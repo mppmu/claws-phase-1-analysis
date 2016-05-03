@@ -1,13 +1,13 @@
 //============================================================================
-// Name        : claws.cpp
+// Name        : main.cpp
 // Author      : Miroslav Gabriel
 // Version     :
 // Copyright   : GNU General Public License
-// Description : Hello World in C++, Ansi-style
+// Description :
 //============================================================================
 
 
-// stl includes
+// std includes
 #include <iostream>
 #include <vector>
 #include <map>
@@ -18,13 +18,13 @@
 #include "TKey.h"
 #include "TTree.h"
 #include "TBranch.h"
-
 #include "TGraph.h"
 #include "TAxis.h"
 #include "TApplication.h"
 
 
 using namespace std;
+
 
 int error(){
 	throw "DeiMudder";
@@ -42,7 +42,7 @@ int main() {
 
 	// Path and file name.
 	// TODO: commandline args
-	TString path = "/remote/pcilc3/data/claws/phaseI/llama/Run-300022.root";
+	TString path = "/Users/mgabriel/workspace/claws/claws_analysis/claws_analysis/Run-300022.root";
 
 	if(gSystem->AccessPathName(path)){
 		cout<<endl<<"File: " << path << " was not found!"<<endl;
@@ -132,7 +132,7 @@ int main() {
 	rootfile->Close();
 
 
-	graph_bwd1->GetYaxis()->SetLimits(0,35000);
+    graph_bwd1->GetYaxis()->SetRangeUser(-32512., 32512);
 	graph_bwd1->Draw();
 
 
