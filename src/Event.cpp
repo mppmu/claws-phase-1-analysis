@@ -7,13 +7,13 @@
 
 #include "Event.h"
 
-namespace claws {
 
-inline int conChName(std::string channel){
-    int out = 0;
-    if (channel == "FWD1") out = 1;
-        return out;
-    }
+
+//inline int conChName(std::string channel){
+//    int out = 0;
+//    if (channel == "FWD1") out = 1;
+//        return out;
+//    }
     
 Event::Event(TTree* meta, TTree* data) {
 	// TODO Auto-generated constructor stub
@@ -26,8 +26,8 @@ Event::~Event() {
 }
 
 
-TGraph* Event::GetChannel(int channel){
-	return graphs.at(channel);
+TGraph* getChannel(std::string channel){
+	return NULL;
 }
 
-} /* namespace claws */
+

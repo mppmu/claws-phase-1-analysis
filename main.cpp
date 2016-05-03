@@ -22,6 +22,9 @@
 #include "TAxis.h"
 #include "TApplication.h"
 
+// my includes
+#include "Event.h"
+
 
 using namespace std;
 
@@ -87,15 +90,14 @@ int main() {
 //		++it;
 //	}
 
-	TTree* testtree = (TTree*)dir_data->Get("300022500-data");
+	TTree* data = (TTree*)dir_data->Get("300022500-data");
+    TTree* meta = (TTree*)dir_data->Get("300022500-data");
+    
+    Event* event = new Event(meta, data);
 
-//	if(testtree){
-//
-//	}
 
-
-	int n_entries = testtree->GetEntries();
-	TBranch* tree_bwd1=testtree->GetBranch("BWD1");
+	int n_entries = data->GetEntries();
+	TBranch* tree_bwd1=data->GetBranch("BWD1");
 
 	short int_bwd1;
 
@@ -105,7 +107,7 @@ int main() {
 
 
 	for (int var = 0; var < n_entries; ++var) {
-		testtree->GetEntry(var);
+		data->GetEntry(var);
 		graph_bwd1->SetPoint(var, var, int_bwd1);
 	}
 

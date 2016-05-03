@@ -24,8 +24,8 @@ public:
 
     TGraph* getChannel(std::string channel); // FWD1-4, BWD1-4
     
-    long int getEvtnr() {return evt_nr};
-    double getTimestamp() {return timestamp};
+    long int getEvtnr() {return evt_nr;};
+    double getTimestamp() {return timestamp;};
     
     double getRate(std::string channel); // Input: FWD1-4, BWD1-4, COMB
     
@@ -36,7 +36,7 @@ protected:
 	std::vector<TGraph*> graphs;
     
     // lower level data
-    long int evtnr;
+    long int evt_nr;
     double timestamp;
     
 };
