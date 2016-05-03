@@ -41,7 +41,7 @@ int main() {
 	cout << "|            Starting CLAWS phase I data analysis       |" << endl;
 	cout << "---------------------------------------------------------" << endl;
 
-//	TApplication app("app", NULL, NULL);
+	TApplication app("app", NULL, NULL);
 
 	// Path and file name.
 	// TODO: commandline args
@@ -95,20 +95,20 @@ int main() {
     Event* event = new Event(meta, data);
 
 
-	long int n_entries = data->GetEntries();
-	TBranch* tree_bwd1=data->GetBranch("BWD1");
-
-	short int_bwd1;
-
-	tree_bwd1->SetAddress(&int_bwd1);
-
-	TGraph* graph_bwd1 = new TGraph();
-
-
-	for (int var = 0; var < n_entries; ++var) {
-		data->GetEntry(var);
-		graph_bwd1->SetPoint(var, var, int_bwd1);
-	}
+//	long int n_entries = data->GetEntries();
+//	TBranch* tree_bwd1=data->GetBranch("BWD1");
+//
+//	short int_bwd1;
+//
+//	tree_bwd1->SetAddress(&int_bwd1);
+//
+//	TGraph* graph_bwd1 = new TGraph();
+//
+//
+//	for (int var = 0; var < n_entries; ++var) {
+//		data->GetEntry(var);
+//		graph_bwd1->SetPoint(var, var, int_bwd1);
+//	}
 
 
 
@@ -132,13 +132,14 @@ int main() {
 
 	rootfile->Close();
 
+    event->getChannel("FWD1")->GetYaxis()->SetRangeUser(-32512., 32512);
+    
+    event->getChannel("FWD1")->Draw("AP");
+    event->getChannel("FWD2")->Draw("P");
+    event->getChannel("FWD3")->Draw("P");
+    event->getChannel("FWD4")->Draw("P");
 
-    graph_bwd1->GetYaxis()->SetRangeUser(-32512., 32512);
-	graph_bwd1->Draw();
-
-
-
-//	app.Run();
+	app.Run();
 
 	return 0;
 }

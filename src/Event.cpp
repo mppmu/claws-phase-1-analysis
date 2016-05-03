@@ -33,18 +33,62 @@ Event::Event(TTree* meta, TTree* data) {
     
     int16_t fwd1;
     data->SetBranchAddress("FWD1", &fwd1);
-    
     FWD1=new TGraph();
+    
+    int16_t fwd2;
+    data->SetBranchAddress("FWD2", &fwd2);
+    FWD2=new TGraph();
+    
+    int16_t fwd3;
+    data->SetBranchAddress("FWD3", &fwd3);
+    FWD3=new TGraph();
+    
+    int16_t fwd4;
+    data->SetBranchAddress("FWD4", &fwd4);
+    FWD4=new TGraph();
+    
+    int16_t bwd1;
+    data->SetBranchAddress("BWD1", &bwd1);
+    BWD1=new TGraph();
+    
+    int16_t bwd2;
+    data->SetBranchAddress("BWD2", &bwd2);
+    BWD2=new TGraph();
+    
+    int16_t bwd3;
+    data->SetBranchAddress("BWD3", &bwd3);
+    BWD3=new TGraph();
+    
+    int16_t bwd4;
+    data->SetBranchAddress("BWD4", &bwd4);
+    BWD4=new TGraph();
+    
     
     //TODO Instead of i*0.8 use the appropriate timebase from the scope.
     for (Long64_t i; i < data->GetEntries(); i++) {
         data->GetEntry(i);
         FWD1->SetPoint(i, i * 0.8, fwd1);
+        FWD2->SetPoint(i, i * 0.8, fwd2);
+        FWD3->SetPoint(i, i * 0.8, fwd3);
+        FWD4->SetPoint(i, i * 0.8, fwd4);
+        BWD1->SetPoint(i, i * 0.8, bwd1);
+        BWD2->SetPoint(i, i * 0.8, bwd2);
+        BWD3->SetPoint(i, i * 0.8, bwd3);
+        BWD4->SetPoint(i, i * 0.8, bwd4);
     }
     
     delete data;
     data = NULL;
 
+    FWD1->SetMarkerColor(kRed+2);
+//
+    FWD1->SetMarkerStyle(20);
+    FWD1->SetMarkerSize(0.6);
+    
+    FWD2->SetMarkerColor(kRed);
+    FWD3->SetMarkerColor(kRed-7);
+    FWD4->SetMarkerColor(kGray);
+//    FWD1->GetYaxis()->SetRangeUser(-32512., 32512);
     
     std::cout.precision(20);
     std::cout << evt_nr << " " << unixtime << std::endl;
@@ -58,7 +102,8 @@ Event::~Event() {
 }
 
 
-TGraph* getChannel(std::string channel){
+TGraph* Event::getChannel(std::string channel){
+    
     if(channel == "FWD1"){
         return FWD1;
     }else if (channel == "FWD2"){
