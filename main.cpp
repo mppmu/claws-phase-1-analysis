@@ -45,18 +45,13 @@ int main() {
 
 	// Path and file name.
 	// TODO: commandline args
-	TString path = "/Users/mgabriel/workspace/claws/claws_analysisclaws_analysis/Run-300022.root";
-
-//	if(gSystem->AccessPathName(path)){
-//		cout<<"File: " << path << " was not found!"<<endl;
-//		return 0;
-//	}
+	TString path = "/Users/mgabriel/workspace/claws/claws_analysis/claws_analysis/Run-300022.root";
 
 	TFile * rootfile  = new TFile(path, "OPEN");
 
-    if (rootfile == NULL){
+    if (rootfile->IsZombie()){
         cout<<"File: " << path << " was not found!"<<endl;
-        return 0;
+        return -1;
     }
 //	rootfile->GetListOfKeys()->Print();
 
@@ -95,7 +90,7 @@ int main() {
 //	}
 
 	TTree* data = (TTree*)dir_data->Get("300022500-data");
-    TTree* meta = (TTree*)dir_data->Get("300022500-data");
+    TTree* meta = (TTree*)dir_data->Get("300022500-meta");
     
     Event* event = new Event(meta, data);
 
@@ -143,7 +138,7 @@ int main() {
 
 
 
-	app.Run();
+//	app.Run();
 
 	return 0;
 }
