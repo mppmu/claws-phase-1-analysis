@@ -5,6 +5,7 @@
  *      Author: mgabriel
  */
 
+#include <iostream>
 #include "Event.h"
 
 
@@ -16,7 +17,11 @@
 //    }
     
 Event::Event(TTree* meta, TTree* data) {
-	// TODO Auto-generated constructor stub
+    if (meta == NULL || data == NULL){
+        std::cout << "Meta tree or data tree not found" << std::endl;
+    }
+	
+    // TODO Auto-generated constructor stub
 	// TODO Autoflag on TGraph to check if is_clock=true, maybe GetYAxis->GetMean ~ (max - min)/2 + min ~ Wert
 
 }

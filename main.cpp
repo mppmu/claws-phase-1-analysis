@@ -41,19 +41,23 @@ int main() {
 	cout << "|            Starting CLAWS phase I data analysis       |" << endl;
 	cout << "---------------------------------------------------------" << endl;
 
-	TApplication app("app", NULL, NULL);
+//	TApplication app("app", NULL, NULL);
 
 	// Path and file name.
 	// TODO: commandline args
-	TString path = "/Users/mgabriel/workspace/claws/claws_analysis/claws_analysis/Run-300022.root";
+	TString path = "/Users/mgabriel/workspace/claws/claws_analysisclaws_analysis/Run-300022.root";
 
-	if(gSystem->AccessPathName(path)){
-		cout<<endl<<"File: " << path << " was not found!"<<endl;
-		return 0;
-	}
+//	if(gSystem->AccessPathName(path)){
+//		cout<<"File: " << path << " was not found!"<<endl;
+//		return 0;
+//	}
 
-	TFile * rootfile   = new TFile(path, "OPEN");
+	TFile * rootfile  = new TFile(path, "OPEN");
 
+    if (rootfile == NULL){
+        cout<<"File: " << path << " was not found!"<<endl;
+        return 0;
+    }
 //	rootfile->GetListOfKeys()->Print();
 
 	TDirectory* dir_data;
@@ -96,7 +100,7 @@ int main() {
     Event* event = new Event(meta, data);
 
 
-	int n_entries = data->GetEntries();
+	long int n_entries = data->GetEntries();
 	TBranch* tree_bwd1=data->GetBranch("BWD1");
 
 	short int_bwd1;
