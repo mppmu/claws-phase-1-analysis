@@ -23,14 +23,13 @@ public:
 	Event(TTree* meta, TTree* data);
 	virtual ~Event();
 
-    TGraph* getChannel(std::string channel); // FWD1-4, BWD1-4
-    
     long int getEvtnr() {return evt_nr;};
-//    double getTimestamp() {return timestamp;};
-    
+    double getTimestamp() {return unixtime;}; // In principl there are several different timestamps in the file, for now we just work with the unixone
+
+    TGraph* getChannel(std::string channel); // FWD1-4, BWD1-4
     double getRate(std::string channel); // Input: FWD1-4, BWD1-4, COMB
-    
     int eventToPdf(std::string file);
+    
     
     
 protected:
@@ -51,6 +50,18 @@ protected:
     // meta data
     UInt_t evt_nr;
     double unixtime;
+    
+};
+
+class Data {
+    
+public:
+    Data(TDirectory* data);
+    virtual ~Data();
+    
+    Event* getEvent(int evt_nr);
+    
+protected:
     
 };
 

@@ -68,33 +68,14 @@ int main() {
 
 	dir_scope2 = (TDirectory*)rootfile->GetDirectory("Scope2", true);
 
-//	map<int,int> events;
-//	map<int,int>::iterator it;
-//	cout << "N: " << dir_data->GetNkeys() << endl;
-//
-//	TIter next(dir_data->GetListOfKeys());
-//	TKey* key;
-//	while ((key = (TKey*)next())){
-//		string name = string(key->GetName()).substr(0,9);
-//		int evt_nr = std::stoi(name);
-//		it = events.find(evt_nr);
-//		if (it == events.end()){
-//			events.insert(pair<int,int>(evt_nr,0));
-//		}
-//
-//	}
-//	cout << events.size()<< endl;
-//	it = events.begin();
-//	while(it !=events.end()){
-//		cout << it->first << endl;
-//		++it;
-//	}
+    
 
 	TTree* data = (TTree*)dir_data->Get("300022500-data");
     TTree* meta = (TTree*)dir_data->Get("300022500-meta");
     
     Event* event = new Event(meta, data);
 
+    Data* data=new Data(dir_data);
 
 //	long int n_entries = data->GetEntries();
 //	TBranch* tree_bwd1=data->GetBranch("BWD1");
@@ -131,11 +112,11 @@ int main() {
 
 
 
-//	rootfile->Close();
+	rootfile->Close();
     
-    TApplication app("app", NULL, NULL);
-    event->eventToPdf("/Users/mgabriel/workspace/claws/claws_analysis/claws_analysis/Run-300022.pdf");
-	app.Run();
+//    TApplication app("app", NULL, NULL);
+//    event->eventToPdf("/Users/mgabriel/workspace/claws/claws_analysis/claws_analysis/Run-300022.pdf");
+//	app.Run();
 
 	return 0;
                           }

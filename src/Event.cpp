@@ -9,14 +9,10 @@
 #include "Event.h"
 #include "TAxis.h"
 #include "TCanvas.h"
+#include "TDirectory.h"
 
+using namespace std;
 
-
-//inline int conChName(std::string channel){
-//    int out = 0;
-//    if (channel == "FWD1") out = 1;
-//        return out;
-//    }
 int setStyle(TGraph* graph1,TGraph* graph2,TGraph* graph3,TGraph* graph4){
     double markersize=0.1;
     
@@ -51,9 +47,11 @@ Event::Event(TTree* meta, TTree* data) {
     meta->SetBranchAddress("evt_nr", &evt_nr);
     meta->SetBranchAddress("unixtime", &unixtime);
     meta->GetEntry(0);
+    
     delete meta;
     meta = NULL;
     
+    //TODO make this here dynamic, now only 8 channels are possible
     int16_t fwd1;
     data->SetBranchAddress("FWD1", &fwd1);
     FWD1=new TGraph();
@@ -104,9 +102,6 @@ Event::Event(TTree* meta, TTree* data) {
     delete data;
     data = NULL;
     
-    
-    std::cout.precision(20);
-    std::cout << evt_nr << " " << unixtime << std::endl;
     // TODO Auto-generated constructor stub
 	// TODO Autoflag on TGraph to check if is_clock=true, maybe GetYAxis->GetMean ~ (max - min)/2 + min ~ Wert
 
@@ -168,4 +163,45 @@ int Event::eventToPdf(std::string file){
 
 }
 
+double Event::getRate(std::string channel){
+    //TODO implementation
+    return 0;
+}
+
+
+
+Data::Data(TDirectory* data){
+    
+    //	map<int,int> events;
+    //	map<int,int>::iterator it;
+    std::cout << "N: " << data->GetNkeys() << std::endl;
+    //
+    //	TIter next(dir_data->GetListOfKeys());
+    //	TKey* key;
+    //	while ((key = (TKey*)next())){
+    //		string name = string(key->GetName()).substr(0,9);
+    //		int evt_nr = std::stoi(name);
+    //		it = events.find(evt_nr);
+    //		if (it == events.end()){
+    //			events.insert(pair<int,int>(evt_nr,0));
+    //		}
+    //
+    //	}
+    //	cout << events.size()<< endl;
+    //	it = events.begin();
+    //	while(it !=events.end()){
+    //		cout << it->first << endl;
+    //		++it;
+    //	}
+    
+    
+}
+
+Data::~Data() {
+    // TODO Auto-generated destructor stub
+}
+
+Event* getEvent(int evt_nr){
+    return NULL;
+};
 
