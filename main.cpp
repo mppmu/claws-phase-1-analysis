@@ -21,6 +21,7 @@
 #include "TGraph.h"
 #include "TAxis.h"
 #include "TApplication.h"
+#include "TCanvas.h"
 
 // my includes
 #include "Event.h"
@@ -41,7 +42,7 @@ int main() {
 	cout << "|            Starting CLAWS phase I data analysis       |" << endl;
 	cout << "---------------------------------------------------------" << endl;
 
-	TApplication app("app", NULL, NULL);
+	
 
 	// Path and file name.
 	// TODO: commandline args
@@ -67,21 +68,21 @@ int main() {
 
 	dir_scope2 = (TDirectory*)rootfile->GetDirectory("Scope2", true);
 
-	map<int,int> events;
-	map<int,int>::iterator it;
-	cout << "N: " << dir_data->GetNkeys() << endl;
-
-	TIter next(dir_data->GetListOfKeys());
-	TKey* key;
-	while ((key = (TKey*)next())){
-		string name = string(key->GetName()).substr(0,9);
-		int evt_nr = std::stoi(name);
-		it = events.find(evt_nr);
-		if (it == events.end()){
-			events.insert(pair<int,int>(evt_nr,0));
-		}
-
-	}
+//	map<int,int> events;
+//	map<int,int>::iterator it;
+//	cout << "N: " << dir_data->GetNkeys() << endl;
+//
+//	TIter next(dir_data->GetListOfKeys());
+//	TKey* key;
+//	while ((key = (TKey*)next())){
+//		string name = string(key->GetName()).substr(0,9);
+//		int evt_nr = std::stoi(name);
+//		it = events.find(evt_nr);
+//		if (it == events.end()){
+//			events.insert(pair<int,int>(evt_nr,0));
+//		}
+//
+//	}
 //	cout << events.size()<< endl;
 //	it = events.begin();
 //	while(it !=events.end()){
@@ -130,16 +131,11 @@ int main() {
 
 
 
-	rootfile->Close();
-
-    event->getChannel("FWD1")->GetYaxis()->SetRangeUser(-32512., 32512);
+//	rootfile->Close();
     
-    event->getChannel("FWD1")->Draw("AP");
-    event->getChannel("FWD2")->Draw("P");
-    event->getChannel("FWD3")->Draw("P");
-    event->getChannel("FWD4")->Draw("P");
-
+    TApplication app("app", NULL, NULL);
+    event->eventToPdf("/Users/mgabriel/workspace/claws/claws_analysis/claws_analysis/Run-300022.pdf");
 	app.Run();
 
 	return 0;
-}
+                          }

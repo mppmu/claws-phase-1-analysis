@@ -30,6 +30,8 @@ public:
     
     double getRate(std::string channel); // Input: FWD1-4, BWD1-4, COMB
     
+    int eventToPdf(std::string file);
+    
     
 protected:
 

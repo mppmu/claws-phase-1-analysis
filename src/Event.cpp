@@ -7,6 +7,8 @@
 
 #include <iostream>
 #include "Event.h"
+#include "TAxis.h"
+#include "TCanvas.h"
 
 
 
@@ -15,7 +17,28 @@
 //    if (channel == "FWD1") out = 1;
 //        return out;
 //    }
-
+int setStyle(TGraph* graph1,TGraph* graph2,TGraph* graph3,TGraph* graph4){
+    double markersize=0.1;
+    
+    graph1->SetMarkerColor(kAzure-3);
+    graph1->SetMarkerStyle(20);
+    graph1->SetMarkerSize(markersize);
+    graph1->GetYaxis()->SetRangeUser(-32512., 32512);
+    
+    graph2->SetMarkerColor(kOrange+7);
+    graph2->SetMarkerStyle(20);
+    graph2->SetMarkerSize(markersize);
+    
+    graph3->SetMarkerColor(kGreen+2);
+    graph3->SetMarkerStyle(20);
+    graph3->SetMarkerSize(markersize);
+    
+    graph4->SetMarkerColor(kRed);
+    graph4->SetMarkerStyle(20);
+    graph4->SetMarkerSize(markersize);
+    
+    return 0;
+}
 
 Event::Event(TTree* meta, TTree* data) {
     
@@ -23,7 +46,7 @@ Event::Event(TTree* meta, TTree* data) {
     if (meta == NULL || data == NULL){
         std::cout << "Meta tree or data tree not found" << std::endl;
     }
-    
+
     // Extract the meta data aka timestamp and evt number
     meta->SetBranchAddress("evt_nr", &evt_nr);
     meta->SetBranchAddress("unixtime", &unixtime);
@@ -63,9 +86,10 @@ Event::Event(TTree* meta, TTree* data) {
     data->SetBranchAddress("BWD4", &bwd4);
     BWD4=new TGraph();
     
-    
+    Long64_t n_entries = data->GetEntries();
+
     //TODO Instead of i*0.8 use the appropriate timebase from the scope.
-    for (Long64_t i; i < data->GetEntries(); i++) {
+    for (Long64_t i = 0 ; i < n_entries ; i++) {
         data->GetEntry(i);
         FWD1->SetPoint(i, i * 0.8, fwd1);
         FWD2->SetPoint(i, i * 0.8, fwd2);
@@ -76,19 +100,10 @@ Event::Event(TTree* meta, TTree* data) {
         BWD3->SetPoint(i, i * 0.8, bwd3);
         BWD4->SetPoint(i, i * 0.8, bwd4);
     }
-    
+
     delete data;
     data = NULL;
-
-    FWD1->SetMarkerColor(kRed+2);
-//
-    FWD1->SetMarkerStyle(20);
-    FWD1->SetMarkerSize(0.6);
     
-    FWD2->SetMarkerColor(kRed);
-    FWD3->SetMarkerColor(kRed-7);
-    FWD4->SetMarkerColor(kGray);
-//    FWD1->GetYaxis()->SetRangeUser(-32512., 32512);
     
     std::cout.precision(20);
     std::cout << evt_nr << " " << unixtime << std::endl;
@@ -124,9 +139,33 @@ TGraph* Event::getChannel(std::string channel){
         std::cout << "Channel " << channel << " not found! " << std::endl;
         return NULL;
     }
+ 
+}
+
+int Event::eventToPdf(std::string file){
+   
+    setStyle(FWD1, FWD2, FWD3, FWD4);
+    setStyle(BWD1, BWD2, BWD3, BWD4);
     
+    TCanvas *c1 = new TCanvas("c1","multipads",1200,750);
+    c1->Divide(1,2,0,0);
+
+    c1->cd(1);
+    FWD1->Draw("AP");
+    FWD2->Draw("P");
+    FWD3->Draw("P");
+    FWD4->Draw("P");
     
-	
+    c1->cd(2);
+    BWD1->Draw("AP");
+    BWD2->Draw("P");
+    BWD3->Draw("P");
+    BWD4->Draw("P");
+    
+    c1->SaveAs(file.c_str());
+    
+    return 0;
+
 }
 
 
