@@ -10,6 +10,15 @@
 #include "TAxis.h"
 #include "TCanvas.h"
 #include "TDirectory.h"
+#include "TFile.h"
+#include "TSystem.h"
+#include "TKey.h"
+#include "TTree.h"
+#include "TBranch.h"
+#include "TGraph.h"
+#include "TAxis.h"
+#include "TApplication.h"
+#include "TCanvas.h"
 
 using namespace std;
 
@@ -170,31 +179,38 @@ double Event::getRate(std::string channel){
 
 
 
-Data::Data(TDirectory* data){
+Data::Data(TDirectory* dir){
     
-    //	map<int,int> events;
-    //	map<int,int>::iterator it;
-    std::cout << "N: " << data->GetNkeys() << std::endl;
-    //
-    //	TIter next(dir_data->GetListOfKeys());
-    //	TKey* key;
-    //	while ((key = (TKey*)next())){
-    //		string name = string(key->GetName()).substr(0,9);
-    //		int evt_nr = std::stoi(name);
-    //		it = events.find(evt_nr);
-    //		if (it == events.end()){
-    //			events.insert(pair<int,int>(evt_nr,0));
-    //		}
-    //
-    //	}
-    //	cout << events.size()<< endl;
-    //	it = events.begin();
-    //	while(it !=events.end()){
-    //		cout << it->first << endl;
-    //		++it;
-    //	}
+
     
+//    Event* event = new Event(meta, data);
+    map<int,Event*> events;
+    map<int,Event*>::iterator it;
+
     
+    TIter next(dir->GetListOfKeys());
+    TKey* key;
+    while ((key = (TKey*)next())){
+    		string name = string(key->GetName()).substr(0,9);
+    		int evt_nr = std::stoi(name);
+    		it = events.find(evt_nr);
+    		if (it == events.end()){
+    			events.insert(pair<int,Event*>(evt_nr,NULL));
+    		}
+    
+    	}
+    
+    TTree* data = NULL;
+    TTree* meta = NULL;
+    it = events.begin();
+    while(it !=events.end()){
+        data = (TTree*)dir->Get((to_string(it->first)+"-data").c_str());
+        meta = (TTree*)dir->Get((to_string(it->first)+"-meta").c_str());
+        it->second=new Event(meta, data);
+        ++it;
+    	}
+    
+    cout << events.size()<< endl;
 }
 
 Data::~Data() {
@@ -204,4 +220,10 @@ Data::~Data() {
 Event* getEvent(int evt_nr){
     return NULL;
 };
+
+int Data::appendEvent(Event* event){
+    
+    
+    return 0;
+}
 

@@ -60,6 +60,7 @@ public:
     virtual ~Data();
     
     Event* getEvent(int evt_nr);
+    int appendEvent(Event* event);
     
 protected:
     

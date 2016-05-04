@@ -70,44 +70,9 @@ int main() {
 
     
 
-	TTree* data = (TTree*)dir_data->Get("300022500-data");
-    TTree* meta = (TTree*)dir_data->Get("300022500-meta");
-    
-    Event* event = new Event(meta, data);
+
 
     Data* data=new Data(dir_data);
-
-//	long int n_entries = data->GetEntries();
-//	TBranch* tree_bwd1=data->GetBranch("BWD1");
-//
-//	short int_bwd1;
-//
-//	tree_bwd1->SetAddress(&int_bwd1);
-//
-//	TGraph* graph_bwd1 = new TGraph();
-//
-//
-//	for (int var = 0; var < n_entries; ++var) {
-//		data->GetEntry(var);
-//		graph_bwd1->SetPoint(var, var, int_bwd1);
-//	}
-
-
-
-
-//	vector<TBranch*> branches;
-//	branches.push_back(testtree->GetBranch("BWD1"));
-//	branches.at(0)->
-//	vector<int> bwd1;
-//	for (int i = 0; i < n_entries; ++i) {
-//
-//	}
-//	TList* filecontent = rootfile->GetListOfKeys();
-//	filecontent->Print();
-//	filecontent->
-
-
-
 
 
 
