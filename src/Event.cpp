@@ -191,26 +191,28 @@ Data::Data(TDirectory* dir){
     TIter next(dir->GetListOfKeys());
     TKey* key;
     while ((key = (TKey*)next())){
-    		string name = string(key->GetName()).substr(0,9);
-    		int evt_nr = std::stoi(name);
+    		int evt_nr = std::stoi(string(key->GetName()).substr(0,9));
     		it = events.find(evt_nr);
     		if (it == events.end()){
-    			events.insert(pair<int,Event*>(evt_nr,NULL));
+                TTree* meta = (TTree*)dir->Get((to_string(evt_nr)+"-meta").c_str());
+                TTree* data = (TTree*)dir->Get((to_string(evt_nr)+"-data").c_str());
+                Event* event=new Event(meta,data);
+    			events.insert(pair<int,Event*>(evt_nr,event));
     		}
     
     	}
     
-    TTree* data = NULL;
-    TTree* meta = NULL;
-    it = events.begin();
-    while(it !=events.end()){
-        data = (TTree*)dir->Get((to_string(it->first)+"-data").c_str());
-        meta = (TTree*)dir->Get((to_string(it->first)+"-meta").c_str());
-        it->second=new Event(meta, data);
-        ++it;
-    	}
+
+//    it = events.begin();
+//    while(it !=events.end()){
+////        data = (TTree*)dir->Get((to_string(it->first)+"-data").c_str());
+////        meta = (TTree*)dir->Get((to_string(it->first)+"-meta").c_str());
+////        it->second=new Event(meta, data);
+//        cout << it->first << ", " << it->second->getEvtnr() <<endl;
+//        ++it;
+//    	}
     
-    cout << events.size()<< endl;
+//    cout << events.size()<< endl;
 }
 
 Data::~Data() {
