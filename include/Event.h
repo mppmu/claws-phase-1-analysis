@@ -28,6 +28,7 @@ public:
 
     TGraph* getChannel(std::string channel); // FWD1-4, BWD1-4
     double getRate(std::string channel); // Input: FWD1-4, BWD1-4, COMB
+    int calcRate(std::string channel);
     int eventToPdf(std::string file);
     
     

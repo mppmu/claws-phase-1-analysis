@@ -172,6 +172,13 @@ int Event::eventToPdf(std::string file){
 
 }
 
+int Event::calcRate(std::string channel){
+    
+    
+    return 0;
+}
+
+
 double Event::getRate(std::string channel){
     //TODO implementation
     return 0;
