@@ -69,7 +69,7 @@ int main() {
 	dir_scope2 = (TDirectory*)rootfile->GetDirectory("Scope2", true);
 
     
-
+//adsasdasdads
 
 
     Data* data=new Data(dir_data);
