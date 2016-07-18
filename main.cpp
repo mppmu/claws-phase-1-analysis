@@ -42,7 +42,7 @@ int main() {
 	cout << "|            Starting CLAWS phase I data analysis       |" << endl;
 	cout << "---------------------------------------------------------" << endl;
 
-	
+	//asdadsasdlcasca
 
 	// Path and file name.
 	// TODO: commandline args
@@ -68,7 +68,7 @@ int main() {
 
 	dir_scope2 = (TDirectory*)rootfile->GetDirectory("Scope2", true);
 
-    
+
 
 
 
@@ -78,7 +78,7 @@ int main() {
 
 
 	rootfile->Close();
-    
+
 //    TApplication app("app", NULL, NULL);
 //    event->eventToPdf("/Users/mgabriel/workspace/claws/claws_analysis/claws_analysis/Run-300022.pdf");
 //	app.Run();
