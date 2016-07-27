@@ -30,6 +30,8 @@ class Event{
         Event(path p);
         virtual ~Event();
 
+        int loadRoot();
+        int loadIni();
         int subtract();
 
         int getCh(string ch);
@@ -46,7 +48,8 @@ class Run{
     public:
         Run(string dir);
         virtual ~Run();
-
+        int buildNTulples();
+        
     protected:
 
     private:

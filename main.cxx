@@ -77,6 +77,25 @@ void printTree (pt::ptree &pt, int level) {
   return;
 }
 
+
+
+
+//===============================================================================
+// Globals for the makeBEASTntuple operations. In poor style, some
+// of these are used inside BEASTdetector member functions.
+//===============================================================================
+
+// Hold run number metadata
+struct run {
+  std::string name;
+  unsigned int run_num;
+  unsigned int sub_run;
+  unsigned int tsMin;
+  unsigned int tsMax;
+};
+
+
+
 int main(int argc, char* argv[]) {
 
 
@@ -88,6 +107,9 @@ int main(int argc, char* argv[]) {
 	path p("/remote/ceph/group/ilc/claws/data/claws_phaseI/connecticut/16-05-26/Run-401161/data_root/Event-401161001.ini");
 	path path_to_rate("/remote/ceph/group/ilc/claws/data/claws_phaseI/connecticut/16-05-26/Run-401161/Rate-Run--11610");
 //	path path_to_rate("/remote/ceph/group/ilc/claws/data/claws_phaseI/connecticut/16-05-26/Run-401161/ok.dat");
+
+
+
 
 	pt::ptree pt;
     pt::ini_parser::read_ini(p.string(), pt);
@@ -117,6 +139,43 @@ int main(int argc, char* argv[]) {
 	cout << rate_bwd4 << endl;
 
 
+	static unsigned int lastTs=0;
+
+	std::ifstream runfile("./runs.txt", std::ios_base::in);
+	std::string line;
+
+	double runnumber = 5001;
+
+	double runnumbertmp, tsMin, tsMax;
+
+
+	if(!runfile) {
+	  std::cout << "ERROR: run number file not found. Exiting." << std::endl;
+	  exit(1);
+	}
+	else {
+	  while (std::getline(runfile,line)) {
+		std::istringstream iss(line);
+
+		iss >> runnumbertmp >> tsMin >> tsMax;
+
+	 	if(runnumber == runnumbertmp) {
+	   		std::cout << "Nr: " << runnumbertmp << std::setprecision(12)<< ", tsMin: " << tsMin << ", tsMax: " << tsMax << std::endl;
+	 	}
+	  //
+	// 	lastTs = tmp_run.tsMax;
+	// 	runs.push_back(tmp_run);
+	  }
+	}
+
+	// if(runs.size()) {
+	//   std::cout << "Run file loaded successfully with " << runs.size() << " entries." << std::endl;
+	// }
+	// else {
+	//   std::cout << "Run file not loaded, exiting" << std::endl;
+	//   exit(1);
+	// }
+
 	// directory_iterator end_itr;
 	//
 	// for (directory_iterator itr(p); itr != end_itr; ++itr)
@@ -134,6 +193,8 @@ int main(int argc, char* argv[]) {
 	return 0;
 
 }
+
+
 
 
 
