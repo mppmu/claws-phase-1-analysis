@@ -14,6 +14,7 @@
 #include <map>
 #include <string>
 #include <cstdlib>
+#include <typeinfo>
 
 // mixed
 #include <boost/filesystem.hpp>
@@ -21,6 +22,8 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/filesystem/fstream.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/lexical_cast.hpp>
 
 // root include
 #include "TFile.h"
@@ -41,6 +44,7 @@
 
 
 using namespace std;
+using namespace boost;
 using namespace boost::filesystem;
 // using namespace po = boost::program_options;
 namespace pt = boost::property_tree;
@@ -77,7 +81,13 @@ void printTree (pt::ptree &pt, int level) {
   return;
 }
 
-
+string fileFromPath(path p){
+	cout << p.filename() << endl;
+	for(const auto &f : p){
+		cout << p.filename() << endl;
+	}
+	return "";
+}
 
 
 //===============================================================================
@@ -104,40 +114,10 @@ int main(int argc, char* argv[]) {
 	cout << "|            Starting CLAWS phase I data analysis       |" << endl;
 	cout << "---------------------------------------------------------" << endl;
 
-	path p("/remote/ceph/group/ilc/claws/data/claws_phaseI/connecticut/16-05-26/Run-401161/data_root/Event-401161001.ini");
-	path path_to_rate("/remote/ceph/group/ilc/claws/data/claws_phaseI/connecticut/16-05-26/Run-401161/Rate-Run--11610");
-//	path path_to_rate("/remote/ceph/group/ilc/claws/data/claws_phaseI/connecticut/16-05-26/Run-401161/ok.dat");
 
-
-
-
-	pt::ptree pt;
-    pt::ini_parser::read_ini(p.string(), pt);
-	printTree(pt, 0);
-
-
-	std::ifstream ratefile(path_to_rate.string());
-
-	double rate_fwd1, rate_fwd2, rate_fwd3, rate_fwd4, rate_bwd1, rate_bwd2, rate_bwd3, rate_bwd4;
-
-	if (!ratefile){
-		cerr << "not file" << endl;
-		exit(1);
-	}
-	while(!ratefile.eof())
-	{
-		ratefile >> rate_fwd1 >> rate_fwd2 >> rate_fwd3 >> rate_fwd4 >> rate_bwd1 >> rate_bwd2 >> rate_bwd3 >> rate_bwd4;
-
-	}
-	cout << rate_fwd1 << endl;
-	cout << rate_fwd2 << endl;
-	cout << rate_fwd3 << endl;
-	cout << rate_fwd4 << endl;
-	cout << rate_bwd1 << endl;
-	cout << rate_bwd2 << endl;
-	cout << rate_bwd3 << endl;
-	cout << rate_bwd4 << endl;
-
+//-------------------------------------------------------------
+// First get the corresponding Tmin and Tmac from the beast run
+//-------------------------------------------------------------
 
 	static unsigned int lastTs=0;
 
@@ -159,33 +139,130 @@ int main(int argc, char* argv[]) {
 
 		iss >> runnumbertmp >> tsMin >> tsMax;
 
-	 	if(runnumber == runnumbertmp) {
-	   		std::cout << "Nr: " << runnumbertmp << std::setprecision(12)<< ", tsMin: " << tsMin << ", tsMax: " << tsMax << std::endl;
-	 	}
-	  //
-	// 	lastTs = tmp_run.tsMax;
-	// 	runs.push_back(tmp_run);
+		if(runnumber == runnumbertmp) {
+			std::cout << "Nr: " << runnumbertmp << std::setprecision(12)<< ", tsMin: " << tsMin << ", tsMax: " << tsMax << std::endl;
+		}
+
 	  }
 	}
 
-	// if(runs.size()) {
-	//   std::cout << "Run file loaded successfully with " << runs.size() << " entries." << std::endl;
-	// }
-	// else {
-	//   std::cout << "Run file not loaded, exiting" << std::endl;
-	//   exit(1);
-	// }
 
-	// directory_iterator end_itr;
+//----------------------------------------------------------------------------------------------
+// Now search for the right claws runs & events corresponding to the timestamp of the beast run
+//----------------------------------------------------------------------------------------------
+
+
+	// path path_to_day("/remote/ceph/group/ilc/claws/data/claws_phaseI/connecticut/16-05-23");
+	path path_to_day("/remote/pcilc3/data/claws_phaseI/connecticut/16-05-23");
+	path path_to_rate("/remote/ceph/group/ilc/claws/data/claws_phaseI/connecticut/16-05-26/Run-401161/Rate-Run--11610");
+//	path path_to_rate("/remote/ceph/group/ilc/claws/data/claws_phaseI/connecticut/16-05-26/Run-401161/ok.dat");
+
+
+
+
+	directory_iterator end_itr;
+	vector<path> dircontent;
+
+	copy(directory_iterator(path_to_day), directory_iterator(), back_inserter(dircontent));
+	sort(dircontent.begin(), dircontent.end());
+
+	for (vector<path>::const_iterator itr = dircontent.begin(); itr != dircontent.end(); ++itr)
+	{
+
+		 if(is_directory(*itr) && starts_with((*itr).filename().string(), "Run-")){
+			path datafolder = (*itr) / path("data_root");
+			vector<path> dircontent;							// local copy
+			copy(directory_iterator(datafolder), directory_iterator(), back_inserter(dircontent));
+			sort(dircontent.begin(), dircontent.end());
+			for (vector<path>::const_iterator itr = dircontent.begin(); itr != dircontent.end(); ++itr){
+				if(is_regular_file(*itr) && starts_with((*itr).filename().string(), "Event-") && ends_with((*itr).filename().string(), ".ini") ){
+//					cout << " " << (*itr).filename() << '\n';
+
+				pt::ptree pt;
+				pt::ini_parser::read_ini((*itr).string(), pt);
+				//	cout <<  pt.get<double>("Properties.UnixTime") << std::setprecision(12) << endl;
+				pt::ptree::const_iterator it = pt.find("Properties");
+				cout <<  it->first << endl;
+				// double unixtime = boost::lexical_cast<double>(it->second.data());
+				//
+				// for (pt::ptree::iterator pos = pt.begin(); pos != pt.end();){
+				//
+				// }
+				// cout <<  unixtime << std::setprecision(12) << endl;
+				//	printTree(pt, 0);
+				}
+				// pt::ptree pt;
+				// pt::ini_parser::read_ini(p.string(), pt);
+
+
+			}
+	//	 	cout << " " << (*itr).filename() << '\n';
+  	  // 			path datafolder = itr->path() / path("data_root");
+  	  // 			directory_iterator end_itr;
+  	  // 			// Cycle through the event files.
+  	  // 			for (directory_iterator itr(datafolder); itr != end_itr; ++itr){
+  	  //
+  	  	}
+	}
+
+	// cycle through the directory
+// 	for (directory_iterator itr(path_to_day); itr != end_itr; ++itr)
+// 	{
+// 		if (is_regular_file(itr->path())) {
+// 			// If it is a file do not do anything!
+//
+// // 			string current_file = itr->path().string();
+// // //			cout <<  itr->path()<< " is directory!" << endl;
+// // 			cout <<  itr->path().filename().string() << " is file!" << endl;
+// 			// fileFromPath(itr->path());
+// 		}
+//
+// 		else if(is_directory(itr->path()) && starts_with(itr->path().filename().string(), "Run-")){
+// 			// If it is a directory check if it is a Run folder and proceed.
+//
+// 			path datafolder = itr->path() / path("data_root");
+// 			directory_iterator end_itr;
+// 			// Cycle through the event files.
+// 			for (directory_iterator itr(datafolder); itr != end_itr; ++itr){
+//
+// 			}
+//
+//
+// 		}
+// 	}
+
+
+	// pt::ptree pt;
+    // pt::ini_parser::read_ini(p.string(), pt);
+	// printTree(pt, 0);
 	//
-	// for (directory_iterator itr(p); itr != end_itr; ++itr)
-	// {
-	// 	if (is_regular_file(itr->path()))
-	// 	{
-	// 		string current_file = itr->path().string();
-	// 		cout << current_file << endl;
-	// 	}
+	//
+	// std::ifstream ratefile(path_to_rate.string());
+	//
+	// double rate_fwd1, rate_fwd2, rate_fwd3, rate_fwd4, rate_bwd1, rate_bwd2, rate_bwd3, rate_bwd4;
+	//
+	// if (!ratefile){
+	// 	cerr << "not file" << endl;
+	// 	exit(1);
 	// }
+	// while(!ratefile.eof())
+	// {
+	// 	ratefile >> rate_fwd1 >> rate_fwd2 >> rate_fwd3 >> rate_fwd4 >> rate_bwd1 >> rate_bwd2 >> rate_bwd3 >> rate_bwd4;
+	//
+	// }
+	// cout << rate_fwd1 << endl;
+	// cout << rate_fwd2 << endl;
+	// cout << rate_fwd3 << endl;
+	// cout << rate_fwd4 << endl;
+	// cout << rate_bwd1 << endl;
+	// cout << rate_bwd2 << endl;
+	// cout << rate_bwd3 << endl;
+	// cout << rate_bwd4 << endl;
+	//
+
+
+
+
 
 //	Event e(p);
 //	e.draw();
