@@ -90,6 +90,21 @@ Event::~Event() {
 	// TODO Auto-generated destructor stub
 }
 
+
+double Run::GetStartTime(){
+    return tsMin;
+};
+double Run::GetStopTime(){
+    return tsMax;
+};
+TTree *GetOnlineTree(){
+    this->BuildOnlineTree();
+    return tree_online;
+};
+TTree *GetOfflineTree(){
+    this->BuildOfflineTree();
+    return tree_offline;
+};
 // int setStyle(TGraph* graph1,TGraph* graph2,TGraph* graph3,TGraph* graph4){
 //     double markersize=0.1;
 //

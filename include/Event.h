@@ -5,18 +5,19 @@
  *      Author: mgabriel
  */
 
-#ifndef EVENT_H_
-#define EVENT_H_
+#ifndef CLAWS_ANALYSIS_EVENT_H_
+#define CLAWS_ANALYSIS_EVENT_H_
 
 // std includes
-#include <vector>
+#include <vector>assss
 #include <string>
 #include <map>
 // root includes
 #include <TFile.h>
 #include <TH1D.h>
 #include <TH1I.h>
-
+#include <TTree.h>
+#include <TBranch.h>
 
 // mixed
 #include<boost/filesystem.hpp>
@@ -46,18 +47,28 @@ class Event{
 class Run{
 
     public:
-        Run(string dir);
+
+        Run(path dir);
         virtual ~Run();
-        int buildNTulples();
-        
-    protected:
+
+        int BuildOnlineTree();
+        int BuildOfflineTree();
+        TTree *GetOnlineTree();
+        TTree *GetOfflineTree();
+        double GetStartTime();
+        double GetStopTime();
+
 
     private:
 
+        double tsMin;
+        double tsMax;
+        TTree *tree_online;
+        TTree *tree_offline;
 
 };
 
-#endif /* EVENT_H_ */
+#endif /* CLAWS_ANALYSIS_EVENT_H_ */
 // class Event {
 //
 // public:

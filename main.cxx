@@ -276,7 +276,7 @@ int main(int argc, char* argv[]) {
 
 	TFile * rootfile  = new TFile(("/remote/ceph/group/ilc/claws/data/NTP/CLAWS/16-05-23/CLAWS-5001-"+ to_string((int)tsMin)+ ".root").c_str(), "RECREATE");
 
-	TTree *tout = new TTree("tout","tout");
+	TTree *tout = new TTree("rate_online","rate_online");
 
 	double ts, rate_fwd1, rate_fwd2, rate_fwd3, rate_fwd4, rate_bwd1, rate_bwd2, rate_bwd3, rate_bwd4;
 
