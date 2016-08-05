@@ -18,31 +18,46 @@
 #include <typeinfo>
 #include <map>
 
- // mixed
- #include<boost/filesystem.hpp>
+ // boost
+ #include <boost/filesystem.hpp>
+ #include <boost/lexical_cast.hpp>
+ #include <boost/algorithm/string/predicate.hpp>
+ #include <boost/algorithm/string/replace.hpp>
+ #include <boost/property_tree/ptree.hpp>
+ #include <boost/property_tree/ini_parser.hpp>
+ // #include <boost/program_options.hpp>
+ // #include <boost/filesystem/fstream.hpp>
+
+ // #include <boost/algorithm/string/predicate.hpp>
+ //
+
+ // #include <boost/foreach.hpp>
 
 
 using namespace std;
-using namespace boost::filesystem;
+using namespace boost;
 
 
-Event::Event(path p)
+Event::Event(path file_root, path file_ini): unixtime(-1.), lerbg(0), herbg(0), injection(false)
 {
 
+    path_file_root  = file_root;
+    path_file_ini   = file_ini;
 
-    cout << "constructor event class " << p << endl;
-    cout << typeid(p.string()).name() << endl;
+    this->LoadIniFile();
 
-    file = new TFile(p.string().c_str(), "open");
-    cout << (TH1I*)file->Get("FWD1-INT") << endl;
-    channels["FWD1-INT"] = (TH1I*)file->Get("FWD1-INT")->Clone();
-    cout << channels["FWD1-INT"] << endl;
-    channels["FWD2-INT"] = (TH1I*)file->Get("FWD2-INT")->Clone();
-    channels["FWD3-INT"] = (TH1I*)file->Get("FWD3-INT")->Clone();
-    channels["BWD1-INT"] = (TH1I*)file->Get("BWD1-INT")->Clone();
-    channels["BWD2-INT"] = (TH1I*)file->Get("BWD2-INT")->Clone();
-    channels["BWD3-INT"] = (TH1I*)file->Get("BWD3-INT")->Clone();
-
+    // cout << typeid(p.string()).name() << endl;
+    //
+    // file = new TFile(p.string().c_str(), "open");
+    // cout << (TH1I*)file->Get("FWD1-INT") << endl;
+    // channels["FWD1-INT"] = (TH1I*)file->Get("FWD1-INT")->Clone();
+    // cout << channels["FWD1-INT"] << endl;
+    // channels["FWD2-INT"] = (TH1I*)file->Get("FWD2-INT")->Clone();
+    // channels["FWD3-INT"] = (TH1I*)file->Get("FWD3-INT")->Clone();
+    // channels["BWD1-INT"] = (TH1I*)file->Get("BWD1-INT")->Clone();
+    // channels["BWD2-INT"] = (TH1I*)file->Get("BWD2-INT")->Clone();
+    // channels["BWD3-INT"] = (TH1I*)file->Get("BWD3-INT")->Clone();
+    //
 
     // TF1 * fit = new TF1("fit", "[0]", 0 ,115);
     // FWD1->Fit(fit, "WRV");
@@ -56,10 +71,39 @@ Event::Event(path p)
 
     //
     // FWD1->Draw();
-
-    file->Close();
-    cout << channels["FWD1-INT"] << endl;
+    //
+    // file->Close();
+    // cout << channels["FWD1-INT"] << endl;
 };
+
+
+double Event::LoadIniFile(){
+
+    property_tree::ptree pt;
+	property_tree::ini_parser::read_ini(path_file_ini.string(), pt);
+
+    unixtime   = pt.get<double>("Properties.UnixTime");
+	lerbg      = pt.get<int>("SuperKEKBData.LERBg");
+	herbg      = pt.get<int>("SuperKEKBData.HERBg");
+
+    if (lerbg || herbg) injection = true;
+    else                injection = false;
+
+    return unixtime;
+};
+double Event::GetUnixtime(){
+    return unixtime;
+}
+int Event::GetLerBg(){
+    return lerbg;
+}
+int Event::GetHerBg(){
+    return herbg;
+}
+
+bool Event::GetInjection(){
+    return injection;
+}
 
 int Event::getCh(string ch){
 
@@ -90,6 +134,49 @@ Event::~Event() {
 	// TODO Auto-generated destructor stub
 }
 
+//----------------------------------------------------------------------------------------------
+// Definition of the Run class.
+//----------------------------------------------------------------------------------------------
+
+Run::Run(path dir){
+    cout << "Do something" << endl;
+    cout << dir.string() << endl;
+
+    path path_data = dir / path("data_root");
+
+    vector<path> folder_content;
+    copy(directory_iterator(dir / path("data_root")), directory_iterator(), back_inserter(folder_content));
+
+    for (vector<path>::const_iterator itr = folder_content.begin(); itr != folder_content.end(); ++itr){
+
+	    if( is_regular_file(*itr)
+            && starts_with((*itr).filename().string(), "Event-")
+            && ends_with((*itr).filename().string(), ".root")){
+
+                // Get the paths to the .root and .ini file of the evnet.
+                path path_file_root = path_data / (*itr);
+                string tmp          = (*itr).filename().string();
+                replace_last( tmp, ".root" , ".ini");
+                path path_file_ini  = path_data / path(tmp);
+
+                if( exists( path_file_ini) ){
+                    events.push_back(new Event(path_file_root, path_file_ini));
+                }
+
+        };
+    };
+
+    for(int i =0; i< events.size(); i++){
+        events.at(i)->LoadIniFile();
+    }
+
+
+
+};
+
+Run::~Run() {
+	// TODO Auto-generated destructor stub
+}
 
 double Run::GetStartTime(){
     return tsMin;
@@ -97,11 +184,20 @@ double Run::GetStartTime(){
 double Run::GetStopTime(){
     return tsMax;
 };
-TTree *GetOnlineTree(){
+
+int Run::BuildOnlineTree(){
+    // TODO Implentation
+    return 0;
+};
+int Run::BuildOfflineTree(){
+    // TODO Implentation
+    return 0;
+};
+TTree *Run::GetOnlineTree(){
     this->BuildOnlineTree();
     return tree_online;
 };
-TTree *GetOfflineTree(){
+TTree *Run::GetOfflineTree(){
     this->BuildOfflineTree();
     return tree_offline;
 };

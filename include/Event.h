@@ -28,11 +28,17 @@ using namespace boost::filesystem;
 class Event{
 
     public:
-        Event(path p);
+        Event(path file_root, path file_ini);
         virtual ~Event();
 
-        int loadRoot();
-        int loadIni();
+        int LoadRootFile();
+        double LoadIniFile();
+
+        bool GetInjection();
+        double GetUnixtime();
+        int GetLerBg();
+        int GetHerBg();
+
         int subtract();
 
         int getCh(string ch);
@@ -41,8 +47,20 @@ class Event{
     private:
         TFile *file;
         map<string, TH1I*> channels;
+        path path_file_root;
+        path path_file_ini;
+
+        double unixtime;
+        int lerbg;
+        int herbg;
+        bool injection;
 };
 
+
+//----------------------------------------------------------------------------------------------
+// Definition of the Run class. This class is supposed to do all gthe organization of a run.
+// TODO(mgabriel@mpp.mpg.de): Add some description
+//----------------------------------------------------------------------------------------------
 
 class Run{
 
@@ -55,20 +73,29 @@ class Run{
         int BuildOfflineTree();
         TTree *GetOnlineTree();
         TTree *GetOfflineTree();
+
         double GetStartTime();
         double GetStopTime();
+
+        int MapOnlineRates();
 
 
     private:
 
         double tsMin;
         double tsMax;
+
         TTree *tree_online;
         TTree *tree_offline;
+        TTree *tree_skb;
+        vector<Event*> events;
 
 };
 
 #endif /* CLAWS_ANALYSIS_EVENT_H_ */
+
+
+
 // class Event {
 //
 // public:
