@@ -5,18 +5,14 @@
  *      Author: mgabriel
  */
 
- // root includes
-#include <TFile.h>
-#include <TH1D.h>
-#include <TH1I.h>
-#include "Event.h"
-#include "TApplication.h"
-#include <TCanvas.h>
-#include <TF1.h>
-
-//std includes
-#include <typeinfo>
-#include <map>
+ //std includes
+ #include <iostream>
+ #include <fstream>
+ #include <vector>
+ #include <map>
+ #include <string>
+ #include <cstdlib>
+ #include <typeinfo>
 
  // boost
  #include <boost/filesystem.hpp>
@@ -27,22 +23,30 @@
  #include <boost/property_tree/ini_parser.hpp>
  // #include <boost/program_options.hpp>
  // #include <boost/filesystem/fstream.hpp>
-
  // #include <boost/algorithm/string/predicate.hpp>
- //
-
  // #include <boost/foreach.hpp>
 
+ // root includes
+#include <TFile.h>
+#include <TH1D.h>
+#include <TH1I.h>
+#include "TApplication.h"
+#include <TCanvas.h>
+#include <TF1.h>
+
+// Project includes
+#include "Event.h"
 
 using namespace std;
 using namespace boost;
 
 
-Event::Event(path file_root, path file_ini): unixtime(-1.), lerbg(0), herbg(0), injection(false)
+Event::Event(path file_root, path file_ini): unixtime_(-1.), lerbg_(-1), herbg_(-1), injection_(false)
 {
 
-    path_file_root  = file_root;
+
     path_file_ini   = file_ini;
+    path_file_root  = file_root;
 
     this->LoadIniFile();
 
@@ -76,33 +80,67 @@ Event::Event(path file_root, path file_ini): unixtime(-1.), lerbg(0), herbg(0), 
     // cout << channels["FWD1-INT"] << endl;
 };
 
+Event::Event(path file_root, path file_ini, path file_online_rate): unixtime_(-1.), lerbg_(-1), herbg_(-1), injection_(false), rates_online_({0})
+{
+    path_file_ini       = file_ini;
+    path_file_root      = file_root;
+    path_online_rate    = file_online_rate;
 
+    this->LoadIniFile();
+    this->LoadOnlineRate();
+
+};
 double Event::LoadIniFile(){
 
     property_tree::ptree pt;
 	property_tree::ini_parser::read_ini(path_file_ini.string(), pt);
 
-    unixtime   = pt.get<double>("Properties.UnixTime");
-	lerbg      = pt.get<int>("SuperKEKBData.LERBg");
-	herbg      = pt.get<int>("SuperKEKBData.HERBg");
+    unixtime_   = pt.get<double>("Properties.UnixTime");
+	lerbg_      = pt.get<int>("SuperKEKBData.LERBg");
+	herbg_      = pt.get<int>("SuperKEKBData.HERBg");
 
-    if (lerbg || herbg) injection = true;
-    else                injection = false;
+    if (lerbg_ || herbg_ ) injection_ = true;
+    else                   injection_ = false;
 
-    return unixtime;
+    //TODO load the rest that is written in the .ini file.
+
+    return unixtime_;
 };
+
+int Event::LoadOnlineRate(){
+
+    std::ifstream ratefile(path_online_rate.string());
+
+    if (!ratefile){
+        cerr << "not file" << endl;
+        exit(1);
+    }
+
+    ratefile >> rates_online_[0] >> rates_online_[1] >> rates_online_[2] >> rates_online_[3] >> rates_online_[4] >> rates_online_[5] >> rates_online_[6] >> rates_online_[7];
+
+    ratefile.close();
+
+    return 0;
+}
+
 double Event::GetUnixtime(){
-    return unixtime;
+    return unixtime_;
 }
+
 int Event::GetLerBg(){
-    return lerbg;
+    return lerbg_;
 }
+
 int Event::GetHerBg(){
-    return herbg;
+    return herbg_;
 }
 
 bool Event::GetInjection(){
-    return injection;
+    return injection_;
+}
+
+int Event::GetEventNr(){
+    return event_number;
 }
 
 int Event::getCh(string ch){
@@ -126,9 +164,14 @@ int Event::draw(){
     app->Run();
     return 0;
 }
+
 int Event::subtract(){
     return 0;
 };
+
+double* GetRatesOnline(){
+    return rates_online_;
+}
 
 Event::~Event() {
 	// TODO Auto-generated destructor stub
@@ -153,24 +196,35 @@ Run::Run(path dir){
             && starts_with((*itr).filename().string(), "Event-")
             && ends_with((*itr).filename().string(), ".root")){
 
-                // Get the paths to the .root and .ini file of the evnet.
+                // Get the paths to the .root file of the event.
                 path path_file_root = path_data / (*itr);
+
+                // Get the path to the .ini file.
                 string tmp          = (*itr).filename().string();
                 replace_last( tmp, ".root" , ".ini");
                 path path_file_ini  = path_data / path(tmp);
 
-                if( exists( path_file_ini) ){
-                    events.push_back(new Event(path_file_root, path_file_ini));
+                // Get the path to the file from the online monitor
+                replace_first(tmp, "Event-","");
+                replace_last(tmp, ".ini", "");
+                string ratefile = "Rate-Run--" + to_string( atoi(tmp.substr(2,4).c_str())) + to_string( atoi(tmp.substr(6,10).c_str())-1 );
+                path path_online_rate = dir / ratefile;
+
+                // Check if the .ini & online monitor exist for the event.
+                if( exists( path_file_ini) && exists( path_online_rate)){
+                    events.push_back(new Event(path_file_root, path_file_ini, path_online_rate));
+                }
+                else{
+                    //TODO put in some mechanism in case the ini or the online rate files do not exist.
                 }
 
         };
     };
 
-    for(int i =0; i< events.size(); i++){
-        events.at(i)->LoadIniFile();
-    }
+    tsMin = events.front()->GetUnixtime();
+    tsMax = events.back()->GetUnixtime();
 
-
+    this->WriteNTuple();
 
 };
 
@@ -200,6 +254,42 @@ TTree *Run::GetOnlineTree(){
 TTree *Run::GetOfflineTree(){
     this->BuildOfflineTree();
     return tree_offline;
+};
+
+int WriteNTuple(){
+
+    TFile * root_file  = new TFile(("./CLAWS-"+ to_string((int)tsMin)+ ".root").c_str(), "RECREATE");
+
+    TTree *tout = new TTree("rates_online","rates_online");
+
+    double ts, rate_fwd1, rate_fwd2, rate_fwd3, rate_fwd4, rate_bwd1, rate_bwd2, rate_bwd3, rate_bwd4;
+
+    tout->Branch("ts", &ts,     "ts/D");
+    tout->Branch("fwd1", &rate_fwd1,     "fwd1/D");
+    tout->Branch("fwd2", &rate_fwd2,     "fwd2/D");
+    tout->Branch("fwd3", &rate_fwd3,     "fwd3/D");
+    tout->Branch("fwd4", &rate_fwd4,     "fwd4/D");
+    tout->Branch("bwd1", &rate_bwd1,     "fbwd1/D");
+    tout->Branch("bwd2", &rate_bwd2,     "fbwd2/D");
+    tout->Branch("bwd3", &rate_bwd3,     "fbwd3/D");
+    tout->Branch("bwd4", &rate_bwd4,     "fbwd4/D");
+
+    for(int i=0; i < events.size(); i++){
+    	ts = events.at(i)->GetUnixtime();
+    	rate_fwd1 = events.at(i)->GetRatesOnline()[0];
+    	rate_fwd2 = events.at(i)->GetRatesOnline()[1];
+    	rate_fwd3 = events.at(i)->GetRatesOnline()[2];
+    	rate_fwd4 = events.at(i)->GetRatesOnline()[3];
+    	rate_bwd1 = events.at(i)->GetRatesOnline()[4];
+    	rate_bwd2 = events.at(i)->GetRatesOnline()[5];
+    	rate_bwd3 = events.at(i)->GetRatesOnline()[6];
+    	rate_bwd4 = events.at(i)->GetRatesOnline()[7];
+    	tout->Fill();
+    }
+    tout->Write();
+    rootfile->Write();
+    rootfile>Close();
+
 };
 // int setStyle(TGraph* graph1,TGraph* graph2,TGraph* graph3,TGraph* graph4){
 //     double markersize=0.1;

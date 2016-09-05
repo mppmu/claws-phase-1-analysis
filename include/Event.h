@@ -25,20 +25,31 @@
 using namespace std;
 using namespace boost::filesystem;
 
+
+//----------------------------------------------------------------------------------------------
+// TODO(mgabriel@mpp.mpg.de): Add some description
+//----------------------------------------------------------------------------------------------
+
+// Declare some global shit
+path path_for_ntuples= "~/workspace/claws_phaseI/claws_analysis/";
+
 class Event{
 
     public:
         Event(path file_root, path file_ini);
+        Event(path file_root, path file_ini, path file_online_rate);
         virtual ~Event();
 
         int LoadRootFile();
         double LoadIniFile();
+	    int LoadOnlineRate();
 
         bool GetInjection();
         double GetUnixtime();
         int GetLerBg();
         int GetHerBg();
-
+	    int GetEventNr();
+        double* GetRatesOnline();
         int subtract();
 
         int getCh(string ch);
@@ -47,13 +58,17 @@ class Event{
     private:
         TFile *file;
         map<string, TH1I*> channels;
+	    int event_number;
         path path_file_root;
         path path_file_ini;
+        path path_online_rate;
 
-        double unixtime;
-        int lerbg;
-        int herbg;
-        bool injection;
+        double unixtime_;
+        int lerbg_;
+        int herbg_;
+        bool injection_;
+	    double rates_online_[8];
+        double rates_offline_[8];
 };
 
 
@@ -78,7 +93,7 @@ class Run{
         double GetStopTime();
 
         int MapOnlineRates();
-
+        int WriteNTuple();
 
     private:
 
