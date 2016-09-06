@@ -41,9 +41,8 @@ using namespace std;
 using namespace boost;
 
 
-Event::Event(path file_root, path file_ini): unixtime_(-1.), lerbg_(-1), herbg_(-1), injection_(false)
+Event::Event(path file_root, path file_ini): unixtime_(-1.), lerbg_(-1), herbg_(-1), injection_(false), rate_online_({0})
 {
-
 
     path_file_ini   = file_ini;
     path_file_root  = file_root;
@@ -80,7 +79,7 @@ Event::Event(path file_root, path file_ini): unixtime_(-1.), lerbg_(-1), herbg_(
     // cout << channels["FWD1-INT"] << endl;
 };
 
-Event::Event(path file_root, path file_ini, path file_online_rate): unixtime_(-1.), lerbg_(-1), herbg_(-1), injection_(false), rates_online_({0})
+Event::Event(path file_root, path file_ini, path file_online_rate): unixtime_(-1.), lerbg_(-1), herbg_(-1), injection_(false), rate_online_({0})
 {
     path_file_ini       = file_ini;
     path_file_root      = file_root;
@@ -116,7 +115,7 @@ int Event::LoadOnlineRate(){
         exit(1);
     }
 
-    ratefile >> rates_online_[0] >> rates_online_[1] >> rates_online_[2] >> rates_online_[3] >> rates_online_[4] >> rates_online_[5] >> rates_online_[6] >> rates_online_[7];
+    ratefile >> rate_online_[0] >> rate_online_[1] >> rate_online_[2] >> rate_online_[3] >> rate_online_[4] >> rate_online_[5] >> rate_online_[6] >> rate_online_[7];
 
     ratefile.close();
 
@@ -169,8 +168,8 @@ int Event::subtract(){
     return 0;
 };
 
-double* GetRatesOnline(){
-    return rates_online_;
+double* Event::GetRateOnline(){
+    return rate_online_;
 }
 
 Event::~Event() {
@@ -182,11 +181,13 @@ Event::~Event() {
 //----------------------------------------------------------------------------------------------
 
 Run::Run(path dir){
+
     cout << "Do something" << endl;
     cout << dir.string() << endl;
 
     path path_data = dir / path("data_root");
 
+    // Look into the data folder of the run land get a list/vector of all the files inside
     vector<path> folder_content;
     copy(directory_iterator(dir / path("data_root")), directory_iterator(), back_inserter(folder_content));
 
@@ -224,8 +225,6 @@ Run::Run(path dir){
     tsMin = events.front()->GetUnixtime();
     tsMax = events.back()->GetUnixtime();
 
-    this->WriteNTuple();
-
 };
 
 Run::~Run() {
@@ -256,7 +255,7 @@ TTree *Run::GetOfflineTree(){
     return tree_offline;
 };
 
-int WriteNTuple(){
+int Run::WriteNTuple(){
 
     TFile * root_file  = new TFile(("./CLAWS-"+ to_string((int)tsMin)+ ".root").c_str(), "RECREATE");
 
@@ -276,19 +275,19 @@ int WriteNTuple(){
 
     for(int i=0; i < events.size(); i++){
     	ts = events.at(i)->GetUnixtime();
-    	rate_fwd1 = events.at(i)->GetRatesOnline()[0];
-    	rate_fwd2 = events.at(i)->GetRatesOnline()[1];
-    	rate_fwd3 = events.at(i)->GetRatesOnline()[2];
-    	rate_fwd4 = events.at(i)->GetRatesOnline()[3];
-    	rate_bwd1 = events.at(i)->GetRatesOnline()[4];
-    	rate_bwd2 = events.at(i)->GetRatesOnline()[5];
-    	rate_bwd3 = events.at(i)->GetRatesOnline()[6];
-    	rate_bwd4 = events.at(i)->GetRatesOnline()[7];
+    	rate_fwd1 = events.at(i)->GetRateOnline()[0];
+    	rate_fwd2 = events.at(i)->GetRateOnline()[1];
+    	rate_fwd3 = events.at(i)->GetRateOnline()[2];
+    	rate_fwd4 = events.at(i)->GetRateOnline()[3];
+    	rate_bwd1 = events.at(i)->GetRateOnline()[4];
+    	rate_bwd2 = events.at(i)->GetRateOnline()[5];
+    	rate_bwd3 = events.at(i)->GetRateOnline()[6];
+    	rate_bwd4 = events.at(i)->GetRateOnline()[7];
     	tout->Fill();
     }
     tout->Write();
-    rootfile->Write();
-    rootfile>Close();
+    root_file->Write();
+    root_file->Close();
 
 };
 // int setStyle(TGraph* graph1,TGraph* graph2,TGraph* graph3,TGraph* graph4){
