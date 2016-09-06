@@ -33,6 +33,7 @@ using namespace boost::filesystem;
 class Event{
 
     public:
+
         Event(path file_root, path file_ini);
         Event(path file_root, path file_ini, path file_online_rate);
         virtual ~Event();
@@ -88,7 +89,7 @@ class Run{
         int BuildOfflineTree();
 
         int MapOnlineRates();
-        int WriteNTuple();
+        int WriteNTuple(path path_ntuple);
 
         double GetStartTime();
         double GetStopTime();

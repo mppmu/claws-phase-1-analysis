@@ -164,7 +164,7 @@ int Event::draw(){
     return 0;
 }
 
-int Event::subtract(){
+int Event::Subtract(){
     return 0;
 };
 
@@ -193,7 +193,7 @@ Run::Run(path dir){
 
     for (vector<path>::const_iterator itr = folder_content.begin(); itr != folder_content.end(); ++itr){
 
-	    if( is_regular_file(*itr)
+	    if(    is_regular_file(*itr)
             && starts_with((*itr).filename().string(), "Event-")
             && ends_with((*itr).filename().string(), ".root")){
 
@@ -255,9 +255,10 @@ TTree *Run::GetOfflineTree(){
     return tree_offline;
 };
 
-int Run::WriteNTuple(){
+int Run::WriteNTuple(path path_ntuple){
 
-    TFile * root_file  = new TFile(("./CLAWS-"+ to_string((int)tsMin)+ ".root").c_str(), "RECREATE");
+    path_ntuple = path_ntuple / ("CLAWS" + to_string((int)tsMin)+ ".root");
+    TFile * root_file  = new TFile(path_ntuple.string().c_str(), "RECREATE");
 
     TTree *tout = new TTree("rates_online","rates_online");
 

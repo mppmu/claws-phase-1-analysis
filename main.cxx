@@ -127,7 +127,6 @@ int main(int argc, char* argv[]) {
 	std::string line;
 
 
-//	double runnumber = 5001;
 	double runnumber = 5001;
 
 	double runnumbertmp, tsMin, tsMax;
@@ -158,164 +157,23 @@ int main(int argc, char* argv[]) {
 
 	// path path_to_day("/remote/ceph/group/ilc/claws/data/claws_phaseI/connecticut/16-05-23");
 	path path_to_day("/remote/ceph/group/ilc/claws/data/claws_phaseI/connecticut/16-05-23");
-	// path path_to_rate("/remote/ceph/group/ilc/claws/data/claws_phaseI/connecticut/16-05-26/Run-401161/Rate-Run--11610");
+	path path_to_ntuple("/remote/ceph/group/ilc/claws/data/NTP/CLAWS/16-05-23");
 //	path path_to_rate("/remote/ceph/group/ilc/claws/data/claws_phaseI/connecticut/16-05-26/Run-401161/ok.dat");
 
 
 	string file_runstart = "";
 	string file_runstop  = "";
 
+
 	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/16-05-23/Run-400999"));
 
-	// directory_iterator end_itr;
-	// vector<path> dircontent;
-	// vector<pair<path, double>> events;
-	//
-	// copy(directory_iterator(path_to_day), directory_iterator(), back_inserter(dircontent));
-	// sort(dircontent.begin(), dircontent.end());
-	//
-	// for (vector<path>::const_iterator itr = dircontent.begin(); itr != dircontent.end(); ++itr)
-	// {
-	//
-	// 	 if(is_directory(*itr) && starts_with((*itr).filename().string(), "Run-")){
-	// 		cout << "Looking at: " << (*itr).filename() << '\n';
-	// 		path datafolder = (*itr) / path("data_root");
-	// 		vector<path> dircontent;							// local copy
-	// 		copy(directory_iterator(datafolder), directory_iterator(), back_inserter(dircontent));
-	// 		sort(dircontent.begin(), dircontent.end());
-	// 		for (vector<path>::const_iterator itr = dircontent.begin(); itr != dircontent.end(); ++itr){
-	// 			if(is_regular_file(*itr) && starts_with((*itr).filename().string(), "Event-") && ends_with((*itr).filename().string(), ".ini") ){
-	// 			//	cout << " " << (*itr).filename() << '\n';
-	//
-	// 				pt::ptree pt;
-	// 				pt::ini_parser::read_ini((*itr).string(), pt);
-	// 				double unixtime = pt.get<double>("Properties.UnixTime");
-	// 				bool lerbg = pt.get<double>("SuperKEKBData.LERBg");
-	// 				bool herbg = pt.get<double>("SuperKEKBData.HERBg");
-	// 				if(unixtime >= tsMin && unixtime <= tsMax && !lerbg && !herbg){
-	// 					cout << "Adding : " << (*itr) << ", with unixtime: "<< unixtime << "and tsMin: " << tsMin << ", and time diff: " << unixtime - tsMin << endl;
-	// 					events.push_back(make_pair((*itr), unixtime));
-	// 				}
-	// 				// else{
-	// 				// 	cout << "Not Adding : " << (*itr) << ", with unixtime: "<< unixtime << "and tsMin: " << tsMin << ", and time diff: " << unixtime - tsMin << endl;
-	// 				// }
-	// 				// else if(unixtime >= tsMax && file_runstart != ""){
-	// 				//
-	// 				// }
-	// 				// cout <<  unixtime << std::setprecision(22) << endl;
-	//
-	//
-	// 			}
-	//
-	//
-	// 		}
+	myrun.WriteNTuple(path_to_ntuple);
 
 
 
+	return 0;
 
-
-
-
-
-	//	 	cout << " " << (*itr).filename() << '\n';
-  	  // 			path datafolder = itr->path() / path("data_root");
-  	  // 			directory_iterator end_itr;
-  	  // 			// Cycle through the event files.
-  	  // 			for (directory_iterator itr(datafolder); itr != end_itr; ++itr){
-  	  //
-
- // 	  	}
-//	}
-	// for(int i=0; i < events.size(); i++){
-	// 	cout << events.at(i).first << ", at:" << events.at(i).second << "\n";
-	// }
-
-//----------------------------------------------------------------------------------------------
-// Now get the rates
-//----------------------------------------------------------------------------------------------
-
-// 	vector<vector<double>> rates;
-//
-// 	for(int i=0; i < events.size(); i++){
-// 		//  Some complex shit going on to convert the names/paths of the eventfiles to the corresponding rate files.
-// 		string filename = events.at(i).first.filename().string();
-// 		replace_first(filename, "Event-40", "");
-// 		replace_last(filename, ".ini", "");
-// 		// string ratefile = "Rate-Run--" + to_string( atoi(filename.substr(0,4).c_str()) ) + to_string( atoi(filename.substr(4,8).c_str())-1 );
-// 		filename = "Rate-Run--" + to_string( atoi(filename.substr(0,4).c_str()) ) + to_string( atoi(filename.substr(4,8).c_str())-1 );
-// 		path path_to_ratefile = events.at(i).first.parent_path().parent_path() / filename;
-//
-// 		std::ifstream ratefile(path_to_ratefile.string());
-//
-// 		double myarray[8] = {0};
-//
-// 		double unixtime = events.at(i).second;
-//
-// 		if (!ratefile){
-// 			cerr << "not file" << endl;
-// 			exit(1);
-// 		}
-// 		vector <double> tmp;
-// 		tmp.push_back(unixtime);
-// //		int count =0;
-// 		while(ratefile >> myarray[0] >> myarray[1] >> myarray[2] >> myarray[3] >> myarray[4] >> myarray[5] >> myarray[6] >> myarray[7])
-// 		{
-// 			for (int i = 0; i<8;i++){
-// 				tmp.push_back(myarray[i]);
-// 			}
-// 			//ratefile >> myarray[0] >> myarray[1] >> myarray[2] >> myarray[3] >> myarray[4] >> myarray[5] >> myarray[6] >> myarray[7];
-// //			cout<< count << ", "<< myarray[0] << " , "<< myarray[1] << " , "<< myarray[2] << " , "<< myarray[3] << " , "<< myarray[4] << " , "<< myarray[5] << " , "<< myarray[6] << " , "<< myarray[7] << "\n";
-// //			count++;
-// 			if(ratefile.eof()) break;
-// 		}
-// 		rates.push_back(tmp);
-// 	}
-// 	cout << events.size() << " , " << rates.size() << endl;
-// 	for(int i=0; i < rates.size(); i++){
-// 		for(int j=0; j < 9; j++){
-// 			cout << rates.at(i).at(j) << ", ";
-// 		}
-// 		cout << endl;
-// 	// 	cout << rates.at(i).first << ", " << rates.at(i).second[0]  << ", " << rates.at(i).second[1]  << ", " << rates.at(i).second[2]  << ", " << rates.at(i).second[3]  << ", " << rates.at(i).second[4]  << ", " << rates.at(i).second[5]  << ", " << rates.at(i).second[6]  << ", " << rates.at(i).second[7] << "\n";
-// 	}
-
-
-//----------------------------------------------------------------------------------------------
-// Now put everything in a root file
-//----------------------------------------------------------------------------------------------
-
-
-	// TFile * rootfile  = new TFile(("/remote/ceph/group/ilc/claws/data/NTP/CLAWS/16-05-23/CLAWS-5001-"+ to_string((int)tsMin)+ ".root").c_str(), "RECREATE");
-	//
-	// TTree *tout = new TTree("rate_online","rate_online");
-	//
-	// double ts, rate_fwd1, rate_fwd2, rate_fwd3, rate_fwd4, rate_bwd1, rate_bwd2, rate_bwd3, rate_bwd4;
-	//
-	// tout->Branch("ts", &ts,     "ts/D");
-	// tout->Branch("fwd1", &rate_fwd1,     "fwd1/D");
-	// tout->Branch("fwd2", &rate_fwd2,     "fwd2/D");
-	// tout->Branch("fwd3", &rate_fwd3,     "fwd3/D");
-	// tout->Branch("fwd4", &rate_fwd4,     "fwd4/D");
-	// tout->Branch("bwd1", &rate_bwd1,     "fbwd1/D");
-	// tout->Branch("bwd2", &rate_bwd2,     "fbwd2/D");
-	// tout->Branch("bwd3", &rate_bwd3,     "fbwd3/D");
-	// tout->Branch("bwd4", &rate_bwd4,     "fbwd4/D");
-	//
-	// for(int i=0; i < rates.size(); i++){
-	// 	ts = rates.at(i).at(0);
-	// 	rate_fwd1 = rates.at(i).at(1);
-	// 	rate_fwd2 = rates.at(i).at(2);
-	// 	rate_fwd3 = rates.at(i).at(3);
-	// 	rate_fwd4 = rates.at(i).at(4);
-	// 	rate_bwd1 = rates.at(i).at(5);
-	// 	rate_bwd2 = rates.at(i).at(6);
-	// 	rate_bwd3 = rates.at(i).at(7);
-	// 	rate_bwd4 = rates.at(i).at(8);
-	// 	tout->Fill();
-	// }
-	// tout->Write();
-	// rootfile->Write();
-
+}
 
 
 
@@ -395,9 +253,6 @@ int main(int argc, char* argv[]) {
 //	Event e(p);
 //	e.draw();
 
-	return 0;
-
-}
 
 
 
