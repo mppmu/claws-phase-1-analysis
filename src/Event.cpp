@@ -41,104 +41,56 @@ using namespace std;
 using namespace boost;
 
 
-Event::Event(path file_root, path file_ini): unixtime_(-1.), lerbg_(-1), herbg_(-1), injection_(false), rate_online_({0})
+
+//----------------------------------------------------------------------------------------------
+// Definition of the Event base class.
+//----------------------------------------------------------------------------------------------
+
+int Event::id_ = 0;
+
+int Event::GetId()
+{
+    return id_;
+}
+
+Event::Event(const path &file_root, const path &file_ini)
+{
+    ++id_;
+
+    path_file_ini_       = file_ini;
+    path_file_root_      = file_root;
+
+};
+
+Event::Event(const path &file_root, const path &file_ini, const path &file_online_rate):Event(file_root, file_ini)
 {
 
-    path_file_ini   = file_ini;
-    path_file_root  = file_root;
+    path_online_rate_    =   file_online_rate;
 
-    this->LoadIniFile();
-
-    // cout << typeid(p.string()).name() << endl;
-    //
-    // file = new TFile(p.string().c_str(), "open");
-    // cout << (TH1I*)file->Get("FWD1-INT") << endl;
-    // channels["FWD1-INT"] = (TH1I*)file->Get("FWD1-INT")->Clone();
-    // cout << channels["FWD1-INT"] << endl;
-    // channels["FWD2-INT"] = (TH1I*)file->Get("FWD2-INT")->Clone();
-    // channels["FWD3-INT"] = (TH1I*)file->Get("FWD3-INT")->Clone();
-    // channels["BWD1-INT"] = (TH1I*)file->Get("BWD1-INT")->Clone();
-    // channels["BWD2-INT"] = (TH1I*)file->Get("BWD2-INT")->Clone();
-    // channels["BWD3-INT"] = (TH1I*)file->Get("BWD3-INT")->Clone();
-    //
-
-    // TF1 * fit = new TF1("fit", "[0]", 0 ,115);
-    // FWD1->Fit(fit, "WRV");
-
-    // TH1D *fwd_values=new TH1D("values","values", 1000000, -32512,32512);
-    //
-    // for (int i = 0; i < FWD1->GetNbinsX(); i++) {
-    //     cout << FWD1->GetBinContent(i) << endl;
-    //     fwd_values->Fill(FWD1->GetBinContent(i));
-    // }
-
-    //
-    // FWD1->Draw();
-    //
-    // file->Close();
-    // cout << channels["FWD1-INT"] << endl;
 };
 
-Event::Event(path file_root, path file_ini, path file_online_rate): unixtime_(-1.), lerbg_(-1), herbg_(-1), injection_(false), rate_online_({0})
+bool Event::GetInjection()  const
 {
-    path_file_ini       = file_ini;
-    path_file_root      = file_root;
-    path_online_rate    = file_online_rate;
-
-    this->LoadIniFile();
-    this->LoadOnlineRate();
-
-};
-double Event::LoadIniFile(){
-
-    property_tree::ptree pt;
-	property_tree::ini_parser::read_ini(path_file_ini.string(), pt);
-
-    unixtime_   = pt.get<double>("Properties.UnixTime");
-	lerbg_      = pt.get<int>("SuperKEKBData.LERBg");
-	herbg_      = pt.get<int>("SuperKEKBData.HERBg");
-
-    if (lerbg_ || herbg_ ) injection_ = true;
-    else                   injection_ = false;
-
-    //TODO load the rest that is written in the .ini file.
-
-    return unixtime_;
-};
-
-int Event::LoadOnlineRate(){
-
-    std::ifstream ratefile(path_online_rate.string());
-
-    if (!ratefile){
-        cerr << "not file" << endl;
-        exit(1);
-    }
-
-    ratefile >> rate_online_[0] >> rate_online_[1] >> rate_online_[2] >> rate_online_[3] >> rate_online_[4] >> rate_online_[5] >> rate_online_[6] >> rate_online_[7];
-
-    ratefile.close();
-
-    return 0;
-}
-
-double Event::GetUnixtime(){
-    return unixtime_;
-}
-
-int Event::GetLerBg(){
-    return lerbg_;
-}
-
-int Event::GetHerBg(){
-    return herbg_;
-}
-
-bool Event::GetInjection(){
     return injection_;
 }
 
-int Event::GetEventNr(){
+double Event::GetUnixtime() const
+{
+    return unixtime_;
+}
+
+int Event::GetLerBg()       const
+{
+    return lerbg_;
+}
+
+int Event::GetHerBg()       const
+{
+    return herbg_;
+}
+
+int Event::GetEventNr()     const
+{
     return event_number;
 }
 
@@ -177,13 +129,103 @@ Event::~Event() {
 }
 
 //----------------------------------------------------------------------------------------------
+// Definition of the PhysicsEvent class derived from Event.
+//----------------------------------------------------------------------------------------------
+PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini): Event(file_root ,file_ini)
+{
+    this->LoadRootFile();
+    this->LoadIniFile();
+};
+
+PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini, const path &file_online_rate): Event(file_root, file_ini, file_online_rate)
+{
+    this->LoadRootFile();
+    this->LoadIniFile();
+    this->LoadOnlineRate();
+
+};
+
+PhysicsEvent::~PhysicsEvent() {
+	// TODO Auto-generated destructor stub
+};
+
+int PhysicsEvent::LoadRootFile()
+{
+
+    // cout << typeid(p.string()).name() << endl;
+    //
+    // file = new TFile(p.string().c_str(), "open");
+    // cout << (TH1I*)file->Get("FWD1-INT") << endl;
+    // channels["FWD1-INT"] = (TH1I*)file->Get("FWD1-INT")->Clone();
+    // cout << channels["FWD1-INT"] << endl;
+    // channels["FWD2-INT"] = (TH1I*)file->Get("FWD2-INT")->Clone();
+    // channels["FWD3-INT"] = (TH1I*)file->Get("FWD3-INT")->Clone();
+    // channels["BWD1-INT"] = (TH1I*)file->Get("BWD1-INT")->Clone();
+    // channels["BWD2-INT"] = (TH1I*)file->Get("BWD2-INT")->Clone();
+    // channels["BWD3-INT"] = (TH1I*)file->Get("BWD3-INT")->Clone();
+    //
+    //
+    // TF1 * fit = new TF1("fit", "[0]", 0 ,115);
+    // FWD1->Fit(fit, "WRV");
+    //
+    // TH1D *fwd_values=new TH1D("values","values", 1000000, -32512,32512);
+    //
+    // for (int i = 0; i < FWD1->GetNbinsX(); i++) {
+    //     cout << FWD1->GetBinContent(i) << endl;
+    //     fwd_values->Fill(FWD1->GetBinContent(i));
+    // }
+    //
+    //
+    // FWD1->Draw();
+    //
+    // file->Close();
+    // cout << channels["FWD1-INT"] << endl;
+
+    return 0;
+}
+
+int PhysicsEvent::LoadIniFile(){
+
+    property_tree::ptree pt;
+	property_tree::ini_parser::read_ini(path_file_ini_.string(), pt);
+
+    unixtime_   = pt.get<double>("Properties.UnixTime");
+	lerbg_      = pt.get<int>("SuperKEKBData.LERBg");
+	herbg_      = pt.get<int>("SuperKEKBData.HERBg");
+
+    if (lerbg_ || herbg_ ) injection_ = true;
+    else                   injection_ = false;
+
+    //TODO load the rest that is written in the .ini file.
+
+    return unixtime_;
+};
+
+int PhysicsEvent::LoadOnlineRate(){
+
+    std::ifstream ratefile(path_online_rate_.string());
+
+    if (!ratefile){
+        cerr << "not file" << endl;
+        exit(1);
+    }
+
+    ratefile >> rate_online_[0] >> rate_online_[1] >> rate_online_[2] >> rate_online_[3] >> rate_online_[4] >> rate_online_[5] >> rate_online_[6] >> rate_online_[7];
+
+    ratefile.close();
+
+    return 0;
+};
+//----------------------------------------------------------------------------------------------
 // Definition of the Run class.
 //----------------------------------------------------------------------------------------------
 
-Run::Run(path dir){
+Run::Run(path dir)
+{
+    // Extract the runnumer from the path to the folder and convert it to int.
+    run_number_ = atoi(dir.filename().string().substr(4,20).c_str());
 
-    cout << "Do something" << endl;
-    cout << dir.string() << endl;
+    cout << "Start Loading Run:  " << run_number_ << endl;
 
     path path_data = dir / path("data_root");
 
@@ -213,7 +255,7 @@ Run::Run(path dir){
 
                 // Check if the .ini & online monitor exist for the event.
                 if( exists( path_file_ini) && exists( path_online_rate)){
-                    events.push_back(new Event(path_file_root, path_file_ini, path_online_rate));
+                    events.push_back(new PhysicsEvent(path_file_root, path_file_ini, path_online_rate));
                 }
                 else{
                     //TODO put in some mechanism in case the ini or the online rate files do not exist.
@@ -225,11 +267,20 @@ Run::Run(path dir){
     tsMin = events.front()->GetUnixtime();
     tsMax = events.back()->GetUnixtime();
 
+    cout << "Done  Loading Run!" << endl;
 };
 
 Run::~Run() {
 	// TODO Auto-generated destructor stub
-}
+};
+
+// int PathToRunNumber(path p)
+// {
+//     // p
+//     //
+//     // run_number_ =
+//     return run_number_
+// }
 
 double Run::GetStartTime(){
     return tsMin;
@@ -255,11 +306,8 @@ TTree *Run::GetOfflineTree(){
     return tree_offline;
 };
 
-int Run::WriteNTuple(path path_ntuple){
-
-    path_ntuple = path_ntuple / ("CLAWS" + to_string((int)tsMin)+ ".root");
-    TFile * root_file  = new TFile(path_ntuple.string().c_str(), "RECREATE");
-
+int Run::WriteOnlineTree(TFile* file)
+{
     TTree *tout = new TTree("rates_online","rates_online");
 
     double ts, rate_fwd1, rate_fwd2, rate_fwd3, rate_fwd4, rate_bwd1, rate_bwd2, rate_bwd3, rate_bwd4;
@@ -274,8 +322,10 @@ int Run::WriteNTuple(path path_ntuple){
     tout->Branch("bwd3", &rate_bwd3,     "fbwd3/D");
     tout->Branch("bwd4", &rate_bwd4,     "fbwd4/D");
 
-    for(int i=0; i < events.size(); i++){
+    for(unsigned int i=0; i < events.size(); i++){
+
     	ts = events.at(i)->GetUnixtime();
+
     	rate_fwd1 = events.at(i)->GetRateOnline()[0];
     	rate_fwd2 = events.at(i)->GetRateOnline()[1];
     	rate_fwd3 = events.at(i)->GetRateOnline()[2];
@@ -284,12 +334,24 @@ int Run::WriteNTuple(path path_ntuple){
     	rate_bwd2 = events.at(i)->GetRateOnline()[5];
     	rate_bwd3 = events.at(i)->GetRateOnline()[6];
     	rate_bwd4 = events.at(i)->GetRateOnline()[7];
+
     	tout->Fill();
     }
+
+    file->cd();
     tout->Write();
-    root_file->Write();
+    return 0;
+};
+int Run::WriteNTuple(path path_ntuple){
+
+    path_ntuple = path_ntuple / ("CLAWS" + to_string((int)tsMin)+ ".root");
+    TFile * root_file  = new TFile(path_ntuple.string().c_str(), "RECREATE");
+
+    this->WriteOnlineTree(root_file);
+
     root_file->Close();
 
+    return 0;
 };
 // int setStyle(TGraph* graph1,TGraph* graph2,TGraph* graph3,TGraph* graph4){
 //     double markersize=0.1;

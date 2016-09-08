@@ -9,7 +9,7 @@
 #define CLAWS_ANALYSIS_EVENT_H_
 
 // std includes
-#include <vector>assss
+#include <vector>
 #include <string>
 #include <map>
 // root includes
@@ -34,44 +34,74 @@ class Event{
 
     public:
 
-        Event(path file_root, path file_ini);
-        Event(path file_root, path file_ini, path file_online_rate);
+        // Event();
+        Event(const path &file_root, const path &file_ini);
+        Event(const path &file_root, const path &file_ini, const path &file_online_rate);
+
         virtual ~Event();
 
-        int     LoadRootFile();
-        double  LoadIniFile();
-	    int     LoadOnlineRate();
+        virtual int     LoadRootFile()   = 0;
+        virtual int     LoadIniFile()    = 0;
+        virtual int     LoadOnlineRate() = 0;
 
         int     Subtract();
 
-        bool    GetInjection();
-        double  GetUnixtime();
-        int     GetLerBg();
-        int     GetHerBg();
-	    int     GetEventNr();
+        bool    GetInjection() const;
+        double  GetUnixtime()  const;
+        int     GetLerBg()     const;
+        int     GetHerBg()     const;
+	    int     GetEventNr()   const;
+
+        static int GetId();
         double* GetRateOnline();
 
         int getCh(string ch);
         int draw();
 
-    private:
-        // An event relies on data/information in three different files. The .root, .ini & the online monitor.
-        path path_file_root;
-        path path_file_ini;
-        path path_online_rate;
 
-	    int event_number;
-        double unixtime_;
-        int lerbg_;
-        int herbg_;
-        bool injection_;
-	    double rate_online_[8];
-        double rate_offline_[8];
+    // protected:
+
+        static int id_;
+
+        // An event relies on data/information in three different files. The .root, .ini & the online monitor.
+        path path_file_root_;
+        path path_file_ini_;
+        path path_online_rate_;
+
+	    int event_number        = -1;
+        double unixtime_        = -1;
+        int lerbg_              = -1;
+        int herbg_              = -1;
+        bool injection_         = false;
+	    double rate_online_[8]  = {};
+        double rate_offline_[8] = {};
 
         TFile *file;
         map<string, TH1I*> channels;
 };
 
+class PhysicsEvent : public Event{
+
+    public:
+
+        // PhysicsEvent();
+        PhysicsEvent(const path &file_root, const path &file_ini);
+        PhysicsEvent(const path &file_root, const path &file_ini, const path &file_online_rate);
+        ~PhysicsEvent();
+
+        int     LoadRootFile();
+        int     LoadIniFile();
+        int     LoadOnlineRate();
+
+    protected:
+
+    private:
+
+};
+//
+// class IntEvent : public Event{
+//
+// };
 
 //----------------------------------------------------------------------------------------------
 // Definition of the Run class. This class is supposed to do all gthe organization of a run.
@@ -82,14 +112,17 @@ class Run{
 
     public:
 
-        Run(path dir);
+        Run(path p);
         virtual ~Run();
 
         int BuildOnlineTree();
         int BuildOfflineTree();
 
         int MapOnlineRates();
+
+        int WriteOnlineTree(TFile* file);
         int WriteNTuple(path path_ntuple);
+
 
         double GetStartTime();
         double GetStopTime();
@@ -98,8 +131,13 @@ class Run{
 
     private:
 
+        int PathToRunNumber(path p);
+
+        path path_run_;
         double tsMin;
         double tsMax;
+
+        int run_number_;
 
         TTree *tree_online;
         TTree *tree_offline;

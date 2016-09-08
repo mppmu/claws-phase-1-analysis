@@ -83,13 +83,13 @@ void printTree (pt::ptree &pt, int level) {
   return;
 }
 
-string fileFromPath(path p){
-	cout << p.filename() << endl;
-	for(const auto &f : p){
-		cout << p.filename() << endl;
-	}
-	return "";
-}
+// string fileFromPath(path p){
+// 	cout << p.filename() << endl;
+// 	for(const auto &f : p){
+// 		cout << p.filename() << endl;
+// 	}
+// 	return "";
+// }
 
 
 //===============================================================================
