@@ -324,18 +324,23 @@ int Run::WriteOnlineTree(TFile* file)
 
     for(unsigned int i=0; i < events.size(); i++){
 
-    	ts = events.at(i)->GetUnixtime();
+        if(!events.at(i)->GetInjection())
+        {
+            ts = events.at(i)->GetUnixtime();
 
-    	rate_fwd1 = events.at(i)->GetRateOnline()[0];
-    	rate_fwd2 = events.at(i)->GetRateOnline()[1];
-    	rate_fwd3 = events.at(i)->GetRateOnline()[2];
-    	rate_fwd4 = events.at(i)->GetRateOnline()[3];
-    	rate_bwd1 = events.at(i)->GetRateOnline()[4];
-    	rate_bwd2 = events.at(i)->GetRateOnline()[5];
-    	rate_bwd3 = events.at(i)->GetRateOnline()[6];
-    	rate_bwd4 = events.at(i)->GetRateOnline()[7];
+            rate_fwd1 = events.at(i)->GetRateOnline()[0];
+            rate_fwd2 = events.at(i)->GetRateOnline()[1];
+            rate_fwd3 = events.at(i)->GetRateOnline()[2];
+            rate_fwd4 = events.at(i)->GetRateOnline()[3];
+            rate_bwd1 = events.at(i)->GetRateOnline()[4];
+            rate_bwd2 = events.at(i)->GetRateOnline()[5];
+            rate_bwd3 = events.at(i)->GetRateOnline()[6];
+            rate_bwd4 = events.at(i)->GetRateOnline()[7];
 
-    	tout->Fill();
+            tout->Fill();
+
+        }
+
     }
 
     file->cd();
@@ -344,7 +349,7 @@ int Run::WriteOnlineTree(TFile* file)
 };
 int Run::WriteNTuple(path path_ntuple){
 
-    path_ntuple = path_ntuple / ("CLAWS" + to_string((int)tsMin)+ ".root");
+    path_ntuple = path_ntuple / ("CLAWS-ON-" +to_string(run_number_) +"-" + to_string((int)tsMin) + "-" +to_string((int)tsMax) +".root");
     TFile * root_file  = new TFile(path_ntuple.string().c_str(), "RECREATE");
 
     this->WriteOnlineTree(root_file);

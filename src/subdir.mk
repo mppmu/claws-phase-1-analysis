@@ -2,12 +2,12 @@
 
 
 # Add inputs and outputs from these tool invocations to the build variables
-CPP_SRCS += \
+CALI_CPP_SRCS += \
 ../src/Event.cpp
 
-OBJS += ./build/src/Event.o
+CALI_OBJS += ./build/src/Event.o
 
-CPP_DEPS += \
+CALI_CPP_DEPS += \
 ./build/src/EVENT.d
 
 # Each subdirectory must supply rules for building sources it contributes

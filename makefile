@@ -14,20 +14,31 @@ LFLAGS    += `root-config --libs --glibs` -lboost_system -lboost_filesystem
 
 INCLUDES  += -I"./include"
 
-OBJS += ./build/main.o
+CALI_OBJS += ./build/calibration.o
+ANA_OBJS += ./build/analysis.o
 
-all: build/claws
+all: build/calibration build/analysis
 
-build/claws: $(OBJS)
-	@echo 'Building target: $@ from: $<'
+
+# Link Calibration
+build/calibration: $(CALI_OBJS)
+	@echo 'Linking target: $@ from: $<'
 	@mkdir -p './build/src'
 	@echo 'Invoking: GCC C++ Linker'
-	g++ -o "build/claws" $(OBJS) $(LFLAGS)
+	g++ -o "build/calibration" $(CALI_OBJS) $(LFLAGS)
 	@echo 'Finished linking: $@ from: $<'
 	@echo ' '
 
+# Link Analysis
+build/analysis: $(ANA_OBJS)
+	@echo 'Linking target: $@ from: $<'
+	@mkdir -p './build/src'
+	@echo 'Invoking: GCC C++ Linker'
+	g++ -o "build/analysis" $(ANA_OBJS) $(LFLAGS)
+	@echo 'Finished linking: $@ from: $<'
+	@echo ' '
 
-# Tool invocations
+# Compile Calibration
 build/%.o: ./%.cxx
 	@echo 'Building target: $@ from: $<'
 	@mkdir -p './build/src'

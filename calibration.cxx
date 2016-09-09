@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) {
 
 
 	cout << "---------------------------------------------------------" << endl;
-	cout << "|            Starting CLAWS phase I data analysis       |" << endl;
+	cout << "|         Starting CLAWS phase I data calibration       |" << endl;
 	cout << "---------------------------------------------------------" << endl;
 
 
@@ -165,7 +165,7 @@ int main(int argc, char* argv[]) {
 	string file_runstop  = "";
 
 
-	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/16-05-23/Run-400999"));
+	Run myrun(path( "/remote/ceph/group/ilc/claws/data/RAW/connecticut/16-05-23/Run-" + string(argv[1]) ) );
 
 	myrun.WriteNTuple(path_to_ntuple);
 
