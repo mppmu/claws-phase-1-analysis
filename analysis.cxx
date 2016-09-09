@@ -19,10 +19,6 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 
-
-
-
-
 // root include
 #include "TFile.h"
 #include "TSystem.h"
@@ -34,8 +30,8 @@
 #include "TApplication.h"
 #include "TCanvas.h"
 #include "TVectorD.h"
-// my includes
-
+// project includes
+#include "GlobalSettings.hh"
 
 
 using namespace std;
@@ -53,7 +49,6 @@ int main(int argc, char* argv[]) {
 //    filesystem::path p("/remote/ceph/group/ilc/claws/data/NTP/CLAWS/16-05-23/CLAWS-ON-400999-1463967125-146396871.root");
 	filesystem::path p("/remote/ceph/group/ilc/claws/data/NTP/CLAWS/16-05-23");
 //		TFile f("/remote/ceph/group/ilc/claws/data/NTP/CLAWS/16-05-23/CLAWS-ON-400999-1463967125-1463968071.root");
-
 
 
 

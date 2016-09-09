@@ -1,9 +1,12 @@
-/*
- * Event.cpp
- *
- *  Created on: Apr 7, 2016
- *      Author: mgabriel
- */
+//============================================================================
+// Name        : main.cpp
+// Author      : Miroslav Gabriel
+// Version     :
+// Created on  : Apr 7, 2016
+// Copyright   : GNU General Public License
+// Description :
+//============================================================================
+
 
  //std includes
  #include <iostream>

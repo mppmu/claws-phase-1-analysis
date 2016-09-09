@@ -16,7 +16,7 @@
 #include <cstdlib>
 #include <typeinfo>
 
-// mixed
+// boost
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -38,10 +38,7 @@
 #include "TApplication.h"
 #include "TCanvas.h"
 
-
-
-
-// my includes
+// project includes
 #include "include/Event.h"
 
 
