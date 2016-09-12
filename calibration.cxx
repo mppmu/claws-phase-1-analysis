@@ -39,7 +39,7 @@
 #include "TCanvas.h"
 
 // project includes
-#include "include/Event.h"
+#include "include/Event.hh"
 
 
 using namespace std;

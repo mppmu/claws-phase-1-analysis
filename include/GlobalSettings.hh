@@ -19,23 +19,38 @@ namespace claws {
 
 class GlobalSettings
 {
+    /*
+        Basic interface class to managed everything related to the location of the
+        data on the individual system.
+    */
+
     public:
 
-        GloablSettings() {std::cout << "asdad" << std::endl;}
-    //    virtual ~GloablSettings()
-        // {
-        //     // TODO Auto-generated destructor stub
-        // };
+        GlobalSettings();
+        virtual ~GlobalSettings();
 
+        GlobalSettings& ResetHook();
+        boost::filesystem::path GetHook();
+
+        GlobalSettings& SetData();
+        GlobalSettings& SetNtp();
+        GlobalSettings& SetRaw();
+        GlobalSettings& SetDate(int day, int month, int year = 16);
+
+        vector <boost::filesystem::path> GetFiles(int tsMin = 0, tsMax = 0);
 
     private:
-        boost::filesystem::path path_ntp      = "/remote/ceph/group/ilc/claws/data/NTP";
-        boost::filesystem::path path_raw_data = "/remote/ceph/group/ilc/claws/data/RAW";
+
+        boost::filesystem::path hook_;
+
+        const boost::filesystem::path path_data_     = "/remote/ceph/group/ilc/claws/data";
+        const boost::filesystem::path path_ntp_      = "/NTP";
+        const boost::filesystem::path path_raw_data_ = "/RAW";
 
 };
 
 };
 
-claws::GlobalSettings * GS = new claws::GlobalSettings();
+extern claws::GlobalSettings * GS;
 
 #endif /* GLOBAL_SETTINGS_H_ */

@@ -17,7 +17,7 @@ INCLUDES  += -I"./include"
 CALI_OBJS += ./build/calibration.o
 ANA_OBJS += ./build/analysis.o
 
-all: build/calibration build/analysis
+all: clean build/calibration build/analysis
 
 
 # Link Calibration

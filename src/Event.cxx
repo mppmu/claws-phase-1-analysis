@@ -38,7 +38,7 @@
 #include <TF1.h>
 
 // Project includes
-#include "Event.h"
+#include "Event.hh"
 
 using namespace std;
 using namespace boost;
