@@ -8,11 +8,6 @@
 // Description :
 //=============================================================================
 
-// c++ includes
-#include <sstream>
-// boost includes
-#include <boost/filesystem.hpp>
-#include <boost/format.hpp>
 
 //project includes
 #include "GlobalSettings.hh"
@@ -22,22 +17,28 @@ claws::GlobalSettings * GS = new claws::GlobalSettings();
 
 namespace claws {
 
-        GlobalSettings::GlobalSettings() : hook_("")
+        std::string StringRunMode(RunMode mode)
+        {
+            if     (mode == DEV)        return "dev";
+            else if(mode == SCOPE)      return "scope";
+            else if(mode == FIRST_BEAM) return "first-beam";
+            else if(mode == LLAMA)      return "llama";
+            else if(mode == CONNECTICUT)return "connecticut";
+            else if(mode == ORION)      return "orion";
+            else                        return "Who knows!";
+        };
+
+        GlobalSettings::GlobalSettings() : hook_(""), data_type_(NONE)
         {
 
         };
-
 
         GlobalSettings::~GlobalSettings()
         {
             // TODO Auto-generated destructor stub
         };
 
-        GlobalSettings& GlobalSettings::ResetHook()
-        {
-            hook_ = "";
-            return *this;
-        };
+
 
         boost::filesystem::path GlobalSettings::GetHook()
         {
@@ -45,25 +46,41 @@ namespace claws {
             return hook_;
         };
 
-        GlobalSettings& GlobalSettings::SetData()
+        GlobalSettings* GlobalSettings::SetData()
         {
             hook_ = hook_ / path_data_;
-            return *this;
+            return this;
         };
 
-        GlobalSettings& GlobalSettings::SetNtp()
+        GlobalSettings* GlobalSettings::ResetHook()
         {
+            data_type_ = NONE;
+            hook_ = "";
+            return this;
+        };
+
+        GlobalSettings* GlobalSettings::SetNtp()
+        {
+            data_type_ = NTP;
             hook_ = hook_ / path_ntp_;
-            return *this;
+            return this;
         };
 
-        GlobalSettings& GlobalSettings::SetRaw()
+        GlobalSettings* GlobalSettings::SetRaw()
         {
+            data_type_ = RAW;
             hook_ = hook_ / path_raw_data_;
-            return *this;
+            return this;
         };
 
-        GlobalSettings& GlobalSettings::SetDate(int day, int month, int year ){
+        GlobalSettings* GlobalSettings::SetMode(RunMode mode)
+        {
+    //        std::cout << mode << std::endl;
+            hook_ = hook_ / StringRunMode(mode);
+            return this;
+        };
+
+        GlobalSettings* GlobalSettings::SetDate(int day, int month, int year ){
 
             if (day <= 0 || day > 31 || month <= 0 || month > 12 || year != 16)
             {
@@ -74,18 +91,18 @@ namespace claws {
             date << boost::format("%02i-%02i-%02i") % year % month % day;
             hook_ = hook_ / date.str();
 
-            return *this;
+            return this;
         };
 
-        vector <boost::filesystem::path> GlobalSettings::GetFiles(int tsMin, int tsMax)
+        std::vector <boost::filesystem::path> GlobalSettings::GetFiles(float tsMin, float tsMax)
         {
-            vector <boost::filesystem::path> files;
+            std::vector <boost::filesystem::path> files;
 
-            if(boost::is_regular_file(hook_))
+            if(boost::filesystem::is_regular_file(hook_))
             {
                 files.push_back(hook_);
             }
-            else if (boost::is_directory(hook_)) {
+            else if (boost::filesystem::is_directory(hook_)) {
                 /* code */
             }
 

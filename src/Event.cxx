@@ -326,7 +326,7 @@ int Run::WriteOnlineTree(TFile* file)
     tout->Branch("bwd4", &rate_bwd4,     "fbwd4/D");
 
     for(unsigned int i=0; i < events.size(); i++){
-
+        // TODO Make the injection dynamic
         if(!events.at(i)->GetInjection())
         {
             ts = events.at(i)->GetUnixtime();
@@ -348,13 +348,47 @@ int Run::WriteOnlineTree(TFile* file)
 
     file->cd();
     tout->Write();
+
+    delete tout;
+
     return 0;
 };
+
+int Run::WriteTimeStamp(TFile* file)
+{
+    TTree *tout = new TTree("timestamp","timestamp");
+
+    double ts;
+
+    tout->Branch("ts", &ts,     "ts/D");
+
+    for(unsigned int i=0; i < events.size(); i++){
+
+        // TODO Make the injection dynamic
+        if(!events.at(i)->GetInjection())
+        {
+            ts = events.at(i)->GetUnixtime();
+
+            tout->Fill();
+
+        }
+
+    }
+
+    file->cd();
+    tout->Write();
+
+    delete tout;
+
+    return 0;
+};
+
 int Run::WriteNTuple(path path_ntuple){
 
     path_ntuple = path_ntuple / ("CLAWS-ON-" +to_string(run_number_) +"-" + to_string((int)tsMin) + "-" +to_string((int)tsMax) +".root");
     TFile * root_file  = new TFile(path_ntuple.string().c_str(), "RECREATE");
 
+    this->WriteTimeStamp(root_file);
     this->WriteOnlineTree(root_file);
 
     root_file->Close();

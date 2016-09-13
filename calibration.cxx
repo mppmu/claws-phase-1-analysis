@@ -40,7 +40,7 @@
 
 // project includes
 #include "include/Event.hh"
-
+#include "GlobalSettings.hh"
 
 using namespace std;
 using namespace boost;
@@ -118,6 +118,7 @@ int main(int argc, char* argv[]) {
 // First get the corresponding Tmin and Tmac from the beast run
 //-------------------------------------------------------------
 
+
 	static unsigned int lastTs=0;
 
 	std::ifstream runfile("./runs.txt", std::ios_base::in);
@@ -161,10 +162,11 @@ int main(int argc, char* argv[]) {
 	string file_runstart = "";
 	string file_runstop  = "";
 
+	GS->ResetHook()->SetData()->SetRaw()->SetMode(claws::CONNECTICUT)->SetDate(3, 11, 16)->GetHook();
 
-	Run myrun(path( "/remote/ceph/group/ilc/claws/data/RAW/connecticut/16-05-23/Run-" + string(argv[1]) ) );
-
-	myrun.WriteNTuple(path_to_ntuple);
+	// Run myrun(path( "/remote/ceph/group/ilc/claws/data/RAW/connecticut/16-05-23/Run-" + string(argv[1]) ) );
+	//
+	// myrun.WriteNTuple(path_to_ntuple);
 
 
 

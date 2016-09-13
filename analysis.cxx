@@ -46,9 +46,8 @@ int main(int argc, char* argv[]) {
 	cout << "|          Starting CLAWS phase I ntuple analysis       |" << endl;
 	cout << "---------------------------------------------------------" << endl;
 
-	GS->ResetHook();
-	GS->SetDate(3, 11, 16);
-	// GS->GetHook();
+	GS->ResetHook()->SetData()->SetNtp()->SetDate(3, 11, 16)->GetHook();
+
 
 //    filesystem::path p("/remote/ceph/group/ilc/claws/data/NTP/CLAWS/16-05-23/CLAWS-ON-400999-1463967125-146396871.root");
 	filesystem::path p("/remote/ceph/group/ilc/claws/data/NTP/CLAWS/16-05-23");

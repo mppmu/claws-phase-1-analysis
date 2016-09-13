@@ -11,11 +11,30 @@
 #ifndef GLOBAL_SETTINGS_H_
 #define GLOBAL_SETTINGS_H_
 
+
+// c++ includes
+#include <string>
+#include <sstream>
+#include <vector>
 // boost includes
 #include <boost/filesystem.hpp>
+#include <boost/format.hpp>
 
 
 namespace claws {
+
+enum RunMode
+{
+    DEV,            // assigned 0
+    SCOPE,          // assigned 1
+    FIRST_BEAM,     // assigned 2
+    LLAMA,          // assigned 3
+    CONNECTICUT,    // assigned 4
+    ORION           // assigned 5
+};
+
+
+std::string StringRunMode(RunMode mode);
 
 class GlobalSettings
 {
@@ -29,19 +48,22 @@ class GlobalSettings
         GlobalSettings();
         virtual ~GlobalSettings();
 
-        GlobalSettings& ResetHook();
         boost::filesystem::path GetHook();
 
-        GlobalSettings& SetData();
-        GlobalSettings& SetNtp();
-        GlobalSettings& SetRaw();
-        GlobalSettings& SetDate(int day, int month, int year = 16);
+        GlobalSettings* ResetHook();
+        GlobalSettings* SetData();
+        GlobalSettings* SetNtp();
+        GlobalSettings* SetRaw();
+        GlobalSettings* SetMode(RunMode mode);
+        GlobalSettings* SetDate(int day, int month, int year = 16);
 
-        vector <boost::filesystem::path> GetFiles(int tsMin = 0, tsMax = 0);
+        std::vector <boost::filesystem::path> GetFiles(float tsMin = 0, float tsMax = 0);
 
     private:
 
         boost::filesystem::path hook_;
+
+        enum data_type_ {NONE, RAW, NTP}             = NONE;
 
         const boost::filesystem::path path_data_     = "/remote/ceph/group/ilc/claws/data";
         const boost::filesystem::path path_ntp_      = "/NTP";

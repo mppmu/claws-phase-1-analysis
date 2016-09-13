@@ -121,6 +121,7 @@ class Run{
         int MapOnlineRates();
 
         int WriteOnlineTree(TFile* file);
+        int WriteTimeStamp(TFile* file);
         int WriteNTuple(path path_ntuple);
 
 
