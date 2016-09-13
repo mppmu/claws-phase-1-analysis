@@ -228,7 +228,7 @@ Run::Run(path dir)
     // Extract the runnumer from the path to the folder and convert it to int.
     run_number_ = atoi(dir.filename().string().substr(4,20).c_str());
 
-    cout << "Start Loading Run:  " << run_number_ << endl;
+    cout << "Start Loading Run:  " << run_number_;
 
     path path_data = dir / path("data_root");
 
@@ -270,7 +270,7 @@ Run::Run(path dir)
     tsMin = events.front()->GetUnixtime();
     tsMax = events.back()->GetUnixtime();
 
-    cout << "Done  Loading Run!" << endl;
+    cout << "   ------   Done  Loading Run!" << endl;
 };
 
 Run::~Run() {
@@ -385,7 +385,7 @@ int Run::WriteTimeStamp(TFile* file)
 
 int Run::WriteNTuple(path path_ntuple){
 
-    path_ntuple = path_ntuple / ("CLAWS-ON-" +to_string(run_number_) +"-" + to_string((int)tsMin) + "-" +to_string((int)tsMax) +".root");
+    path_ntuple = path_ntuple / ("CLAWS-ON-" +to_string(run_number_) +"-" + to_string((int)tsMin) +".root");
     TFile * root_file  = new TFile(path_ntuple.string().c_str(), "RECREATE");
 
     this->WriteTimeStamp(root_file);

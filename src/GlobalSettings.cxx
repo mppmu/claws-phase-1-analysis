@@ -28,7 +28,7 @@ namespace claws {
             else                        return "Who knows!";
         };
 
-        GlobalSettings::GlobalSettings() : hook_(""), data_type_(NONE)
+        GlobalSettings::GlobalSettings() : hook_("")
         {
 
         };
@@ -54,21 +54,21 @@ namespace claws {
 
         GlobalSettings* GlobalSettings::ResetHook()
         {
-            data_type_ = NONE;
+            // data_type_ = NONE;
             hook_ = "";
             return this;
         };
 
         GlobalSettings* GlobalSettings::SetNtp()
         {
-            data_type_ = NTP;
+            // data_type_ = NTP;
             hook_ = hook_ / path_ntp_;
             return this;
         };
 
         GlobalSettings* GlobalSettings::SetRaw()
         {
-            data_type_ = RAW;
+            // data_type_ = RAW;
             hook_ = hook_ / path_raw_data_;
             return this;
         };
@@ -94,7 +94,8 @@ namespace claws {
             return this;
         };
 
-        std::vector <boost::filesystem::path> GlobalSettings::GetFiles(float tsMin, float tsMax)
+
+        std::vector <boost::filesystem::path> GlobalSettings::GetNtpFiles(float tsMin, float tsMax)
         {
             std::vector <boost::filesystem::path> files;
 
@@ -111,5 +112,35 @@ namespace claws {
             return files;
         }
 
+        std::vector <boost::filesystem::path> GlobalSettings::GetRawFiles()
+        {
+            std::vector <boost::filesystem::path> files;
 
+            if(boost::filesystem::is_regular_file(hook_))
+            {
+                files.push_back(hook_);
+            }
+            else if (boost::filesystem::is_directory(hook_)) {
+
+
+                boost::filesystem::directory_iterator end_itr;
+                // cycle through the directory
+            	for (boost::filesystem::directory_iterator itr(hook_); itr != end_itr; ++itr)
+            	{
+            		if (boost::filesystem::is_regular_file(itr->path())) {
+            			// If it is a file do not do anything!
+            		}
+
+            		else if(boost::filesystem::is_directory(itr->path()) && boost::starts_with(itr->path().filename().string(), "Run-")){
+            			// If it is a directory check if it is a Run folder and proceed.
+                        files.push_back(itr->path());
+            		}
+            	}
+
+            }
+
+            this->ResetHook();
+
+            return files;
+        }
 }

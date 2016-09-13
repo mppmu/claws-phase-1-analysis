@@ -162,7 +162,12 @@ int main(int argc, char* argv[]) {
 	string file_runstart = "";
 	string file_runstop  = "";
 
-	GS->ResetHook()->SetData()->SetRaw()->SetMode(claws::CONNECTICUT)->SetDate(3, 11, 16)->GetHook();
+	std::vector <boost::filesystem::path> files = GS->ResetHook()->SetData()->SetRaw()->SetMode(claws::CONNECTICUT)->SetDate(23, 5, 16)->GetRawFiles();
+	for(int i =0; i< files.size();i++){
+		Run myrun(path(files.at(i)));
+		myrun.WriteNTuple(path_to_ntuple);
+	}
+
 
 	// Run myrun(path( "/remote/ceph/group/ilc/claws/data/RAW/connecticut/16-05-23/Run-" + string(argv[1]) ) );
 	//

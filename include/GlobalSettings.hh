@@ -19,6 +19,7 @@
 // boost includes
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 
 
 namespace claws {
@@ -57,13 +58,14 @@ class GlobalSettings
         GlobalSettings* SetMode(RunMode mode);
         GlobalSettings* SetDate(int day, int month, int year = 16);
 
-        std::vector <boost::filesystem::path> GetFiles(float tsMin = 0, float tsMax = 0);
+        std::vector <boost::filesystem::path> GetNtpFiles(float tsMin = 0, float tsMax = 0);
+        std::vector <boost::filesystem::path> GetRawFiles();
 
     private:
 
         boost::filesystem::path hook_;
 
-        enum data_type_ {NONE, RAW, NTP}             = NONE;
+        // enum data_type_ {NONE, RAW, NTP}             = NONE;
 
         const boost::filesystem::path path_data_     = "/remote/ceph/group/ilc/claws/data";
         const boost::filesystem::path path_ntp_      = "/NTP";
