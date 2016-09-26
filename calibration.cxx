@@ -39,7 +39,7 @@
 #include "TCanvas.h"
 
 // project includes
-#include "include/Event.hh"
+#include "Event.hh"
 #include "GlobalSettings.hh"
 
 using namespace std;
@@ -154,16 +154,16 @@ int main(int argc, char* argv[]) {
 
 
 	// path path_to_day("/remote/ceph/group/ilc/claws/data/claws_phaseI/connecticut/16-05-23");
-	path path_to_day("/remote/ceph/group/ilc/claws/data/claws_phaseI/connecticut/16-05-23");
-	path path_to_ntuple("/remote/ceph/group/ilc/claws/data/NTP/CLAWS/16-05-23");
+//	path path_to_day("/remote/ceph/group/ilc/claws/data/claws_phaseI/connecticut/16-05-18");
+//	path path_to_ntuple("/remote/ceph/group/ilc/claws/data/NTP/CLAWS/16-05-23");
 //	path path_to_rate("/remote/ceph/group/ilc/claws/data/claws_phaseI/connecticut/16-05-26/Run-401161/ok.dat");
 
 
 	string file_runstart = "";
 	string file_runstop  = "";
-
-	std::vector <boost::filesystem::path> files = GS->ResetHook()->SetData()->SetRaw()->SetMode(claws::CONNECTICUT)->SetDate(23, 5, 16)->GetRawFiles();
-	for(int i =0; i< files.size();i++){
+	path path_to_ntuple = GS->ResetHook()->SetData()->SetNtp()->SetDetector(claws::CLW)->SetDate(atoi(argv[1]), 5, 16)->GetHook();
+	std::vector <boost::filesystem::path> files = GS->ResetHook()->SetData()->SetRaw()->SetMode(claws::CONNECTICUT)->SetDate(atoi(argv[1]), 5, 16)->GetRawFiles();
+	for(unsigned int i =0; i< files.size();i++){
 		Run myrun(path(files.at(i)));
 		myrun.WriteNTuple(path_to_ntuple);
 	}

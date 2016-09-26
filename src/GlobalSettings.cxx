@@ -66,6 +66,46 @@ namespace claws {
             return this;
         };
 
+        GlobalSettings* GlobalSettings::SetDetector(Detector det)
+        {
+            if(det == CLW){
+                hook_ = hook_ / "CLW";
+            }
+            else if(det == BEAST)
+            {
+                hook_ = hook_ / "BEAST";
+            }
+            else if(det == TPC)
+            {
+                hook_ = hook_ / "TPC";
+            }
+            else if(det == BGO)
+            {
+                hook_ = hook_ / "BGO";
+            }
+            else if(det == PIN)
+            {
+                hook_ = hook_ / "PIN";
+            }
+            else if(det == SKB)
+            {
+                hook_ = hook_ / "SKB";
+            }
+            else if(det == SuperKEKB)
+            {
+                hook_ = hook_ / "SuperKEKB";
+            }
+            else if(det == SuperKEKB_MachineStudies)
+            {
+                hook_ = hook_ / "SuperKEKB_MachineStudies";
+            }
+            else
+            {
+                hook_ = hook_ / "Who knows!";
+            }
+            return this;
+        };
+
         GlobalSettings* GlobalSettings::SetRaw()
         {
             // data_type_ = RAW;
@@ -89,7 +129,7 @@ namespace claws {
 
             std::stringstream date;
             date << boost::format("%02i-%02i-%02i") % year % month % day;
-            hook_ = hook_ / date.str();
+            hook_ = hook_ / ("20" + date.str());
 
             return this;
         };

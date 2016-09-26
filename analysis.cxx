@@ -46,11 +46,11 @@ int main(int argc, char* argv[]) {
 	cout << "|          Starting CLAWS phase I ntuple analysis       |" << endl;
 	cout << "---------------------------------------------------------" << endl;
 
-	GS->ResetHook()->SetData()->SetNtp()->SetDate(3, 11, 16)->GetHook();
+
 
 
 //    filesystem::path p("/remote/ceph/group/ilc/claws/data/NTP/CLAWS/16-05-23/CLAWS-ON-400999-1463967125-146396871.root");
-	filesystem::path p("/remote/ceph/group/ilc/claws/data/NTP/CLAWS/16-05-23");
+//	filesystem::path p("/remote/ceph/group/ilc/claws/data/NTP/CLAWS/16-05-23");
 //		TFile f("/remote/ceph/group/ilc/claws/data/NTP/CLAWS/16-05-23/CLAWS-ON-400999-1463967125-1463968071.root");
 
 
@@ -61,13 +61,15 @@ int main(int argc, char* argv[]) {
 
 	for (int i=0;i<8;i++){
 		TGraph *tmp = new TGraph();
+		// tmp->GetYaxis()->SetRangeUser(0, 400000);
+		// tmp->GetXaxis()->SetRangeUser(1463960000, 1464010000);
 		tmp->SetMarkerStyle(20);
 		tmp->SetMarkerSize(0.8);
 		tmp->SetMarkerColor(i+1);
 		graph_channels.push_back(tmp);
-	}
+	};
 
-
+	filesystem::path p(GS->ResetHook()->SetData()->SetNtp()->SetDetector(claws::CLW)->SetDate(atoi(argv[1]), 5, 16)->GetHook());
 
 	vector<filesystem::path> folder_content;
 
@@ -78,7 +80,7 @@ int main(int argc, char* argv[]) {
 	for (vector<filesystem::path>::const_iterator itr = folder_content.begin(); itr != folder_content.end(); ++itr){
 		cout << "Opening file: " << (*itr) << endl;
 		if(    is_regular_file(*itr)
-			&& starts_with((*itr).filename().string(), "CLAWS-ON-")
+			&& starts_with((*itr).filename().string(), "CLAWSv0.1-")
 			&& ends_with((*itr).filename().string(), ".root"))
 		{
 			string file = filesystem::path(*itr).string();
@@ -92,9 +94,12 @@ int main(int argc, char* argv[]) {
 	        exit(-1);
 			}
 
-			TTree *tree_rate_online = (TTree*)f.Get("rates_online");
+
 
 			double rate[8], ts;
+
+			TTree *tree_rate_online = (TTree*)f.Get("on");
+
 			tree_rate_online->SetBranchAddress("ts", &ts);
 
 			tree_rate_online->SetBranchAddress("fwd1", &rate[0]);
@@ -106,15 +111,43 @@ int main(int argc, char* argv[]) {
 			tree_rate_online->SetBranchAddress("bwd3", &rate[6]);
 			tree_rate_online->SetBranchAddress("bwd4", &rate[7]);
 
-			for(unsigned int i=0; i < tree_rate_online->GetEntries(); i++)
+			// TTree *tree_rate_online_inj = (TTree*)f.Get("on_inj");
+			//
+			// tree_rate_online_inj->SetBranchAddress("ts", &ts);
+			//
+			// tree_rate_online_inj->SetBranchAddress("fwd1", &rate[0]);
+			// tree_rate_online_inj->SetBranchAddress("fwd2", &rate[1]);
+			// tree_rate_online_inj->SetBranchAddress("fwd3", &rate[2]);
+			// tree_rate_online_inj->SetBranchAddress("fwd4", &rate[3]);
+			// tree_rate_online_inj->SetBranchAddress("bwd1", &rate[4]);
+			// tree_rate_online_inj->SetBranchAddress("bwd2", &rate[5]);
+			// tree_rate_online_inj->SetBranchAddress("bwd3", &rate[6]);
+			// tree_rate_online_inj->SetBranchAddress("bwd4", &rate[7]);
+
+			int point = 0;
+			for(unsigned int i =0; i < tree_rate_online->GetEntries(); i++)
 			{
 				tree_rate_online->GetEntry(i);
-
-				for (int ch=0;ch<8;ch++){
-					graph_channels.at(ch)->SetPoint(i+i_point,ts,rate[ch]);
-				}
+			//	if (ts > 0 && ts < 1864000000)
+			//	{
+			///		std::cout << ts << std::setprecision(12) << std::endl;
+					for (int ch=0;ch<8;ch++){
+						graph_channels.at(ch)->SetPoint(point+i_point,ts,rate[ch]);
+					}
+					point++;
+			//	}
 			}
 			i_point += tree_rate_online->GetEntries();
+				std::cout << point << std::endl;
+			// for(unsigned int i =0; i < tree_rate_online_inj->GetEntries(); i++)
+			// {
+			// 	tree_rate_online_inj->GetEntry(i);
+			//
+			// 	for (int ch=0;ch<8;ch++){
+			// 		graph_channels.at(ch)->SetPoint(i+i_point,ts,rate[ch]);
+			// 	}
+			// }
+			//i_point += tree_rate_online_inj->GetEntries();
 
 			f.Close();
 		}
@@ -124,13 +157,18 @@ int main(int argc, char* argv[]) {
 
 
     cout << "Drawing now!" << endl;
-    TCanvas * c1 = new TCanvas("fwd1", "fwd1", 600, 600);
+    TCanvas * c1 = new TCanvas("fwd1", "fwd1", 1200, 600);
+
+	// graph_channels.at(0)->GetXaxis()->SetRangeUser(1464000289.68, 1464002895.31);
+	graph_channels.at(0)->GetYaxis()->SetRangeUser(0, 400000);
 
 	graph_channels.at(0)->Draw("AP");
 	for (int ch=1;ch<8;ch++){
 		graph_channels.at(ch)->Draw("P");
 	}
-
+	c1->SaveAs("OnInj.pdf");
+	c1->SaveAs("OnInj.png");
+	c1->SaveAs("OnInj.eps");
 
 
 	app->Run();

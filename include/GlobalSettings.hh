@@ -24,6 +24,18 @@
 
 namespace claws {
 
+enum Detector
+{
+    CLW,                      // assigned 0
+    BEAST,                      // assigned 1
+    TPC,                        // assigned 2
+    BGO,                        // assigned 3
+    PIN,                        // assigned 4
+    SKB,                        // assigned 5
+    SuperKEKB,
+    SuperKEKB_MachineStudies
+};
+
 enum RunMode
 {
     DEV,            // assigned 0
@@ -50,10 +62,12 @@ class GlobalSettings
         virtual ~GlobalSettings();
 
         boost::filesystem::path GetHook();
+        boost::filesystem::path GetDetector();
 
         GlobalSettings* ResetHook();
         GlobalSettings* SetData();
         GlobalSettings* SetNtp();
+        GlobalSettings* SetDetector(Detector det);
         GlobalSettings* SetRaw();
         GlobalSettings* SetMode(RunMode mode);
         GlobalSettings* SetDate(int day, int month, int year = 16);

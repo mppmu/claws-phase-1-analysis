@@ -5,8 +5,8 @@
  *      Author: mgabriel
  */
 
-#ifndef CLAWS_ANALYSIS_EVENT_H_
-#define CLAWS_ANALYSIS_EVENT_H_
+#ifndef CLAWS_EVENT_H_
+#define CLAWS_EVENT_H_
 
 // std includes
 #include <vector>
@@ -63,21 +63,6 @@ class Event{
 
         static int id_;
 
-        // An event relies on data/information in three different files. The .root, .ini & the online monitor.
-        path path_file_root_;
-        path path_file_ini_;
-        path path_online_rate_;
-
-	    int event_number        = -1;
-        double unixtime_        = -1;
-        int lerbg_              = -1;
-        int herbg_              = -1;
-        bool injection_         = false;
-	    double rate_online_[8]  = {};
-        double rate_offline_[8] = {};
-
-        TFile *file;
-        map<string, TH1I*> channels;
 };
 
 class PhysicsEvent : public Event{
@@ -103,48 +88,6 @@ class PhysicsEvent : public Event{
 //
 // };
 
-//----------------------------------------------------------------------------------------------
-// Definition of the Run class. This class is supposed to do all gthe organization of a run.
-// TODO(mgabriel@mpp.mpg.de): Add some description
-//----------------------------------------------------------------------------------------------
-
-class Run{
-
-    public:
-
-        Run(path p);
-        virtual ~Run();
-
-        int BuildOnlineTree();
-        int BuildOfflineTree();
-
-        int MapOnlineRates();
-
-        int WriteOnlineTree(TFile* file);
-        int WriteTimeStamp(TFile* file);
-        int WriteNTuple(path path_ntuple);
 
 
-        double GetStartTime();
-        double GetStopTime();
-        TTree *GetOnlineTree();
-        TTree *GetOfflineTree();
-
-    private:
-
-        int PathToRunNumber(path p);
-
-        path path_run_;
-        double tsMin;
-        double tsMax;
-
-        int run_number_;
-
-        TTree *tree_online;
-        TTree *tree_offline;
-        TTree *tree_skb;
-        vector<Event*> events;
-
-};
-
-#endif /* CLAWS_ANALYSIS_EVENT_H_ */
+#endif /* CLAWS_EVENT_H_ */
