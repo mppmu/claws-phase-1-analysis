@@ -43,8 +43,6 @@
 using namespace std;
 using namespace boost;
 
-
-
 //----------------------------------------------------------------------------------------------
 // Definition of the Event base class.
 //----------------------------------------------------------------------------------------------
@@ -106,17 +104,33 @@ int Event::draw(){
 
     TApplication *app=new TApplication("app",0,0);
     cout << "Drawing now!" << endl;
-    TCanvas * fwd1 = new TCanvas("fwd1", "fwd1", 600, 600);
-
-    map<string, TH1I*>::iterator it = channels.find("BWD3-INT");
-
-    if(it != channels.end()){
-        cout << it->first << endl;
-        it->second->Draw();
-    }
+    // TCanvas * fwd1 = new TCanvas("fwd1", "fwd1", 600, 600);
+    //
+    // map<string, TH1I*>::iterator it = channels.find("BWD3-INT");
+    //
+    // if(it != channels.end()){
+    //     cout << it->first << endl;
+    //     it->second->Draw();
+    // }
 
     app->Run();
     return 0;
+}
+
+map<string, TH1I*> PhysicsEvent::GetPedestral()
+{
+    map<string, TH1I*> rtn;
+    for(auto & itr : phy_chs_)
+    {
+        rtn[itr.first]  =  itr.second->GetPedestral();
+        cout << "First: " << itr.first << endl;
+        TApplication *app=new TApplication("app",0,0);
+        itr.second->GetPedestral()->Draw();
+        app->Run();
+
+    }
+
+    return rtn;
 }
 
 int Event::Subtract(){
@@ -136,58 +150,49 @@ Event::~Event() {
 //----------------------------------------------------------------------------------------------
 PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini): Event(file_root ,file_ini)
 {
+    cout << "Loading PhysicsEvent: " << file_root.string() << endl;
     this->LoadRootFile();
     this->LoadIniFile();
 };
 
 PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini, const path &file_online_rate): Event(file_root, file_ini, file_online_rate)
 {
+    cout << "Loading PhysicsEvent: " << file_root.string() << endl;
     this->LoadRootFile();
     this->LoadIniFile();
     this->LoadOnlineRate();
-
 };
 
 PhysicsEvent::~PhysicsEvent() {
 	// TODO Auto-generated destructor stub
 };
 
-int PhysicsEvent::LoadRootFile()
+void PhysicsEvent::LoadRootFile()
 {
+    file = new TFile(path_file_root_.string().c_str(), "open");
 
-    // cout << typeid(p.string()).name() << endl;
-    //
-    // file = new TFile(p.string().c_str(), "open");
-    // cout << (TH1I*)file->Get("FWD1-INT") << endl;
-    // channels["FWD1-INT"] = (TH1I*)file->Get("FWD1-INT")->Clone();
-    // cout << channels["FWD1-INT"] << endl;
-    // channels["FWD2-INT"] = (TH1I*)file->Get("FWD2-INT")->Clone();
-    // channels["FWD3-INT"] = (TH1I*)file->Get("FWD3-INT")->Clone();
-    // channels["BWD1-INT"] = (TH1I*)file->Get("BWD1-INT")->Clone();
-    // channels["BWD2-INT"] = (TH1I*)file->Get("BWD2-INT")->Clone();
-    // channels["BWD3-INT"] = (TH1I*)file->Get("BWD3-INT")->Clone();
-    //
-    //
-    // TF1 * fit = new TF1("fit", "[0]", 0 ,115);
-    // FWD1->Fit(fit, "WRV");
-    //
-    // TH1D *fwd_values=new TH1D("values","values", 1000000, -32512,32512);
-    //
-    // for (int i = 0; i < FWD1->GetNbinsX(); i++) {
-    //     cout << FWD1->GetBinContent(i) << endl;
-    //     fwd_values->Fill(FWD1->GetBinContent(i));
-    // }
-    //
-    //
-    // FWD1->Draw();
-    //
-    // file->Close();
-    // cout << channels["FWD1-INT"] << endl;
+    phy_chs_["FWD1"] = new PhysicsChannel("FWD1");
+    phy_chs_["FWD2"] = new PhysicsChannel("FWD2");
+    phy_chs_["FWD3"] = new PhysicsChannel("FWD3");
+    phy_chs_["FWD4"] = new PhysicsChannel("FWD4");
 
-    return 0;
+    phy_chs_["BWD1"] = new PhysicsChannel("BWD1");
+    phy_chs_["BWD2"] = new PhysicsChannel("BWD2");
+    phy_chs_["BWD3"] = new PhysicsChannel("BWD3");
+    phy_chs_["BWD4"] = new PhysicsChannel("BWD4");
+
+    for (auto &itr : phy_chs_)
+    {
+        itr.second->LoadWaveform(file);
+        // itr.second->LoadPedestral();
+    }
+
+//    file->Close("R");
+    delete file;
+
 }
 
-int PhysicsEvent::LoadIniFile(){
+void PhysicsEvent::LoadIniFile(){
 
     property_tree::ptree pt;
 	property_tree::ini_parser::read_ini(path_file_ini_.string(), pt);
@@ -200,11 +205,9 @@ int PhysicsEvent::LoadIniFile(){
     else                   injection_ = false;
 
     //TODO load the rest that is written in the .ini file.
-
-    return unixtime_;
 };
 
-int PhysicsEvent::LoadOnlineRate(){
+void PhysicsEvent::LoadOnlineRate(){
 
     std::ifstream ratefile(path_online_rate_.string());
 
@@ -216,6 +219,4 @@ int PhysicsEvent::LoadOnlineRate(){
     ratefile >> rate_online_[0] >> rate_online_[1] >> rate_online_[2] >> rate_online_[3] >> rate_online_[4] >> rate_online_[5] >> rate_online_[6] >> rate_online_[7];
 
     ratefile.close();
-
-    return 0;
 };

@@ -18,10 +18,10 @@
 #include <TH1I.h>
 #include <TTree.h>
 #include <TBranch.h>
-
-// mixed
+// Boost
 #include<boost/filesystem.hpp>
-
+// Project includes
+#include "Channel.hh"
 using namespace std;
 using namespace boost::filesystem;
 
@@ -40,9 +40,12 @@ class Event{
 
         virtual ~Event();
 
-        virtual int     LoadRootFile()   = 0;
-        virtual int     LoadIniFile()    = 0;
-        virtual int     LoadOnlineRate() = 0;
+        virtual void                   LoadRootFile()   = 0;
+        virtual void                   LoadIniFile()    = 0;
+        virtual void                   LoadOnlineRate() = 0;
+        virtual map<string, TH1I*>     GetPedestral()   = 0;
+
+        void             LoadPedestral();
 
         int     Subtract();
 
@@ -52,17 +55,36 @@ class Event{
         int     GetHerBg()     const;
 	    int     GetEventNr()   const;
 
+
+
         static int GetId();
+
         double* GetRateOnline();
 
         int getCh(string ch);
         int draw();
 
-
     // protected:
 
         static int id_;
 
+        // An event relies on data/information in three different files. The .root, .ini & the online monitor.
+        path path_file_root_;
+        path path_file_ini_;
+        path path_online_rate_;
+
+	    int event_number        = -1;
+        double unixtime_        = -1;
+        int lerbg_              = -1;
+        int herbg_              = -1;
+        bool injection_         = false;
+	    double rate_online_[8]  = {};
+        double rate_offline_[8] = {};
+
+
+        TFile *file;
+
+        map<string, IntChannel*> int_chs_;
 };
 
 class PhysicsEvent : public Event{
@@ -74,20 +96,14 @@ class PhysicsEvent : public Event{
         PhysicsEvent(const path &file_root, const path &file_ini, const path &file_online_rate);
         ~PhysicsEvent();
 
-        int     LoadRootFile();
-        int     LoadIniFile();
-        int     LoadOnlineRate();
+        void                   LoadRootFile();
+        void                   LoadIniFile();
+        void                   LoadOnlineRate();
 
-    protected:
+        map<string, TH1I*>     GetPedestral();
 
-    private:
+        map<string, PhysicsChannel*> phy_chs_;
 
 };
-//
-// class IntEvent : public Event{
-//
-// };
-
-
 
 #endif /* CLAWS_EVENT_H_ */

@@ -40,6 +40,7 @@
 
 // project includes
 #include "Event.hh"
+#include "Run.hh"
 #include "GlobalSettings.hh"
 
 using namespace std;
@@ -159,14 +160,41 @@ int main(int argc, char* argv[]) {
 //	path path_to_rate("/remote/ceph/group/ilc/claws/data/claws_phaseI/connecticut/16-05-26/Run-401161/ok.dat");
 
 
-	string file_runstart = "";
-	string file_runstop  = "";
-	path path_to_ntuple = GS->ResetHook()->SetData()->SetNtp()->SetDetector(claws::CLW)->SetDate(atoi(argv[1]), 5, 16)->GetHook();
-	std::vector <boost::filesystem::path> files = GS->ResetHook()->SetData()->SetRaw()->SetMode(claws::CONNECTICUT)->SetDate(atoi(argv[1]), 5, 16)->GetRawFiles();
-	for(unsigned int i =0; i< files.size();i++){
-		Run myrun(path(files.at(i)));
-		myrun.WriteNTuple(path_to_ntuple);
-	}
+	// string file_runstart = "";
+	// string file_runstop  = "";
+	// path path_to_ntuple = GS->ResetHook()->SetData()->SetNtp()->SetDetector(claws::CLW)->SetDate(atoi(argv[1]), 1, 16)->GetHook();
+	// std::vector <boost::filesystem::path> files = GS->ResetHook()->SetData()->SetRaw()->SetMode(claws::CONNECTICUT)->SetDate(atoi(argv[1]), 1, 16)->GetRawFiles();
+	// for(unsigned int i =0; i< files.size();i++){
+	// 	Run myrun(path(files.at(i)));
+	// 	myrun.SubtractPedestral();
+	// //	myrun.WriteNTuple(path_to_ntuple);
+	// }
+
+
+
+	//test
+	path path_file_root		= "/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-01-01/Run-400999/data_root/Event-400999001.root";
+	path path_file_ini		= "/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-01-01/Run-400999/data_root/Event-400999001.ini";
+	path path_online_rate	= "/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-01-01/Run-400999/Rate-Run--9990";
+
+//	TH1::AddDirectory(kFALSE);
+	short cont;
+	cout << sizeof(cont) << endl;
+	PhysicsEvent *event=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
+	PhysicsEvent *event1=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
+	PhysicsEvent *event2=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
+	PhysicsEvent *event3=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
+	cout << "Cont nr4"<< endl;
+	cin >> cont;
+	cout << cont <<endl;
+
+	PhysicsEvent *event4=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
+
+
+
+	cout<< "Cont nr5"<< endl;
+	cin >> cont;
+	cout << cont <<endl;
 
 
 	// Run myrun(path( "/remote/ceph/group/ilc/claws/data/RAW/connecticut/16-05-23/Run-" + string(argv[1]) ) );

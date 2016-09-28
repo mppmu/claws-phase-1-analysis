@@ -5,7 +5,10 @@
 # CALI_CPP_SRCS += ../src/Event.cpp
 # CALI_CPP_SRCS += ../src/GlobalSettings.cxx
 
+
+CALI_OBJS += ./build/src/Channel.o
 CALI_OBJS += ./build/src/Event.o
+CALI_OBJS += ./build/src/Run.o
 CALI_OBJS += ./build/src/GlobalSettings.o
 
 ANA_OBJS += ./build/src/GlobalSettings.o

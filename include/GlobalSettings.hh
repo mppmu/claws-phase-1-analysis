@@ -61,6 +61,11 @@ class GlobalSettings
         GlobalSettings();
         virtual ~GlobalSettings();
 
+        int GetNBits();
+        int GetNBitsScope();
+        int GetXLow();
+        int GetXUp();
+
         boost::filesystem::path GetHook();
         boost::filesystem::path GetDetector();
 
@@ -72,10 +77,17 @@ class GlobalSettings
         GlobalSettings* SetMode(RunMode mode);
         GlobalSettings* SetDate(int day, int month, int year = 16);
 
+
         std::vector <boost::filesystem::path> GetNtpFiles(float tsMin = 0, float tsMax = 0);
         std::vector <boost::filesystem::path> GetRawFiles();
 
     private:
+
+        const int n_bits_       = 65536;
+        const int n_bits_scope_  = 256;
+
+        const int x_low_        = -1 * n_bits_/2 - n_bits_scope_/2;
+        const int x_up_         =  x_low_ + n_bits_scope_* n_bits_scope_ ;
 
         boost::filesystem::path hook_;
 

@@ -38,7 +38,25 @@ namespace claws {
             // TODO Auto-generated destructor stub
         };
 
+        int GlobalSettings::GetNBits()
+        {
+            return n_bits_;
+        }
 
+        int GlobalSettings::GetNBitsScope()
+        {
+            return n_bits_scope_;
+        }
+
+        int GlobalSettings::GetXLow()
+        {
+            return x_low_;
+        }
+
+        int GlobalSettings::GetXUp()
+        {
+            return x_up_;
+        }
 
         boost::filesystem::path GlobalSettings::GetHook()
         {
