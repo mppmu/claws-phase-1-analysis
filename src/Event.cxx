@@ -239,7 +239,6 @@ void PhysicsEvent::Draw(){
         pad+=+2;
         if(pad > 8) pad =1;
         c_ped->cd(pad);
-        // i.second->GetPedestral()->Draw();
         i.second->GetPedestral()->Draw();
     }
 
