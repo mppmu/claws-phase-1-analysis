@@ -43,11 +43,13 @@ class Event{
         virtual void                   LoadRootFile()   = 0;
         virtual void                   LoadIniFile()    = 0;
         virtual void                   LoadOnlineRate() = 0;
-        virtual map<string, TH1I*>     GetPedestral()   = 0;
+        virtual map<string, TH1I*>     GetPedestal()   = 0;
 
-        void             LoadPedestral();
+        void SubtractPedestal();
 
-        int     Subtract();
+        void             LoadPedestal();
+
+
 
         bool    GetInjection() const;
         double  GetUnixtime()  const;
@@ -56,13 +58,12 @@ class Event{
 	    int     GetEventNr()   const;
 
 
-
         static int GetId();
 
         double* GetRateOnline();
 
         int getCh(string ch);
-        int draw();
+        virtual void Draw();
 
     // protected:
 
@@ -84,7 +85,7 @@ class Event{
 
         TFile *file;
 
-        map<string, IntChannel*> int_chs_;
+        map<string, Channel*> channels_;
 };
 
 class PhysicsEvent : public Event{
@@ -100,11 +101,11 @@ class PhysicsEvent : public Event{
         void                   LoadIniFile();
         void                   LoadOnlineRate();
 
-        map<string, TH1I*>     GetPedestral();
+        map<string, TH1I*>     GetPedestal();
 
-        void Draw();
 
-        map<string, PhysicsChannel*> phy_chs_;
+
+        // map<string, PhysicsChannel*> channels_;
         //map<string, PhysicsChannel*> phy_chs_;
 
 };

@@ -70,6 +70,15 @@ Event::Event(const path &file_root, const path &file_ini, const path &file_onlin
 
 };
 
+void Event::SubtractPedestal()
+{
+
+    for(auto i : channels_)
+    {
+        i.second->SubtractPedestal( 5);
+    }
+}
+
 bool Event::GetInjection()  const
 {
     return injection_;
@@ -100,36 +109,37 @@ int Event::getCh(string ch){
     return 0;
 }
 
-int Event::draw(){
-    // TApplication *app=new TApplication("app",0,0);
-    // for(auto & i : phy_chs_)
-    // {
-    //     i.second->Draw();
-    // }
-    //
-    // app->Run();
-    return 0;
-}
 
-map<string, TH1I*> PhysicsEvent::GetPedestral()
-{
-    map<string, TH1I*> rtn;
-    for(auto & itr : phy_chs_)
+
+void Event::Draw(){
+
+    cout << "Drawing PhysicsEvent: "<< event_number << endl;
+
+    TCanvas * c = new TCanvas(to_string(event_number).c_str(),to_string(event_number).c_str(), 1600, 1200);
+    c->Divide(2,4);
+    unsigned int pad=0;
+    for(auto i : channels_)
     {
-        rtn[itr.first]  =  itr.second->GetPedestral();
-        cout << "First: " << itr.first << endl;
-        TApplication *app=new TApplication("app",0,0);
-        itr.second->GetPedestral()->Draw();
-        app->Run();
-
+        pad+=+2;
+        if(pad > 8) pad =1;
+        c->cd(pad);
+        i.second->GetWaveformHist()->Draw();
     }
 
-    return rtn;
-}
+    string ped_can_name = to_string(event_number) + " Pedestal";
+    TCanvas * c_ped = new TCanvas(ped_can_name.c_str(), ped_can_name.c_str(), 1600, 1200);
+    c_ped->Divide(2,4);
+    pad=0;
+    for(auto i : channels_)
+    {
+        pad+=+2;
+        if(pad > 8) pad =1;
+        c_ped->cd(pad);
+        i.second->GetPedestal()->Draw();
+    }
 
-int Event::Subtract(){
-    return 0;
-};
+
+}
 
 double* Event::GetRateOnline(){
     return rate_online_;
@@ -165,20 +175,20 @@ void PhysicsEvent::LoadRootFile()
 {
     file = new TFile(path_file_root_.string().c_str(), "open");
 
-    phy_chs_["FWD1"] = new PhysicsChannel("FWD1");
-    phy_chs_["FWD2"] = new PhysicsChannel("FWD2");
-    phy_chs_["FWD3"] = new PhysicsChannel("FWD3");
-    phy_chs_["FWD4"] = new PhysicsChannel("FWD4");
+    channels_["FWD1"] = new PhysicsChannel("FWD1");
+    channels_["FWD2"] = new PhysicsChannel("FWD2");
+    channels_["FWD3"] = new PhysicsChannel("FWD3");
+    channels_["FWD4"] = new PhysicsChannel("FWD4");
 
-    phy_chs_["BWD1"] = new PhysicsChannel("BWD1");
-    phy_chs_["BWD2"] = new PhysicsChannel("BWD2");
-    phy_chs_["BWD3"] = new PhysicsChannel("BWD3");
-    phy_chs_["BWD4"] = new PhysicsChannel("BWD4");
+    channels_["BWD1"] = new PhysicsChannel("BWD1");
+    channels_["BWD2"] = new PhysicsChannel("BWD2");
+    channels_["BWD3"] = new PhysicsChannel("BWD3");
+    channels_["BWD4"] = new PhysicsChannel("BWD4");
 
-    for (auto &itr : phy_chs_)
+    for (auto &itr : channels_)
     {
         itr.second->LoadWaveform(file);
-        itr.second->LoadPedestral();
+        itr.second->LoadPedestal();
     }
 
     file->Close("R");
@@ -215,32 +225,13 @@ void PhysicsEvent::LoadOnlineRate(){
     ratefile.close();
 };
 
-void PhysicsEvent::Draw(){
-
-    cout << "Drawing PhysicsEvent: " << endl;
-
-    TCanvas * c = new TCanvas(to_string(event_number).c_str(),to_string(event_number).c_str(), 1600, 1200);
-    c->Divide(2,4);
-    unsigned int pad=0;
-    // for(auto i : phy_chs_)
-    // {
-    //     pad+=+2;
-    //     if(pad > 8) pad =1;
-    //     c->cd(pad);
-    //     i.second->GetWaveformHist()->Draw();
-    // }
-
-    string ped_can_name = to_string(event_number) + " Pedestral";
-    TCanvas * c_ped = new TCanvas(ped_can_name.c_str(), ped_can_name.c_str(), 1600, 1200);
-    c_ped->Divide(2,4);
-    pad=0;
-    for(auto i : phy_chs_)
+map<string, TH1I*> PhysicsEvent::GetPedestal()
+{
+    map<string, TH1I*> rtn;
+    for(auto & itr : channels_)
     {
-        pad+=+2;
-        if(pad > 8) pad =1;
-        c_ped->cd(pad);
-        i.second->GetPedestral()->Draw();
+        rtn[itr.first]  =  itr.second->GetPedestal();
     }
 
-
+    return rtn;
 }

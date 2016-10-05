@@ -173,31 +173,30 @@ int main(int argc, char* argv[]) {
     TApplication *app=new TApplication("app",0,0);
 
 	//test
-	path path_file_root		= "/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-01-01/Run-400999/data_root/Event-400999001.root";
-	path path_file_ini		= "/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-01-01/Run-400999/data_root/Event-400999001.ini";
-	path path_online_rate	= "/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-01-01/Run-400999/Rate-Run--9990";
+	// path path_file_root		= "/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-01-01/Run-400999/data_root/Event-400999001.root";
+	// path path_file_ini		= "/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-01-01/Run-400999/data_root/Event-400999001.ini";
+	// path path_online_rate	= "/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-01-01/Run-400999/Rate-Run--9990";
 
 	// path path_file_root		= "./Run-400999/data_root/Event-400999001.root";
 	// path path_file_ini		= "./Run-400999/data_root/Event-400999001.ini";
 	// path path_online_rate	= "./Run-400999/Rate-Run--9990";
 
 //	TH1::AddDirectory(kFALSE);
-	short cont;
-	cout << sizeof(cont) << endl;
+	// short cont;
+	// cout << sizeof(cont) << endl;
 
 	// PhysicsEvent *event=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
 	// PhysicsEvent *event1=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
 	// PhysicsEvent *event2=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
-	// PhysicsEvent *event3=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
-	PhysicsEvent *event4=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
-	event4->Draw();
+	// // PhysicsEvent *event3=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
+	// PhysicsEvent *event4=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
+	// event4->Draw();
 
 
+	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-01-01/Run-400999"));
+	
+	myrun.Pedestal();
 
-
-	// Run myrun(path( "/remote/ceph/group/ilc/claws/data/RAW/connecticut/16-05-23/Run-" + string(argv[1]) ) );
-	//
-	// myrun.WriteNTuple(path_to_ntuple);
 
 
 	app->Run();
