@@ -222,19 +222,19 @@ void PhysicsEvent::Draw(){
     TCanvas * c = new TCanvas(to_string(event_number).c_str(),to_string(event_number).c_str(), 1600, 1200);
     c->Divide(2,4);
     unsigned int pad=0;
-    for(auto & i : phy_chs_)
-    {
-        pad+=+2;
-        if(pad > 8) pad =1;
-        c->cd(pad);
-        i.second->GetWaveformHist()->Draw();
-    }
+    // for(auto i : phy_chs_)
+    // {
+    //     pad+=+2;
+    //     if(pad > 8) pad =1;
+    //     c->cd(pad);
+    //     i.second->GetWaveformHist()->Draw();
+    // }
 
     string ped_can_name = to_string(event_number) + " Pedestral";
     TCanvas * c_ped = new TCanvas(ped_can_name.c_str(), ped_can_name.c_str(), 1600, 1200);
     c_ped->Divide(2,4);
     pad=0;
-    for(auto & i : phy_chs_)
+    for(auto i : phy_chs_)
     {
         pad+=+2;
         if(pad > 8) pad =1;
