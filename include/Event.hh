@@ -33,8 +33,8 @@ using namespace boost::filesystem;
 class Event{
 
     public:
-
-        // Event();
+        //TODO -fix event name und numbger
+        
         Event(const path &file_root, const path &file_ini);
         Event(const path &file_root, const path &file_ini, const path &file_online_rate);
 
@@ -102,7 +102,10 @@ class PhysicsEvent : public Event{
 
         map<string, TH1I*>     GetPedestral();
 
-        map<string, PhysicsChannel*> phy_chs_;
+        void Draw();
+
+        map<string, Channel*> phy_chs_;
+        //map<string, PhysicsChannel*> phy_chs_;
 
 };
 

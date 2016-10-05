@@ -1,10 +1,6 @@
 
 
-
-
 -include src/subdir.mk
-
-
 
 
 
@@ -17,7 +13,7 @@ INCLUDES  += -I"./include"
 CALI_OBJS += ./build/calibration.o
 ANA_OBJS += ./build/analysis.o
 
-all: clean build/calibration build/analysis
+all: monkey clean build/calibration build/analysis
 
 
 # Link Calibration
@@ -51,3 +47,22 @@ build/%.o: ./%.cxx
 clean:
 	@echo 'Cleaning up!'
 	rm -rf './build'
+
+monkey:
+	@echo ┈┈┈┈┈┈┈┈┈┈┈?????????????
+	@echo ┈┈╱▔▔▔▔▔╲┈┈┈??????????
+	@echo ┈╱┈┈╱▔╲╲╲▏┈┈┈?????┈
+	@echo ╱┈┈╱━╱▔▔▔▔▔╲━╮┈┈
+	@echo ▏┈▕┃▕╱▔╲╱▔╲▕╮┃┈┈
+	@echo ▏┈▕╰━▏▊▕▕▋▕▕━╯┈┈
+	@echo ╲┈┈╲╱▔╭╮▔▔┳╲╲┈┈┈
+	@echo ┈╲┈┈▏╭━━━━╯▕▕┈┈┈
+	@echo ┈┈╲┈╲▂▂▂▂▂▂╱╱┈┈┈
+	@echo ┈┈┈┈▏┊┈┈┈┈┊┈┈┈╲┈
+	@echo ┈┈┈┈▏┊┈┈┈┈┊▕╲┈┈╲
+	@echo ┈╱▔╲▏┊┈┈┈┈┊▕╱▔╲▕
+	@echo ┈▏┈┈┈╰┈┈┈┈╯┈┈┈▕▕
+	@echo ┈╲┈┈┈╲┈┈┈┈╱┈┈┈╱┈╲
+	@echo ┈┈╲┈┈▕▔▔▔▔▏┈┈╱╲╲╲▏
+	@echo ┈╱▔┈┈▕┈┈┈┈▏┈┈▔╲▔▔
+	@echo ┈╲▂▂▂╱┈┈┈┈╲▂▂▂╱┈

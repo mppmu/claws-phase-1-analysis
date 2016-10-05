@@ -170,7 +170,7 @@ int main(int argc, char* argv[]) {
 	// //	myrun.WriteNTuple(path_to_ntuple);
 	// }
 
-
+    TApplication *app=new TApplication("app",0,0);
 
 	//test
 	path path_file_root		= "/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-01-01/Run-400999/data_root/Event-400999001.root";
@@ -180,21 +180,15 @@ int main(int argc, char* argv[]) {
 //	TH1::AddDirectory(kFALSE);
 	short cont;
 	cout << sizeof(cont) << endl;
-	PhysicsEvent *event=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
-	PhysicsEvent *event1=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
-	PhysicsEvent *event2=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
-	PhysicsEvent *event3=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
-	cout << "Cont nr4"<< endl;
-	cin >> cont;
-	cout << cont <<endl;
 
+	// PhysicsEvent *event=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
+	// PhysicsEvent *event1=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
+	// PhysicsEvent *event2=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
+	// PhysicsEvent *event3=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
 	PhysicsEvent *event4=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
+	event4->Draw();
 
 
-
-	cout<< "Cont nr5"<< endl;
-	cin >> cont;
-	cout << cont <<endl;
 
 
 	// Run myrun(path( "/remote/ceph/group/ilc/claws/data/RAW/connecticut/16-05-23/Run-" + string(argv[1]) ) );
@@ -202,6 +196,7 @@ int main(int argc, char* argv[]) {
 	// myrun.WriteNTuple(path_to_ntuple);
 
 
+	app->Run();
 
 	return 0;
 
