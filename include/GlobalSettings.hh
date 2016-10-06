@@ -98,8 +98,8 @@ class GlobalSettings
         const int n_bits_       = 65536;
         const int n_bits_scope_  = 256;
 
-        const double x_low_        = -1 * n_bits_scope_/2 ;
-        const double x_up_         =  x_low_ +  n_bits_scope_;
+        const double x_low_        = -1 * n_bits_scope_/2 -0.5;
+        const double x_up_         =  x_low_ +  n_bits_scope_ +1;
 
         boost::filesystem::path hook_;
 
