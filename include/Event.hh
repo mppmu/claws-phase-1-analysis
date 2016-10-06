@@ -8,21 +8,40 @@
 #ifndef CLAWS_EVENT_H_
 #define CLAWS_EVENT_H_
 
-// std includes
+//std includes
+#include <iostream>
+#include <fstream>
 #include <vector>
-#include <string>
 #include <map>
+#include <string>
+#include <cstdlib>
+#include <typeinfo>
+// boost
+#include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/ini_parser.hpp>
+// #include <boost/program_options.hpp>
+// #include <boost/filesystem/fstream.hpp>
+// #include <boost/algorithm/string/predicate.hpp>
+// #include <boost/foreach.hpp>
+
 // root includes
 #include <TFile.h>
 #include <TH1D.h>
 #include <TH1I.h>
-#include <TTree.h>
-#include <TBranch.h>
-// Boost
-#include<boost/filesystem.hpp>
+#include "TApplication.h"
+#include <TCanvas.h>
+#include <TF1.h>
 // Project includes
 #include "Channel.hh"
+
+
 using namespace std;
+using namespace boost;
+//needed for all the paths
 using namespace boost::filesystem;
 
 
@@ -36,31 +55,22 @@ class Event{
         //TODO -fix event name und numbger
 
         Event(const path &file_root, const path &file_ini);
-        Event(const path &file_root, const path &file_ini, const path &file_online_rate);
 
         virtual ~Event();
 
         virtual void                   LoadRootFile()   = 0;
         virtual void                   LoadIniFile()    = 0;
-        virtual void                   LoadOnlineRate() = 0;
-        virtual map<string, TH1I*>     GetPedestal()   = 0;
 
         void SubtractPedestal();
 
         void             LoadPedestal();
 
+        double                 GetUnixtime()  const;
 
-
-        bool    GetInjection() const;
-        double  GetUnixtime()  const;
-        int     GetLerBg()     const;
-        int     GetHerBg()     const;
-	    int     GetEventNr()   const;
-
+	    int                    GetEventNr()   const;
+        map<string, TH1I*>     GetPedestal();
 
         static int GetId();
-
-        double* GetRateOnline();
 
         int getCh(string ch);
         virtual void Draw();
@@ -72,15 +82,13 @@ class Event{
         // An event relies on data/information in three different files. The .root, .ini & the online monitor.
         path path_file_root_;
         path path_file_ini_;
-        path path_online_rate_;
+
+        property_tree::ptree pt_;
 
 	    int event_number        = -1;
         double unixtime_        = -1;
-        int lerbg_              = -1;
-        int herbg_              = -1;
-        bool injection_         = false;
-	    double rate_online_[8]  = {};
-        double rate_offline_[8] = {};
+
+
 
 
         TFile *file;
@@ -101,13 +109,43 @@ class PhysicsEvent : public Event{
         void                   LoadIniFile();
         void                   LoadOnlineRate();
 
-        map<string, TH1I*>     GetPedestal();
+        double*                GetRateOnline();
+        int                    GetLerBg()     const;
+        int                    GetHerBg()     const;
+        bool                   GetInjection() const;
 
+        path path_online_rate_;
 
+        int lerbg_              = -1;
+        int herbg_              = -1;
+        bool injection_         = false;
+
+        double rate_online_[8];
+        double rate_offline_[8];
 
         // map<string, PhysicsChannel*> channels_;
         //map<string, PhysicsChannel*> phy_chs_;
 
 };
+
+class IntEvent : public Event{
+
+    public:
+
+        // PhysicsEvent();
+        IntEvent(const path &file_root, const path &file_ini);
+
+        ~IntEvent();
+
+        void                   LoadRootFile();
+        void                   LoadIniFile();
+
+
+
+
+
+
+};
+
 
 #endif /* CLAWS_EVENT_H_ */

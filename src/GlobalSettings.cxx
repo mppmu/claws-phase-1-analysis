@@ -17,6 +17,29 @@ claws::GlobalSettings * GS = new claws::GlobalSettings();
 
 namespace claws {
 
+        double ConvertRange(int in){
+            double ranges[] = {10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000};
+            return ranges[in];
+        };
+
+        int8_t ConvertOffset(double offset, int rn)
+        {
+            double range = ConvertRange(rn);
+
+            if(offset >= 0){
+                return int8_t(offset*1000/range * 127);
+            }
+            else if(offset < 0)
+            {
+                return int8_t(offset*1000/range * 128);
+            }
+            else
+            {
+                std::cout << "Couldn't convert Offset!" << std::endl;
+                return 0;
+            }
+        };
+
         std::string StringRunMode(RunMode mode)
         {
             if     (mode == DEV)        return "dev";
@@ -27,6 +50,32 @@ namespace claws {
             else if(mode == ORION)      return "orion";
             else                        return "Who knows!";
         };
+
+        std::string indent(int level) {
+          std::string s;
+          for (int i=0; i<level; i++) s += "  ";
+          return s;
+        }
+
+        void printTree (pt::ptree &pt, int level) {
+          if (pt.empty()) {
+            std::cerr << "\""<< pt.data()<< "\"";
+          } else {
+            if (level) std::cerr << std::endl;
+            std::cerr << indent(level) << "{" << std::endl;
+            for (pt::ptree::iterator pos = pt.begin(); pos != pt.end();) {
+              std::cerr << indent(level+1) << "\"" << pos->first << "\": ";
+              printTree(pos->second, level + 1);
+              ++pos;
+              if (pos != pt.end()) {
+                std::cerr << ",";
+              }
+              std::cerr << std::endl;
+            }
+            std::cerr << indent(level) << " }";
+          }
+          return;
+        }
 
         GlobalSettings::GlobalSettings() : hook_("")
         {

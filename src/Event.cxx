@@ -7,37 +7,6 @@
 // Description :
 //============================================================================
 
-
- //std includes
- #include <iostream>
- #include <fstream>
- #include <vector>
- #include <map>
- #include <string>
- #include <cstdlib>
- #include <typeinfo>
-
- // boost
- #include <boost/filesystem.hpp>
- #include <boost/lexical_cast.hpp>
- #include <boost/algorithm/string/predicate.hpp>
- #include <boost/algorithm/string/replace.hpp>
- #include <boost/property_tree/ptree.hpp>
- #include <boost/property_tree/ini_parser.hpp>
- // #include <boost/program_options.hpp>
- // #include <boost/filesystem/fstream.hpp>
- // #include <boost/algorithm/string/predicate.hpp>
- // #include <boost/foreach.hpp>
-
- // root includes
-#include <TFile.h>
-#include <TH1D.h>
-#include <TH1I.h>
-#include "TApplication.h"
-#include <TCanvas.h>
-#include <TF1.h>
-
-// Project includes
 #include "Event.hh"
 
 using namespace std;
@@ -63,13 +32,6 @@ Event::Event(const path &file_root, const path &file_ini)
 
 };
 
-Event::Event(const path &file_root, const path &file_ini, const path &file_online_rate):Event(file_root, file_ini)
-{
-
-    path_online_rate_    =   file_online_rate;
-
-};
-
 void Event::SubtractPedestal()
 {
 
@@ -79,24 +41,10 @@ void Event::SubtractPedestal()
     }
 }
 
-bool Event::GetInjection()  const
-{
-    return injection_;
-}
 
 double Event::GetUnixtime() const
 {
     return unixtime_;
-}
-
-int Event::GetLerBg()       const
-{
-    return lerbg_;
-}
-
-int Event::GetHerBg()       const
-{
-    return herbg_;
 }
 
 int Event::GetEventNr()     const
@@ -116,24 +64,25 @@ void Event::Draw(){
     cout << "Drawing PhysicsEvent: "<< event_number << endl;
 
     TCanvas * c = new TCanvas(to_string(event_number).c_str(),to_string(event_number).c_str(), 1600, 1200);
-    c->Divide(2,4);
+    c->Divide(2, channels_.size()/2);
     unsigned int pad=0;
+
     for(auto i : channels_)
     {
         pad+=+2;
-        if(pad > 8) pad =1;
+        if(pad > channels_.size()) pad =1;
         c->cd(pad);
         i.second->GetWaveformHist()->Draw();
     }
 
     string ped_can_name = to_string(event_number) + " Pedestal";
     TCanvas * c_ped = new TCanvas(ped_can_name.c_str(), ped_can_name.c_str(), 1600, 1200);
-    c_ped->Divide(2,4);
+    c_ped->Divide(2, channels_.size()/2);
     pad=0;
     for(auto i : channels_)
     {
         pad+=+2;
-        if(pad > 8) pad =1;
+        if(pad > channels_.size() ) pad =1;
         c_ped->cd(pad);
         i.second->GetPedestal()->Draw();
     }
@@ -141,9 +90,16 @@ void Event::Draw(){
 
 }
 
-double* Event::GetRateOnline(){
-    return rate_online_;
-}
+map<string, TH1I*> Event::GetPedestal()
+{
+    map<string, TH1I*> rtn;
+    for(auto & itr : channels_)
+    {
+        rtn[itr.first]  =  itr.second->GetPedestal();
+    }
+
+    return rtn;
+};
 
 Event::~Event() {
 	// TODO Auto-generated destructor stub
@@ -155,15 +111,18 @@ Event::~Event() {
 PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini): Event(file_root ,file_ini)
 {
     cout << "Loading PhysicsEvent: " << file_root.string() << endl;
+
+    fill_n(rate_online_, 8, -1);
+    fill_n(rate_offline_, 8, -1);
+
     this->LoadRootFile();
     this->LoadIniFile();
 };
 
-PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini, const path &file_online_rate): Event(file_root, file_ini, file_online_rate)
+PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini, const path &file_online_rate): PhysicsEvent(file_root, file_ini)
 {
-    cout << "Loading PhysicsEvent: " << file_root.string() << endl;
-    this->LoadRootFile();
-    this->LoadIniFile();
+    path_online_rate_ = file_online_rate;
+
     this->LoadOnlineRate();
 };
 
@@ -198,12 +157,11 @@ void PhysicsEvent::LoadRootFile()
 
 void PhysicsEvent::LoadIniFile(){
 
-    property_tree::ptree pt;
-	property_tree::ini_parser::read_ini(path_file_ini_.string(), pt);
+	property_tree::ini_parser::read_ini(path_file_ini_.string(), pt_);
 
-    unixtime_   = pt.get<double>("Properties.UnixTime");
-	lerbg_      = pt.get<int>("SuperKEKBData.LERBg");
-	herbg_      = pt.get<int>("SuperKEKBData.HERBg");
+    unixtime_   = pt_.get<double>("Properties.UnixTime");
+	lerbg_      = pt_.get<int>("SuperKEKBData.LERBg");
+	herbg_      = pt_.get<int>("SuperKEKBData.HERBg");
 
     if (lerbg_ || herbg_ ) injection_ = true;
     else                   injection_ = false;
@@ -225,13 +183,67 @@ void PhysicsEvent::LoadOnlineRate(){
     ratefile.close();
 };
 
-map<string, TH1I*> PhysicsEvent::GetPedestal()
+double* PhysicsEvent::GetRateOnline(){
+    return rate_online_;
+}
+
+bool PhysicsEvent::GetInjection()  const
 {
-    map<string, TH1I*> rtn;
-    for(auto & itr : channels_)
+    return injection_;
+}
+
+int PhysicsEvent::GetLerBg()       const
+{
+    return lerbg_;
+}
+
+int PhysicsEvent::GetHerBg()       const
+{
+    return herbg_;
+}
+
+//----------------------------------------------------------------------------------------------
+// Definition of the IntEvent class derived from Event.
+//----------------------------------------------------------------------------------------------
+IntEvent::IntEvent(const path &file_root, const path &file_ini): Event(file_root ,file_ini)
+{
+    cout << "Loading Intermediate Event: " << file_root.string() << endl;
+    this->LoadRootFile();
+
+};
+
+void IntEvent::LoadRootFile()
+{
+    file = new TFile(path_file_root_.string().c_str(), "open");
+
+    channels_["FWD1-INT"] = new IntChannel("FWD1");
+    channels_["FWD2-INT"] = new IntChannel("FWD2");
+    channels_["FWD3-INT"] = new IntChannel("FWD3");
+
+    channels_["BWD1-INT"] = new IntChannel("BWD1");
+    channels_["BWD2-INT"] = new IntChannel("BWD2");
+    channels_["BWD3-INT"] = new IntChannel("BWD3");
+
+    for (auto &itr : channels_)
     {
-        rtn[itr.first]  =  itr.second->GetPedestal();
+        itr.second->LoadWaveform(file);
+        itr.second->LoadPedestal();
     }
 
-    return rtn;
+    file->Close("R");
+    delete file;
+
 }
+
+void IntEvent::LoadIniFile()
+{
+    property_tree::ini_parser::read_ini(path_file_ini_.string(), pt_);
+
+    unixtime_   = pt_.get<double>("Properties.UnixTime");
+
+    //TODO load the rest that is written in the .ini file.
+}
+
+IntEvent::~IntEvent() {
+	// TODO Auto-generated destructor stub
+};

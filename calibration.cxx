@@ -55,31 +55,7 @@ int error(){
 	return 0;
 }
 
-string indent(int level) {
-  string s;
-  for (int i=0; i<level; i++) s += "  ";
-  return s;
-}
 
-void printTree (pt::ptree &pt, int level) {
-  if (pt.empty()) {
-    cerr << "\""<< pt.data()<< "\"";
-  } else {
-    if (level) cerr << endl;
-    cerr << indent(level) << "{" << endl;
-    for (pt::ptree::iterator pos = pt.begin(); pos != pt.end();) {
-      cerr << indent(level+1) << "\"" << pos->first << "\": ";
-      printTree(pos->second, level + 1);
-      ++pos;
-      if (pos != pt.end()) {
-        cerr << ",";
-      }
-      cerr << endl;
-    }
-    cerr << indent(level) << " }";
-  }
-  return;
-}
 
 // string fileFromPath(path p){
 // 	cout << p.filename() << endl;
@@ -194,7 +170,7 @@ int main(int argc, char* argv[]) {
 
 
 	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-01-01/Run-400999"));
-	
+
 	myrun.Pedestal();
 
 

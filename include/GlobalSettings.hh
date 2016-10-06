@@ -17,10 +17,18 @@
 #include <sstream>
 #include <vector>
 // boost includes
-#include <boost/filesystem.hpp>
 #include <boost/format.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/program_options.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/ini_parser.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/foreach.hpp>
 
+namespace pt = boost::property_tree;
 
 namespace claws {
 
@@ -46,8 +54,12 @@ enum RunMode
     ORION           // assigned 5
 };
 
-
+double ConvertRange(int in);
+int8_t ConvertOffset(double offset, int rn);
 std::string StringRunMode(RunMode mode);
+
+std::string indent(int level);
+void printTree (pt::ptree &pt, int level=0) ;
 
 class GlobalSettings
 {
@@ -86,8 +98,8 @@ class GlobalSettings
         const int n_bits_       = 65536;
         const int n_bits_scope_  = 256;
 
-        const int x_low_        = -1 * n_bits_scope_/2;
-        const int x_up_         =  x_low_ +  n_bits_scope_ -1;
+        const double x_low_        = -1 * n_bits_scope_/2 ;
+        const double x_up_         =  x_low_ +  n_bits_scope_;
 
         boost::filesystem::path hook_;
 
