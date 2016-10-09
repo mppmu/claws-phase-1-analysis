@@ -32,12 +32,13 @@ Event::Event(const path &file_root, const path &file_ini)
 
 };
 
-void Event::SubtractPedestal()
+void Event::SubtractPedestal(map<string, double> ped)
 {
-
-    for(auto i : channels_)
+    for(auto &c : channels_)
     {
-        i.second->SubtractPedestal( 5);
+        cout << "name: " << c.first << endl;
+        cout << "ped: " << ped[c.first] << endl;
+        c.second->SubtractPedestal( ped[c.first] );
     }
 }
 
@@ -110,12 +111,12 @@ Event::~Event() {
 //----------------------------------------------------------------------------------------------
 PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini): Event(file_root ,file_ini)
 {
-    cout << "Loading PhysicsEvent: " << file_root.string() << endl;
+//    cout << "Loading PhysicsEvent: " << file_root.string() << endl;
 
-    fill_n(rate_online_, 8, -1);
+    fill_n(rate_online_, 6, -1);
     fill_n(rate_offline_, 8, -1);
 
-    this->LoadRootFile();
+    // this->LoadRootFile();
     this->LoadIniFile();
 };
 
@@ -139,10 +140,10 @@ void PhysicsEvent::LoadRootFile()
     channels_["FWD3"] = new PhysicsChannel("FWD3");
     channels_["FWD4"] = new PhysicsChannel("FWD4");
 
-    channels_["BWD1"] = new PhysicsChannel("BWD1");
-    channels_["BWD2"] = new PhysicsChannel("BWD2");
-    channels_["BWD3"] = new PhysicsChannel("BWD3");
-    channels_["BWD4"] = new PhysicsChannel("BWD4");
+    // channels_["BWD1"] = new PhysicsChannel("BWD1");
+    // channels_["BWD2"] = new PhysicsChannel("BWD2");
+    // channels_["BWD3"] = new PhysicsChannel("BWD3");
+    // channels_["BWD4"] = new PhysicsChannel("BWD4");
 
     for (auto &itr : channels_)
     {
@@ -177,8 +178,8 @@ void PhysicsEvent::LoadOnlineRate(){
         cerr << "not file" << endl;
         exit(1);
     }
-
-    ratefile >> rate_online_[0] >> rate_online_[1] >> rate_online_[2] >> rate_online_[3] >> rate_online_[4] >> rate_online_[5] >> rate_online_[6] >> rate_online_[7];
+    double dummy;
+    ratefile >> rate_online_[0] >> rate_online_[1] >> rate_online_[2] >> dummy >> rate_online_[3] >> rate_online_[4] >> rate_online_[5] >> dummy;
 
     ratefile.close();
 };
@@ -207,7 +208,7 @@ int PhysicsEvent::GetHerBg()       const
 //----------------------------------------------------------------------------------------------
 IntEvent::IntEvent(const path &file_root, const path &file_ini): Event(file_root ,file_ini)
 {
-    cout << "Loading Intermediate Event: " << file_root.string() << endl;
+//    cout << "Loading Intermediate Event: " << file_root.string() << endl;
     this->LoadRootFile();
 
 };

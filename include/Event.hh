@@ -61,7 +61,7 @@ class Event{
         virtual void                   LoadRootFile()   = 0;
         virtual void                   LoadIniFile()    = 0;
 
-        void SubtractPedestal();
+        void SubtractPedestal(map<string, double> ped);
 
         void             LoadPedestal();
 
@@ -120,7 +120,7 @@ class PhysicsEvent : public Event{
         int herbg_              = -1;
         bool injection_         = false;
 
-        double rate_online_[8];
+        double rate_online_[6];
         double rate_offline_[8];
 
         // map<string, PhysicsChannel*> channels_;

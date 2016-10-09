@@ -37,6 +37,7 @@
 #include "TAxis.h"
 #include "TApplication.h"
 #include "TCanvas.h"
+#include <TStyle.h>
 
 // project includes
 #include "Event.hh"
@@ -90,7 +91,7 @@ int main(int argc, char* argv[]) {
 	cout << "|         Starting CLAWS phase I data calibration       |" << endl;
 	cout << "---------------------------------------------------------" << endl;
 
-
+	gStyle->SetOptFit(11111);
 //-------------------------------------------------------------
 // First get the corresponding Tmin and Tmac from the beast run
 //-------------------------------------------------------------
@@ -138,15 +139,15 @@ int main(int argc, char* argv[]) {
 
 	// string file_runstart = "";
 	// string file_runstop  = "";
-	// path path_to_ntuple = GS->ResetHook()->SetData()->SetNtp()->SetDetector(claws::CLW)->SetDate(atoi(argv[1]), 1, 16)->GetHook();
-	// std::vector <boost::filesystem::path> files = GS->ResetHook()->SetData()->SetRaw()->SetMode(claws::CONNECTICUT)->SetDate(atoi(argv[1]), 1, 16)->GetRawFiles();
-	// for(unsigned int i =0; i< files.size();i++){
-	// 	Run myrun(path(files.at(i)));
-	// 	myrun.SubtractPedestral();
-	// //	myrun.WriteNTuple(path_to_ntuple);
-	// }
+	path path_to_ntuple = GS->ResetHook()->SetData()->SetNtp()->SetDetector(claws::CLW)->SetDate(atoi(argv[1]), 5, 16)->GetHook();
+	std::vector <boost::filesystem::path> files = GS->ResetHook()->SetData()->SetRaw()->SetMode(claws::CONNECTICUT)->SetDate(atoi(argv[1]), 5, 16)->GetRawFiles();
+	for(unsigned int i =0; i< files.size();i++){
+		Run myrun(path(files.at(i)));
+		// myrun.SubtractPedestral();
+		myrun.WriteNTuple(path_to_ntuple);
+	}
 
-    TApplication *app=new TApplication("app",0,0);
+    // TApplication *app=new TApplication("app",0,0);
 
 	//test
 	// path path_file_root		= "/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-01-01/Run-400999/data_root/Event-400999001.root";
@@ -169,13 +170,13 @@ int main(int argc, char* argv[]) {
 	// event4->Draw();
 
 
-	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-01-01/Run-400999"));
+	// Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-01-01/Run-400999"));
 
-	myrun.Pedestal();
+	// myrun.Pedestal();
 
 
 
-	app->Run();
+	// app->Run();
 
 	return 0;
 
