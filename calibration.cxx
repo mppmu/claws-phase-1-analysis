@@ -137,17 +137,16 @@ int main(int argc, char* argv[]) {
 //	path path_to_rate("/remote/ceph/group/ilc/claws/data/claws_phaseI/connecticut/16-05-26/Run-401161/ok.dat");
 
 
-	// string file_runstart = "";
-	// string file_runstop  = "";
-	path path_to_ntuple = GS->ResetHook()->SetData()->SetNtp()->SetDetector(claws::CLW)->SetDate(atoi(argv[1]), 5, 16)->GetHook();
-	std::vector <boost::filesystem::path> files = GS->ResetHook()->SetData()->SetRaw()->SetMode(claws::CONNECTICUT)->SetDate(atoi(argv[1]), 5, 16)->GetRawFiles();
-	for(unsigned int i =0; i< files.size();i++){
-		Run myrun(path(files.at(i)));
-		// myrun.SubtractPedestral();
-		myrun.WriteNTuple(path_to_ntuple);
-	}
+	// Online Data
+	// path path_to_ntuple = GS->ResetHook()->SetData()->SetNtp()->SetDetector(claws::CLW)->SetDate(atoi(argv[1]), 5, 16)->GetHook();
+	// std::vector <boost::filesystem::path> files = GS->ResetHook()->SetData()->SetRaw()->SetMode(claws::CONNECTICUT)->SetDate(atoi(argv[1]), 5, 16)->GetRawFiles();
+	// for(unsigned int i =0; i< files.size();i++){
+	// 	Run myrun(path(files.at(i)));
+	// 	// myrun.SubtractPedestral();
+	// 	myrun.WriteNTuple(path_to_ntuple);
+	// }
 
-    // TApplication *app=new TApplication("app",0,0);
+
 
 	//test
 	// path path_file_root		= "/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-01-01/Run-400999/data_root/Event-400999001.root";
@@ -169,14 +168,14 @@ int main(int argc, char* argv[]) {
 	// PhysicsEvent *event4=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
 	// event4->Draw();
 
+	TApplication *app=new TApplication("app",0,0);
+	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-23/Run-400999"));
 
-	// Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-01-01/Run-400999"));
-
-	// myrun.Pedestal();
+	myrun.Pedestal();
 
 
 
-	// app->Run();
+	app->Run();
 
 	return 0;
 

@@ -36,8 +36,6 @@ void Event::SubtractPedestal(map<string, double> ped)
 {
     for(auto &c : channels_)
     {
-        cout << "name: " << c.first << endl;
-        cout << "ped: " << ped[c.first] << endl;
         c.second->SubtractPedestal( ped[c.first] );
     }
 }
@@ -116,7 +114,7 @@ PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini): Event(f
     fill_n(rate_online_, 6, -1);
     fill_n(rate_offline_, 8, -1);
 
-    // this->LoadRootFile();
+    this->LoadRootFile();
     this->LoadIniFile();
 };
 
@@ -140,10 +138,10 @@ void PhysicsEvent::LoadRootFile()
     channels_["FWD3"] = new PhysicsChannel("FWD3");
     channels_["FWD4"] = new PhysicsChannel("FWD4");
 
-    // channels_["BWD1"] = new PhysicsChannel("BWD1");
-    // channels_["BWD2"] = new PhysicsChannel("BWD2");
-    // channels_["BWD3"] = new PhysicsChannel("BWD3");
-    // channels_["BWD4"] = new PhysicsChannel("BWD4");
+    channels_["BWD1"] = new PhysicsChannel("BWD1");
+    channels_["BWD2"] = new PhysicsChannel("BWD2");
+    channels_["BWD3"] = new PhysicsChannel("BWD3");
+    channels_["BWD4"] = new PhysicsChannel("BWD4");
 
     for (auto &itr : channels_)
     {
