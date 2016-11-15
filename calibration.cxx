@@ -131,15 +131,10 @@ int main(int argc, char* argv[]) {
 //----------------------------------------------------------------------------------------------
 
 
-	// path path_to_day("/remote/ceph/group/ilc/claws/data/claws_phaseI/connecticut/16-05-23");
-//	path path_to_day("/remote/ceph/group/ilc/claws/data/claws_phaseI/connecticut/16-05-18");
-//	path path_to_ntuple("/remote/ceph/group/ilc/claws/data/NTP/CLAWS/16-05-23");
-//	path path_to_rate("/remote/ceph/group/ilc/claws/data/claws_phaseI/connecticut/16-05-26/Run-401161/ok.dat");
 
-
-	// Online Data
-	// path path_to_ntuple = GS->ResetHook()->SetData()->SetNtp()->SetDetector(claws::CLW)->SetDate(atoi(argv[1]), 5, 16)->GetHook();
-	// std::vector <boost::filesystem::path> files = GS->ResetHook()->SetData()->SetRaw()->SetMode(claws::CONNECTICUT)->SetDate(atoi(argv[1]), 5, 16)->GetRawFiles();
+	// //Online Data
+	// path path_to_ntuple = GS->ResetHook()->SetData()->SetNtp()->SetDetector(claws::CLW)->SetDate(atoi(argv[1]), 6, 16)->GetHook();
+	// std::vector <boost::filesystem::path> files = GS->ResetHook()->SetData()->SetRaw()->SetMode(claws::CONNECTICUT)->SetDate(atoi(argv[1]), 6, 16)->GetRawFiles();
 	// for(unsigned int i =0; i< files.size();i++){
 	// 	Run myrun(path(files.at(i)));
 	// 	// myrun.SubtractPedestral();
@@ -157,25 +152,17 @@ int main(int argc, char* argv[]) {
 	// path path_file_ini		= "./Run-400999/data_root/Event-400999001.ini";
 	// path path_online_rate	= "./Run-400999/Rate-Run--9990";
 
-//	TH1::AddDirectory(kFALSE);
-	// short cont;
-	// cout << sizeof(cont) << endl;
+	TH1::AddDirectory(kFALSE);
 
-	// PhysicsEvent *event=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
-	// PhysicsEvent *event1=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
-	// PhysicsEvent *event2=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
-	// // PhysicsEvent *event3=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
-	// PhysicsEvent *event4=new PhysicsEvent(path_file_root, path_file_ini, path_online_rate);
-	// event4->Draw();
+//	TApplication *app=new TApplication("app",0,0);
+//	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-23/Run-400999"));
+	Run myrun(path("./Run-400999"));
 
-	TApplication *app=new TApplication("app",0,0);
-	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-23/Run-400999"));
-
-	myrun.Pedestal();
+//	myrun.Pedestal();
 
 
 
-	app->Run();
+//	app->Run();
 
 	return 0;
 

@@ -4,9 +4,11 @@
 
 
 
-CFLAGS   += `root-config --cflags`
+CFLAGS   += -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free `root-config --cflags` -I/remote/pcilc3/software/gperftools/include
+# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
 
-LFLAGS    += `root-config --libs --glibs` -lboost_system -lboost_filesystem
+LFLAGS    += -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free `root-config --libs --glibs` -lboost_system -lboost_filesystem -L/remote/pcilc3/software/gperftools/lib -lprofiler -ltcmalloc
+# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
 
 INCLUDES  += -I"./include"
 

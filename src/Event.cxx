@@ -114,24 +114,16 @@ PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini): Event(f
     fill_n(rate_online_, 6, -1);
     fill_n(rate_offline_, 8, -1);
 
-    this->LoadRootFile();
-    this->LoadIniFile();
-};
 
-PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini, const path &file_online_rate): PhysicsEvent(file_root, file_ini)
-{
-    path_online_rate_ = file_online_rate;
-
-    this->LoadOnlineRate();
-};
-
-PhysicsEvent::~PhysicsEvent() {
-	// TODO Auto-generated destructor stub
-};
-
-void PhysicsEvent::LoadRootFile()
-{
+    // TODO This should actually be in the LoadRootFile(). However, because root is a piece of shit, the gperf heap profiler can only be
+    // called after that.
     file = new TFile(path_file_root_.string().c_str(), "open");
+
+    if(file->IsZombie())
+    {
+        cout << "Error openning file" << endl;
+        exit(-1);
+    }
 
     channels_["FWD1"] = new PhysicsChannel("FWD1");
     channels_["FWD2"] = new PhysicsChannel("FWD2");
@@ -143,14 +135,44 @@ void PhysicsEvent::LoadRootFile()
     channels_["BWD3"] = new PhysicsChannel("BWD3");
     channels_["BWD4"] = new PhysicsChannel("BWD4");
 
+};
+
+PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini, const path &file_online_rate): PhysicsEvent(file_root, file_ini)
+{
+    path_online_rate_ = file_online_rate;
+
+    // this->LoadOnlineRate();
+};
+
+PhysicsEvent::~PhysicsEvent() {
+	// TODO Auto-generated destructor stub
+};
+
+void PhysicsEvent::LoadRootFile()
+{
+    // HeapProfilerDump("PhysicsChannel created");
+
     for (auto &itr : channels_)
     {
         itr.second->LoadWaveform(file);
+        // HeapProfilerDump("Waveform loaded");
         itr.second->LoadPedestal();
+        // HeapProfilerDump("Pedestral loaded");
+
     }
+
+    // HeapProfilerStop();
+    // cout << "Event number " << event_number << endl;
+
+    // for (auto &itr : channels_)
+    // {
+    //     long int size = sizeof(vector<int8_t>) + sizeof(int8_t)*itr.second->GetWaveform()->size();
+    //     cout << itr.first << ": " << size << endl;
+    // }
 
     file->Close("R");
     delete file;
+    file = NULL;
 
 }
 
@@ -158,12 +180,21 @@ void PhysicsEvent::LoadIniFile(){
 
 	property_tree::ini_parser::read_ini(path_file_ini_.string(), pt_);
 
-    unixtime_   = pt_.get<double>("Properties.UnixTime");
-	lerbg_      = pt_.get<int>("SuperKEKBData.LERBg");
-	herbg_      = pt_.get<int>("SuperKEKBData.HERBg");
+    unixtime_       = pt_.get<double>("Properties.UnixTime");
+	lerbg_          = pt_.get<int>("SuperKEKBData.LERBg");
+	herbg_          = pt_.get<int>("SuperKEKBData.HERBg");
+    kekb_status_    = pt_.get<string>("SuperKEKBData.SuperKEKBStatus");
+    ler_status_     = pt_.get<string>("SuperKEKBData.LERSTatus");
+    her_status_     = pt_.get<string>("SuperKEKBData.HERStatus");
 
-    if (lerbg_ || herbg_ ) injection_ = true;
-    else                   injection_ = false;
+    if (lerbg_ || herbg_ )                      injection_ = true;
+    else                                        injection_ = false;
+    if(kekb_status_ == "Vacuum Scrubbing"
+     && ler_status_ == "Vacuum Scrubbing"
+     && her_status_ == "Vacuum Scrubbing")      scrubbing_ = 3;
+    else if(ler_status_ == "Vacuum Scrubbing")  scrubbing_ = 1;
+    else if(her_status_ == "Vacuum Scrubbing")  scrubbing_ = 2;
+    else                                        scrubbing_ = 0;
 
     //TODO load the rest that is written in the .ini file.
 };
@@ -189,6 +220,11 @@ double* PhysicsEvent::GetRateOnline(){
 bool PhysicsEvent::GetInjection()  const
 {
     return injection_;
+}
+
+int PhysicsEvent::GetScrubbing()  const
+{
+    return scrubbing_;
 }
 
 int PhysicsEvent::GetLerBg()       const

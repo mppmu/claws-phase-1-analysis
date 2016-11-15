@@ -28,6 +28,11 @@
 // #include <boost/algorithm/string/predicate.hpp>
 // #include <boost/foreach.hpp>
 
+
+// gperf
+#include <gperftools/heap-profiler.h>
+#include <gperftools/profiler.h>
+
 // root includes
 #include <TFile.h>
 #include <TH1D.h>
@@ -113,12 +118,17 @@ class PhysicsEvent : public Event{
         int                    GetLerBg()     const;
         int                    GetHerBg()     const;
         bool                   GetInjection() const;
+        int                    GetScrubbing() const;
 
         path path_online_rate_;
 
         int lerbg_              = -1;
         int herbg_              = -1;
         bool injection_         = false;
+        std::string kekb_status_    = "";
+        std::string ler_status_ ="";
+        std::string her_status_ = "";
+        int scrubbing_        = 0;
 
         double rate_online_[6];
         double rate_offline_[8];
