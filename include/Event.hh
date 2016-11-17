@@ -44,7 +44,6 @@
 #include "Channel.hh"
 
 
-using namespace std;
 using namespace boost;
 //needed for all the paths
 using namespace boost::filesystem;
@@ -72,8 +71,10 @@ class Event{
 
         double                 GetUnixtime()  const;
 
-	    int                    GetEventNr()   const;
-        map<string, TH1I*>     GetPedestal();
+	    int                    GetNr()   const;
+        std::string             GetNrStr() const;
+        std::map<std::string, TH1I*>     GetPedestal();
+        std::map<std::string, Channel*>  GetChannels();
 
         static int GetId();
 
@@ -90,7 +91,8 @@ class Event{
 
         property_tree::ptree pt_;
 
-	    int event_number        = -1;
+	    int nr_        = -1;
+        std::string nr_str_;
         double unixtime_        = -1;
 
 
@@ -98,7 +100,7 @@ class Event{
 
         TFile *file;
 
-        map<string, Channel*> channels_;
+        std::map<std::string, Channel*> channels_;
 };
 
 class PhysicsEvent : public Event{

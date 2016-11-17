@@ -17,6 +17,7 @@
  #include <cstdlib>
  #include <typeinfo>
 
+
  // boost
  #include <boost/filesystem.hpp>
  #include <boost/lexical_cast.hpp>
@@ -46,7 +47,7 @@
 #include "Run.hh"
 
 using namespace std;
-using namespace boost;
+
 
 
 //----------------------------------------------------------------------------------------------
@@ -58,37 +59,147 @@ Run::Run(path p)
 
     path_run_ = p;
     // Extract the runnumer from the path to the folder and convert it to int.
-    run_number_ = atoi(path_run_.filename().string().substr(4,20).c_str());
+    run_nr_     = atoi(path_run_.filename().string().substr(4,20).c_str());
+    run_nr_str_ = path_run_.filename().string().substr(4,20);
+
     cout << "--------------------------------------------------"<< endl;
-    cout << "Loading Run:  " << run_number_ << endl;
+    cout << "Syncing Run:  " << run_nr_ << endl;
 
-    path path_data = path_run_ / path("data_root");
-    this->LoadEventFiles(path_data);
+    // Check if the converted root, data & intermediate folders are available.
+    if( !boost::filesystem::is_directory(path_run_/path("data_root"))  )
+    {
+        cout << "run folder does not exits!" << endl;
+        exit(-1);
+    }
 
-    path path_int = path_run_ / path("int_root");
-    this->LoadIntFiles(path_int);
+    if( !boost::filesystem::is_directory(path_run_/path("data_root"))
+        && boost::filesystem::is_empty(path_run_/path("data_root"))    )
+    {
+        cout << "data_root folder does not exits!" << endl;
+        exit(-1);
+    }
+
+    if( !boost::filesystem::is_directory(path_run_/path("int_root"))
+        && boost::filesystem::is_empty(path_run_/path("int_root"))     )
+    {
+        cout << "int_root folder does not exits!" << endl;
+        exit(-1);
+    }
+
+    if(!boost::filesystem::is_directory(path_run_/path("calibration")) )
+    {
+        boost::filesystem::create_directory(path_run_/path("calibration"));
+    }
+
+    cout << "Done Syncing Run!" << endl;
+};
+
+
+void Run::LoadRawData()
+{
+    cout << "Loading Raw Data:  " << run_nr_ << endl;
+    this->LoadEventFiles();
+
+    this->LoadIntFiles();
 
     this->LoadRunSettings();
 
-    tsMin = events_.front()->GetUnixtime();
-    tsMax = events_.back()->GetUnixtime();
+    if(!boost::filesystem::is_directory(path_run_/path("calibration/raw")) )
+    {
+        boost::filesystem::create_directory(path_run_/path("calibration/raw"));
+    }
 
+    std::string filename = path_run_.string()+"/calibration/raw/Run-"+run_nr_str_+"_raw.root";
+    TFile *rfile = new TFile(filename.c_str(), "RECREATE");
 
+    rfile->mkdir("events");
+    for(auto &e : events_)
+    {
+        rfile->cd();
+        rfile->mkdir(("events/"+e->GetNrStr()).c_str());
+        rfile->cd(("events/"+e->GetNrStr()).c_str());
 
-    cout << "Done Loading Run!" << endl;
+        std::map<std::string, Channel*> chs= e->GetChannels();
+
+        for(auto &ch : chs)
+        {
+            TCanvas c(ch.first.c_str(),ch.first.c_str(),500,500);
+            TH1I* hist = ch.second->GetWaveformHist();
+            hist->Draw();
+            c.Write();
+            delete hist;
+            hist = NULL;
+        }
+
+    }
+
+    rfile->mkdir("int");
+
+    for(auto &e : int_events_)
+    {
+        rfile->cd();
+        cout << e->GetNrStr() <<endl;
+        rfile->mkdir(("int/"+e->GetNrStr()).c_str());
+        rfile->cd(("int/"+e->GetNrStr()).c_str());
+
+        std::map<std::string, Channel*> chs= e->GetChannels();
+
+        for(auto &ch : chs)
+        {
+            TCanvas c(ch.first.c_str(),ch.first.c_str(),500,500);
+            TH1I* hist = ch.second->GetWaveformHist();
+            hist->Draw();
+            c.Write();
+            delete hist;
+            hist = NULL;
+        }
+
+    }
+
+    rfile->Close();
+    delete rfile;
+    rfile = NULL;
+
 };
-void Run::LoadEventFiles(path path_data)
+
+void Run::PedestalSubtraction()
 {
+    cout << "Running Pedestal Subraction" << endl;
+
+    this->LoadPedestal();
+    this->FitPedestal();
+    this
+    this->SubtractPedestal();
+
+
+}
+
+
+void Run::LoadEventFiles()
+{
+    // Method to load all the information that is located in the data_root folder with
+    // following steps:
+    //      1. Look into the data_root folder and create a PhysicalEvent object for
+    //         each event.root file & check if file for online particle rate and
+    //         do exist
+    //      2. Loop through all objects in events_ and load the raw data from the
+    //         corresponding root file
+    //      3. Loop through all objects in events_ and load the oneline monitor
+    //         particle rate from textfile
+    //      4. Loop through all objects in events_ and load the event specific settings
+    //         from the event.ini file
+
     // Look into the data folder of the run and get a list/vector of all the events inside
+    path path_data = path_run_ / path("data_root");
+
     vector<path> folder_content;
     copy(directory_iterator(path_data), directory_iterator(), back_inserter(folder_content));
-    // HeapProfilerStart("/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/profiles/heapprof");
-//    ProfilerStart("/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/profiles/cpuprof.prof");
+    std::sort(folder_content.begin(),folder_content.end());
 
     for (vector<path>::const_iterator itr = folder_content.begin(); itr != folder_content.end(); ++itr)
     {
         //claws::ProgressBar((itr - folder_content.begin()+1.)/(folder_content.end()-folder_content.begin()));
-	    if(    is_regular_file(*itr)
+	    if(    boost::filesystem::is_regular_file(*itr)
             && starts_with((*itr).filename().string(), "Event-")
             && ends_with((*itr).filename().string(), ".root"))
         {
@@ -107,29 +218,24 @@ void Run::LoadEventFiles(path path_data)
                 path path_online_rate = path_run_ / ratefile;
 
                 // Check if the .ini & online monitor exist for the event.
-                if( exists( path_file_ini) && exists( path_online_rate)){
+                if( boost::filesystem::exists( path_file_ini) && boost::filesystem::exists( path_online_rate)){
 
                     events_.push_back(new PhysicsEvent(path_file_root, path_file_ini, path_online_rate));
                 }
                 else{
                     //TODO put in some mechanism in case the ini or the online rate files do not exist.
                 }
-        };
-    };
-
-    HeapProfilerStart("/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/profiles/heapprof");
-
-    cout << "Loading Root Files:" << endl;
+        }
+    }
 
     for(auto & e : events_)
     {
         claws::ProgressBar((&e - &events_[0]+1.)/(events_.end()-events_.begin()));
         e->LoadRootFile();
-        HeapProfilerDump("Rootfile loaded");
+//        HeapProfilerDump("Rootfile loaded");
     }
 
     cout << "Loading Online Rate Files:" << endl;
-
     for(auto & e : events_)
     {
         claws::ProgressBar((&e - &events_[0]+1.)/(events_.end()-events_.begin()));
@@ -142,28 +248,28 @@ void Run::LoadEventFiles(path path_data)
     {
         claws::ProgressBar((&e - &events_[0]+1.)/(events_.end()-events_.begin()));
         e->LoadIniFile();
-        HeapProfilerDump("Inifile loaded");
+//        HeapProfilerDump("Inifile loaded");
     }
 
+//    HeapProfilerStop();
 
-    HeapProfilerStop();
-
-}
+};
 
 
-void Run::LoadIntFiles(path path_int)
+void Run::LoadIntFiles()
 {
-
+    path path_int = path_run_/path("int_root");
     vector<path> folder_content;
     copy(directory_iterator(path_int), directory_iterator(), back_inserter(folder_content));
+    std::sort(folder_content.begin(),folder_content.end());
 
-    cout << "Intermediate Files:" << endl;
+    cout << "Loading Intermediate Files:" << endl;
 
     for (vector<path>::const_iterator itr = folder_content.begin(); itr != folder_content.end(); ++itr)
     {
         claws::ProgressBar((itr - folder_content.begin()+1.)/(folder_content.end()-folder_content.begin()));
-        if(    is_regular_file(*itr)
-            && starts_with((*itr).filename().string(), ("Run-"+ to_string(run_number_) +"-Int") )
+        if(    boost::filesystem::is_regular_file(*itr)
+            && starts_with((*itr).filename().string(), ("Run-"+ to_string(run_nr_) +"-Int") )
             && ends_with((*itr).filename().string(), ".root"))
         {
             // Get the paths to the .root file of the event.
@@ -189,13 +295,12 @@ void Run::LoadIntFiles(path path_int)
 void Run::LoadRunSettings()
 {
     cout << "Run Settings:" << endl;
-    path ini_file  = path_run_ / ("Run-" + to_string(run_number_) + "-Settings.ini");
+    path ini_file  = path_run_ / ("Run-" + to_string(run_nr_) + "-Settings.ini");
 
-    if( is_regular_file(ini_file) && exists(ini_file) )
+    if( boost::filesystem::is_regular_file(ini_file) && exists(ini_file) )
     {
         property_tree::ini_parser::read_ini(ini_file.string(), settings_);
     }
-//    claws::printTree(settings_, 1);
 
 };
 
@@ -327,7 +432,7 @@ int Run::WriteOnlineTree(TFile* file)
 
 int Run::WriteTimeStamp(TFile* file)
 {
-    TTree *tout = new TTree("clw_skb","clw_skb");
+    TTree *tout = new TTree("tout","tout");
 
     double ts;
     bool injection;
@@ -350,12 +455,12 @@ int Run::WriteTimeStamp(TFile* file)
 
     delete tout;
 
-    return 0;
+    return 0;cout << "Loading Raw Data:  " << run_nr_ << endl;
 };
 
 int Run::WriteNTuple(path path_ntuple){
 
-    path_ntuple = path_ntuple / ("CLWv0.1-" +to_string(run_number_) +"-" + to_string((int)tsMin) +".root");
+    path_ntuple = path_ntuple / ("CLWv0.1-" +to_string(run_nr_) +"-" + to_string((int)tsMin) +".root");
     TFile * root_file  = new TFile(path_ntuple.string().c_str(), "RECREATE");
 
     this->WriteTimeStamp(root_file);
@@ -390,7 +495,7 @@ void Run::LoadPedestal()
     // Create the 8 Histos
     for(auto & itr : h_ped_)
     {
-        string title    = "Run-" + to_string(run_number_) + "-" + itr.first + "_pd";
+        string title    = "Run-" + to_string(run_nr_) + "-" + itr.first + "_pd";
 
         //TODO Get the fucking binning right!
         h_ped_[itr.first] = new TH1I(title.c_str(), title.c_str(), GS->GetNBitsScope() , GS->GetXLow(), GS->GetXUp());
@@ -426,7 +531,7 @@ void Run::LoadPedestal()
 
     for(auto & itr : h_ped_int_)
     {
-        string title    = "Run-" + to_string(run_number_) + "-" + itr.first + "_pd";
+        string title    = "Run-" + to_string(run_nr_) + "-" + itr.first + "_pd";
         h_ped_int_[itr.first] = new TH1I(title.c_str(), title.c_str(), GS->GetNBitsScope() , GS->GetXLow(), GS->GetXUp());
 
     }
@@ -452,7 +557,7 @@ void Run::FitPedestal()
 
     for(auto & itr : h_ped_)
     {
-        string name = to_string(run_number_) +"_"+ itr.first +"_pd_fit";
+        string name = to_string(run_nr_) +"_"+ itr.first +"_pd_fit";
 
         string section;
         if(itr.first == "FWD1")          section = "Scope-1-Channel-Settings-A";
@@ -479,7 +584,7 @@ void Run::FitPedestal()
 
     for(auto & itr : h_ped_int_)
     {
-        string name = to_string(run_number_) +"_"+ itr.first +"_pd_fit";
+        string name = to_string(run_nr_) +"_"+ itr.first +"_pd_fit";
 
         // TODO Check if a gaussain really is the best option to get the pedestral. A center of gravity might work better.
         TF1 *fit = new TF1(name.c_str(), "gaus" , -5 , 5 );
@@ -507,9 +612,28 @@ void Run::SubtractPedestal()
     }
 }
 
+void Run::SavePedestal()
+{
+    if(!boost::filesystem::is_directory(path_run_/path("Calibration")) )
+    {
+        boost::filesystem::create_directory(path_run_/path("Calibration"));
+    }
+
+    std::string filename = path_run_.string()+"Calibration/run-"+run_nr_str_+"_pedestal_subtraction.root";
+    TFile *rfile = new TFile(filename.c_str(), "RECREATE");
+    for(auto &p : h_ped_)
+    {
+        p.second->Write(p.first.c_str());
+    }
+    for(auto &i : h_ped_int_)
+    {
+        i.second->Write(i.first.c_str());
+    }
+}
+
 void Run::DrawPedestal()
 {
-    string title = to_string(run_number_);
+    string title = to_string(run_nr_);
     TCanvas * c = new TCanvas(title.c_str(), title.c_str(), 1600, 1200);
     c->Divide(2,h_ped_.size()/2);
     unsigned int pad=0;
@@ -535,13 +659,8 @@ void Run::DrawPedestal()
     }
 }
 
-void Run::Pedestal()
-{
-    this->LoadPedestal();
-    this->FitPedestal();
-    this->SubtractPedestal();
-    this->DrawPedestal();
-}
+
+
 
 Run::~Run() {
 	// TODO Auto-generated destructor stub

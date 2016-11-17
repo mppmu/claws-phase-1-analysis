@@ -91,9 +91,9 @@ TH1I* Channel::GetWaveformHist()
 
         TH1I* hist_wf = new TH1I( title.c_str(), title.c_str(), waveform_->size(), 0 , waveform_->size()*0.8);
 
-        for(unsigned int i = 1; i <= waveform_->size(); i++)
+        for(unsigned int i = 0; i < waveform_->size(); i++)
         {
-            hist_wf->SetBinContent(i, waveform_->at(i));
+            hist_wf->SetBinContent(i+1, waveform_->at(i));
         }
 
         return hist_wf;

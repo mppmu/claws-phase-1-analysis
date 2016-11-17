@@ -24,7 +24,6 @@
 #include "Event.hh"
 #include "GlobalSettings.hh"
 
-using namespace std;
 using namespace boost::filesystem;
 
 
@@ -49,15 +48,21 @@ class Run{
         int WriteTimeStamp(TFile* file);
         int WriteNTuple(path path_ntuple);
 
-        void Pedestal();
+
+        void SubtractPedestal();
         void LoadPedestal();
         void FitPedestal();
-        void SubtractPedestal();
+        void SavePedestal();
         void DrawPedestal();
 
-        void LoadEventFiles(path path_data);
-        void LoadIntFiles(path path_int);
+
+        void LoadEventFiles();
+        void LoadIntFiles();
         void LoadRunSettings();
+
+        // These methods are meant to be public in the end and used by the user
+        void PedestalSubtraction();
+        void LoadRawData();
 
         int    GetRunNr();
         double GetStartTime();
@@ -65,6 +70,7 @@ class Run{
         TTree *GetOnlineTree();
         TTree *GetOfflineTree();
 
+    protected:
 
 
     private:
@@ -75,7 +81,8 @@ class Run{
         double tsMin;
         double tsMax;
 
-        int run_number_;
+        int run_nr_;
+        std::string run_nr_str_;
 
         TTree *tree_online;
         TTree *tree_offline;
@@ -83,14 +90,14 @@ class Run{
 
         property_tree::ptree settings_;
 
-        vector<PhysicsEvent*>   events_;
-        vector<IntEvent*>       int_events_;
+        std::vector<PhysicsEvent*>   events_;
+        std::vector<IntEvent*>       int_events_;
 
-        map<string, double> ped_;
-        map<string, double> ped_int_;
+        std::map<string, double> ped_;
+        std::map<string, double> ped_int_;
 
-        map<string, TH1I*> h_ped_;
-        map<string, TH1I*> h_ped_int_;
+        std::map<string, TH1I*> h_ped_;
+        std::map<string, TH1I*> h_ped_int_;
 };
 
 #endif /* CLAWS_RUN_H_ */

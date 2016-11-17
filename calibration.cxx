@@ -157,8 +157,8 @@ int main(int argc, char* argv[]) {
 //	TApplication *app=new TApplication("app",0,0);
 //	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-23/Run-400999"));
 	Run myrun(path("./Run-400999"));
-
-//	myrun.Pedestal();
+	myrun.LoadRawData();
+	myrun.PedestalSubtraction();
 
 
 

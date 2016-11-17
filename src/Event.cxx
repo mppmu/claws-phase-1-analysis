@@ -46,9 +46,14 @@ double Event::GetUnixtime() const
     return unixtime_;
 }
 
-int Event::GetEventNr()     const
+int Event::GetNr()     const
 {
-    return event_number;
+    return nr_;
+}
+
+std::string Event::GetNrStr()     const
+{
+    return nr_str_;
 }
 
 int Event::getCh(string ch){
@@ -60,9 +65,9 @@ int Event::getCh(string ch){
 
 void Event::Draw(){
 
-    cout << "Drawing PhysicsEvent: "<< event_number << endl;
+    cout << "Drawing PhysicsEvent: "<< nr_ << endl;
 
-    TCanvas * c = new TCanvas(to_string(event_number).c_str(),to_string(event_number).c_str(), 1600, 1200);
+    TCanvas * c = new TCanvas(to_string(nr_).c_str(),to_string(nr_).c_str(), 1600, 1200);
     c->Divide(2, channels_.size()/2);
     unsigned int pad=0;
 
@@ -74,7 +79,7 @@ void Event::Draw(){
         i.second->GetWaveformHist()->Draw();
     }
 
-    string ped_can_name = to_string(event_number) + " Pedestal";
+    string ped_can_name = to_string(nr_) + " Pedestal";
     TCanvas * c_ped = new TCanvas(ped_can_name.c_str(), ped_can_name.c_str(), 1600, 1200);
     c_ped->Divide(2, channels_.size()/2);
     pad=0;
@@ -89,9 +94,9 @@ void Event::Draw(){
 
 }
 
-map<string, TH1I*> Event::GetPedestal()
+std::map<std::string, TH1I*> Event::GetPedestal()
 {
-    map<string, TH1I*> rtn;
+    std::map<std::string, TH1I*> rtn;
     for(auto & itr : channels_)
     {
         rtn[itr.first]  =  itr.second->GetPedestal();
@@ -99,6 +104,11 @@ map<string, TH1I*> Event::GetPedestal()
 
     return rtn;
 };
+
+std::map<std::string, Channel*> Event::GetChannels()
+{
+    return channels_;
+}
 
 Event::~Event() {
 	// TODO Auto-generated destructor stub
@@ -109,15 +119,18 @@ Event::~Event() {
 //----------------------------------------------------------------------------------------------
 PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini): Event(file_root ,file_ini)
 {
-//    cout << "Loading PhysicsEvent: " << file_root.string() << endl;
 
     fill_n(rate_online_, 6, -1);
     fill_n(rate_offline_, 8, -1);
 
+    nr_     = atoi(file_root.filename().string().substr(6,15).c_str());
+    nr_str_ = file_root.filename().string().substr(6,9);
 
     // TODO This should actually be in the LoadRootFile(). However, because root is a piece of shit, the gperf heap profiler can only be
     // called after that.
     file = new TFile(path_file_root_.string().c_str(), "open");
+    // cout << "Listing gDirectory in PhysicsEvent::PhysicsEvent!" << endl;
+    // gDirectory->ls();
 
     if(file->IsZombie())
     {
@@ -140,8 +153,6 @@ PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini): Event(f
 PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini, const path &file_online_rate): PhysicsEvent(file_root, file_ini)
 {
     path_online_rate_ = file_online_rate;
-
-    // this->LoadOnlineRate();
 };
 
 PhysicsEvent::~PhysicsEvent() {
@@ -150,30 +161,20 @@ PhysicsEvent::~PhysicsEvent() {
 
 void PhysicsEvent::LoadRootFile()
 {
-    // HeapProfilerDump("PhysicsChannel created");
 
     for (auto &itr : channels_)
     {
         itr.second->LoadWaveform(file);
-        // HeapProfilerDump("Waveform loaded");
         itr.second->LoadPedestal();
-        // HeapProfilerDump("Pedestral loaded");
 
     }
-
-    // HeapProfilerStop();
-    // cout << "Event number " << event_number << endl;
-
-    // for (auto &itr : channels_)
-    // {
-    //     long int size = sizeof(vector<int8_t>) + sizeof(int8_t)*itr.second->GetWaveform()->size();
-    //     cout << itr.first << ": " << size << endl;
-    // }
-
+    //     cout << "Listing gDirectory in PhysicsEvent::LoadRootFile() after loading!" << endl;
+    // gDirectory->ls();
     file->Close("R");
     delete file;
     file = NULL;
-
+    // cout << "Listing gDirectory in PhysicsEvent::LoadRootFile() after closing the file!" << endl;
+    // gDirectory->ls();
 }
 
 void PhysicsEvent::LoadIniFile(){
@@ -243,6 +244,11 @@ int PhysicsEvent::GetHerBg()       const
 IntEvent::IntEvent(const path &file_root, const path &file_ini): Event(file_root ,file_ini)
 {
 //    cout << "Loading Intermediate Event: " << file_root.string() << endl;
+
+    nr_str_ = file_root.filename().string().substr(14,3);
+    nr_     = atoi(nr_str_.c_str());
+
+
     this->LoadRootFile();
 
 };
