@@ -158,7 +158,7 @@ int main(int argc, char* argv[]) {
 //	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-23/Run-400999"));
 	Run myrun(path("./Run-400999"));
 	myrun.LoadRawData();
-	myrun.PedestalSubtraction();
+//	myrun.PedestalSubtraction();
 
 
 

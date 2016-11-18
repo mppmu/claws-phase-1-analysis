@@ -38,8 +38,10 @@
 #include <TCanvas.h>
 #include <TF1.h>
 
+// OpenMP
+#include <omp.h>
 
-//
+// google performance tools
 #include <gperftools/heap-profiler.h>
 #include <gperftools/profiler.h>
 
@@ -54,7 +56,7 @@ using namespace std;
 // Definition of the Run class.
 //----------------------------------------------------------------------------------------------
 
-Run::Run(path p)
+Run::Run(boost::filesystem::path p)
 {
 
     path_run_ = p;
@@ -86,9 +88,9 @@ Run::Run(path p)
         exit(-1);
     }
 
-    if(!boost::filesystem::is_directory(path_run_/path("calibration")) )
+    if(!boost::filesystem::is_directory(path_run_/path("Calibration")) )
     {
-        boost::filesystem::create_directory(path_run_/path("calibration"));
+        boost::filesystem::create_directory(path_run_/path("Calibration"));
     }
 
     cout << "Done Syncing Run!" << endl;
@@ -100,17 +102,29 @@ void Run::LoadRawData()
     cout << "Loading Raw Data:  " << run_nr_ << endl;
     this->LoadEventFiles();
 
-    this->LoadIntFiles();
+    // this->LoadIntFiles();
+    //
+    // this->LoadRunSettings();
+    //
+    // if(!boost::filesystem::is_directory(path_run_/boost::filesystem::path("Calibration/raw")) )
+    // {
+    //     boost::filesystem::create_directory(path_run_/boost::filesystem::path("Calibration/raw"));
+    // }
+    //
+    // boost::filesystem::path fname = path_run_.string()/boost::filesystem::path("/Calibration/raw/Run-"+run_nr_str_+"_raw.root");
+    // this->SaveEvents(fname);
 
-    this->LoadRunSettings();
-
-    if(!boost::filesystem::is_directory(path_run_/path("calibration/raw")) )
+    for(auto &e : events_)
     {
-        boost::filesystem::create_directory(path_run_/path("calibration/raw"));
+
+        std::cout<< "Event: "<<e->GetNrStr()<< std::endl;
     }
 
-    std::string filename = path_run_.string()+"/calibration/raw/Run-"+run_nr_str_+"_raw.root";
-    TFile *rfile = new TFile(filename.c_str(), "RECREATE");
+};
+
+void Run::SaveEvents(boost::filesystem::path fname)
+{
+    TFile *rfile = new TFile(fname.string().c_str(), "RECREATE");
 
     rfile->mkdir("events");
     for(auto &e : events_)
@@ -124,7 +138,7 @@ void Run::LoadRawData()
         for(auto &ch : chs)
         {
             TCanvas c(ch.first.c_str(),ch.first.c_str(),500,500);
-            TH1I* hist = ch.second->GetWaveformHist();
+            TH1F* hist = ch.second->GetWaveformHist();
             hist->Draw();
             c.Write();
             delete hist;
@@ -138,7 +152,6 @@ void Run::LoadRawData()
     for(auto &e : int_events_)
     {
         rfile->cd();
-        cout << e->GetNrStr() <<endl;
         rfile->mkdir(("int/"+e->GetNrStr()).c_str());
         rfile->cd(("int/"+e->GetNrStr()).c_str());
 
@@ -147,7 +160,7 @@ void Run::LoadRawData()
         for(auto &ch : chs)
         {
             TCanvas c(ch.first.c_str(),ch.first.c_str(),500,500);
-            TH1I* hist = ch.second->GetWaveformHist();
+            TH1F* hist = ch.second->GetWaveformHist();
             hist->Draw();
             c.Write();
             delete hist;
@@ -168,9 +181,16 @@ void Run::PedestalSubtraction()
 
     this->LoadPedestal();
     this->FitPedestal();
-    this
-    this->SubtractPedestal();
+    this->SavePedestal();
+    this->Subtract();
 
+    if(!boost::filesystem::is_directory(path_run_/boost::filesystem::path("Calibration")) )
+    {
+        boost::filesystem::create_directory(path_run_/boost::filesystem::path("Calibration"));
+    }
+
+    boost::filesystem::path fname = path_run_.string()/boost::filesystem::path("/Calibration/run-"+run_nr_str_+"_events_subtracted.root");
+    this->SaveEvents(fname);
 
 }
 
@@ -196,18 +216,21 @@ void Run::LoadEventFiles()
     copy(directory_iterator(path_data), directory_iterator(), back_inserter(folder_content));
     std::sort(folder_content.begin(),folder_content.end());
 
-    for (vector<path>::const_iterator itr = folder_content.begin(); itr != folder_content.end(); ++itr)
+    omp_set_num_threads(4);
+
+    #pragma omp parallel for ordered
+    for (signed int i=0; i<folder_content.size(); ++i)
     {
-        //claws::ProgressBar((itr - folder_content.begin()+1.)/(folder_content.end()-folder_content.begin()));
-	    if(    boost::filesystem::is_regular_file(*itr)
-            && starts_with((*itr).filename().string(), "Event-")
-            && ends_with((*itr).filename().string(), ".root"))
+    //     //claws::ProgressBar((itr - folder_content.begin()+1.)/(folder_content.end()-folder_content.begin()));
+        if(    boost::filesystem::is_regular_file(folder_content.at(i))
+            && starts_with(folder_content.at(i).filename().string(), "Event-")
+            && ends_with(folder_content.at(i).filename().string(), ".root"))
         {
                 // Get the paths to the .root file of the event.
-                path path_file_root = (*itr);
+                path path_file_root = folder_content.at(i);
                 cout << "Loading file: " << path_file_root.string() << endl;
                 // Get the path to the .ini file.
-                string tmp          = (*itr).filename().string();
+                string tmp          = folder_content.at(i).filename().string();
                 replace_last( tmp, ".root" , ".ini");
                 path path_file_ini  = path_data / path(tmp);
 
@@ -218,15 +241,48 @@ void Run::LoadEventFiles()
                 path path_online_rate = path_run_ / ratefile;
 
                 // Check if the .ini & online monitor exist for the event.
-                if( boost::filesystem::exists( path_file_ini) && boost::filesystem::exists( path_online_rate)){
-
-                    events_.push_back(new PhysicsEvent(path_file_root, path_file_ini, path_online_rate));
+                if( boost::filesystem::exists( path_file_ini) && boost::filesystem::exists( path_online_rate))
+                {
+                        #pragma omp ordered
+                        events_.push_back(new PhysicsEvent(path_file_root, path_file_ini, path_online_rate));
                 }
                 else{
                     //TODO put in some mechanism in case the ini or the online rate files do not exist.
                 }
         }
     }
+
+    // for (vector<path>::const_iterator itr = folder_content.begin(); itr != folder_content.end(); ++itr)
+    // {
+    //     //claws::ProgressBar((itr - folder_content.begin()+1.)/(folder_content.end()-folder_content.begin()));
+	//     if(    boost::filesystem::is_regular_file(*itr)
+    //         && starts_with((*itr).filename().string(), "Event-")
+    //         && ends_with((*itr).filename().string(), ".root"))
+    //     {
+    //             // Get the paths to the .root file of the event.
+    //             path path_file_root = (*itr);
+    //             cout << "Loading file: " << path_file_root.string() << endl;
+    //             // Get the path to the .ini file.
+    //             string tmp          = (*itr).filename().string();
+    //             replace_last( tmp, ".root" , ".ini");
+    //             path path_file_ini  = path_data / path(tmp);
+    //
+    //             // Get the path to the file from the online monitor
+    //             replace_first(tmp, "Event-","");
+    //             replace_last(tmp, ".ini", "");
+    //             string ratefile = "Rate-Run--" + to_string( atoi(tmp.substr(2,4).c_str())) + to_string( atoi(tmp.substr(6,10).c_str())-1 );
+    //             path path_online_rate = path_run_ / ratefile;
+    //
+    //             // Check if the .ini & online monitor exist for the event.
+    //             if( boost::filesystem::exists( path_file_ini) && boost::filesystem::exists( path_online_rate)){
+    //                 // #pragma omp ordered
+    //                 events_.push_back(new PhysicsEvent(path_file_root, path_file_ini, path_online_rate));
+    //             }
+    //             else{
+    //                 //TODO put in some mechanism in case the ini or the online rate files do not exist.
+    //             }
+    //     }
+    // }
 
     for(auto & e : events_)
     {
@@ -599,7 +655,7 @@ void Run::FitPedestal()
 
 
 
-void Run::SubtractPedestal()
+void Run::Subtract()
 {
     for (auto& ev : events_)
     {
@@ -619,8 +675,9 @@ void Run::SavePedestal()
         boost::filesystem::create_directory(path_run_/path("Calibration"));
     }
 
-    std::string filename = path_run_.string()+"Calibration/run-"+run_nr_str_+"_pedestal_subtraction.root";
+    std::string filename = path_run_.string()+"/Calibration/run-"+run_nr_str_+"_pedestal_subtraction.root";
     TFile *rfile = new TFile(filename.c_str(), "RECREATE");
+
     for(auto &p : h_ped_)
     {
         p.second->Write(p.first.c_str());
@@ -629,7 +686,11 @@ void Run::SavePedestal()
     {
         i.second->Write(i.first.c_str());
     }
-}
+
+    rfile->Close();
+    delete rfile;
+
+};
 
 void Run::DrawPedestal()
 {

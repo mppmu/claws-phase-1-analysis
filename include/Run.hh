@@ -24,9 +24,6 @@
 #include "Event.hh"
 #include "GlobalSettings.hh"
 
-using namespace boost::filesystem;
-
-
 //----------------------------------------------------------------------------------------------
 // Definition of the Run class. This class is supposed to do all gthe organization of a run.
 // TODO(mgabriel@mpp.mpg.de): Add some description
@@ -46,10 +43,10 @@ class Run{
 
         int WriteOnlineTree(TFile* file);
         int WriteTimeStamp(TFile* file);
-        int WriteNTuple(path path_ntuple);
+        int WriteNTuple(boost::filesystem::path path_ntuple);
 
 
-        void SubtractPedestal();
+        void Subtract();
         void LoadPedestal();
         void FitPedestal();
         void SavePedestal();
@@ -64,6 +61,8 @@ class Run{
         void PedestalSubtraction();
         void LoadRawData();
 
+        void SaveEvents(boost::filesystem::path fname);
+
         int    GetRunNr();
         double GetStartTime();
         double GetStopTime();
@@ -75,9 +74,9 @@ class Run{
 
     private:
 
-        int PathToRunNumber(path p);
+        int PathToRunNumber(boost::filesystem::path p);
 
-        path path_run_;
+        boost::filesystem::path path_run_;
         double tsMin;
         double tsMax;
 
@@ -88,7 +87,7 @@ class Run{
         TTree *tree_offline;
         TTree *tree_skb;
 
-        property_tree::ptree settings_;
+        boost::property_tree::ptree settings_;
 
         std::vector<PhysicsEvent*>   events_;
         std::vector<IntEvent*>       int_events_;

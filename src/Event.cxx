@@ -34,9 +34,9 @@ Event::Event(const path &file_root, const path &file_ini)
 
 void Event::SubtractPedestal(map<string, double> ped)
 {
-    for(auto &c : channels_)
+    for(auto &ch : channels_)
     {
-        c.second->SubtractPedestal( ped[c.first] );
+        ch.second->Subtract( ped[ch.first] );
     }
 }
 

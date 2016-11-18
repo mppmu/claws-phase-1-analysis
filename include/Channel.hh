@@ -36,17 +36,19 @@ class Channel
 
         virtual     void    LoadWaveform(TFile* file);
         virtual     void    LoadPedestal();
-        virtual     void    SubtractPedestal(double ped);
+        virtual     void    Subtract(double sb);
 
         virtual     void    PrintType() = 0;
 
         string  GetName();
-        vector<int8_t>*     GetWaveform();
-        TH1I*               GetWaveformHist();
+        //vector<int8_t>*     GetWaveform();
+        vector<float>*      GetWaveform();
+        TH1F*               GetWaveformHist();
         TH1I*               GetPedestal();
 
         string  name_;
-        vector<int8_t>*     waveform_   = NULL;
+        //vector<int8_t>*     waveform_   = NULL;
+        vector<float>*     waveform_   = NULL;
         TH1I*               pedestal_  = NULL;
         unsigned int        n_sample_   = 0;
         // void Draw();

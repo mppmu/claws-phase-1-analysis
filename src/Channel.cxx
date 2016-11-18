@@ -14,7 +14,8 @@
 
 Channel::Channel(string ch_name): name_(ch_name)
 {
-    waveform_       = new vector<int8_t>();
+    //waveform_       = new vector<int8_t>();
+    waveform_       = new vector<float>();
     string title    = name_+"_pd";
     pedestal_      = new TH1I(title.c_str(), title.c_str(), GS->GetNBitsScope() , GS->GetXLow(), GS->GetXUp());
     pedestal_->SetDirectory(0);            // Root is the most stupid BITCH!!!
@@ -63,11 +64,12 @@ void Channel::LoadPedestal()
 
 }
 
-void Channel::SubtractPedestal(double ped)
+void Channel::Subtract(double sb)
 {
     for (unsigned int i = 0; i < waveform_->size(); i++)
     {
-        waveform_->at(i) = waveform_->at(i)-ped;
+        waveform_->at(i) = waveform_->at(i)-sb;
+
     }
 }
 
@@ -76,20 +78,19 @@ string Channel::GetName()
     return name_;
 }
 
-vector<int8_t>* Channel::GetWaveform()
+vector<float>* Channel::GetWaveform()
+// vector<int8_t>* Channel::GetWaveform()
 {
     return waveform_;
 }
 
-TH1I* Channel::GetWaveformHist()
+TH1F* Channel::GetWaveformHist()
 {
     if( waveform_->size() != 0 )
     {
         string title = name_+"_wf";
-        int low  = *min_element(waveform_->begin(),waveform_->end());
-        int high = *max_element(waveform_->begin(),waveform_->end());
 
-        TH1I* hist_wf = new TH1I( title.c_str(), title.c_str(), waveform_->size(), 0 , waveform_->size()*0.8);
+        TH1F* hist_wf = new TH1F( title.c_str(), title.c_str(), waveform_->size(), 0 , waveform_->size()*0.8);
 
         for(unsigned int i = 0; i < waveform_->size(); i++)
         {
