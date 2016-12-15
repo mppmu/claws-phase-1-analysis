@@ -16,6 +16,8 @@
  #include <string>
  #include <cstdlib>
  #include <typeinfo>
+ #include <math.h>
+
 
 
  // boost
@@ -45,6 +47,7 @@
 #include <gperftools/heap-profiler.h>
 #include <gperftools/profiler.h>
 
+
 // Project includes
 #include "Run.hh"
 
@@ -64,7 +67,18 @@ Run::Run(boost::filesystem::path p)
     run_nr_     = atoi(path_run_.filename().string().substr(4,20).c_str());
     run_nr_str_ = path_run_.filename().string().substr(4,20);
 
-    cout << "--------------------------------------------------"<< endl;
+};
+
+void Run::SynchronizeFiles()
+{
+    /*
+    This method uses the path to the run folder to determine the number of events.
+    Afterwards it checks if all the files for all the events do exist. Finally it
+    creates one EventClass object for each physics and each intermedieate event with
+    the paths to all the files as a parameter => SynchronizeFiles().
+    */
+
+    // cout << "-------------------------------------------------------"<< endl;
     cout << "Syncing Run:  " << run_nr_ << endl;
 
     // Check if the converted root, data & intermediate folders are available.
@@ -93,14 +107,60 @@ Run::Run(boost::filesystem::path p)
         boost::filesystem::create_directory(path_run_/path("Calibration"));
     }
 
+    path path_data = path_run_ / path("data_root");
+
+    vector<path> folder_content;
+    copy(directory_iterator(path_data), directory_iterator(), back_inserter(folder_content));
+    std::sort(folder_content.begin(),folder_content.end());
+
+   #pragma omp parallel num_threads(7)
+   {
+       #pragma omp for ordered schedule(dynamic,1)
+        for (signed int i=0; i<folder_content.size(); ++i)
+        {
+    //     //claws::ProgressBar((itr - folder_content.begin()+1.)/(folder_content.end()-folder_content.begin()));
+            if(    boost::filesystem::is_regular_file(folder_content.at(i))
+                && starts_with(folder_content.at(i).filename().string(), "Event-")
+                && ends_with(folder_content.at(i).filename().string(), ".root"))
+            {
+                // Get the paths to the .root file of the event.
+                path path_file_root = folder_content.at(i);
+                // cout << "Loading file: " << path_file_root.string() << endl;
+                // Get the path to the .ini file.
+                string tmp          = folder_content.at(i).filename().string();
+                replace_last( tmp, ".root" , ".ini");
+                path path_file_ini  = path_data / path(tmp);
+
+                // Get the path to the file from the online monitor
+                replace_first(tmp, "Event-","");
+                replace_last(tmp, ".ini", "");
+                string ratefile = "Rate-Run--" + to_string( atoi(tmp.substr(2,4).c_str())) + to_string( atoi(tmp.substr(6,10).c_str())-1 );
+                path path_online_rate = path_run_ / ratefile;
+
+                // Check if the .ini & online monitor exist for the event.
+                if( boost::filesystem::exists( path_file_ini) && boost::filesystem::exists( path_online_rate))
+                {
+                        #pragma omp ordered
+                        events_.push_back(new PhysicsEvent(path_file_root, path_file_ini, path_online_rate));
+                }
+                else{
+                    //TODO put in some mechanism in case the ini or the online rate files do not exist.
+                }
+            }
+        }
+    }
+
     cout << "Done Syncing Run!" << endl;
 };
 
 
 void Run::LoadRawData()
 {
-    cout << "Loading Raw Data:  " << run_nr_ << endl;
+    cout << "Loading data:  " << run_nr_ << endl;
+
     this->LoadEventFiles();
+
+    cout << "Done loading data!" << endl;
 
     // this->LoadIntFiles();
     //
@@ -114,11 +174,11 @@ void Run::LoadRawData()
     // boost::filesystem::path fname = path_run_.string()/boost::filesystem::path("/Calibration/raw/Run-"+run_nr_str_+"_raw.root");
     // this->SaveEvents(fname);
 
-    for(auto &e : events_)
-    {
-
-        std::cout<< "Event: "<<e->GetNrStr()<< std::endl;
-    }
+    // for(auto &e : events_)
+    // {
+    //
+    //     std::cout<< "Event: "<<e->GetNrStr()<< std::endl;
+    // }
 
 };
 
@@ -205,55 +265,58 @@ void Run::LoadEventFiles()
     //      2. Loop through all objects in events_ and load the raw data from the
     //         corresponding root file
     //      3. Loop through all objects in events_ and load the oneline monitor
-    //         particle rate from textfile
-    //      4. Loop through all objects in events_ and load the event specific settings
-    //         from the event.ini file
-
+    //         pacout << "Loading Raw Data:  " << run_nr_ << endl;
     // Look into the data folder of the run and get a list/vector of all the events inside
-    path path_data = path_run_ / path("data_root");
-
-    vector<path> folder_content;
-    copy(directory_iterator(path_data), directory_iterator(), back_inserter(folder_content));
-    std::sort(folder_content.begin(),folder_content.end());
-
-    omp_set_num_threads(4);
-
-    #pragma omp parallel for ordered
-    for (signed int i=0; i<folder_content.size(); ++i)
-    {
-    //     //claws::ProgressBar((itr - folder_content.begin()+1.)/(folder_content.end()-folder_content.begin()));
-        if(    boost::filesystem::is_regular_file(folder_content.at(i))
-            && starts_with(folder_content.at(i).filename().string(), "Event-")
-            && ends_with(folder_content.at(i).filename().string(), ".root"))
-        {
-                // Get the paths to the .root file of the event.
-                path path_file_root = folder_content.at(i);
-                cout << "Loading file: " << path_file_root.string() << endl;
-                // Get the path to the .ini file.
-                string tmp          = folder_content.at(i).filename().string();
-                replace_last( tmp, ".root" , ".ini");
-                path path_file_ini  = path_data / path(tmp);
-
-                // Get the path to the file from the online monitor
-                replace_first(tmp, "Event-","");
-                replace_last(tmp, ".ini", "");
-                string ratefile = "Rate-Run--" + to_string( atoi(tmp.substr(2,4).c_str())) + to_string( atoi(tmp.substr(6,10).c_str())-1 );
-                path path_online_rate = path_run_ / ratefile;
-
-                // Check if the .ini & online monitor exist for the event.
-                if( boost::filesystem::exists( path_file_ini) && boost::filesystem::exists( path_online_rate))
-                {
-                        #pragma omp ordered
-                        events_.push_back(new PhysicsEvent(path_file_root, path_file_ini, path_online_rate));
-                }
-                else{
-                    //TODO put in some mechanism in case the ini or the online rate files do not exist.
-                }
-        }
-    }
+//     path path_data = path_run_ / path("data_root");
+//
+//     vector<path> folder_content;
+//     copy(directory_iterator(path_data), directory_iterator(), back_inserter(folder_content));
+//     std::sort(folder_content.begin(),folder_content.end());
+//
+//     double wall0 = claws::get_wall_time();
+//     double cpu0  = claws::get_cpu_time();
+//
+// //    #pragma omp parallel num_threads(7)
+// //    {
+// //        #pragma omp for ordered schedule(dynamic,1)
+//         for (signed int i=0; i<folder_content.size(); ++i)
+//         {
+//     //     //claws::ProgressBar((itr - folder_content.begin()+1.)/(folder_content.end()-folder_content.begin()));
+//             if(    boost::filesystem::is_regular_file(folder_content.at(i))
+//                 && starts_with(folder_content.at(i).filename().string(), "Event-")
+//                 && ends_with(folder_content.at(i).filename().string(), ".root"))
+//             {
+//                 // Get the paths to the .root file of the event.
+//                 path path_file_root = folder_content.at(i);
+//                 // cout << "Loading file: " << path_file_root.string() << endl;
+//                 // Get the path to the .ini file.
+//                 string tmp          = folder_content.at(i).filename().string();
+//                 replace_last( tmp, ".root" , ".ini");
+//                 path path_file_ini  = path_data / path(tmp);
+//
+//                 // Get the path to the file from the online monitor
+//                 replace_first(tmp, "Event-","");
+//                 replace_last(tmp, ".ini", "");
+//                 string ratefile = "Rate-Run--" + to_string( atoi(tmp.substr(2,4).c_str())) + to_string( atoi(tmp.substr(6,10).c_str())-1 );
+//                 path path_online_rate = path_run_ / ratefile;
+//
+//                 // Check if the .ini & online monitor exist for the event.
+//                 if( boost::filesystem::exists( path_file_ini) && boost::filesystem::exists( path_online_rate))
+//                 {
+// //                        #pragma omp ordered
+//                         events_.push_back(new PhysicsEvent(path_file_root, path_file_ini, path_online_rate));
+//                 }
+//                 else{
+//                     //TODO put in some mechanism in case the ini or the online rate files do not exist.
+//                 }
+//             }
+//         }
+// //    }
 
     // for (vector<path>::const_iterator itr = folder_content.begin(); itr != folder_content.end(); ++itr)
     // {
+
+
     //     //claws::ProgressBar((itr - folder_content.begin()+1.)/(folder_content.end()-folder_content.begin()));
 	//     if(    boost::filesystem::is_regular_file(*itr)
     //         && starts_with((*itr).filename().string(), "Event-")
@@ -284,28 +347,42 @@ void Run::LoadEventFiles()
     //     }
     // }
 
-    for(auto & e : events_)
+    double wall0 = claws::get_wall_time();
+    double cpu0  = claws::get_cpu_time();
+
+    #pragma omp parallel num_threads(7)
     {
-        claws::ProgressBar((&e - &events_[0]+1.)/(events_.end()-events_.begin()));
-        e->LoadRootFile();
-//        HeapProfilerDump("Rootfile loaded");
+        #pragma omp for schedule(dynamic,1)
+        for(unsigned int i=0; i< events_.size();i++)
+        {
+             //claws::ProgressBar((&e - &events_[0]+1.)/(events_.end()-events_.begin()));
+            events_.at(i)->LoadRootFile();
+             //HeapProfilerDump("Rootfile loaded");
+        }
+
     }
 
-    cout << "Loading Online Rate Files:" << endl;
-    for(auto & e : events_)
-    {
-        claws::ProgressBar((&e - &events_[0]+1.)/(events_.end()-events_.begin()));
-        e->LoadOnlineRate();
-    }
+    double wall1 = claws::get_wall_time();
+    double cpu1  = claws::get_cpu_time();
 
-
-    cout << "Loading Ini Files:" << endl;
-    for(auto & e : events_)
-    {
-        claws::ProgressBar((&e - &events_[0]+1.)/(events_.end()-events_.begin()));
-        e->LoadIniFile();
-//        HeapProfilerDump("Inifile loaded");
-    }
+    cout << "Wall Time = " << wall1 - wall0 << endl;
+    cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+//
+//     cout << "Loading Online Rate Files:" << endl;
+//     for(auto & e : events_)
+//     {
+//         claws::ProgressBar((&e - &events_[0]+1.)/(events_.end()-events_.begin()));
+//         e->LoadOnlineRate();
+//     }
+//
+//
+//     cout << "Loading Ini Files:" << endl;
+//     for(auto & e : events_)
+//     {
+//         claws::ProgressBar((&e - &events_[0]+1.)/(events_.end()-events_.begin()));
+//         e->LoadIniFile();
+// //        HeapProfilerDump("Inifile loaded");
+//     }
 
 //    HeapProfilerStop();
 
@@ -511,7 +588,7 @@ int Run::WriteTimeStamp(TFile* file)
 
     delete tout;
 
-    return 0;cout << "Loading Raw Data:  " << run_nr_ << endl;
+    return 0;
 };
 
 int Run::WriteNTuple(path path_ntuple){

@@ -126,17 +126,11 @@ PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini): Event(f
     nr_     = atoi(file_root.filename().string().substr(6,15).c_str());
     nr_str_ = file_root.filename().string().substr(6,9);
 
-    // TODO This should actually be in the LoadRootFile(). However, because root is a piece of shit, the gperf heap profiler can only be
-    // called after that.
-    file = new TFile(path_file_root_.string().c_str(), "open");
+
     // cout << "Listing gDirectory in PhysicsEvent::PhysicsEvent!" << endl;
     // gDirectory->ls();
 
-    if(file->IsZombie())
-    {
-        cout << "Error openning file" << endl;
-        exit(-1);
-    }
+
 
     channels_["FWD1"] = new PhysicsChannel("FWD1");
     channels_["FWD2"] = new PhysicsChannel("FWD2");
@@ -162,15 +156,29 @@ PhysicsEvent::~PhysicsEvent() {
 void PhysicsEvent::LoadRootFile()
 {
 
+    // TFile and TTree classes are not thread save, therefore, you have to look them.
+    #pragma omp critical
+    {
+        file = new TFile(path_file_root_.string().c_str(), "open");
+
+        if(file->IsZombie())
+        {
+            cout << "Error openning file" << endl;
+            exit(-1);
+        }
+    }
+
     for (auto &itr : channels_)
     {
         itr.second->LoadWaveform(file);
-        itr.second->LoadPedestal();
-
     }
     //     cout << "Listing gDirectory in PhysicsEvent::LoadRootFile() after loading!" << endl;
     // gDirectory->ls();
-    file->Close("R");
+    #pragma omp critical
+    {
+        file->Close("R");
+    }
+
     delete file;
     file = NULL;
     // cout << "Listing gDirectory in PhysicsEvent::LoadRootFile() after closing the file!" << endl;

@@ -55,6 +55,9 @@ namespace claws {
         ORION           // assigned 5
     };
 
+    double get_wall_time();
+    double get_cpu_time();
+
     void ProgressBar(float progress, int show_step_size = 1);
     double ConvertRange(int in);
     int8_t ConvertOffset(double offset, int rn);

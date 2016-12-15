@@ -46,6 +46,8 @@ class Run{
         int WriteNTuple(boost::filesystem::path path_ntuple);
 
 
+        void SynchronizeFiles();
+
         void Subtract();
         void LoadPedestal();
         void FitPedestal();
