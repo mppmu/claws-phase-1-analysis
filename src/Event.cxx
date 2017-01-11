@@ -7,6 +7,9 @@
 // Description :
 //============================================================================
 
+// OpenMP
+#include <omp.h>
+
 #include "Event.hh"
 
 using namespace std;
@@ -31,6 +34,55 @@ Event::Event(const path &file_root, const path &file_ini)
     path_file_root_      = file_root;
 
 };
+void Event::LoadRootFile()
+{
+    TFile *file=NULL;
+    file = new TFile(path_file_root_.string().c_str(), "open");
+
+    if(file->IsZombie())
+    {
+        cout << "Error openning file" << endl;
+        exit(-1);
+    }
+
+    for (auto &itr : channels_)
+    {
+        itr.second->LoadHistogram(file);
+    }
+
+    file->Close("R");
+    delete file;
+    file = NULL;
+
+};
+
+void Event::LoadWaveform()
+{
+
+    for (auto &itr : channels_)
+    {
+        itr.second->LoadWaveform();
+    }
+
+};
+
+void Event::DeleteHistograms()
+{
+
+    for (auto &itr : channels_)
+    {
+        itr.second->DeleteHistogram();
+    }
+
+};
+
+void Event::LoadPedestal()
+{
+    for (auto &itr : channels_)
+    {
+        itr.second->LoadPedestal();
+    }
+};
 
 void Event::SubtractPedestal(map<string, double> ped)
 {
@@ -40,11 +92,14 @@ void Event::SubtractPedestal(map<string, double> ped)
     }
 }
 
+void Event::SetBaseline(map<std::string, float> baseline)
+{   
+    for(auto & itr : channels_)
+    {
+        itr.second->SetBaseline( baseline[itr.first] );
+    }
+};
 
-double Event::GetUnixtime() const
-{
-    return unixtime_;
-}
 
 int Event::GetNr()     const
 {
@@ -60,8 +115,6 @@ int Event::getCh(string ch){
 
     return 0;
 }
-
-
 
 void Event::Draw(){
 
@@ -130,8 +183,6 @@ PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini): Event(f
     // cout << "Listing gDirectory in PhysicsEvent::PhysicsEvent!" << endl;
     // gDirectory->ls();
 
-
-
     channels_["FWD1"] = new PhysicsChannel("FWD1");
     channels_["FWD2"] = new PhysicsChannel("FWD2");
     channels_["FWD3"] = new PhysicsChannel("FWD3");
@@ -153,40 +204,37 @@ PhysicsEvent::~PhysicsEvent() {
 	// TODO Auto-generated destructor stub
 };
 
-void PhysicsEvent::LoadRootFile()
-{
-
-    // TFile and TTree classes are not thread save, therefore, you have to look them.
-    #pragma omp critical
-    {
-        file = new TFile(path_file_root_.string().c_str(), "open");
-
-        if(file->IsZombie())
-        {
-            cout << "Error openning file" << endl;
-            exit(-1);
-        }
-    }
-
-    for (auto &itr : channels_)
-    {
-        itr.second->LoadWaveform(file);
-    }
-    //     cout << "Listing gDirectory in PhysicsEvent::LoadRootFile() after loading!" << endl;
-    // gDirectory->ls();
-    #pragma omp critical
-    {
-        file->Close("R");
-    }
-
-    delete file;
-    file = NULL;
-    // cout << "Listing gDirectory in PhysicsEvent::LoadRootFile() after closing the file!" << endl;
-    // gDirectory->ls();
-}
+// void PhysicsEvent::LoadRootFile()
+// {
+//
+//     // TFile and TTree classes are not thread save, therefore, you have to look them.
+//     #pragma omp critical
+//     {
+//         file = new TFile(path_file_root_.string().c_str(), "open");
+//
+//         if(file->IsZombie())
+//         {
+//             cout << "Error openning file" << endl;
+//             exit(-1);
+//         }
+//     }
+//
+//     for (auto &itr : channels_)
+//
+//     #pragma omp critical
+//     {
+//         file->Close("R");
+//     }
+//
+//     delete file;
+//     file = NULL;
+//     // cout << "Listing gDirectory in PhysicsEvent::LoadRootFile() after closing the file!" << endl;
+//     // gDirectory->ls();
+// }
 
 void PhysicsEvent::LoadIniFile(){
 
+    property_tree::ptree pt_;
 	property_tree::ini_parser::read_ini(path_file_ini_.string(), pt_);
 
     unixtime_       = pt_.get<double>("Properties.UnixTime");
@@ -245,25 +293,18 @@ int PhysicsEvent::GetHerBg()       const
 {
     return herbg_;
 }
-
+double PhysicsEvent::GetUnixtime() const
+{
+    return unixtime_;
+}
 //----------------------------------------------------------------------------------------------
 // Definition of the IntEvent class derived from Event.
 //----------------------------------------------------------------------------------------------
 IntEvent::IntEvent(const path &file_root, const path &file_ini): Event(file_root ,file_ini)
 {
-//    cout << "Loading Intermediate Event: " << file_root.string() << endl;
 
     nr_str_ = file_root.filename().string().substr(14,3);
     nr_     = atoi(nr_str_.c_str());
-
-
-    this->LoadRootFile();
-
-};
-
-void IntEvent::LoadRootFile()
-{
-    file = new TFile(path_file_root_.string().c_str(), "open");
 
     channels_["FWD1-INT"] = new IntChannel("FWD1");
     channels_["FWD2-INT"] = new IntChannel("FWD2");
@@ -273,24 +314,40 @@ void IntEvent::LoadRootFile()
     channels_["BWD2-INT"] = new IntChannel("BWD2");
     channels_["BWD3-INT"] = new IntChannel("BWD3");
 
-    for (auto &itr : channels_)
-    {
-        itr.second->LoadWaveform(file);
-        itr.second->LoadPedestal();
-    }
+};
 
-    file->Close("R");
-    delete file;
-
-}
+// void IntEvent::LoadRootFile()
+// {
+//     file = new TFile(path_file_root_.string().c_str(), "open");
+//
+//
+//
+//     for (auto &itr : channels_)
+//     {
+//         itr.second->LoadWaveform(file);
+//         itr.second->LoadPedestal();
+//     }
+//
+//     file->Close("R");
+//     delete file;
+//
+// }
 
 void IntEvent::LoadIniFile()
 {
+    property_tree::ptree pt_;
     property_tree::ini_parser::read_ini(path_file_ini_.string(), pt_);
 
-    unixtime_   = pt_.get<double>("Properties.UnixTime");
-
-    //TODO load the rest that is written in the .ini file.
+    for(int i=1;i<5;i++)
+    {
+        mean_online_[i] = pt_.get<double>("FWD."+std::to_string(i)+"-Mean");
+        accepted_online_[i] = pt_.get<double>("FWD."+std::to_string(i)+"-Accepted");
+    }
+    for(int i=1;i<5;i++)
+    {
+        mean_online_[i+4] = pt_.get<double>("BWD."+std::to_string(i)+"-Mean");
+        accepted_online_[i+4] = pt_.get<double>("BWD."+std::to_string(i)+"-Accepted");
+    }
 }
 
 IntEvent::~IntEvent() {

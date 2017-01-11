@@ -4,7 +4,7 @@
 
 
 
-CFLAGS   += -fopenmp `root-config --cflags` -I/remote/pcilc3/software/gperftools/include
+CFLAGS   += -fopenmp `root-config --cflags` -I/remote/pcilc3/software/gperftools/include -g -rdynamic
 # -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
 
 LFLAGS    += -fopenmp -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free `root-config --libs --glibs` -lboost_system -lboost_filesystem -L/remote/pcilc3/software/gperftools/lib -lprofiler -ltcmalloc

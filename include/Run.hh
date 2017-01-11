@@ -46,22 +46,31 @@ class Run{
         int WriteNTuple(boost::filesystem::path path_ntuple);
 
 
-        void SynchronizeFiles();
+
 
         void Subtract();
-        void LoadPedestal();
-        void FitPedestal();
-        void SavePedestal();
+
+
         void DrawPedestal();
 
 
-        void LoadEventFiles();
-        void LoadIntFiles();
-        void LoadRunSettings();
 
         // These methods are meant to be public in the end and used by the user
-        void PedestalSubtraction();
+        void SynchronizeFiles();
+
         void LoadRawData();
+
+            void LoadEventFiles();
+            void LoadIntFiles();
+            void LoadWaveforms();
+            void LoadRunSettings();
+
+        void SubtractPedestal();
+
+            void LoadPedestal();
+            void FitPedestal();
+            void SavePedestal();
+
 
         void SaveEvents(boost::filesystem::path fname);
 

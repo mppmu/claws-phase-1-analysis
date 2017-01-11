@@ -28,6 +28,12 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>
 
+#include <stdio.h>
+#include <execinfo.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <unistd.h>
+
 namespace pt = boost::property_tree;
 
 
@@ -64,6 +70,7 @@ namespace claws {
     std::string StringRunMode(RunMode mode);
     std::string indent(int level);
     void printTree (pt::ptree &pt, int level=0) ;
+    void handler(int sig);
 
     class GlobalSettings
     {

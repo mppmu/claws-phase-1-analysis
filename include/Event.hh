@@ -62,25 +62,36 @@ class Event{
 
         virtual ~Event();
 
-        virtual void                   LoadRootFile()   = 0;
-        virtual void                   LoadIniFile()    = 0;
+
+
 
         void SubtractPedestal(map<string, double> ped);
 
         void             LoadPedestal();
 
-        double                 GetUnixtime()  const;
 
-	    int                    GetNr()   const;
-        std::string             GetNrStr() const;
-        std::map<std::string, TH1I*>     GetPedestal();
-        std::map<std::string, Channel*>  GetChannels();
+
+
 
         static int GetId();
 
         int getCh(string ch);
         virtual void Draw();
 
+
+        // Methods for loading data from disk
+        virtual void LoadRootFile();
+        virtual void LoadWaveform();
+        virtual void DeleteHistograms();
+        virtual void LoadIniFile() = 0;
+
+
+        void                             SetBaseline(map<std::string, float> baseline);
+
+        int                              GetNr()   const;
+        std::string                      GetNrStr() const;
+        std::map<std::string, TH1I*>     GetPedestal();
+        std::map<std::string, Channel*>  GetChannels();
     // protected:
 
         static int id_;
@@ -89,16 +100,16 @@ class Event{
         path path_file_root_;
         path path_file_ini_;
 
-        property_tree::ptree pt_;
+
 
 	    int nr_        = -1;
         std::string nr_str_;
-        double unixtime_        = -1;
 
 
 
 
-        TFile *file;
+
+
 
         std::map<std::string, Channel*> channels_;
 };
@@ -112,7 +123,7 @@ class PhysicsEvent : public Event{
         PhysicsEvent(const path &file_root, const path &file_ini, const path &file_online_rate);
         ~PhysicsEvent();
 
-        void                   LoadRootFile();
+//        void                   LoadRootFile();
         void                   LoadIniFile();
         void                   LoadOnlineRate();
 
@@ -121,9 +132,11 @@ class PhysicsEvent : public Event{
         int                    GetHerBg()     const;
         bool                   GetInjection() const;
         int                    GetScrubbing() const;
+        double                 GetUnixtime()  const;
 
         path path_online_rate_;
 
+        double unixtime_        = -1;
         int lerbg_              = -1;
         int herbg_              = -1;
         bool injection_         = false;
@@ -149,10 +162,11 @@ class IntEvent : public Event{
 
         ~IntEvent();
 
-        void                   LoadRootFile();
+//        void                   LoadRootFile();
         void                   LoadIniFile();
 
-
+        double mean_online_[8];
+        double accepted_online_[8];
 
 
 

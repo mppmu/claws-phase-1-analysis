@@ -85,13 +85,13 @@ struct run {
 
 int main(int argc, char* argv[]) {
 
-
+//	signal(SIGSEGV, claws::handler);
 
 	cout << "---------------------------------------------------------" << endl;
 	cout << "|         Starting CLAWS phase I data calibration       |" << endl;
 	cout << "---------------------------------------------------------" << endl;
 
-	gStyle->SetOptFit(11111);
+	gStyle->SetOptFit(1111);
 //-------------------------------------------------------------
 // First get the corresponding Tmin and Tmac from the beast run
 //-------------------------------------------------------------
@@ -157,8 +157,9 @@ int main(int argc, char* argv[]) {
 //	TApplication *app=new TApplication("app",0,0);
 //	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-23/Run-400999"));
 	Run myrun(path("./Run-400999"));
-	// myrun.LoadRawData();
-//	myrun.PedestalSubtraction();
+	myrun.SynchronizeFiles();
+    myrun.LoadRawData();
+	myrun.SubtractPedestal();
 
 
 

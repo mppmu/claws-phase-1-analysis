@@ -17,6 +17,7 @@
  #include <cstdlib>
  #include <typeinfo>
  #include <math.h>
+ #include <stdlib.h>
 
 
 
@@ -39,7 +40,7 @@
 #include <TApplication.h>
 #include <TCanvas.h>
 #include <TF1.h>
-
+#include <TThread.h>
 // OpenMP
 #include <omp.h>
 
@@ -66,6 +67,7 @@ Run::Run(boost::filesystem::path p)
     // Extract the runnumer from the path to the folder and convert it to int.
     run_nr_     = atoi(path_run_.filename().string().substr(4,20).c_str());
     run_nr_str_ = path_run_.filename().string().substr(4,20);
+    cout << "Created run:" << run_nr_ << endl;
 
 };
 
@@ -79,7 +81,7 @@ void Run::SynchronizeFiles()
     */
 
     // cout << "-------------------------------------------------------"<< endl;
-    cout << "Syncing Run:  " << run_nr_ << endl;
+    cout << "Synchronizing run" << "\r" << std::flush;
 
     // Check if the converted root, data & intermediate folders are available.
     if( !boost::filesystem::is_directory(path_run_/path("data_root"))  )
@@ -113,9 +115,9 @@ void Run::SynchronizeFiles()
     copy(directory_iterator(path_data), directory_iterator(), back_inserter(folder_content));
     std::sort(folder_content.begin(),folder_content.end());
 
-   #pragma omp parallel num_threads(7)
-   {
-       #pragma omp for ordered schedule(dynamic,1)
+//    #pragma omp parallel num_threads(7)
+//    {
+//       #pragma omp for ordered schedule(dynamic,1)
         for (signed int i=0; i<folder_content.size(); ++i)
         {
     //     //claws::ProgressBar((itr - folder_content.begin()+1.)/(folder_content.end()-folder_content.begin()));
@@ -140,7 +142,6 @@ void Run::SynchronizeFiles()
                 // Check if the .ini & online monitor exist for the event.
                 if( boost::filesystem::exists( path_file_ini) && boost::filesystem::exists( path_online_rate))
                 {
-                        #pragma omp ordered
                         events_.push_back(new PhysicsEvent(path_file_root, path_file_ini, path_online_rate));
                 }
                 else{
@@ -148,23 +149,59 @@ void Run::SynchronizeFiles()
                 }
             }
         }
-    }
+//    }
 
-    cout << "Done Syncing Run!" << endl;
+    path path_int = path_run_/path("int_root");
+    folder_content.clear();
+    copy(directory_iterator(path_int), directory_iterator(), back_inserter(folder_content));
+    std::sort(folder_content.begin(),folder_content.end());
+
+//    #pragma omp parallel num_threads(7)
+//    {
+    //    #pragma omp for ordered schedule(dynamic,1)
+        for (signed int i=0; i<folder_content.size(); ++i)
+        {
+            if(    boost::filesystem::is_regular_file(folder_content.at(i))
+                && starts_with((folder_content.at(i)).filename().string(), ("Run-"+ to_string(run_nr_) +"-Int") )
+                && ends_with((folder_content.at(i)).filename().string(), ".root"))
+                {
+                // Get the paths to the .root file of the event.
+                path path_file_root = (folder_content.at(i));
+
+                // Get the path to the .ini file.
+                string tmp          = (folder_content.at(i)).filename().string();
+                replace_last( tmp, ".root" , ".ini");
+                path path_file_ini  = path_int / path(tmp);
+
+                // Check if the .ini & online monitor exist for the event.
+                if( exists( path_file_ini) ){
+                    int_events_.push_back(new IntEvent(path_file_root, path_file_ini));
+                }
+                else
+                {
+                    //TODO put in some mechanism in case the ini or the online rate files do not exist.
+                }
+            }
+        }
+        std::cout <<"Synchronizing done" << std::endl;
+
 };
 
 
 void Run::LoadRawData()
 {
-    cout << "Loading data:  " << run_nr_ << endl;
 
+    std::cout << "Loading data:  " << run_nr_ << "\r" << std::flush;
     this->LoadEventFiles();
+    this->LoadIntFiles();
+    this->LoadWaveforms();
+    this->LoadRunSettings();
 
-    cout << "Done loading data!" << endl;
+    std::cout << "Loading data done!                  " << std::endl;
 
-    // this->LoadIntFiles();
     //
-    // this->LoadRunSettings();
+    //
+    //
     //
     // if(!boost::filesystem::is_directory(path_run_/boost::filesystem::path("Calibration/raw")) )
     // {
@@ -179,6 +216,300 @@ void Run::LoadRawData()
     //
     //     std::cout<< "Event: "<<e->GetNrStr()<< std::endl;
     // }
+
+};
+void Run::LoadEventFiles()
+{
+    // Method to load all the information that is located in the data_root folder with
+    // following steps:
+    //      1. Look into the data_root folder and create a PhysicalEvent object for
+    //         each event.root file & check if file for online particle rate and
+    //         do exist
+    //      2. Loop through all objects in events_ and load the raw data from the
+    //         corresponding root file
+    //      3. Loop through all objects in events_ and load the oneline monitor
+    //         pacout << "Loading Raw Data:  " << run_nr_ << endl;
+    // Look into the data folder of the run and get a list/vector of all the events inside
+    for(unsigned int i=0; i< events_.size();i++)
+    {
+        events_.at(i)->LoadRootFile();
+    }
+
+    for(unsigned int i=0; i< events_.size();i++)
+    {
+        events_.at(i)->LoadOnlineRate();
+    }
+
+    for(unsigned int i=0; i< events_.size();i++)
+    {
+        events_.at(i)->LoadIniFile();
+    }
+
+};
+
+void Run::LoadIntFiles()
+{
+    for(unsigned int i=0; i< int_events_.size();i++)
+    {
+        int_events_.at(i)->LoadRootFile();
+    }
+
+    for(unsigned int i=0; i< int_events_.size();i++)
+    {
+        int_events_.at(i)->LoadIniFile();
+    }
+};
+
+void Run::LoadWaveforms()
+{
+    // cout<<"Run::LoadWaveforms" <<endl;
+    // double wall0 = claws::get_wall_time();
+    // double cpu0  = claws::get_cpu_time();
+
+
+    #pragma omp parallel num_threads(7)
+    {
+        #pragma omp for schedule(dynamic,1)
+        for(unsigned int i=0; i< events_.size();i++)
+        {
+            events_.at(i)->LoadWaveform();
+            events_.at(i)->DeleteHistograms();
+        }
+        #pragma omp for schedule(dynamic,1)
+        for(unsigned int i=0; i< int_events_.size();i++)
+        {
+            int_events_.at(i)->LoadWaveform();
+            int_events_.at(i)->DeleteHistograms();
+        }
+
+    }
+
+    // double wall1 = claws::get_wall_time();
+    // double cpu1  = claws::get_cpu_time();
+    //
+    // cout << "Wall Time = " << wall1 - wall0 << endl;
+    // cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+};
+
+void Run::LoadRunSettings()
+{
+    path ini_file  = path_run_ / ("Run-" + to_string(run_nr_) + "-Settings.ini");
+
+    if( boost::filesystem::is_regular_file(ini_file) && exists(ini_file) )
+    {
+        property_tree::ini_parser::read_ini(ini_file.string(), settings_);
+    }
+
+    // Data taking in the phyics events has been conducted with an vertical offset.
+    std::string ch[8]       = {"FWD1", "FWD2", "FWD3", "FWD4", "BWD1", "BWD2", "BWD3", "BWD4"};
+    std::string sections[8] = {"Scope-1-Channel-Settings-A", "Scope-1-Channel-Settings-B", "Scope-1-Channel-Settings-C", "Scope-1-Channel-Settings-D",
+                               "Scope-2-Channel-Settings-A", "Scope-2-Channel-Settings-B", "Scope-2-Channel-Settings-C", "Scope-2-Channel-Settings-D"};
+
+    map<std::string, float> baseline;
+
+    for(unsigned i=0;i<8;i++)
+    {
+        int offset = claws::ConvertOffset(settings_.get<double>(sections[i]+".AnalogOffset"), settings_.get<int>(sections[i]+".Range"));
+        baseline[ch[i]] = offset;
+    }
+
+    for(unsigned int i=0; i< events_.size();i++)
+    {
+        events_.at(i)->SetBaseline(baseline);
+
+    }
+};
+
+void Run::SubtractPedestal()
+{
+
+    double wall0 = claws::get_wall_time();
+    double cpu0  = claws::get_cpu_time();
+    std::cout << "Subtracting pedestal: running" << "\r" << std::flush;
+
+    this->LoadPedestal();
+    this->FitPedestal();
+    this->SavePedestal();
+    // this->Subtract();
+    //
+    // if(!boost::filesystem::is_directory(path_run_/boost::filesystem::path("Calibration")) )
+    // {
+    //     boost::filesystem::create_directory(path_run_/boost::filesystem::path("Calibration"));
+    // }
+    //
+    // boost::filesystem::path fname = path_run_.string()/boost::filesystem::path("/Calibration/run-"+run_nr_str_+"_events_subtracted.root");
+    // this->SaveEvents(fname);
+
+    std::cout << "Subtracting pedestal: done!   " << std::endl;
+
+    double wall1 = claws::get_wall_time();
+    double cpu1  = claws::get_cpu_time();
+
+    cout << "Wall Time = " << wall1 - wall0 << endl;
+    cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+
+};
+
+void Run::LoadPedestal()
+{
+    // Just in case we are not running this thing for the first time,
+    // make sure we delete the previous stuff.
+
+    for(auto & itr : h_ped_)
+    {
+        delete itr.second;
+    }
+
+    for(auto & itr : h_ped_int_)
+    {
+        delete itr.second;
+    }
+
+    // Set the entries to NULL or at all if ran for the first time.
+    h_ped_["FWD1"]   = NULL;
+    h_ped_["FWD2"]   = NULL;
+    h_ped_["FWD3"]   = NULL;
+    h_ped_["FWD4"]   = NULL;
+
+    h_ped_["BWD1"]   = NULL;
+    h_ped_["BWD2"]   = NULL;
+    h_ped_["BWD3"]   = NULL;
+    h_ped_["BWD4"]   = NULL;
+
+    // Set the entries to NULL or at all if ran for the first time.
+    h_ped_int_["FWD1-INT"]   = NULL;
+    h_ped_int_["FWD2-INT"]   = NULL;
+    h_ped_int_["FWD3-INT"]   = NULL;
+
+    h_ped_int_["BWD1-INT"]   = NULL;
+    h_ped_int_["BWD2-INT"]   = NULL;
+    h_ped_int_["BWD3-INT"]   = NULL;
+
+    // Create the histograms
+    for(auto & itr : h_ped_)
+    {
+        string title    = "Run-" + to_string(run_nr_) + "-" + itr.first + "_pd";
+
+        //TODO Get the fucking binning right!
+        h_ped_[itr.first] = new TH1I(title.c_str(), title.c_str(), GS->GetNBitsScope() , GS->GetXLow(), GS->GetXUp());
+
+    }
+
+    for(auto & itr : h_ped_int_)
+    {
+        string title    = "Run-" + to_string(run_nr_) + "-" + itr.first + "_pd";
+        h_ped_int_[itr.first] = new TH1I(title.c_str(), title.c_str(), GS->GetNBitsScope() , GS->GetXLow(), GS->GetXUp());
+
+    }
+
+    #pragma omp parallel num_threads(7)
+    {
+        #pragma omp for schedule(dynamic,1)
+        for(unsigned int i=0; i< events_.size();i++)
+        {
+
+            events_.at(i)->LoadPedestal();
+            map<string, TH1I*> tmp = events_.at(i)->GetPedestal();
+            for (auto& m : h_ped_)
+            {
+                m.second->Add(tmp[m.first]);
+            }
+        }
+
+        #pragma omp for schedule(dynamic,1)
+        for(unsigned int i=0; i< int_events_.size();i++)
+        {
+            int_events_.at(i)->LoadPedestal();
+            map<string, TH1I*> tmp = int_events_.at(i)->GetPedestal();
+            for (auto& m : h_ped_int_)
+            {
+                h_ped_int_[m.first]->Add(tmp[m.first]);
+            }
+        }
+
+    }
+
+};
+void Run::FitPedestal()
+{
+
+    ped_.clear();
+    ped_int_.clear();
+
+    for(auto & itr : h_ped_)
+    {
+        string name = to_string(run_nr_) +"_"+ itr.first +"_pd_fit";
+
+        string section;
+        if(itr.first == "FWD1")          section = "Scope-1-Channel-Settings-A";
+        else if(itr.first == "FWD2")     section = "Scope-1-Channel-Settings-B";
+        else if(itr.first == "FWD3")     section = "Scope-1-Channel-Settings-C";
+        else if(itr.first == "FWD4")     section = "Scope-1-Channel-Settings-D";
+
+        else if(itr.first == "BWD1")     section = "Scope-2-Channel-Settings-A";
+        else if(itr.first == "BWD2")     section = "Scope-2-Channel-Settings-B";
+        else if(itr.first == "BWD3")     section = "Scope-2-Channel-Settings-C";
+        else if(itr.first == "BWD4")     section = "Scope-2-Channel-Settings-D";
+
+        int offset = claws::ConvertOffset(settings_.get<double>(section+".AnalogOffset"), settings_.get<int>(section+".Range"));
+
+        // TODO Check if a gaussain really is the best option to get the pedestral. A center of gravity might work better.
+
+        TF1 *fit = new TF1(name.c_str(), "gaus" , offset-5 , offset +5 );
+        fit->SetParameter(1, offset);
+        itr.second->Fit(fit, "RQ0");
+
+        double constant = itr.second->GetFunction(name.c_str())->GetParameter(0);
+        double mean     = itr.second->GetFunction(name.c_str())->GetParameter(1);
+        double sigma    = itr.second->GetFunction(name.c_str())->GetParameter(2);
+
+        fit->SetParameters(constant, mean, sigma);
+        fit->SetRange(mean - 3*sigma, mean +3*sigma);
+
+        itr.second->Fit(fit, "R0");
+        const Int_t kNotDraw = 1<<9;
+        itr.second->GetFunction(name.c_str())->ResetBit(kNotDraw);
+
+        ped_[itr.first] = itr.second->GetFunction(name.c_str())->GetParameter(1);
+
+    }
+
+    for(auto & itr : h_ped_int_)
+    {
+        string name = to_string(run_nr_) +"_"+ itr.first +"_pd_fit";
+
+        // TODO Check if a gaussain really is the best option to get the pedestral. A center of gravity might work better.
+        TF1 *fit = new TF1(name.c_str(), "gaus" , -5 , 5 );
+        fit->SetParameter(1, 0);
+        itr.second->Fit(fit, "R0");
+        const Int_t kNotDraw = 1<<9;
+        itr.second->GetFunction(name.c_str())->ResetBit(kNotDraw);
+        ped_int_[itr.first] = itr.second->GetFunction(name.c_str())->GetParameter(1);
+
+    }
+};
+
+void Run::SavePedestal()
+{
+    if(!boost::filesystem::is_directory(path_run_/path("Calibration")) )
+    {
+        boost::filesystem::create_directory(path_run_/path("Calibration"));
+    }
+
+    std::string filename = path_run_.string()+"/Calibration/run-"+run_nr_str_+"_pedestal_subtraction.root";
+    TFile *rfile = new TFile(filename.c_str(), "RECREATE");
+
+    for(auto &p : h_ped_)
+    {
+        p.second->Write(p.first.c_str());
+    }
+    for(auto &i : h_ped_int_)
+    {
+        i.second->Write(i.first.c_str());
+    }
+
+    rfile->Close();
+    delete rfile;
 
 };
 
@@ -198,10 +529,7 @@ void Run::SaveEvents(boost::filesystem::path fname)
         for(auto &ch : chs)
         {
             TCanvas c(ch.first.c_str(),ch.first.c_str(),500,500);
-            TH1F* hist = ch.second->GetWaveformHist();
-            hist->Draw();
-            c.Write();
-            delete hist;
+            TH1F* hist ;
             hist = NULL;
         }
 
@@ -232,208 +560,6 @@ void Run::SaveEvents(boost::filesystem::path fname)
     rfile->Close();
     delete rfile;
     rfile = NULL;
-
-};
-
-void Run::PedestalSubtraction()
-{
-    cout << "Running Pedestal Subraction" << endl;
-
-    this->LoadPedestal();
-    this->FitPedestal();
-    this->SavePedestal();
-    this->Subtract();
-
-    if(!boost::filesystem::is_directory(path_run_/boost::filesystem::path("Calibration")) )
-    {
-        boost::filesystem::create_directory(path_run_/boost::filesystem::path("Calibration"));
-    }
-
-    boost::filesystem::path fname = path_run_.string()/boost::filesystem::path("/Calibration/run-"+run_nr_str_+"_events_subtracted.root");
-    this->SaveEvents(fname);
-
-}
-
-
-void Run::LoadEventFiles()
-{
-    // Method to load all the information that is located in the data_root folder with
-    // following steps:
-    //      1. Look into the data_root folder and create a PhysicalEvent object for
-    //         each event.root file & check if file for online particle rate and
-    //         do exist
-    //      2. Loop through all objects in events_ and load the raw data from the
-    //         corresponding root file
-    //      3. Loop through all objects in events_ and load the oneline monitor
-    //         pacout << "Loading Raw Data:  " << run_nr_ << endl;
-    // Look into the data folder of the run and get a list/vector of all the events inside
-//     path path_data = path_run_ / path("data_root");
-//
-//     vector<path> folder_content;
-//     copy(directory_iterator(path_data), directory_iterator(), back_inserter(folder_content));
-//     std::sort(folder_content.begin(),folder_content.end());
-//
-//     double wall0 = claws::get_wall_time();
-//     double cpu0  = claws::get_cpu_time();
-//
-// //    #pragma omp parallel num_threads(7)
-// //    {
-// //        #pragma omp for ordered schedule(dynamic,1)
-//         for (signed int i=0; i<folder_content.size(); ++i)
-//         {
-//     //     //claws::ProgressBar((itr - folder_content.begin()+1.)/(folder_content.end()-folder_content.begin()));
-//             if(    boost::filesystem::is_regular_file(folder_content.at(i))
-//                 && starts_with(folder_content.at(i).filename().string(), "Event-")
-//                 && ends_with(folder_content.at(i).filename().string(), ".root"))
-//             {
-//                 // Get the paths to the .root file of the event.
-//                 path path_file_root = folder_content.at(i);
-//                 // cout << "Loading file: " << path_file_root.string() << endl;
-//                 // Get the path to the .ini file.
-//                 string tmp          = folder_content.at(i).filename().string();
-//                 replace_last( tmp, ".root" , ".ini");
-//                 path path_file_ini  = path_data / path(tmp);
-//
-//                 // Get the path to the file from the online monitor
-//                 replace_first(tmp, "Event-","");
-//                 replace_last(tmp, ".ini", "");
-//                 string ratefile = "Rate-Run--" + to_string( atoi(tmp.substr(2,4).c_str())) + to_string( atoi(tmp.substr(6,10).c_str())-1 );
-//                 path path_online_rate = path_run_ / ratefile;
-//
-//                 // Check if the .ini & online monitor exist for the event.
-//                 if( boost::filesystem::exists( path_file_ini) && boost::filesystem::exists( path_online_rate))
-//                 {
-// //                        #pragma omp ordered
-//                         events_.push_back(new PhysicsEvent(path_file_root, path_file_ini, path_online_rate));
-//                 }
-//                 else{
-//                     //TODO put in some mechanism in case the ini or the online rate files do not exist.
-//                 }
-//             }
-//         }
-// //    }
-
-    // for (vector<path>::const_iterator itr = folder_content.begin(); itr != folder_content.end(); ++itr)
-    // {
-
-
-    //     //claws::ProgressBar((itr - folder_content.begin()+1.)/(folder_content.end()-folder_content.begin()));
-	//     if(    boost::filesystem::is_regular_file(*itr)
-    //         && starts_with((*itr).filename().string(), "Event-")
-    //         && ends_with((*itr).filename().string(), ".root"))
-    //     {
-    //             // Get the paths to the .root file of the event.
-    //             path path_file_root = (*itr);
-    //             cout << "Loading file: " << path_file_root.string() << endl;
-    //             // Get the path to the .ini file.
-    //             string tmp          = (*itr).filename().string();
-    //             replace_last( tmp, ".root" , ".ini");
-    //             path path_file_ini  = path_data / path(tmp);
-    //
-    //             // Get the path to the file from the online monitor
-    //             replace_first(tmp, "Event-","");
-    //             replace_last(tmp, ".ini", "");
-    //             string ratefile = "Rate-Run--" + to_string( atoi(tmp.substr(2,4).c_str())) + to_string( atoi(tmp.substr(6,10).c_str())-1 );
-    //             path path_online_rate = path_run_ / ratefile;
-    //
-    //             // Check if the .ini & online monitor exist for the event.
-    //             if( boost::filesystem::exists( path_file_ini) && boost::filesystem::exists( path_online_rate)){
-    //                 // #pragma omp ordered
-    //                 events_.push_back(new PhysicsEvent(path_file_root, path_file_ini, path_online_rate));
-    //             }
-    //             else{
-    //                 //TODO put in some mechanism in case the ini or the online rate files do not exist.
-    //             }
-    //     }
-    // }
-
-    double wall0 = claws::get_wall_time();
-    double cpu0  = claws::get_cpu_time();
-
-    #pragma omp parallel num_threads(7)
-    {
-        #pragma omp for schedule(dynamic,1)
-        for(unsigned int i=0; i< events_.size();i++)
-        {
-             //claws::ProgressBar((&e - &events_[0]+1.)/(events_.end()-events_.begin()));
-            events_.at(i)->LoadRootFile();
-             //HeapProfilerDump("Rootfile loaded");
-        }
-
-    }
-
-    double wall1 = claws::get_wall_time();
-    double cpu1  = claws::get_cpu_time();
-
-    cout << "Wall Time = " << wall1 - wall0 << endl;
-    cout << "CPU Time  = " << cpu1  - cpu0  << endl;
-//
-//     cout << "Loading Online Rate Files:" << endl;
-//     for(auto & e : events_)
-//     {
-//         claws::ProgressBar((&e - &events_[0]+1.)/(events_.end()-events_.begin()));
-//         e->LoadOnlineRate();
-//     }
-//
-//
-//     cout << "Loading Ini Files:" << endl;
-//     for(auto & e : events_)
-//     {
-//         claws::ProgressBar((&e - &events_[0]+1.)/(events_.end()-events_.begin()));
-//         e->LoadIniFile();
-// //        HeapProfilerDump("Inifile loaded");
-//     }
-
-//    HeapProfilerStop();
-
-};
-
-
-void Run::LoadIntFiles()
-{
-    path path_int = path_run_/path("int_root");
-    vector<path> folder_content;
-    copy(directory_iterator(path_int), directory_iterator(), back_inserter(folder_content));
-    std::sort(folder_content.begin(),folder_content.end());
-
-    cout << "Loading Intermediate Files:" << endl;
-
-    for (vector<path>::const_iterator itr = folder_content.begin(); itr != folder_content.end(); ++itr)
-    {
-        claws::ProgressBar((itr - folder_content.begin()+1.)/(folder_content.end()-folder_content.begin()));
-        if(    boost::filesystem::is_regular_file(*itr)
-            && starts_with((*itr).filename().string(), ("Run-"+ to_string(run_nr_) +"-Int") )
-            && ends_with((*itr).filename().string(), ".root"))
-        {
-            // Get the paths to the .root file of the event.
-            path path_file_root = (*itr);
-
-            // Get the path to the .ini file.
-            string tmp          = (*itr).filename().string();
-            replace_last( tmp, ".root" , ".ini");
-            path path_file_ini  = path_int / path(tmp);
-
-            // Check if the .ini & online monitor exist for the event.
-            if( exists( path_file_ini) ){
-                int_events_.push_back(new IntEvent(path_file_root, path_file_ini));
-            }
-            else{
-                //TODO put in some mechanism in case the ini or the online rate files do not exist.
-            }
-        }
-    }
-}
-
-
-void Run::LoadRunSettings()
-{
-    cout << "Run Settings:" << endl;
-    path ini_file  = path_run_ / ("Run-" + to_string(run_nr_) + "-Settings.ini");
-
-    if( boost::filesystem::is_regular_file(ini_file) && exists(ini_file) )
-    {
-        property_tree::ini_parser::read_ini(ini_file.string(), settings_);
-    }
 
 };
 
@@ -500,6 +626,7 @@ int Run::WriteOnlineTree(TFile* file)
             tout_inj->Fill();
             if(events_.at(i)->GetScrubbing() == 3)   tscrub_inj->Fill();
         }
+
         else
         {
             tout->Fill();
@@ -604,131 +731,9 @@ int Run::WriteNTuple(path path_ntuple){
     return 0;
 };
 
-void Run::LoadPedestal()
-{
-    cout << "Loading Pedestal:" << endl;
-    // Just in case we are not running this thing for the first time,
-    // make sure we delete the previous stuff.
-    for(auto & itr : h_ped_)
-    {
-        delete itr.second;
-    }
-    // Set the entries to NULL or at all if ran for the first time.
-    h_ped_["FWD1"]   = NULL;
-    h_ped_["FWD2"]   = NULL;
-    h_ped_["FWD3"]   = NULL;
-    h_ped_["FWD4"]   = NULL;
-
-    h_ped_["BWD1"]   = NULL;
-    h_ped_["BWD2"]   = NULL;
-    h_ped_["BWD3"]   = NULL;
-    h_ped_["BWD4"]   = NULL;
 
 
-    // Create the 8 Histos
-    for(auto & itr : h_ped_)
-    {
-        string title    = "Run-" + to_string(run_nr_) + "-" + itr.first + "_pd";
 
-        //TODO Get the fucking binning right!
-        h_ped_[itr.first] = new TH1I(title.c_str(), title.c_str(), GS->GetNBitsScope() , GS->GetXLow(), GS->GetXUp());
-
-    }
-
-    // Go through the events and add each pedestral
-    for (auto& v : events_)
-    {
-        claws::ProgressBar((&v - &events_[0] +1.)/(events_.end()-events_.begin()));
-
-        map<string, TH1I*> tmp = v->GetPedestal();
-
-        for (auto& m : h_ped_)
-        {
-            h_ped_[m.first]->Add(tmp[m.first]);
-        }
-    }
-
-    for(auto & itr : h_ped_int_)
-    {
-        delete itr.second;
-    }
-
-    // Set the entries to NULL or at all if ran for the first time.
-    h_ped_int_["FWD1-INT"]   = NULL;
-    h_ped_int_["FWD2-INT"]   = NULL;
-    h_ped_int_["FWD3-INT"]   = NULL;
-
-    h_ped_int_["BWD1-INT"]   = NULL;
-    h_ped_int_["BWD2-INT"]   = NULL;
-    h_ped_int_["BWD3-INT"]   = NULL;
-
-    for(auto & itr : h_ped_int_)
-    {
-        string title    = "Run-" + to_string(run_nr_) + "-" + itr.first + "_pd";
-        h_ped_int_[itr.first] = new TH1I(title.c_str(), title.c_str(), GS->GetNBitsScope() , GS->GetXLow(), GS->GetXUp());
-
-    }
-
-    // Go through the events and add each pedestral
-    for (auto& v : int_events_)
-    {
-        map<string, TH1I*> tmp = v->GetPedestal();
-
-        for (auto& m : h_ped_int_)
-        {
-            h_ped_int_[m.first]->Add(tmp[m.first]);
-        }
-    }
-
-};
-
-void Run::FitPedestal()
-{
-
-    ped_.clear();
-    ped_int_.clear();
-
-    for(auto & itr : h_ped_)
-    {
-        string name = to_string(run_nr_) +"_"+ itr.first +"_pd_fit";
-
-        string section;
-        if(itr.first == "FWD1")          section = "Scope-1-Channel-Settings-A";
-        else if(itr.first == "FWD2")     section = "Scope-1-Channel-Settings-B";
-        else if(itr.first == "FWD3")     section = "Scope-1-Channel-Settings-C";
-        else if(itr.first == "FWD4")     section = "Scope-1-Channel-Settings-D";
-
-        else if(itr.first == "BWD1")     section = "Scope-2-Channel-Settings-A";
-        else if(itr.first == "BWD2")     section = "Scope-2-Channel-Settings-B";
-        else if(itr.first == "BWD3")     section = "Scope-2-Channel-Settings-C";
-        else if(itr.first == "BWD4")     section = "Scope-2-Channel-Settings-D";
-
-        int offset = claws::ConvertOffset(settings_.get<double>(section+".AnalogOffset"), settings_.get<int>(section+".Range"));
-
-        // TODO Check if a gaussain really is the best option to get the pedestral. A center of gravity might work better.
-        TF1 *fit = new TF1(name.c_str(), "gaus" , offset-5 , offset +5 );
-        fit->SetParameter(1, offset);
-        itr.second->Fit(fit, "RQ0");
-        const Int_t kNotDraw = 1<<9;
-        itr.second->GetFunction(name.c_str())->ResetBit(kNotDraw);
-        ped_[itr.first] = itr.second->GetFunction(name.c_str())->GetParameter(1);
-
-    }
-
-    for(auto & itr : h_ped_int_)
-    {
-        string name = to_string(run_nr_) +"_"+ itr.first +"_pd_fit";
-
-        // TODO Check if a gaussain really is the best option to get the pedestral. A center of gravity might work better.
-        TF1 *fit = new TF1(name.c_str(), "gaus" , -5 , 5 );
-        fit->SetParameter(1, 0);
-        itr.second->Fit(fit, "RQ0");
-        const Int_t kNotDraw = 1<<9;
-        itr.second->GetFunction(name.c_str())->ResetBit(kNotDraw);
-        ped_int_[itr.first] = itr.second->GetFunction(name.c_str())->GetParameter(1);
-
-    }
-};
 
 
 
@@ -745,29 +750,7 @@ void Run::Subtract()
     }
 }
 
-void Run::SavePedestal()
-{
-    if(!boost::filesystem::is_directory(path_run_/path("Calibration")) )
-    {
-        boost::filesystem::create_directory(path_run_/path("Calibration"));
-    }
 
-    std::string filename = path_run_.string()+"/Calibration/run-"+run_nr_str_+"_pedestal_subtraction.root";
-    TFile *rfile = new TFile(filename.c_str(), "RECREATE");
-
-    for(auto &p : h_ped_)
-    {
-        p.second->Write(p.first.c_str());
-    }
-    for(auto &i : h_ped_int_)
-    {
-        i.second->Write(i.first.c_str());
-    }
-
-    rfile->Close();
-    delete rfile;
-
-};
 
 void Run::DrawPedestal()
 {
