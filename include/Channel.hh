@@ -50,11 +50,16 @@ class Channel
         TH1F*               GetWaveformHist();
         TH1I*               GetPedestal();
 
+        float               GetPDMean();
+        float               GetPDError();
+
         string  name_;
 
         vector<float>*      waveform_   = NULL;
         TH1I*               hist_       = NULL;
         TH1I*               pedestal_   = NULL;
+        float               pd_mean_;
+        float               pd_error_;
         unsigned int        n_sample_   = 0;
         int                 n_bits_;
 

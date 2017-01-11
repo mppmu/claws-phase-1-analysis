@@ -148,12 +148,12 @@ namespace claws {
             return n_bits_scope_;
         }
 
-        int GlobalSettings::GetXLow()
+        float GlobalSettings::GetXLow()
         {
             return x_low_;
         }
 
-        int GlobalSettings::GetXUp()
+        float GlobalSettings::GetXUp()
         {
             return x_up_;
         }

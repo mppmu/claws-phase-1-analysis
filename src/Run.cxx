@@ -389,7 +389,6 @@ void Run::LoadPedestal()
     for(auto & itr : h_ped_)
     {
         string title    = "Run-" + to_string(run_nr_) + "-" + itr.first + "_pd";
-
         //TODO Get the fucking binning right!
         h_ped_[itr.first] = new TH1I(title.c_str(), title.c_str(), GS->GetNBitsScope() , GS->GetXLow(), GS->GetXUp());
 

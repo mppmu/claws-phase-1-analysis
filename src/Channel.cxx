@@ -23,6 +23,8 @@ Channel::Channel(string ch_name): name_(ch_name)
     //waveform_       = new vector<int8_t>();
     waveform_       = new vector<float>();
     string title    = name_+"_pd";
+    // Calling GetNBitsScope which returns the number of actual bits of the scope. That is not equal to the Max or Min values of the
+    // integer values in the data.
     n_bits_         = GS->GetNBitsScope();
     pedestal_      = new TH1I(title.c_str(), title.c_str(), n_bits_ , GS->GetXLow(), GS->GetXUp());
     pedestal_->SetDirectory(0);            // Root is the most stupid BITCH!!!
@@ -120,7 +122,8 @@ void Channel::LoadPedestal()
     {
         exit(1);
     }
-
+    pd_mean_    =   pedestal_->GetMean();
+    pd_error    =   pedestal_->GetMeanError();
 }
 
 void Channel::Subtract(double sb)
