@@ -51,6 +51,10 @@
 
 // Project includes
 #include "Run.hh"
+#include "Event.hh"
+#include "Pedestal.hh"
+#include "GlobalSettings.hh"
+
 
 using namespace std;
 
@@ -67,6 +71,7 @@ Run::Run(boost::filesystem::path p)
     // Extract the runnumer from the path to the folder and convert it to int.
     run_nr_     = atoi(path_run_.filename().string().substr(4,20).c_str());
     run_nr_str_ = path_run_.filename().string().substr(4,20);
+    pedestal_   = new Pedestal(run_nr_);
     cout << "Created run:" << run_nr_ << endl;
 
 };
@@ -328,8 +333,8 @@ void Run::SubtractPedestal()
     std::cout << "Subtracting pedestal: running" << "\r" << std::flush;
 
     this->LoadPedestal();
-    this->FitPedestal();
-    this->SavePedestal();
+    // this->FitPedestal();
+    // this->SavePedestal();
     // this->Subtract();
     //
     // if(!boost::filesystem::is_directory(path_run_/boost::filesystem::path("Calibration")) )
@@ -355,51 +360,78 @@ void Run::LoadPedestal()
     // Just in case we are not running this thing for the first time,
     // make sure we delete the previous stuff.
 
-    for(auto & itr : h_ped_)
-    {
-        delete itr.second;
-    }
+    // for(auto & itr : h_ped_)
+    // {
+    //     delete itr.second;
+    // }
+    //
+    // for(auto & itr : h_ped_int_)
+    // {
+    //     delete itr.second;
+    // }
 
-    for(auto & itr : h_ped_int_)
-    {
-        delete itr.second;
-    }
-
-    // Set the entries to NULL or at all if ran for the first time.
-    h_ped_["FWD1"]   = NULL;
-    h_ped_["FWD2"]   = NULL;
-    h_ped_["FWD3"]   = NULL;
-    h_ped_["FWD4"]   = NULL;
-
-    h_ped_["BWD1"]   = NULL;
-    h_ped_["BWD2"]   = NULL;
-    h_ped_["BWD3"]   = NULL;
-    h_ped_["BWD4"]   = NULL;
-
-    // Set the entries to NULL or at all if ran for the first time.
-    h_ped_int_["FWD1-INT"]   = NULL;
-    h_ped_int_["FWD2-INT"]   = NULL;
-    h_ped_int_["FWD3-INT"]   = NULL;
-
-    h_ped_int_["BWD1-INT"]   = NULL;
-    h_ped_int_["BWD2-INT"]   = NULL;
-    h_ped_int_["BWD3-INT"]   = NULL;
+    // Set the entries to NULL or at all if ran forstd::string channel the first time.
+    // h_ped_["FWD1"]   = NULL;
+    // h_ped_["FWD2"]   = NULL;
+    // h_ped_["FWD3"]   = NULL;
+    // h_ped_["FWD4"]   = NULL;
+    //
+    // h_ped_["BWD1"]   = NULL;
+    // h_ped_["BWD2"]   = NULL;
+    // h_ped_["BWD3"]   = NULL;
+    // h_ped_["BWD4"]   = NULL;
+    //
+    // // Set the entries to NULL or at all if ran for the first time.
+    // h_ped_int_["FWD1-INT"]   = NULL;
+    // h_ped_int_["FWD2-INT"]   = NULL;
+    // h_ped_int_["FWD3-INT"]   = NULL;
+    //
+    // h_ped_int_["BWD1-INT"]   = NULL;
+    // h_ped_int_["BWD2-INT"]   = NULL;
+    // h_ped_int_["BWD3-INT"]   = NULL;
 
     // Create the histograms
-    for(auto & itr : h_ped_)
-    {
-        string title    = "Run-" + to_string(run_nr_) + "-" + itr.first + "_pd";
-        //TODO Get the fucking binning right!
-        h_ped_[itr.first] = new TH1I(title.c_str(), title.c_str(), GS->GetNBitsScope() , GS->GetXLow(), GS->GetXUp());
+    // for(auto & itr : h_ped_)
+    // {
+    //     string title    = "Run-" + to_string(run_nr_) + "-" + itr.first + "_pd";
+    //     //TODO Get the fucking binning right!
+    //     h_ped_[itr.first] = new TH1I(title.c_str(), title.c_str(), GS->GetNBitsScope() , GS->GetXLow(), GS->GetXUp());
+    //
+    // }
+    //
+    // for(auto & itr : h_ped_int_)
+    // {
+    //     string title    = "Run-" + to_string(run_nr_) + "-" + itr.first + "_pd";
+    //     h_ped_int_[itr.first] = new TH1I(title.c_str(), title.c_str(), GS->GetNBitsScope() , GS->GetXLow(), GS->GetXUp());
+    //
+    // }
 
-    }
-
-    for(auto & itr : h_ped_int_)
-    {
-        string title    = "Run-" + to_string(run_nr_) + "-" + itr.first + "_pd";
-        h_ped_int_[itr.first] = new TH1I(title.c_str(), title.c_str(), GS->GetNBitsScope() , GS->GetXLow(), GS->GetXUp());
-
-    }
+    // #pragma omp parallel num_threads(7)
+    // {
+    //     #pragma omp for schedule(dynamic,1)
+    //     for(unsigned int i=0; i< events_.size();i++)
+    //     {
+    //
+    //         events_.at(i)->LoadPedestal();
+    //         map<string, TH1I*> tmp = events_.at(i)->GetPedestal();
+    //         for (auto& m : h_ped_)
+    //         {
+    //             m.second->Add(tmp[m.first]);
+    //         }
+    //     }
+    //
+    //     #pragma omp for schedule(dynamic,1)
+    //     for(unsigned int i=0; i< int_events_.size();i++)
+    //     {
+    //         int_events_.at(i)->LoadPedestal();
+    //         map<string, TH1I*> tmp = int_events_.at(i)->GetPedestal();
+    //         for (auto& m : h_ped_int_)
+    //         {
+    //             h_ped_int_[m.first]->Add(tmp[m.first]);
+    //         }
+    //     }
+    //
+    // }
 
     #pragma omp parallel num_threads(7)
     {
@@ -408,22 +440,16 @@ void Run::LoadPedestal()
         {
 
             events_.at(i)->LoadPedestal();
-            map<string, TH1I*> tmp = events_.at(i)->GetPedestal();
-            for (auto& m : h_ped_)
-            {
-                m.second->Add(tmp[m.first]);
-            }
+            pedestal_->AddEvent(events_.at(i)->GetPedestal());
+
         }
 
         #pragma omp for schedule(dynamic,1)
         for(unsigned int i=0; i< int_events_.size();i++)
         {
             int_events_.at(i)->LoadPedestal();
-            map<string, TH1I*> tmp = int_events_.at(i)->GetPedestal();
-            for (auto& m : h_ped_int_)
-            {
-                h_ped_int_[m.first]->Add(tmp[m.first]);
-            }
+            pedestal_->AddEvent(int_events_.at(i)->GetPedestal());
+
         }
 
     }
@@ -432,60 +458,60 @@ void Run::LoadPedestal()
 void Run::FitPedestal()
 {
 
-    ped_.clear();
-    ped_int_.clear();
-
-    for(auto & itr : h_ped_)
-    {
-        string name = to_string(run_nr_) +"_"+ itr.first +"_pd_fit";
-
-        string section;
-        if(itr.first == "FWD1")          section = "Scope-1-Channel-Settings-A";
-        else if(itr.first == "FWD2")     section = "Scope-1-Channel-Settings-B";
-        else if(itr.first == "FWD3")     section = "Scope-1-Channel-Settings-C";
-        else if(itr.first == "FWD4")     section = "Scope-1-Channel-Settings-D";
-
-        else if(itr.first == "BWD1")     section = "Scope-2-Channel-Settings-A";
-        else if(itr.first == "BWD2")     section = "Scope-2-Channel-Settings-B";
-        else if(itr.first == "BWD3")     section = "Scope-2-Channel-Settings-C";
-        else if(itr.first == "BWD4")     section = "Scope-2-Channel-Settings-D";
-
-        int offset = claws::ConvertOffset(settings_.get<double>(section+".AnalogOffset"), settings_.get<int>(section+".Range"));
-
-        // TODO Check if a gaussain really is the best option to get the pedestral. A center of gravity might work better.
-
-        TF1 *fit = new TF1(name.c_str(), "gaus" , offset-5 , offset +5 );
-        fit->SetParameter(1, offset);
-        itr.second->Fit(fit, "RQ0");
-
-        double constant = itr.second->GetFunction(name.c_str())->GetParameter(0);
-        double mean     = itr.second->GetFunction(name.c_str())->GetParameter(1);
-        double sigma    = itr.second->GetFunction(name.c_str())->GetParameter(2);
-
-        fit->SetParameters(constant, mean, sigma);
-        fit->SetRange(mean - 3*sigma, mean +3*sigma);
-
-        itr.second->Fit(fit, "R0");
-        const Int_t kNotDraw = 1<<9;
-        itr.second->GetFunction(name.c_str())->ResetBit(kNotDraw);
-
-        ped_[itr.first] = itr.second->GetFunction(name.c_str())->GetParameter(1);
-
-    }
-
-    for(auto & itr : h_ped_int_)
-    {
-        string name = to_string(run_nr_) +"_"+ itr.first +"_pd_fit";
-
-        // TODO Check if a gaussain really is the best option to get the pedestral. A center of gravity might work better.
-        TF1 *fit = new TF1(name.c_str(), "gaus" , -5 , 5 );
-        fit->SetParameter(1, 0);
-        itr.second->Fit(fit, "R0");
-        const Int_t kNotDraw = 1<<9;
-        itr.second->GetFunction(name.c_str())->ResetBit(kNotDraw);
-        ped_int_[itr.first] = itr.second->GetFunction(name.c_str())->GetParameter(1);
-
-    }
+    // ped_.clear();
+    // ped_int_.clear();
+    //
+    // for(auto & itr : h_ped_)
+    // {
+    //     string name = to_string(run_nr_) +"_"+ itr.first +"_pd_fit";
+    //
+    //     string section;
+    //     if(itr.first == "FWD1")          section = "Scope-1-Channel-Settings-A";
+    //     else if(itr.first == "FWD2")     section = "Scope-1-Channel-Settings-B";
+    //     else if(itr.first == "FWD3")     section = "Scope-1-Channel-Settings-C";
+    //     else if(itr.first == "FWD4")     section = "Scope-1-Channel-Settings-D";
+    //
+    //     else if(itr.first == "BWD1")     section = "Scope-2-Channel-Settings-A";
+    //     else if(itr.first == "BWD2")     section = "Scope-2-Channel-Settings-B";
+    //     else if(itr.first == "BWD3")     section = "Scope-2-Channel-Settings-C";
+    //     else if(itr.first == "BWD4")     section = "Scope-2-Channel-Settings-D";
+    //
+    //     int offset = claws::ConvertOffset(settings_.get<double>(section+".AnalogOffset"), settings_.get<int>(section+".Range"));
+    //
+    //     // TODO Check if a gaussain really is the best option to get the pedestral. A center of gravity might work better.
+    //
+    //     TF1 *fit = new TF1(name.c_str(), "gaus" , offset-5 , offset +5 );
+    //     fit->SetParameter(1, offset);
+    //     itr.second->Fit(fit, "RQ0");
+    //
+    //     double constant = itr.second->GetFunction(name.c_str())->GetParameter(0);
+    //     double mean     = itr.second->GetFunction(name.c_str())->GetParameter(1);
+    //     double sigma    = itr.second->GetFunction(name.c_str())->GetParameter(2);
+    //
+    //     fit->SetParameters(constant, mean, sigma);
+    //     fit->SetRange(mean - 3*sigma, mean +3*sigma);
+    //
+    //     itr.second->Fit(fit, "R0");
+    //     const Int_t kNotDraw = 1<<9;
+    //     itr.second->GetFunction(name.c_str())->ResetBit(kNotDraw);
+    //
+    //     ped_[itr.first] = itr.second->GetFunction(name.c_str())->GetParameter(1);
+    //
+    // }
+    //
+    // for(auto & itr : h_ped_int_)
+    // {
+    //     string name = to_string(run_nr_) +"_"+ itr.first +"_pd_fit";
+    //
+    //     // TODO Check if a gaussain really is the best option to get the pedestral. A center of gravity might work better.
+    //     TF1 *fit = new TF1(name.c_str(), "gaus" , -5 , 5 );
+    //     fit->SetParameter(1, 0);
+    //     itr.second->Fit(fit, "R0");
+    //     const Int_t kNotDraw = 1<<9;
+    //     itr.second->GetFunction(name.c_str())->ResetBit(kNotDraw);
+    //     ped_int_[itr.first] = itr.second->GetFunction(name.c_str())->GetParameter(1);
+    //
+    // }
 };
 
 void Run::SavePedestal()
@@ -494,21 +520,21 @@ void Run::SavePedestal()
     {
         boost::filesystem::create_directory(path_run_/path("Calibration"));
     }
-
-    std::string filename = path_run_.string()+"/Calibration/run-"+run_nr_str_+"_pedestal_subtraction.root";
-    TFile *rfile = new TFile(filename.c_str(), "RECREATE");
-
-    for(auto &p : h_ped_)
-    {
-        p.second->Write(p.first.c_str());
-    }
-    for(auto &i : h_ped_int_)
-    {
-        i.second->Write(i.first.c_str());
-    }
-
-    rfile->Close();
-    delete rfile;
+    //
+    // std::string filename = path_run_.string()+"/Calibration/run-"+run_nr_str_+"_pedestal_subtraction.root";
+    // TFile *rfile = new TFile(filename.c_str(), "RECREATE");
+    //
+    // for(auto &p : h_ped_)
+    // {
+    //     p.second->Write(p.first.c_str());
+    // }
+    // for(auto &i : h_ped_int_)
+    // {
+    //     i.second->Write(i.first.c_str());
+    // }
+    //
+    // rfile->Close();
+    // delete rfile;
 
 };
 
@@ -738,45 +764,45 @@ int Run::WriteNTuple(path path_ntuple){
 
 void Run::Subtract()
 {
-    for (auto& ev : events_)
-    {
-        ev->SubtractPedestal(ped_);
-    }
-
-    for (auto& in : int_events_)
-    {
-        in->SubtractPedestal(ped_int_);
-    }
+    // for (auto& ev : events_)
+    // {
+    //     ev->SubtractPedestal(ped_);
+    // }
+    //
+    // for (auto& in : int_events_)
+    // {
+    //     in->SubtractPedestal(ped_int_);
+    // }
 }
 
 
 
 void Run::DrawPedestal()
 {
-    string title = to_string(run_nr_);
-    TCanvas * c = new TCanvas(title.c_str(), title.c_str(), 1600, 1200);
-    c->Divide(2,h_ped_.size()/2);
-    unsigned int pad=0;
-    for(auto i : h_ped_)
-    {
-        pad+=+2;
-        if(pad > h_ped_.size()) pad =1;
-        c->cd(pad);
-        i.second->Draw();
-    }
-
-    title += "-Int";
-    TCanvas * c_int = new TCanvas(title.c_str(), title.c_str(), 1600, 1200);
-    c_int->Divide(2, h_ped_int_.size()/2);
-    pad=0;
-    for(auto i : h_ped_int_)
-    {
-        pad+=+2;
-        if(pad > h_ped_int_.size() ) pad =1;
-        c_int->cd(pad);
-        i.second->Draw();
-
-    }
+    // string title = to_string(run_nr_);
+    // TCanvas * c = new TCanvas(title.c_str(), title.c_str(), 1600, 1200);
+    // c->Divide(2,h_ped_.size()/2);
+    // unsigned int pad=0;
+    // for(auto i : h_ped_)
+    // {
+    //     pad+=+2;
+    //     if(pad > h_ped_.size()) pad =1;
+    //     c->cd(pad);
+    //     i.second->Draw();
+    // }
+    //
+    // title += "-Int";
+    // TCanvas * c_int = new TCanvas(title.c_str(), title.c_str(), 1600, 1200);
+    // c_int->Divide(2, h_ped_int_.size()/2);
+    // pad=0;
+    // for(auto i : h_ped_int_)
+    // {
+    //     pad+=+2;
+    //     if(pad > h_ped_int_.size() ) pad =1;
+    //     c_int->cd(pad);
+    //     i.second->Draw();
+    //
+    // }
 }
 
 

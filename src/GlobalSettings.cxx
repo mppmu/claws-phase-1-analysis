@@ -158,6 +158,11 @@ namespace claws {
             return x_up_;
         }
 
+        std::vector <std::string> GlobalSettings::GetChannels()
+        {
+            return channels_;
+        }
+
         boost::filesystem::path GlobalSettings::GetHook()
         {
             std::cout << hook_ << std::endl;

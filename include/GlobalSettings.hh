@@ -88,6 +88,7 @@ namespace claws {
             int GetNBitsScope();
             float GetXLow();
             float GetXUp();
+            std::vector <std::string> GetChannels();
 
             boost::filesystem::path GetHook();
             boost::filesystem::path GetDetector();
@@ -104,6 +105,9 @@ namespace claws {
             std::vector <boost::filesystem::path> GetNtpFiles(float tsMin = 0, float tsMax = 0);
             std::vector <boost::filesystem::path> GetRawFiles();
 
+
+
+
         private:
 
             const int n_bits_       = 65536;
@@ -111,6 +115,15 @@ namespace claws {
 
             const float x_low_        = - n_bits_scope_/2 -0.5;
             const float x_up_         =  x_low_ +  n_bits_scope_;
+
+            std::vector <std::string>   channels_ = {"FWD1", "FWD1-INT",
+                                                     "FWD2", "FWD2-INT",
+                                                     "FWD3", "FWD3-INT",
+                                                     "FWD3", "FWD4-INT",
+                                                     "BWD1", "BWD1-INT",
+                                                     "BWD2", "BWD2-INT",
+                                                     "BWD3", "BWD3-INT",
+                                                     "BWD4", "BWD4-INT"};
 
             boost::filesystem::path hook_;
 

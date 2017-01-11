@@ -123,7 +123,7 @@ void Channel::LoadPedestal()
         exit(1);
     }
     pd_mean_    =   pedestal_->GetMean();
-    pd_error    =   pedestal_->GetMeanError();
+    pd_error_    =   pedestal_->GetMeanError();
 }
 
 void Channel::Subtract(double sb)
