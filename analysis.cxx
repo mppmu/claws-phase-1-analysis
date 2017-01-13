@@ -31,7 +31,7 @@
 #include "TCanvas.h"
 #include "TVectorD.h"
 // project includes
-#include "GlobalSettings.hh"
+#include "globalsettings.hh"
 
 
 using namespace std;

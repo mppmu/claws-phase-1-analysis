@@ -40,9 +40,9 @@
 #include <TStyle.h>
 
 // project includes
-#include "Event.hh"
-#include "Run.hh"
-#include "GlobalSettings.hh"
+#include "event.hh"
+#include "run.hh"
+#include "globalsettings.hh"
 
 using namespace std;
 using namespace boost;
@@ -86,9 +86,8 @@ struct run {
 int main(int argc, char* argv[]) {
 
 //	signal(SIGSEGV, claws::handler);
-
 	cout << "---------------------------------------------------------" << endl;
-	cout << "|         Starting CLAWS phase I data calibration       |" << endl;
+	cout << "|				   	CLAWS phase I data calibration       |" << endl;
 	cout << "---------------------------------------------------------" << endl;
 
 	gStyle->SetOptFit(1111);
