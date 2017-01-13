@@ -119,11 +119,12 @@ namespace claws {
             std::vector <std::string>   channels_ = {"FWD1", "FWD1-INT",
                                                      "FWD2", "FWD2-INT",
                                                      "FWD3", "FWD3-INT",
-                                                     "FWD4", "FWD4-INT",
+                                                     "FWD4",
                                                      "BWD1", "BWD1-INT",
                                                      "BWD2", "BWD2-INT",
                                                      "BWD3", "BWD3-INT",
-                                                     "BWD4", "BWD4-INT"};
+                                                     "BWD4"
+                                                    };
 
             boost::filesystem::path hook_;
 

@@ -50,15 +50,26 @@ void Pedestal::SavePedestal(TFile* file)
     }
 };
 
-std::map<std::string, float> Pedestal::GetPedestal()
+std::map<std::string, float> Pedestal::GetPedestal(int type)
 {
     std::map<std::string, float> tmp;
 
     for (auto &ch : h_)
     {
-        tmp[ch.first]   = ch.second->GetMean();
-    }
+        if(type == 0)
+        {
+            tmp[ch.first]   = ch.second->GetMean();
+        }
+        else if(type == 1 && ch.first.length() == 4)
+        {
+            tmp[ch.first]   = ch.second->GetMean();
+        }
+        else if(type == 2 && ch.first.length() == 8)
+        {
+            tmp[ch.first]   = ch.second->GetMean();
+        }
 
+    }
     return tmp;
 };
 

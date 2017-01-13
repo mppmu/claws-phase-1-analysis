@@ -26,7 +26,8 @@ class Pedestal{
         void                                AddEvent(std::map<std::string, TH1I*> event);
         void                                SavePedestal(TFile* file);
 
-        std::map<std::string, float>             GetPedestal();
+        // type=0 means normal and intermediate, 1 normal only, 2 intermediate only
+        std::map<std::string, float>             GetPedestal(int type=0);
         std::map<std::string, float>             GetError();
 
         std::map<std::string, TH1I*>             GetHistograms();

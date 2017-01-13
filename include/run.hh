@@ -114,7 +114,7 @@ class Run{
         void SubtractPedestal();
 
             void LoadPedestal();
-            void FitPedestal();
+            void CalculatePedestal(); // Outdated, needs to be removed
             void SavePedestal();
 
         int    GetRunNr();

@@ -43,7 +43,7 @@
 
 // Project includes
 #include "channel.hh"
-#include "event.hh"
+
 
 using namespace boost;
 //needed for all the paths
@@ -66,12 +66,12 @@ class Event{
 
 
 
-        void SubtractPedestal(std::map<std::string, double> ped);
+        void SubtractPedestal(std::map<std::string, float> ped);
 
         void             LoadPedestal();
 
 
-
+//        std::map<std::string, Channel*> GetChannels();
 
 
         static int GetId();

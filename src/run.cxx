@@ -334,10 +334,11 @@ void Run::SubtractPedestal()
     std::cout << "Subtracting pedestal: running" << "\r" << std::flush;
 
     this->LoadPedestal();
-    this->CalculatePedestal();
-    // this->SavePedestal();
-    // this->Subtract();
-    //
+    // this->CalculatePedestal();
+
+
+    this->SavePedestal();
+    this->Subtract();
     // if(!boost::filesystem::is_directory(path_run_/boost::filesystem::path("Calibration")) )
     // {
     //     boost::filesystem::create_directory(path_run_/boost::filesystem::path("Calibration"));
@@ -525,6 +526,7 @@ void Run::CalculatePedestal()
     //     ped_int_[itr.first] = itr.second->GetFunction(name.c_str())->GetParameter(1);
     //
     // }
+    // pedestal_->CalculatePedestal();
 };
 
 void Run::SavePedestal()
@@ -533,21 +535,14 @@ void Run::SavePedestal()
     {
         boost::filesystem::create_directory(path_run_/path("Calibration"));
     }
-    //
-    // std::string filename = path_run_.string()+"/Calibration/run-"+run_nr_str_+"_pedestal_subtraction.root";
-    // TFile *rfile = new TFile(filename.c_str(), "RECREATE");
-    //
-    // for(auto &p : h_ped_)
-    // {
-    //     p.second->Write(p.first.c_str());
-    // }
-    // for(auto &i : h_ped_int_)
-    // {
-    //     i.second->Write(i.first.c_str());
-    // }
-    //
-    // rfile->Close();
-    // delete rfile;
+
+    std::string filename = path_run_.string()+"/Calibration/run-"+run_nr_str_+"_pedestal_subtraction.root";
+    TFile *rfile = new TFile(filename.c_str(), "RECREATE");
+
+    pedestal_->SavePedestal(rfile);
+
+    rfile->Close();
+    delete rfile;
 
 };
 
@@ -777,15 +772,27 @@ int Run::WriteNTuple(path path_ntuple){
 
 void Run::Subtract()
 {
-    // for (auto& ev : events_)
-    // {
-    //     ev->SubtractPedestal(ped_);
-    // }
-    //
-    // for (auto& in : int_events_)
-    // {
-    //     in->SubtractPedestal(ped_int_);
-    // }
+    #pragma omp parallel num_threads(7)
+    {
+        std::map<std::string, float> tmp = pedestal_->GetPedestal(1);
+
+        #pragma omp for schedule(dynamic,1)
+        for(unsigned int i=0; i< events_.size();i++)
+        {
+            events_.at(i)->SubtractPedestal(tmp);
+        }
+    }
+
+    #pragma omp parallel num_threads(7)
+    {
+        std::map<std::string, float> tmp = pedestal_->GetPedestal(2);
+
+        #pragma omp for schedule(dynamic,1)
+        for(unsigned int i=0; i< int_events_.size();i++)
+        {
+            int_events_.at(i)->SubtractPedestal(tmp);
+        }
+    }
 }
 
 

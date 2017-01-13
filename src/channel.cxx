@@ -114,8 +114,8 @@ void Channel::LoadPedestal()
 
             i++;
         }
-
-        assert((pedestal_->GetEntries()>waveform_->size()*0.1));
+        //std::cout<< name_<< ":  (pedestal_->GetEntries(): " <<pedestal_->GetEntries()<< ", waveform_->size(): "<<waveform_->size() << std::endl;
+    if((pedestal_->GetEntries()<waveform_->size()*0.01)) std::cout<< name_<< ":  (pedestal_->GetEntries(): " <<pedestal_->GetEntries()<< ", waveform_->size(): "<<waveform_->size() << std::endl;
 
     }
     else

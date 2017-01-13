@@ -85,7 +85,7 @@ void Event::LoadPedestal()
     }
 };
 
-void Event::SubtractPedestal(map<string, double> ped)
+void Event::SubtractPedestal(map<string, float> ped)
 {
     for(auto &ch : channels_)
     {
