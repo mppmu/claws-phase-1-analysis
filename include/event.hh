@@ -86,6 +86,8 @@ class Event{
         virtual void DeleteHistograms();
         virtual void LoadIniFile() = 0;
 
+        virtual std::map<std::string, double> GetIntegral() = 0;
+
 
         void                             SetBaseline(std::map<std::string, float> baseline);
 
@@ -135,6 +137,8 @@ class PhysicsEvent : public Event{
         int                    GetScrubbing() const;
         double                 GetUnixtime()  const;
 
+        std::map<std::string, double> GetIntegral(); // Pure Placeholder fo far
+
         path path_online_rate_;
 
         double unixtime_        = -1;
@@ -163,14 +167,12 @@ class IntEvent : public Event{
 
         ~IntEvent();
 
-//        void                   LoadRootFile();
         void                   LoadIniFile();
+
+        std::map<std::string, double> GetIntegral();
 
         double mean_online_[8];
         double accepted_online_[8];
-
-
-
 
 };
 

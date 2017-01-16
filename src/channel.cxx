@@ -114,7 +114,7 @@ void Channel::LoadPedestal()
 
             i++;
         }
-        //std::cout<< name_<< ":  (pedestal_->GetEntries(): " <<pedestal_->GetEntries()<< ", waveform_->size(): "<<waveform_->size() << std::endl;
+
     if((pedestal_->GetEntries()<waveform_->size()*0.01)) std::cout<< name_<< ":  (pedestal_->GetEntries(): " <<pedestal_->GetEntries()<< ", waveform_->size(): "<<waveform_->size() << std::endl;
 
     }
@@ -131,7 +131,6 @@ void Channel::Subtract(double pedestal)
     for (unsigned int i = 0; i < waveform_->size(); i++)
     {
         waveform_->at(i) = waveform_->at(i)-pedestal;
-
     }
 }
 
@@ -181,6 +180,8 @@ TH1I* Channel::GetPedestal()
 
 
 
+
+
 //----------------------------------------------------------------------------------------------
 // Definition of the PhysicsChannel class derived from Event.
 // TODO prper description
@@ -199,6 +200,12 @@ void PhysicsChannel::PrintType()
 {
     cout << "I'm a PhysicsChannel " << endl;
 }
+
+double PhysicsChannel::GetIntegral()
+{
+    return 0;
+};
+
 //----------------------------------------------------------------------------------------------
 // Definition of the PhysicsChannel class derived from Event.
 // TODO prper description
@@ -216,4 +223,15 @@ IntChannel::~IntChannel() {
 void IntChannel::PrintType()
 {
     cout << "I'm a Intermediate Channel!" << endl;
-}
+};
+
+double IntChannel::GetIntegral()
+{
+    integral_ = 0;
+    for(unsigned i=106; i < waveform_->size(); i++)
+    {
+        integral_ += waveform_->at(i);
+
+    }
+    return integral_;
+};

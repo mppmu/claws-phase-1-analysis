@@ -50,6 +50,7 @@
 // root includes
 #include <TFile.h>
 #include <TH1D.h>
+#include <TH1F.h>
 #include <TH1I.h>
 #include <TApplication.h>
 #include <TCanvas.h>
@@ -117,6 +118,8 @@ class Run{
             void CalculatePedestal(); // Outdated, needs to be removed
             void SavePedestal();
 
+        void GainCalibration();
+
         int    GetRunNr();
         double GetStartTime();
         double GetStopTime();
@@ -147,6 +150,8 @@ class Run{
         std::vector<IntEvent*>       int_events_;
 
         Pedestal* pedestal_;
+
+        std::map<std::string, TH1F*>   gain_;
         // std::map<string, double> ped_;
         // std::map<string, double> ped_int_;
         //

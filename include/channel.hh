@@ -53,6 +53,10 @@ class Channel
         float               GetPDMean();
         float               GetPDError();
 
+        virtual double       GetIntegral() = 0;
+
+
+
         string  name_;
 
         vector<float>*      waveform_   = NULL;
@@ -60,12 +64,15 @@ class Channel
         TH1I*               pedestal_   = NULL;
         float               pd_mean_;
         float               pd_error_;
+
+        float               integral_     = 0 ; 
         unsigned int        n_sample_   = 0;
         int                 n_bits_;
 
         int                 pd_gap_      = 25;
         float               pd_delta_   = 4;
         float               baseline_;
+
         // void Draw();
 
 };
@@ -80,6 +87,8 @@ class PhysicsChannel : public Channel
         void    WaveformDecomposition();
         void    PrintType();
 
+        double               GetIntegral();  // Pure Placeholder so far.
+
 };
 
 class IntChannel : public Channel
@@ -89,8 +98,9 @@ class IntChannel : public Channel
         IntChannel(string ch_name);
         virtual ~IntChannel();
 
-        void    CalcGain();
-        void    LoadAverage1PE();
+
+
+        double               GetIntegral();
 
         void    PrintType();
 

@@ -88,7 +88,7 @@ namespace claws {
             int GetNBitsScope();
             float GetXLow();
             float GetXUp();
-            std::vector <std::string> GetChannels();
+            std::vector <std::string> GetChannels(int type=0);
 
             boost::filesystem::path GetHook();
             boost::filesystem::path GetDetector();
@@ -116,15 +116,15 @@ namespace claws {
             const float x_low_        = - n_bits_scope_/2 -0.5;
             const float x_up_         =  x_low_ +  n_bits_scope_;
 
-            std::vector <std::string>   channels_ = {"FWD1", "FWD1-INT",
-                                                     "FWD2", "FWD2-INT",
-                                                     "FWD3", "FWD3-INT",
-                                                     "FWD4",
-                                                     "BWD1", "BWD1-INT",
-                                                     "BWD2", "BWD2-INT",
-                                                     "BWD3", "BWD3-INT",
-                                                     "BWD4"
+            std::vector <std::string>   channels_ = {"FWD1", "FWD2", "FWD3", "FWD4",
+                                                     "BWD1", "BWD2", "BWD3", "BWD4"
                                                     };
+
+            std::vector <std::string>   int_channels_ = {"FWD1-INT", "FWD2-INT", "FWD3-INT",
+                                                         "BWD1-INT", "BWD2-INT", "BWD3-INT"
+                                                        };
+
+
 
             boost::filesystem::path hook_;
 

@@ -141,24 +141,15 @@ int main(int argc, char* argv[]) {
 	// }
 
 
-
-	//test
-	// path path_file_root		= "/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-01-01/Run-400999/data_root/Event-400999001.root";
-	// path path_file_ini		= "/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-01-01/Run-400999/data_root/Event-400999001.ini";
-	// path path_online_rate	= "/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-01-01/Run-400999/Rate-Run--9990";
-
-	// path path_file_root		= "./Run-400999/data_root/Event-400999001.root";
-	// path path_file_ini		= "./Run-400999/data_root/Event-400999001.ini";
-	// path path_online_rate	= "./Run-400999/Rate-Run--9990";
-
 	TH1::AddDirectory(kFALSE);
 
 //	TApplication *app=new TApplication("app",0,0);
 //	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-23/Run-400999"));
-	Run myrun(path("./Run-400999"));
+//	Run myrun(path("./Run-400999"));
 	myrun.SynchronizeFiles();
     myrun.LoadRawData();
 	myrun.SubtractPedestal();
+	myrun.GainCalibration();
 
 
 

@@ -298,6 +298,13 @@ double PhysicsEvent::GetUnixtime() const
 {
     return unixtime_;
 }
+
+std::map<std::string, double> PhysicsEvent::GetIntegral()
+{
+    std::map<std::string, double>    rtn;
+    return rtn;
+}
+
 //----------------------------------------------------------------------------------------------
 // Definition of the IntEvent class derived from Event.
 //----------------------------------------------------------------------------------------------
@@ -317,23 +324,6 @@ IntEvent::IntEvent(const path &file_root, const path &file_ini): Event(file_root
 
 };
 
-// void IntEvent::LoadRootFile()
-// {
-//     file = new TFile(path_file_root_.string().c_str(), "open");
-//
-//
-//
-//     for (auto &itr : channels_)
-//     {
-//         itr.second->LoadWaveform(file);
-//         itr.second->LoadPedestal();
-//     }
-//
-//     file->Close("R");
-//     delete file;
-//
-// }
-
 void IntEvent::LoadIniFile()
 {
     property_tree::ptree pt_;
@@ -349,6 +339,18 @@ void IntEvent::LoadIniFile()
         mean_online_[i+4] = pt_.get<double>("BWD."+std::to_string(i)+"-Mean");
         accepted_online_[i+4] = pt_.get<double>("BWD."+std::to_string(i)+"-Accepted");
     }
+};
+
+std::map<std::string, double> IntEvent::GetIntegral()
+{
+    std::map<std::string, double>    rtn;
+
+    for(auto & itr : channels_)
+    {
+        rtn[itr.first]  =  itr.second->GetIntegral();
+    }
+
+    return rtn;
 }
 
 IntEvent::~IntEvent() {

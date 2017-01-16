@@ -158,9 +158,15 @@ namespace claws {
             return x_up_;
         }
 
-        std::vector <std::string> GlobalSettings::GetChannels()
+        std::vector <std::string> GlobalSettings::GetChannels(int type)
         {
-            return channels_;
+            if(type == 0){
+                std::vector<std::string> tmp = channels_;
+                tmp.insert(std::end(tmp),std::begin(int_channels_),std::end(int_channels_));
+                return tmp;
+            }
+            else if (type == 1) return channels_;
+            else if (type == 2) return int_channels_;
         }
 
         boost::filesystem::path GlobalSettings::GetHook()

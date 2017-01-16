@@ -335,8 +335,6 @@ void Run::SubtractPedestal()
 
     this->LoadPedestal();
     // this->CalculatePedestal();
-
-
     this->SavePedestal();
     this->Subtract();
     // if(!boost::filesystem::is_directory(path_run_/boost::filesystem::path("Calibration")) )
@@ -361,83 +359,6 @@ void Run::LoadPedestal()
 {
     // Just in case we are not running this thing for the first time,
     // make sure we delete the previous stuff.
-
-    // for(auto & itr : h_ped_)
-    // {
-    //     delete itr.second;
-    // }
-    //
-    // for(auto & itr : h_ped_int_)
-    // {
-    //     delete itr.second;
-    // }
-
-    // Set the entries to NULL or at all if ran forstd::string channel the first time.
-    // h_ped_["FWD1"]   = NULL;
-    // h_ped_["FWD2"]   = NULL;
-    // h_ped_["FWD3"]   = NULL;
-    // h_ped_["FWD4"]   = NULL;
-    //
-    // h_ped_["BWD1"]   = NULL;
-    // h_ped_["BWD2"]   = NULL;
-    // h_ped_["BWD3"]   = NULL;
-    // h_ped_["BWD4"]   = NULL;
-    //
-    // // Set the entries to NULL or at all if ran for the first time.
-    // h_ped_int_["FWD1-INT"]   = NULL;
-    // h_ped_int_["FWD2-INT"]   = NULL;
-    // h_ped_int_["FWD3-INT"]   = NULL;
-    //
-    // h_ped_int_["BWD1-INT"]   = NULL;
-    // h_ped_int_["BWD2-INT"]   = NULL;
-    // h_ped_int_["BWD3-INT"]   = NULL;
-
-    // Create the histograms
-    // for(auto & itr : h_ped_)
-    // {
-    //     string title    = "Run-" + to_string(run_nr_) + "-" + itr.first + "_pd";
-    //     //TODO Get the fucking binning right!
-    //     h_ped_[itr.first] = new TH1I(title.c_str(), title.c_str(), GS->GetNBitsScope() , GS->GetXLow(), GS->GetXUp());
-    //
-    // }
-    //
-    // for(auto & itr : h_ped_int_)
-    // {
-    //     string title    = "Run-" + to_string(run_nr_) + "-" + itr.first + "_pd";
-    //     h_ped_int_[itr.first] = new TH1I(title.c_str(), title.c_str(), GS->GetNBitsScope() , GS->GetXLow(), GS->GetXUp());
-    //
-    // }
-
-    // #pragma omp parallel num_threads(7)
-    // {
-    //     #pragma omp for schedule(dynamic,1)
-    //     for(unsigned int i=0; i< events_.size();i++)
-    //     {
-    //
-    //         events_.at(i)->LoadPedestal();
-    //         map<string, TH1I*> tmp = events_.at(i)->GetPedestal();
-    //         for (auto& m : h_ped_)
-    //         {
-    //             m.second->Add(tmp[m.first]);
-    //         }
-    //     }
-    //
-    //     #pragma omp for schedule(dynamic,1)
-    //     for(unsigned int i=0; i< int_events_.size();i++)
-    //     {
-    //         int_events_.at(i)->LoadPedestal();
-    //         map<string, TH1I*> tmp = int_events_.at(i)->GetPedestal();
-    //         for (auto& m : h_ped_int_)
-    //         {
-    //             h_ped_int_[m.first]->Add(tmp[m.first]);
-    //         }
-    //     }
-    //
-    // }
-
-    // The following block might be looking a little bit redundant, but the AddEvent() Method in the pedestal class is
-    // of course always accessing the same object. Therefore, raise conditions are expected to come up and you have to
-    // split the pedestal generation and transfer.
 
     #pragma omp parallel num_threads(7)
     {
@@ -545,6 +466,44 @@ void Run::SavePedestal()
     delete rfile;
 
 };
+
+
+void Run::GainCalibration()
+{
+// {        std::string title    = "Run-" + std::to_string(run_nr_) + "-" + ch + "_pd";
+        // h_[ch]               = new TH1I(title.c_str(), title.c_str(), GS->GetNBitsScope() , GS->GetXLow(), GS->GetXUp());
+
+    for(auto & v : GS->GetChannels(2))
+    {
+        std::string title    = "run_" + std::to_string(run_nr_) + "_" + v + "_gain";
+        gain_[v] = new TH1F(title.c_str(), title.c_str(),200,-1000 ,5000);
+    }
+    for(unsigned int i=0; i< int_events_.size();i++)
+    {
+        std::map<std::string, double> tmp =int_events_.at(i)->GetIntegral();
+        for(auto & m : gain_)
+        {
+            m.second->Fill(-tmp[m.first]);
+        }
+    }
+
+    if(!boost::filesystem::is_directory(path_run_/path("Calibration")) )
+    {
+        boost::filesystem::create_directory(path_run_/path("Calibration"));
+    }
+
+    std::string filename = path_run_.string()+"/Calibration/run_"+run_nr_str_+"_gain.root";
+    TFile *rfile = new TFile(filename.c_str(), "RECREATE");
+
+    for(auto & itr : gain_)
+    {
+        itr.second->Write();
+    }
+
+    rfile->Close();
+    delete rfile;
+}
+
 
 void Run::SaveEvents(boost::filesystem::path fname)
 {
@@ -764,12 +723,6 @@ int Run::WriteNTuple(path path_ntuple){
     return 0;
 };
 
-
-
-
-
-
-
 void Run::Subtract()
 {
     #pragma omp parallel num_threads(7)
@@ -793,9 +746,7 @@ void Run::Subtract()
             int_events_.at(i)->SubtractPedestal(tmp);
         }
     }
-}
-
-
+};
 
 void Run::DrawPedestal()
 {
