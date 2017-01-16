@@ -126,11 +126,11 @@ void Channel::LoadPedestal()
     pd_error_    =   pedestal_->GetMeanError();
 }
 
-void Channel::Subtract(double sb)
+void Channel::Subtract(double pedestal)
 {
     for (unsigned int i = 0; i < waveform_->size(); i++)
     {
-        waveform_->at(i) = waveform_->at(i)-sb;
+        waveform_->at(i) = waveform_->at(i)-pedestal;
 
     }
 }

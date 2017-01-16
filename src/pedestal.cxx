@@ -27,7 +27,10 @@ Pedestal::Pedestal(int run_nr):run_nr_(run_nr)
         h_[ch]               = new TH1I(title.c_str(), title.c_str(), GS->GetNBitsScope() , GS->GetXLow(), GS->GetXUp());
         g_[ch]               = new TGraphErrors();
         title                = "Run-" + std::to_string(run_nr_) + "-" + ch + "_pdg";
-        g_[ch]->SetTitle(title.c_str());
+        g_[ch]->SetName(title.c_str());
+        // This should be eventually removed by my own global root style for the TBrowser
+        g_[ch]->SetMarkerStyle(5);
+        g_[ch]->SetMarkerColor(kRed);
     }
 };
 
@@ -44,7 +47,12 @@ void Pedestal::AddEvent(std::map<std::string, TH1I*> event)
 
 void Pedestal::SavePedestal(TFile* file)
 {
+    // Methode writes the pedestal histograms and graphs to a root file coming from outside.
     for (auto &ch : h_)
+    {
+        ch.second->Write();
+    }
+    for (auto &ch : g_)
     {
         ch.second->Write();
     }
