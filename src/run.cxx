@@ -87,7 +87,7 @@ void Run::SynchronizeFiles()
     */
 
     // cout << "-------------------------------------------------------"<< endl;
-    cout << "Synchronizing run" << "\r" << std::flush;
+    cout << "Run::Synchronizing run" << "\r" << std::flush;
 
     // Check if the converted root, data & intermediate folders are available.
     if( !boost::filesystem::is_directory(path_run_/path("data_root"))  )
@@ -196,8 +196,13 @@ void Run::SynchronizeFiles()
 
 void Run::LoadRawData()
 {
+    cout<<"Run::LoadWaveforms" <<endl;
+
+    double wall0 = claws::get_wall_time();
+    double cpu0  = claws::get_cpu_time();
 
     std::cout << "Loading data:  " << run_nr_ << "\r" << std::flush;
+
     this->LoadEventFiles();
     this->LoadIntFiles();
     this->LoadWaveforms();
@@ -205,10 +210,7 @@ void Run::LoadRawData()
 
     std::cout << "Loading data done!                  " << std::endl;
 
-    //
-    //
-    //
-    //
+
     // if(!boost::filesystem::is_directory(path_run_/boost::filesystem::path("Calibration/raw")) )
     // {
     //     boost::filesystem::create_directory(path_run_/boost::filesystem::path("Calibration/raw"));
@@ -223,7 +225,13 @@ void Run::LoadRawData()
     //     std::cout<< "Event: "<<e->GetNrStr()<< std::endl;
     // }
 
+    double wall1 = claws::get_wall_time();
+    double cpu1  = claws::get_cpu_time();
+
+    cout << "Wall Time = " << wall1 - wall0 << endl;
+    cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 };
+
 void Run::LoadEventFiles()
 {
     // Method to load all the information that is located in the data_root folder with
@@ -236,9 +244,12 @@ void Run::LoadEventFiles()
     //      3. Loop through all objects in events_ and load the oneline monitor
     //         pacout << "Loading Raw Data:  " << run_nr_ << endl;
     // Look into the data folder of the run and get a list/vector of all the events inside
+
     for(unsigned int i=0; i< events_.size();i++)
     {
         events_.at(i)->LoadRootFile();
+        events_.at(i)->LoadWaveform();
+        events_.at(i)->DeleteHistograms();
     }
 
     for(unsigned int i=0; i< events_.size();i++)
@@ -275,12 +286,17 @@ void Run::LoadWaveforms()
 
     #pragma omp parallel num_threads(7)
     {
-        #pragma omp for schedule(dynamic,1)
-        for(unsigned int i=0; i< events_.size();i++)
-        {
-            events_.at(i)->LoadWaveform();
-            events_.at(i)->DeleteHistograms();
-        }
+        // When all the histograms are copyed into memory and than the the vectors are filled in a second (multi threaded) step, a
+        // full run would use more than my full ram (32gb). So if you: open file=> fill vector => delete histogram again  in one step
+        // only one third of the memorey is need. However, since the TFile class is not threadsafe, this has to be done in a none
+        // multi threaded region!
+
+        // #pragma omp for schedule(dynamic,1)
+        // for(unsigned int i=0; i< events_.size();i++)
+        // {
+        //     events_.at(i)->LoadWaveform();
+        //     events_.at(i)->DeleteHistograms();
+        // }
         #pragma omp for schedule(dynamic,1)
         for(unsigned int i=0; i< int_events_.size();i++)
         {

@@ -97,7 +97,7 @@ class Event{
         std::map<std::string, Channel*>  GetChannels();
     // protected:
 
-        static int id_;
+    //    static int id_;
 
         // An event relies on data/information in three different files. The .root, .ini & the online monitor.
         path path_file_root_;

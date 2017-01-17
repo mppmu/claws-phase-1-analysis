@@ -36,10 +36,12 @@ Channel::~Channel() {
 
 void Channel::LoadHistogram(TFile* file)
 {
+    std::cout<< name_.c_str() << std::endl;
     hist_= (TH1I*)file->Get(name_.c_str());
     hist_->SetDirectory(0);
     n_sample_  = hist_->GetNbinsX();
-}
+};
+
 void Channel::LoadWaveform()
 {
     if(hist_ == NULL)
@@ -124,7 +126,7 @@ void Channel::LoadPedestal()
     }
     pd_mean_    =   pedestal_->GetMean();
     pd_error_    =   pedestal_->GetMeanError();
-}
+};
 
 void Channel::Subtract(double pedestal)
 {
@@ -132,23 +134,23 @@ void Channel::Subtract(double pedestal)
     {
         waveform_->at(i) = waveform_->at(i)-pedestal;
     }
-}
+};
 
 void Channel::SetBaseline(float baseline)
 {
     baseline_ = baseline;
-}
+};
 
 string Channel::GetName()
 {
     return name_;
-}
+};
 
 vector<float>* Channel::GetWaveform()
 // vector<int8_t>* Channel::GetWaveform()
 {
     return waveform_;
-}
+};
 
 TH1F* Channel::GetWaveformHist()
 {
@@ -170,13 +172,13 @@ TH1F* Channel::GetWaveformHist()
         return NULL;
     }
 
-}
+};
 
 
 TH1I* Channel::GetPedestal()
 {
     return pedestal_;
-}
+};
 
 
 

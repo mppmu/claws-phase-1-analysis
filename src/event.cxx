@@ -20,16 +20,16 @@ using namespace boost;
 // Definition of the Event base class.
 //----------------------------------------------------------------------------------------------
 
-int Event::id_ = 0;
+//int Event::id_ = 0;
 
-int Event::GetId()
-{
-    return id_;
-}
+// int Event::GetId()
+// {
+//     return id_;
+// }
 
 Event::Event(const path &file_root, const path &file_ini)
 {
-    ++id_;
+//    ++id_;
 
     path_file_ini_       = file_ini;
     path_file_root_      = file_root;
@@ -37,6 +37,11 @@ Event::Event(const path &file_root, const path &file_ini)
 };
 void Event::LoadRootFile()
 {
+    std::cout<< "Loading Event: " << nr_str_ << std::endl;
+    if(nr_ == 0)
+    {
+        std::cout<< path_file_root_ << std:: endl;
+    }
     TFile *file=NULL;
     file = new TFile(path_file_root_.string().c_str(), "open");
 
@@ -180,7 +185,6 @@ PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini): Event(f
     nr_     = atoi(file_root.filename().string().substr(6,15).c_str());
     nr_str_ = file_root.filename().string().substr(6,9);
 
-
     // cout << "Listing gDirectory in PhysicsEvent::PhysicsEvent!" << endl;
     // gDirectory->ls();
 
@@ -189,10 +193,10 @@ PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini): Event(f
     channels_["FWD3"] = new PhysicsChannel("FWD3");
     channels_["FWD4"] = new PhysicsChannel("FWD4");
 
-    channels_["BWD1"] = new PhysicsChannel("BWD1");
-    channels_["BWD2"] = new PhysicsChannel("BWD2");
-    channels_["BWD3"] = new PhysicsChannel("BWD3");
-    channels_["BWD4"] = new PhysicsChannel("BWD4");
+    // channels_["BWD1"] = new PhysicsChannel("BWD1");
+    // channels_["BWD2"] = new PhysicsChannel("BWD2");
+    // channels_["BWD3"] = new PhysicsChannel("BWD3");
+    // channels_["BWD4"] = new PhysicsChannel("BWD4");
 
 };
 
@@ -310,17 +314,16 @@ std::map<std::string, double> PhysicsEvent::GetIntegral()
 //----------------------------------------------------------------------------------------------
 IntEvent::IntEvent(const path &file_root, const path &file_ini): Event(file_root ,file_ini)
 {
-
     nr_str_ = file_root.filename().string().substr(14,3);
     nr_     = atoi(nr_str_.c_str());
 
     channels_["FWD1-INT"] = new IntChannel("FWD1");
     channels_["FWD2-INT"] = new IntChannel("FWD2");
     channels_["FWD3-INT"] = new IntChannel("FWD3");
-
-    channels_["BWD1-INT"] = new IntChannel("BWD1");
-    channels_["BWD2-INT"] = new IntChannel("BWD2");
-    channels_["BWD3-INT"] = new IntChannel("BWD3");
+    // 
+    // channels_["BWD1-INT"] = new IntChannel("BWD1");
+    // channels_["BWD2-INT"] = new IntChannel("BWD2");
+    // channels_["BWD3-INT"] = new IntChannel("BWD3");
 
 };
 

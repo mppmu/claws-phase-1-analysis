@@ -145,6 +145,8 @@ int main(int argc, char* argv[]) {
 
 //	TApplication *app=new TApplication("app",0,0);
 //	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-23/Run-400999"));
+	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2017-01-16/Run-401161"));
+//	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-25/Run-401140"));
 //	Run myrun(path("./Run-400999"));
 	myrun.SynchronizeFiles();
     myrun.LoadRawData();
