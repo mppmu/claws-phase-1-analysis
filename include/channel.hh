@@ -39,7 +39,8 @@ class Channel
         virtual     void    DeleteHistogram();
 
         virtual     void    LoadPedestal();
-        virtual     void    Subtract(double sb);
+        virtual     void    Subtract();
+        virtual     void    Subtract(double pedestal);
 
         virtual     void    PrintType() = 0;
 
@@ -53,8 +54,8 @@ class Channel
         float               GetPDMean();
         float               GetPDError();
 
-        virtual double       GetIntegral() = 0;
-
+        virtual void     CalculateIntegral() = 0;
+        double               GetIntegral();
 
 
         string  name_;
@@ -65,7 +66,7 @@ class Channel
         float               pd_mean_;
         float               pd_error_;
 
-        float               integral_     = 0 ; 
+        double               integral_     = 0 ;
         unsigned int        n_sample_   = 0;
         int                 n_bits_;
 
@@ -87,7 +88,7 @@ class PhysicsChannel : public Channel
         void    WaveformDecomposition();
         void    PrintType();
 
-        double               GetIntegral();  // Pure Placeholder so far.
+        void               CalculateIntegral();  // Pure Placeholder so far.
 
 };
 
@@ -100,7 +101,7 @@ class IntChannel : public Channel
 
 
 
-        double               GetIntegral();
+        void    CalculateIntegral();
 
         void    PrintType();
 

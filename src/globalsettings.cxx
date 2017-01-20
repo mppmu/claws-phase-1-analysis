@@ -10,6 +10,7 @@
 
 // std includes
 #include <time.h>
+#include <stdio.h>
 #include <sys/time.h>
 
 //project includes
@@ -46,6 +47,15 @@ namespace claws {
 
     double get_cpu_time(){
         return (double)clock() / CLOCKS_PER_SEC;
+    }
+
+    void print_local_time()
+    {
+        time_t rawtime;
+        struct tm*timeinfo;
+        time(&rawtime);
+        timeinfo = localtime(&rawtime);
+        printf("Date: %s", asctime(timeinfo));
     }
 
         void ProgressBar(float progress, int show_step_size){
@@ -281,20 +291,19 @@ namespace claws {
             return files;
         }
 
-        std::vector <boost::filesystem::path> GlobalSettings::GetRawFiles()
+        std::vector <boost::filesystem::path> GlobalSettings::GetRuns(boost::filesystem::path p)
         {
-            std::vector <boost::filesystem::path> files;
+            std::vector <boost::filesystem::path> runs;
 
-            if(boost::filesystem::is_regular_file(hook_))
-            {
-                files.push_back(hook_);
-            }
-            else if (boost::filesystem::is_directory(hook_)) {
-
+            // if(boost::filesystem::is_regular_file(p))
+            // {
+            //     files.push_back(p);
+            // }
+            if (boost::filesystem::is_directory(p)) {
 
                 boost::filesystem::directory_iterator end_itr;
                 // cycle through the directory
-            	for (boost::filesystem::directory_iterator itr(hook_); itr != end_itr; ++itr)
+            	for (boost::filesystem::directory_iterator itr(p); itr != end_itr; ++itr)
             	{
             		if (boost::filesystem::is_regular_file(itr->path())) {
             			// If it is a file do not do anything!
@@ -302,14 +311,14 @@ namespace claws {
 
             		else if(boost::filesystem::is_directory(itr->path()) && boost::starts_with(itr->path().filename().string(), "Run-")){
             			// If it is a directory check if it is a Run folder and proceed.
-                        files.push_back(itr->path());
+                        runs.push_back(itr->path());
             		}
             	}
 
             }
 
-            this->ResetHook();
+        //    this->ResetHook();
 
-            return files;
+            return runs;
         }
 }

@@ -36,7 +36,6 @@ Channel::~Channel() {
 
 void Channel::LoadHistogram(TFile* file)
 {
-    std::cout<< name_.c_str() << std::endl;
     hist_= (TH1I*)file->Get(name_.c_str());
     hist_->SetDirectory(0);
     n_sample_  = hist_->GetNbinsX();
@@ -125,7 +124,16 @@ void Channel::LoadPedestal()
         exit(1);
     }
     pd_mean_    =   pedestal_->GetMean();
-    pd_error_    =   pedestal_->GetMeanError();
+    pd_error_   =   pedestal_->GetMeanError();
+};
+
+void Channel::Subtract()
+{
+    /*
+        If no argument is given just use the mean value from the pedestal histogram, i.e. the event specific pedestal.
+        This can be usefull when the pedestal over time is experiencing a shift or some pickup!
+    */
+    this->Subtract(pedestal_->GetMean());
 };
 
 void Channel::Subtract(double pedestal)
@@ -180,7 +188,10 @@ TH1I* Channel::GetPedestal()
     return pedestal_;
 };
 
-
+double Channel::GetIntegral()
+{
+    return integral_;
+}
 
 
 
@@ -203,9 +214,11 @@ void PhysicsChannel::PrintType()
     cout << "I'm a PhysicsChannel " << endl;
 }
 
-double PhysicsChannel::GetIntegral()
+void PhysicsChannel::CalculateIntegral()
 {
-    return 0;
+    /*
+        TODO Implement
+    */
 };
 
 //----------------------------------------------------------------------------------------------
@@ -227,13 +240,12 @@ void IntChannel::PrintType()
     cout << "I'm a Intermediate Channel!" << endl;
 };
 
-double IntChannel::GetIntegral()
+void IntChannel::CalculateIntegral()
 {
     integral_ = 0;
-    for(unsigned i=106; i < waveform_->size(); i++)
+    for(unsigned i=107; i < waveform_->size(); i++)
     {
         integral_ += waveform_->at(i);
 
     }
-    return integral_;
 };

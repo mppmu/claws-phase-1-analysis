@@ -87,7 +87,7 @@ int main(int argc, char* argv[]) {
 
 //	signal(SIGSEGV, claws::handler);
 	cout << "---------------------------------------------------------" << endl;
-	cout << "|				   	CLAWS phase I data calibration       |" << endl;
+	cout << "|            CLAWS phase I data calibration             |" << endl;
 	cout << "---------------------------------------------------------" << endl;
 
 	gStyle->SetOptFit(1111);
@@ -145,15 +145,28 @@ int main(int argc, char* argv[]) {
 
 //	TApplication *app=new TApplication("app",0,0);
 //	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-23/Run-400999"));
-	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2017-01-16/Run-401161"));
+//	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2017-01-16/Run-401161"));
+//	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2017-01-16/Run-401140"));
 //	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-25/Run-401140"));
-//	Run myrun(path("./Run-400999"));
+	Run myrun(path("./Run-400999"));
 	myrun.SynchronizeFiles();
     myrun.LoadRawData();
 	myrun.SubtractPedestal();
 	myrun.GainCalibration();
+	myrun.Average1PE();
 
-
+	// std::vector <boost::filesystem::path> runs = GS->GetRuns(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2017-01-09"));
+	// for(unsigned i = 0 ; i<runs.size(); i++)
+	// {
+	// //	std::cout << runs.at(i) << std::endl;
+	// 	Run myrun(runs.at(i));
+	//
+	// 	myrun.SynchronizeFiles();
+	// 	myrun.LoadRawData();
+	// 	myrun.SubtractPedestal();
+	// 	myrun.GainCalibration();
+	// 	myrun.Average1PE();
+	// }
 
 //	app->Run();
 

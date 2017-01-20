@@ -29,9 +29,22 @@ Pedestal::Pedestal(int run_nr):run_nr_(run_nr)
         title                = "Run-" + std::to_string(run_nr_) + "-" + ch + "_pdg";
         g_[ch]->SetName(title.c_str());
         // This should be eventually removed by my own global root style for the TBrowser
-        g_[ch]->SetMarkerStyle(5);
+        g_[ch]->SetMarkerStyle(2);
         g_[ch]->SetMarkerColor(kRed);
+        g_[ch]->SetMarkerSize(2);
     }
+    for(auto &ch : GS->GetChannels(1))
+    {
+        // Fucking SetRangeUser does not work for TGraphs because the Min/Max is recalculated before drawing.
+        g_[ch]->SetMaximum(115);
+        g_[ch]->SetMinimum(113);
+    }
+    for(auto &ch : GS->GetChannels(2))
+    {
+        g_[ch]->SetMaximum(-4);
+        g_[ch]->SetMinimum(4);
+    }
+
 };
 
 void Pedestal::AddEvent(std::map<std::string, TH1I*> event)

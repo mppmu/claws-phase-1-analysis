@@ -37,6 +37,7 @@
 #include <TFile.h>
 #include <TH1D.h>
 #include <TH1I.h>
+
 #include <TApplication.h>
 #include <TCanvas.h>
 #include <TF1.h>
@@ -53,7 +54,6 @@
 #include "run.hh"
 #include "pedestal.hh"
 #include "event.hh"
-
 #include "globalsettings.hh"
 
 
@@ -73,8 +73,10 @@ Run::Run(boost::filesystem::path p)
     run_nr_     = atoi(path_run_.filename().string().substr(4,20).c_str());
     run_nr_str_ = path_run_.filename().string().substr(4,20);
     pedestal_   = new Pedestal(run_nr_);
-    cout << "Created run:" << run_nr_ << endl;
-
+    gain_       = new Gain(run_nr_);
+    cout << "---------------------------------------------------------" << endl;
+    cout << "\033[1;31mRun::Created run: \033[0m" << run_nr_ << endl;
+    claws::print_local_time();
 };
 
 void Run::SynchronizeFiles()
@@ -87,7 +89,7 @@ void Run::SynchronizeFiles()
     */
 
     // cout << "-------------------------------------------------------"<< endl;
-    cout << "Run::Synchronizing run" << "\r" << std::flush;
+    cout << "\033[33;1mRun::Synchronizing run:\033[0m running" << "\r" << std::flush;
 
     // Check if the converted root, data & intermediate folders are available.
     if( !boost::filesystem::is_directory(path_run_/path("data_root"))  )
@@ -174,7 +176,7 @@ void Run::SynchronizeFiles()
                 // Get the paths to the .root file of the event.
                 path path_file_root = (folder_content.at(i));
 
-                // Get the path to the .ini file.
+                // Get the path to the .ini file
                 string tmp          = (folder_content.at(i)).filename().string();
                 replace_last( tmp, ".root" , ".ini");
                 path path_file_ini  = path_int / path(tmp);
@@ -189,26 +191,28 @@ void Run::SynchronizeFiles()
                 }
             }
         }
-        std::cout <<"Synchronizing done" << std::endl;
+        cout << "\033[32;1mRun::Synchronizing run:\033[0m done!   " << "\r" << std::endl;
+
 
 };
 
 
 void Run::LoadRawData()
 {
-    cout<<"Run::LoadWaveforms" <<endl;
-
     double wall0 = claws::get_wall_time();
     double cpu0  = claws::get_cpu_time();
 
-    std::cout << "Loading data:  " << run_nr_ << "\r" << std::flush;
+    std::cout << "\033[33;1mRun::Loading data:\033[0m running" << "\r" << std::flush;
+
+//    std::cout << "Loading data:  " << run_nr_ << "\r" << std::flush;
 
     this->LoadEventFiles();
     this->LoadIntFiles();
     this->LoadWaveforms();
     this->LoadRunSettings();
 
-    std::cout << "Loading data done!                  " << std::endl;
+    std::cout << "\033[32;1mRun::Loading data:\033[0m done!   " << "\r" << std::endl;
+//    std::cout << "Loading data done!                  " << std::endl;
 
 
     // if(!boost::filesystem::is_directory(path_run_/boost::filesystem::path("Calibration/raw")) )
@@ -287,10 +291,7 @@ void Run::LoadWaveforms()
     #pragma omp parallel num_threads(7)
     {
         // When all the histograms are copyed into memory and than the the vectors are filled in a second (multi threaded) step, a
-        // full run would use more than my full ram (32gb). So if you: open file=> fill vector => delete histogram again  in one step
-        // only one third of the memorey is need. However, since the TFile class is not threadsafe, this has to be done in a none
-        // multi threaded region!
-
+        // full run would use more than my full r
         // #pragma omp for schedule(dynamic,1)
         // for(unsigned int i=0; i< events_.size();i++)
         // {
@@ -347,12 +348,13 @@ void Run::SubtractPedestal()
 
     double wall0 = claws::get_wall_time();
     double cpu0  = claws::get_cpu_time();
-    std::cout << "Subtracting pedestal: running" << "\r" << std::flush;
+    std::cout << "\033[33;1mRun::Subtracting pedestal:\033[0m running" << "\r" << std::flush;
+//    std::cout << "Subtracting pedestal: running" << "\r" << std::flush;
 
     this->LoadPedestal();
-    // this->CalculatePedestal();
     this->SavePedestal();
     this->Subtract();
+
     // if(!boost::filesystem::is_directory(path_run_/boost::filesystem::path("Calibration")) )
     // {
     //     boost::filesystem::create_directory(path_run_/boost::filesystem::path("Calibration"));
@@ -360,8 +362,8 @@ void Run::SubtractPedestal()
     //
     // boost::filesystem::path fname = path_run_.string()/boost::filesystem::path("/Calibration/run-"+run_nr_str_+"_events_subtracted.root");
     // this->SaveEvents(fname);
-
-    std::cout << "Subtracting pedestal: done!   " << std::endl;
+    std::cout << "\033[32;1mRun::Subtracting pedestal:\033[0m done!       " << std::cout;
+//    std::cout << "Subtracting pedestal: done!   " << std::endl;
 
     double wall1 = claws::get_wall_time();
     double cpu1  = claws::get_cpu_time();
@@ -373,27 +375,27 @@ void Run::SubtractPedestal()
 
 void Run::LoadPedestal()
 {
-    // Just in case we are not running this thing for the first time,
-    // make sure we delete the previous stuff.
+    /*
+        TODO description
+    */
 
     #pragma omp parallel num_threads(7)
     {
         #pragma omp for schedule(dynamic,1)
         for(unsigned int i=0; i< events_.size();i++)
         {
-
             events_.at(i)->LoadPedestal();
-
         }
 
         #pragma omp for schedule(dynamic,1)
         for(unsigned int i=0; i< int_events_.size();i++)
         {
             int_events_.at(i)->LoadPedestal();
-
         }
 
     }
+
+    // There is of course only one object of class Pedestal (pedestal_) all events need to access => no multi threading.
 
     for(unsigned int i=0; i< events_.size();i++)
     {
@@ -468,12 +470,16 @@ void Run::CalculatePedestal()
 
 void Run::SavePedestal()
 {
+    /*
+        TODO description
+    */
+
     if(!boost::filesystem::is_directory(path_run_/path("Calibration")) )
     {
         boost::filesystem::create_directory(path_run_/path("Calibration"));
     }
 
-    std::string filename = path_run_.string()+"/Calibration/run-"+run_nr_str_+"_pedestal_subtraction.root";
+    std::string filename = path_run_.string()+"/Calibration/run-"+run_nr_str_+"_pedestal_subtraction_v1.root";
     TFile *rfile = new TFile(filename.c_str(), "RECREATE");
 
     pedestal_->SavePedestal(rfile);
@@ -483,43 +489,153 @@ void Run::SavePedestal()
 
 };
 
-
-void Run::GainCalibration()
+void Run::Subtract()
 {
-// {        std::string title    = "Run-" + std::to_string(run_nr_) + "-" + ch + "_pd";
-        // h_[ch]               = new TH1I(title.c_str(), title.c_str(), GS->GetNBitsScope() , GS->GetXLow(), GS->GetXUp());
+    /*
+        TODO description
+    */
+    #pragma omp parallel num_threads(7)
+    {
+        std::map<std::string, float> tmp = pedestal_->GetPedestal(1);
 
-    for(auto & v : GS->GetChannels(2))
-    {
-        std::string title    = "run_" + std::to_string(run_nr_) + "_" + v + "_gain";
-        gain_[v] = new TH1F(title.c_str(), title.c_str(),200,-1000 ,5000);
-    }
-    for(unsigned int i=0; i< int_events_.size();i++)
-    {
-        std::map<std::string, double> tmp =int_events_.at(i)->GetIntegral();
-        for(auto & m : gain_)
+        #pragma omp for schedule(dynamic,1)
+        for(unsigned int i=0; i< events_.size();i++)
         {
-            m.second->Fill(-tmp[m.first]);
+            events_.at(i)->SubtractPedestal(tmp);
         }
     }
 
-    if(!boost::filesystem::is_directory(path_run_/path("Calibration")) )
+    #pragma omp parallel num_threads(7)
     {
-        boost::filesystem::create_directory(path_run_/path("Calibration"));
+        std::map<std::string, float> tmp = pedestal_->GetPedestal(2);
+
+        #pragma omp for schedule(dynamic,1)
+        for(unsigned int i=0; i< int_events_.size();i++)
+        {
+            int_events_.at(i)->SubtractPedestal();
+        }
     }
+};
 
-    std::string filename = path_run_.string()+"/Calibration/run_"+run_nr_str_+"_gain.root";
-    TFile *rfile = new TFile(filename.c_str(), "RECREATE");
+void Run::GainCalibration()
+{
+    /*
+        TODO description
+    */
 
-    for(auto & itr : gain_)
+    std::cout << "\033[33;1mRun::Calibrating gain:\033[0m running" << "\r" << std::flush;
+
+    double wall0 = claws::get_wall_time();
+    double cpu0  = claws::get_cpu_time();
+
+    for(unsigned int i=0; i< int_events_.size();i++)
     {
-        itr.second->Write();
+        int_events_.at(i)->CalculateIntegral();
+        gain_->AddValue(int_events_.at(i)->GetIntegral());
     }
+    gain_->Fit();
+    gain_->Save(path_run_);
 
-    rfile->Close();
-    delete rfile;
+    // for(auto & v : GS->GetChannels(2))
+    // {
+    //     std::string title    = "run_" + std::to_string(run_nr_) + "_" + v + "_gain";
+    //     gain_[v] = new TH1F(title.c_str(), title.c_str(),140,-200 ,2600);
+    // }
+    // for(unsigned int i=0; i< int_events_.size();i++)
+    // {
+    //     int_events_.at(i)->CalculateIntegral();
+    //     std::map<std::string, double> tmp =int_events_.at(i)->GetIntegral();
+    //     for(auto & m : gain_)
+    //     {
+    //         m.second->Fill(-tmp[m.first]);
+    //     }
+    // }
+    //
+    // for(auto & m : gain_)
+    // {
+    //     TF1* gaussian=new TF1(m.first.c_str(),"gaus",-200, 2600);
+    //
+    //     m.second->Fit(gaussian,"Q");
+    //
+    //     TF1* double_gaussian=new TF1(m.first.c_str(),"gaus(220)+gaus(420)",0,3*gaussian->GetParameter(1) );
+    //
+    //     double_gaussian->SetParameter(0,gaussian->GetParameter(0));
+    //     double_gaussian->SetParameter(1,gaussian->GetParameter(1));
+    //     double_gaussian->SetParameter(2,gaussian->GetParameter(2));
+    //
+    //     double_gaussian->SetParameter(3,gaussian->GetParameter(0)*0.1);
+    //     double_gaussian->SetParameter(4,gaussian->GetParameter(1)*2);
+    //     double_gaussian->SetParameter(5,gaussian->GetParameter(2));
+    //
+    //     double_gaussian->SetParLimits(4,gaussian->GetParameter(1)*1.65, gaussian->GetParameter(1)*2.8);
+    //     double_gaussian->SetParLimits(5,gaussian->GetParameter(2)*0.25, gaussian->GetParameter(2)*3.);
+    //
+    //     m.second->Fit(double_gaussian,"WWQ");
+    //
+    // }
+    //
+    // if(!boost::filesystem::is_directory(path_run_/path("Calibration")) )
+    // {
+    //     boost::filesystem::create_directory(path_run_/path("Calibration"));
+    // }
+    //
+    // std::string filename = path_run_.string()+"/Calibration/run_"+run_nr_str_+"_gain_v1.root";
+    // TFile *rfile = new TFile(filename.c_str(), "RECREATE");
+    //
+    // for(auto & itr : gain_)
+    // {
+    //     itr.second->Write();
+    // }
+    //
+    // rfile->Close();
+    // delete rfile;
+
+    std::cout << "\033[32;1mRun::Calibrating gain:\033[0m done!     " << std::endl;
+
+    double wall1 = claws::get_wall_time();
+    double cpu1  = claws::get_cpu_time();
+
+    cout << "Wall Time = " << wall1 - wall0 << endl;
+    cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 }
 
+void Run::Average1PE()
+{
+    /*
+        TODO description
+    */
+
+    std::cout << "\033[33;1mRun::Extracting average 1 pe:\033[0m running" << "\r" << std::flush;
+
+    double wall0 = claws::get_wall_time();
+    double cpu0  = claws::get_cpu_time();
+
+
+    // for(auto & v : GS->GetChannels(2))
+    // {
+    //     std::string title    = "run_" + std::to_string(run_nr_) + "_" + v + "_average1pe_v1";
+    //     average_1pe_[v] = new TH1F(title.c_str(), title.c_str(),120,-200 ,1200);
+    // }
+    //
+    // for(unsigned int i=0; i< int_events_.size();i++)
+    // {
+    //     std::map<std::string, double> tmp_Int =int_events_.at(i)->GetIntegral();
+    //
+    //     for(auto & m : average_1pe_)
+    //     {
+    //
+    //         if(tmp_int[m.first] >= 0.75*gain_[m.first]->Get )m.second->Fill(-tmp[m.first]);
+    //     }
+    // }
+
+    std::cout << "\033[32;1mRun::Extracting average 1 pe:\033[0m done!     " << std::endl;
+
+    double wall1 = claws::get_wall_time();
+    double cpu1  = claws::get_cpu_time();
+
+    cout << "Wall Time = " << wall1 - wall0 << endl;
+    cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+};
 
 void Run::SaveEvents(boost::filesystem::path fname)
 {
@@ -665,140 +781,7 @@ int Run::WriteOnlineTree(TFile* file)
     // tout_inj->Branch("bwd2_rate_on", &rate_bwd2,     "bwd2_rate_on/D");
     // tout_inj->Branch("bwd3_rate_on", &rate_bwd3,     "bwd3_rate_on/D");
     // tout_inj->Branch("bwd4_rate_on", &rate_bwd4,     "bwd4_rate_on/D");
-    //
-    // for(unsigned int i=0; i < events_.size(); i++){
-    //
-    //     ts = events_.at(i)->GetUnixtime();
-    //
-    //     rate_fwd1 = events_.at(i)->GetRateOnline()[0];
-    //     rate_fwd2 = events_.at(i)->GetRateOnline()[1];
-    //     rate_fwd3 = events_.at(i)->GetRateOnline()[2];
-    //     rate_fwd4 = events_.at(i)->GetRateOnline()[3];
-    //     rate_bwd1 = events_.at(i)->GetRateOnline()[4];
-    //     rate_bwd2 = events_.at(i)->GetRateOnline()[5];
-    //     rate_bwd3 = events_.at(i)->GetRateOnline()[6];
-    //     rate_bwd4 = events_.at(i)->GetRateOnline()[7];
-    //
-    //     if(events_.at(i)->GetInjection()) tout_inj->Fill();
-    //     else                             tout->Fill();
-    //
-    // }
-
-    file->cd();
-    tout->Write();
-    tout_inj->Write();
-    tscrub->Write();
-    tscrub_inj->Write();
-
-    delete tout;
-    delete tout_inj;
-    delete tscrub;
-    delete tscrub_inj;
-
-    return 0;
-};
-
-int Run::WriteTimeStamp(TFile* file)
-{
-    TTree *tout = new TTree("tout","tout");
-
-    double ts;
-    bool injection;
-
-    tout->Branch("ts", &ts,     "ts/D");
-    tout->Branch("inj", &injection,     "inj/O");
-
-    for(unsigned int i=0; i < events_.size(); i++){
-
-        injection = events_.at(i)->GetInjection();
-        ts        = events_.at(i)->GetUnixtime();
-
-        tout->Fill();
-
-
-    }
-
-    file->cd();
-    tout->Write();
-
-    delete tout;
-
-    return 0;
-};
-
-int Run::WriteNTuple(path path_ntuple){
-
-    path_ntuple = path_ntuple / ("CLWv0.1-" +to_string(run_nr_) +"-" + to_string((int)tsMin) +".root");
-    TFile * root_file  = new TFile(path_ntuple.string().c_str(), "RECREATE");
-
-    this->WriteTimeStamp(root_file);
-    this->WriteOnlineTree(root_file);
-
-    root_file->Close();
-
-    return 0;
-};
-
-void Run::Subtract()
-{
-    #pragma omp parallel num_threads(7)
-    {
-        std::map<std::string, float> tmp = pedestal_->GetPedestal(1);
-
-        #pragma omp for schedule(dynamic,1)
-        for(unsigned int i=0; i< events_.size();i++)
-        {
-            events_.at(i)->SubtractPedestal(tmp);
-        }
-    }
-
-    #pragma omp parallel num_threads(7)
-    {
-        std::map<std::string, float> tmp = pedestal_->GetPedestal(2);
-
-        #pragma omp for schedule(dynamic,1)
-        for(unsigned int i=0; i< int_events_.size();i++)
-        {
-            int_events_.at(i)->SubtractPedestal(tmp);
-        }
-    }
-};
-
-void Run::DrawPedestal()
-{
-    // string title = to_string(run_nr_);
-    // TCanvas * c = new TCanvas(title.c_str(), title.c_str(), 1600, 1200);
-    // c->Divide(2,h_ped_.size()/2);
-    // unsigned int pad=0;
-    // for(auto i : h_ped_)
-    // {
-    //     pad+=+2;
-    //     if(pad > h_ped_.size()) pad =1;
-    //     c->cd(pad);
-    //     i.second->Draw();
-    // }
-    //
-    // title += "-Int";
-    // TCanvas * c_int = new TCanvas(title.c_str(), title.c_str(), 1600, 1200);
-    // c_int->Divide(2, h_ped_int_.size()/2);
-    // pad=0;
-    // for(auto i : h_ped_int_)
-    // {
-    //     pad+=+2;
-    //     if(pad > h_ped_int_.size() ) pad =1;
-    //     c_int->cd(pad);
-    //     i.second->Draw();
-    //
-    // }
-}
-
-
-
-
-Run::~Run() {
-	// TODO Auto-generated destructor stub
-};
-// int setStyle(TGraph* graph1,TGraph* graph2,TGraph* graph3,TGraph* graph4){
+    //// int setStyle(TGraph* graph1,TGraph* graph2,TGraph* graph3,TGraph* graph4){
 //     double markersize=0.1;
 //
 //     graph1->SetMarkerColor(kAzure-3);
@@ -1011,3 +994,108 @@ Run::~Run() {
 //
 //     return 0;
 // }
+    // for(unsigned int i=0; i < events_.size(); i++){
+    //
+    //     ts = events_.at(i)->GetUnixtime();
+    //
+    //     rate_fwd1 = events_.at(i)->GetRateOnline()[0];
+    //     rate_fwd2 = events_.at(i)->GetRateOnline()[1];
+    //     rate_fwd3 = events_.at(i)->GetRateOnline()[2];
+    //     rate_fwd4 = events_.at(i)->GetRateOnline()[3];
+    //     rate_bwd1 = events_.at(i)->GetRateOnline()[4];
+    //     rate_bwd2 = events_.at(i)->GetRateOnline()[5];
+    //     rate_bwd3 = events_.at(i)->GetRateOnline()[6];
+    //     rate_bwd4 = events_.at(i)->GetRateOnline()[7];
+    //
+    //     if(events_.at(i)->GetInjection()) tout_inj->Fill();
+    //     else                             tout->Fill();
+    //
+    // }
+
+    file->cd();
+    tout->Write();
+    tout_inj->Write();
+    tscrub->Write();
+    tscrub_inj->Write();
+
+    delete tout;
+    delete tout_inj;
+    delete tscrub;
+    delete tscrub_inj;
+
+    return 0;
+};
+
+int Run::WriteTimeStamp(TFile* file)
+{
+    TTree *tout = new TTree("tout","tout");
+
+    double ts;
+    bool injection;
+
+    tout->Branch("ts", &ts,     "ts/D");
+    tout->Branch("inj", &injection,     "inj/O");
+
+    for(unsigned int i=0; i < events_.size(); i++){
+
+        injection = events_.at(i)->GetInjection();
+        ts        = events_.at(i)->GetUnixtime();
+
+        tout->Fill();
+
+
+    }
+
+    file->cd();
+    tout->Write();
+
+    delete tout;
+
+    return 0;
+};
+
+int Run::WriteNTuple(path path_ntuple){
+
+    path_ntuple = path_ntuple / ("CLWv0.1-" +to_string(run_nr_) +"-" + to_string((int)tsMin) +".root");
+    TFile * root_file  = new TFile(path_ntuple.string().c_str(), "RECREATE");
+
+    this->WriteTimeStamp(root_file);
+    this->WriteOnlineTree(root_file);
+
+    root_file->Close();
+
+    return 0;
+};
+
+
+void Run::DrawPedestal()
+{
+    // string title = to_string(run_nr_);
+    // TCanvas * c = new TCanvas(title.c_str(), title.c_str(), 1600, 1200);
+    // c->Divide(2,h_ped_.size()/2);
+    // unsigned int pad=0;
+    // for(auto i : h_ped_)
+    // {
+    //     pad+=+2;
+    //     if(pad > h_ped_.size()) pad =1;
+    //     c->cd(pad);
+    //     i.second->Draw();
+    // }
+    //
+    // title += "-Int";
+    // TCanvas * c_int = new TCanvas(title.c_str(), title.c_str(), 1600, 1200);
+    // c_int->Divide(2, h_ped_int_.size()/2);
+    // pad=0;
+    // for(auto i : h_ped_int_)
+    // {
+    //     pad+=+2;
+    //     if(pad > h_ped_int_.size() ) pad =1;
+    //     c_int->cd(pad);
+    //     i.second->Draw();
+    //
+    // }
+}
+
+Run::~Run() {
+	// TODO Auto-generated destructor stub
+};

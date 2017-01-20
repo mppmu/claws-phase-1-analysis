@@ -8,6 +8,7 @@
 
 CALI_OBJS += ./build/src/channel.o
 CALI_OBJS += ./build/src/event.o
+CALI_OBJS += ./build/src/gain.o
 CALI_OBJS += ./build/src/pedestal.o
 CALI_OBJS += ./build/src/run.o
 CALI_OBJS += ./build/src/globalsettings.o

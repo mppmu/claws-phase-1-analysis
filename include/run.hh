@@ -66,6 +66,7 @@
 // Project includes
 #include "run.hh"
 #include "pedestal.hh"
+#include "gain.hh"
 #include "event.hh"
 
 #include "globalsettings.hh"
@@ -120,6 +121,8 @@ class Run{
 
         void GainCalibration();
 
+        void Average1PE();
+
         int    GetRunNr();
         double GetStartTime();
         double GetStopTime();
@@ -150,8 +153,11 @@ class Run{
         std::vector<IntEvent*>       int_events_;
 
         Pedestal* pedestal_;
+        Gain*     gain_;
 
-        std::map<std::string, TH1F*>   gain_;
+        // std::map<std::string, TH1F*>   gain_;
+        std::map<std::string, TH1F*>   average_1pe_;
+
         // std::map<string, double> ped_;
         // std::map<string, double> ped_int_;
         //

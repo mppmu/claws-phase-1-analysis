@@ -65,7 +65,7 @@ class Event{
 
 
 
-
+        void SubtractPedestal();
         void SubtractPedestal(std::map<std::string, float> ped);
 
         void             LoadPedestal();
@@ -86,7 +86,8 @@ class Event{
         virtual void DeleteHistograms();
         virtual void LoadIniFile() = 0;
 
-        virtual std::map<std::string, double> GetIntegral() = 0;
+        void CalculateIntegral();
+        std::map<std::string, double> GetIntegral();
 
 
         void                             SetBaseline(std::map<std::string, float> baseline);
@@ -137,7 +138,7 @@ class PhysicsEvent : public Event{
         int                    GetScrubbing() const;
         double                 GetUnixtime()  const;
 
-        std::map<std::string, double> GetIntegral(); // Pure Placeholder fo far
+//        std::map<std::string, double> GetIntegral(); // Pure Placeholder fo far
 
         path path_online_rate_;
 
@@ -169,7 +170,7 @@ class IntEvent : public Event{
 
         void                   LoadIniFile();
 
-        std::map<std::string, double> GetIntegral();
+//        std::map<std::string, double> GetIntegral();
 
         double mean_online_[8];
         double accepted_online_[8];

@@ -37,7 +37,7 @@ Event::Event(const path &file_root, const path &file_ini)
 };
 void Event::LoadRootFile()
 {
-    std::cout<< "Loading Event: " << nr_str_ << std::endl;
+    // std::cout<< "Loading Event: " << nr_str_ << std::endl;
     if(nr_ == 0)
     {
         std::cout<< path_file_root_ << std:: endl;
@@ -87,6 +87,16 @@ void Event::LoadPedestal()
     for (auto &itr : channels_)
     {
         itr.second->LoadPedestal();
+    }
+};
+
+void Event::SubtractPedestal()
+{
+    /* See "void Channel::Subtract()" for more information
+    */
+    for(auto &ch : channels_)
+    {
+        ch.second->Subtract();
     }
 };
 
@@ -155,6 +165,9 @@ void Event::Draw(){
 
 std::map<std::string, TH1I*> Event::GetPedestal()
 {
+    /*
+        TODO description
+    */
     std::map<std::string, TH1I*> rtn;
     for(auto & itr : channels_)
     {
@@ -168,6 +181,27 @@ std::map<std::string, Channel*> Event::GetChannels()
 {
     return channels_;
 }
+
+void Event::CalculateIntegral()
+{
+    for(auto & itr : channels_)
+    {
+        itr.second->CalculateIntegral();
+    }
+
+}
+std::map<std::string, double> Event::GetIntegral()
+{
+    std::map<std::string, double>    rtn;
+
+    for(auto & itr : channels_)
+    {
+        rtn[itr.first]  =  itr.second->GetIntegral();
+    }
+
+    return rtn;
+}
+
 
 Event::~Event() {
 	// TODO Auto-generated destructor stub
@@ -188,15 +222,18 @@ PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini): Event(f
     // cout << "Listing gDirectory in PhysicsEvent::PhysicsEvent!" << endl;
     // gDirectory->ls();
 
+    /*
+        TODO Implement a dynamic creation of channels getting the list list and therefore number of channels from somewhere else.
+    */
     channels_["FWD1"] = new PhysicsChannel("FWD1");
     channels_["FWD2"] = new PhysicsChannel("FWD2");
     channels_["FWD3"] = new PhysicsChannel("FWD3");
     channels_["FWD4"] = new PhysicsChannel("FWD4");
 
-    // channels_["BWD1"] = new PhysicsChannel("BWD1");
-    // channels_["BWD2"] = new PhysicsChannel("BWD2");
-    // channels_["BWD3"] = new PhysicsChannel("BWD3");
-    // channels_["BWD4"] = new PhysicsChannel("BWD4");
+    channels_["BWD1"] = new PhysicsChannel("BWD1");
+    channels_["BWD2"] = new PhysicsChannel("BWD2");
+    channels_["BWD3"] = new PhysicsChannel("BWD3");
+    channels_["BWD4"] = new PhysicsChannel("BWD4");
 
 };
 
@@ -303,11 +340,15 @@ double PhysicsEvent::GetUnixtime() const
     return unixtime_;
 }
 
-std::map<std::string, double> PhysicsEvent::GetIntegral()
-{
-    std::map<std::string, double>    rtn;
-    return rtn;
-}
+// std::map<std::string, double> PhysicsEvent::GetIntegral()
+// {
+//     /*
+//     TODO implementation
+//     */
+//
+//     std::map<std::string, double>    rtn;
+//     return rtn;
+// }
 
 //----------------------------------------------------------------------------------------------
 // Definition of the IntEvent class derived from Event.
@@ -316,14 +357,16 @@ IntEvent::IntEvent(const path &file_root, const path &file_ini): Event(file_root
 {
     nr_str_ = file_root.filename().string().substr(14,3);
     nr_     = atoi(nr_str_.c_str());
-
+    /*
+        TODO Implement a dynamic creation of channels getting the list list and therefore number of channels from somewhere else.
+    */
     channels_["FWD1-INT"] = new IntChannel("FWD1");
     channels_["FWD2-INT"] = new IntChannel("FWD2");
     channels_["FWD3-INT"] = new IntChannel("FWD3");
-    // 
-    // channels_["BWD1-INT"] = new IntChannel("BWD1");
-    // channels_["BWD2-INT"] = new IntChannel("BWD2");
-    // channels_["BWD3-INT"] = new IntChannel("BWD3");
+
+    channels_["BWD1-INT"] = new IntChannel("BWD1");
+    channels_["BWD2-INT"] = new IntChannel("BWD2");
+    channels_["BWD3-INT"] = new IntChannel("BWD3");
 
 };
 
@@ -344,17 +387,7 @@ void IntEvent::LoadIniFile()
     }
 };
 
-std::map<std::string, double> IntEvent::GetIntegral()
-{
-    std::map<std::string, double>    rtn;
 
-    for(auto & itr : channels_)
-    {
-        rtn[itr.first]  =  itr.second->GetIntegral();
-    }
-
-    return rtn;
-}
 
 IntEvent::~IntEvent() {
 	// TODO Auto-generated destructor stub

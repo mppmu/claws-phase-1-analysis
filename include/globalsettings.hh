@@ -63,6 +63,7 @@ namespace claws {
 
     double get_wall_time();
     double get_cpu_time();
+    void print_local_time();
 
     void ProgressBar(float progress, int show_step_size = 1);
     double ConvertRange(int in);
@@ -103,7 +104,7 @@ namespace claws {
 
 
             std::vector <boost::filesystem::path> GetNtpFiles(float tsMin = 0, float tsMax = 0);
-            std::vector <boost::filesystem::path> GetRawFiles();
+            std::vector <boost::filesystem::path> GetRuns(boost::filesystem::path p);
 
 
 
@@ -117,11 +118,11 @@ namespace claws {
             const float x_up_         =  x_low_ +  n_bits_scope_;
 
             std::vector <std::string>   channels_ = {"FWD1", "FWD2", "FWD3", "FWD4",
-                                                     "BWD1", "BWD2", "BWD3", "BWD4"
+                                                      "BWD1", "BWD2", "BWD3", "BWD4"
                                                     };
 
             std::vector <std::string>   int_channels_ = {"FWD1-INT", "FWD2-INT", "FWD3-INT",
-                                                         "BWD1-INT", "BWD2-INT", "BWD3-INT"
+                                                          "BWD1-INT", "BWD2-INT", "BWD3-INT"
                                                         };
 
 
