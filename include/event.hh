@@ -62,17 +62,11 @@ class Event{
         Event(const path &file_root, const path &file_ini);
 
         virtual ~Event();
-
-
-
+        
         void SubtractPedestal();
         void SubtractPedestal(std::map<std::string, float> ped);
 
         void             LoadPedestal();
-
-
-//        std::map<std::string, Channel*> GetChannels();
-
 
         static int GetId();
 
@@ -86,16 +80,17 @@ class Event{
         virtual void DeleteHistograms();
         virtual void LoadIniFile() = 0;
 
-        void CalculateIntegral();
-        std::map<std::string, double> GetIntegral();
+        void                                CalculateIntegral();
+        std::map<std::string, double>       GetIntegral();
 
 
-        void                             SetBaseline(std::map<std::string, float> baseline);
+        void                                SetBaseline(std::map<std::string, float> baseline);
 
-        int                              GetNr()   const;
-        std::string                      GetNrStr() const;
-        std::map<std::string, TH1I*>     GetPedestal();
-        std::map<std::string, Channel*>  GetChannels();
+        int                                 GetNr()   const;
+        std::string                         GetNrStr() const;
+        std::map<std::string, TH1I*>        GetPedestal();
+        std::map<std::string, Channel*>     GetChannels();
+        std::vector<std::vector<float>*>    GetWaveforms();
     // protected:
 
     //    static int id_;
@@ -108,12 +103,6 @@ class Event{
 
 	    int nr_        = -1;
         std::string nr_str_;
-
-
-
-
-
-
 
         std::map<std::string, Channel*> channels_;
 };

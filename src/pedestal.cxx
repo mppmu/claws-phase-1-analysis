@@ -118,4 +118,14 @@ std::map<std::string, TGraphErrors*> Pedestal::GetGraphs()
 
 Pedestal::~Pedestal() {
 	// TODO Auto-generated destructor stub
+    std::cout << "Deleting Pedestal Object!" << std::endl;
+
+    for (auto &ch : h_)
+    {
+        delete ch.second;
+    }
+    for (auto &ch : g_)
+    {
+        delete ch.second;
+    }
 };

@@ -32,6 +32,9 @@ Channel::Channel(string ch_name): name_(ch_name)
 
 Channel::~Channel() {
 	// TODO Auto-generated destructor stub
+    delete waveform_;
+    delete hist_;
+    delete pedestal_;
 };
 
 void Channel::LoadHistogram(TFile* file)
@@ -40,6 +43,11 @@ void Channel::LoadHistogram(TFile* file)
     hist_->SetDirectory(0);
     n_sample_  = hist_->GetNbinsX();
 };
+
+// void Channel::LoadPedestaet(name_.c_str());
+//     hist_->SetDirectory(0);
+//     n_sample_  = hist_->GetNbinsX();
+// };
 
 void Channel::LoadWaveform()
 {
@@ -54,7 +62,7 @@ void Channel::LoadWaveform()
 
     for(unsigned int i=0; i< n_sample_; i++)
     {
-        waveform_->push_back(int8_t(hist_->GetBinContent(i)/n_bits_));
+        waveform_->push_back(int8_t(hist_->GetBinContent(i+1)/n_bits_));
     }
 
 };
@@ -116,16 +124,23 @@ void Channel::LoadPedestal()
             i++;
         }
 
-    if((pedestal_->GetEntries()<waveform_->size()*0.01)) std::cout<< name_<< ":  (pedestal_->GetEntries(): " <<pedestal_->GetEntries()<< ", waveform_->size(): "<<waveform_->size() << std::endl;
+        if((pedestal_->GetEntries()<waveform_->size()*0.01)) std::cout<< name_<< ":  (pedestal_->GetEntries(): "
+                                                             <<pedestal_->GetEntries()<< ", waveform_->size(): "
+                                                             <<waveform_->size() << std::endl;
 
     }
+
     else
     {
         exit(1);
     }
+
     pd_mean_    =   pedestal_->GetMean();
     pd_error_   =   pedestal_->GetMeanError();
 };
+
+// void Channel::Subtract(double pedestal)
+//             }GetChannelsform_->at( i )
 
 void Channel::Subtract()
 {
@@ -207,6 +222,7 @@ PhysicsChannel::PhysicsChannel(string ch_name): Channel(ch_name)
 
 PhysicsChannel::~PhysicsChannel() {
 	// TODO Auto-generated destructor stub
+
 };
 
 void PhysicsChannel::PrintType()

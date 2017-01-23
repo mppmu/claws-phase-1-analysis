@@ -534,61 +534,7 @@ void Run::GainCalibration()
         gain_->AddValue(int_events_.at(i)->GetIntegral());
     }
     gain_->Fit();
-    gain_->Save(path_run_);
-
-    // for(auto & v : GS->GetChannels(2))
-    // {
-    //     std::string title    = "run_" + std::to_string(run_nr_) + "_" + v + "_gain";
-    //     gain_[v] = new TH1F(title.c_str(), title.c_str(),140,-200 ,2600);
-    // }
-    // for(unsigned int i=0; i< int_events_.size();i++)
-    // {
-    //     int_events_.at(i)->CalculateIntegral();
-    //     std::map<std::string, double> tmp =int_events_.at(i)->GetIntegral();
-    //     for(auto & m : gain_)
-    //     {
-    //         m.second->Fill(-tmp[m.first]);
-    //     }
-    // }
-    //
-    // for(auto & m : gain_)
-    // {
-    //     TF1* gaussian=new TF1(m.first.c_str(),"gaus",-200, 2600);
-    //
-    //     m.second->Fit(gaussian,"Q");
-    //
-    //     TF1* double_gaussian=new TF1(m.first.c_str(),"gaus(220)+gaus(420)",0,3*gaussian->GetParameter(1) );
-    //
-    //     double_gaussian->SetParameter(0,gaussian->GetParameter(0));
-    //     double_gaussian->SetParameter(1,gaussian->GetParameter(1));
-    //     double_gaussian->SetParameter(2,gaussian->GetParameter(2));
-    //
-    //     double_gaussian->SetParameter(3,gaussian->GetParameter(0)*0.1);
-    //     double_gaussian->SetParameter(4,gaussian->GetParameter(1)*2);
-    //     double_gaussian->SetParameter(5,gaussian->GetParameter(2));
-    //
-    //     double_gaussian->SetParLimits(4,gaussian->GetParameter(1)*1.65, gaussian->GetParameter(1)*2.8);
-    //     double_gaussian->SetParLimits(5,gaussian->GetParameter(2)*0.25, gaussian->GetParameter(2)*3.);
-    //
-    //     m.second->Fit(double_gaussian,"WWQ");
-    //
-    // }
-    //
-    // if(!boost::filesystem::is_directory(path_run_/path("Calibration")) )
-    // {
-    //     boost::filesystem::create_directory(path_run_/path("Calibration"));
-    // }
-    //
-    // std::string filename = path_run_.string()+"/Calibration/run_"+run_nr_str_+"_gain_v1.root";
-    // TFile *rfile = new TFile(filename.c_str(), "RECREATE");
-    //
-    // for(auto & itr : gain_)
-    // {
-    //     itr.second->Write();
-    // }
-    //
-    // rfile->Close();
-    // delete rfile;
+    gain_->SaveGain(path_run_);
 
     std::cout << "\033[32;1mRun::Calibrating gain:\033[0m done!     " << std::endl;
 
@@ -617,16 +563,13 @@ void Run::Average1PE()
     //     average_1pe_[v] = new TH1F(title.c_str(), title.c_str(),120,-200 ,1200);
     // }
     //
-    // for(unsigned int i=0; i< int_events_.size();i++)
-    // {
-    //     std::map<std::string, double> tmp_Int =int_events_.at(i)->GetIntegral();
-    //
-    //     for(auto & m : average_1pe_)
-    //     {
-    //
-    //         if(tmp_int[m.first] >= 0.75*gain_[m.first]->Get )m.second->Fill(-tmp[m.first]);
-    //     }
-    // }
+    for(unsigned int i=0; i< int_events_.size();i++)
+    {
+        gain_->AddIntWf(int_events_.at(i)->GetWaveforms());
+    }
+
+    gain_->NormalizeWaveforms(int_events_.size());
+    gain_->SaveAvg(path_run_);
 
     std::cout << "\033[32;1mRun::Extracting average 1 pe:\033[0m done!     " << std::endl;
 
@@ -1098,4 +1041,24 @@ void Run::DrawPedestal()
 
 Run::~Run() {
 	// TODO Auto-generated destructor stub
+    std::cout << "Deleteing Run object!" << std::endl;
+    #pragma omp parallel num_threads(7)
+    {
+        #pragma omp for schedule(dynamic,1)
+        for(unsigned int i=0; i< events_.size();i++)
+        {
+            delete events_.at(i);
+            events_.at(i) = NULL;
+        }
+
+        #pragma omp for schedule(dynamic,1)
+        for(unsigned int i=0; i< int_events_.size();i++)
+        {
+            delete int_events_.at(i);
+            int_events_.at(i) = NULL;
+        }
+    }
+    delete pedestal_;
+    delete gain_;
+
 };

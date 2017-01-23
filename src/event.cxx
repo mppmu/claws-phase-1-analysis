@@ -202,9 +202,22 @@ std::map<std::string, double> Event::GetIntegral()
     return rtn;
 }
 
+std::vector<std::vector<float>*>    Event::GetWaveforms()
+{
+    std::vector<std::vector<float>*> rtn;
+    for(auto& m : channels_)
+    {
+        rtn.push_back(m.second->GetWaveform());
+    }
+    return rtn;
+};
 
 Event::~Event() {
 	// TODO Auto-generated destructor stub
+    for(auto& m : channels_)
+    {
+        delete m.second;
+    }
 }
 
 //----------------------------------------------------------------------------------------------
@@ -244,6 +257,7 @@ PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini, const pa
 
 PhysicsEvent::~PhysicsEvent() {
 	// TODO Auto-generated destructor stub
+
 };
 
 // void PhysicsEvent::LoadRootFile()

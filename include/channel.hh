@@ -31,7 +31,7 @@ class Channel
 {
     public:
 
-        Channel(string ch_name);
+        Channel(std::string ch_name);
         virtual ~Channel();
 
         virtual     void    LoadHistogram(TFile* file);
@@ -45,7 +45,7 @@ class Channel
         virtual     void    PrintType() = 0;
 
         void                SetBaseline(float baseline);
-        string              GetName();
+        std::string              GetName();
         //vector<int8_t>*     GetWaveform();
         vector<float>*      GetWaveform();
         TH1F*               GetWaveformHist();
@@ -58,15 +58,15 @@ class Channel
         double               GetIntegral();
 
 
-        string  name_;
+        std::string  name_;
 
-        vector<float>*      waveform_   = NULL;
+        std::vector<float>*      waveform_   = NULL;
         TH1I*               hist_       = NULL;
         TH1I*               pedestal_   = NULL;
         float               pd_mean_;
         float               pd_error_;
 
-        double               integral_     = 0 ;
+        double              integral_     = 0 ;
         unsigned int        n_sample_   = 0;
         int                 n_bits_;
 
