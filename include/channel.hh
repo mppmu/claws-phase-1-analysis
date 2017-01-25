@@ -5,7 +5,7 @@
  *      Author: mgabriel
  */
 
-#ifndef CLAWS_CHANNEl_H_
+#ifndef CLAWS_CHANNEL_H_
 #define CLAWS_CHANNEL_H_
 
 // Std includes
@@ -47,7 +47,7 @@ class Channel
         void                SetBaseline(float baseline);
         std::string              GetName();
         //vector<int8_t>*     GetWaveform();
-        vector<float>*      GetWaveform();
+        std::vector<float>*      GetWaveform();
         TH1F*               GetWaveformHist();
         TH1I*               GetPedestal();
 

@@ -13,19 +13,26 @@
 #include <boost/filesystem.hpp>
 // root
 #include <TH1I.h>
+// Project
+#include "channel.hh"
 
 struct GainChannel
 {
-    GainChannel(std::string n, TH1I* h, double g, std::vector<float>* v):name(n),hist(h),gain(g), avg_wf(v){};
+    GainChannel(std::string n, TH1I* h, double g, std::vector<float>* v):name(n),gain_hist(h), gain(g), avg_wf(v)
+    {
+        avg_hist = NULL;
+    };
     ~GainChannel()
     {
-        delete hist;
+        delete gain_hist;
         delete avg_wf;
-    }
+        delete avg_hist;
+    };
     std::string name;
-    TH1I*       hist;
+    TH1I*       gain_hist;
     double      gain;
     std::vector<float>* avg_wf;
+    TH1F*       avg_hist;
 };
 
 class Gain
@@ -35,14 +42,18 @@ class Gain
         virtual                             ~Gain();
 
         void                                AddValue(std::map<std::string, double> values);
-        void                                AddValue(std::vector<double> values);
+        // void                                AddValue(std::vector<double> values);
 
-        void                                Fit();
+        void                                FitGain();
         void                                SaveGain(boost::filesystem::path path_run);
 
-        void                                AddIntWf(std::vector<std::vector<float>*> wfs);
-        void                                NormalizeWaveforms(double norm);
+        void                                AddIntWf(std::map<std::string, std::vector<float>*> wfs, std::map<std::string, double>integral);
+        void                                AddIntWfs(std::vector<std::vector<Channel*>> int_channels);
+        void                                NormalizeWaveform(int ch, double norm);
+        void                                FitAvg();
         void                                SaveAvg(boost::filesystem::path path_run);
+
+        void                                WfToHist();
 
         std::map<std::string, double>       GetGain();
         double                              GetGain(std::string channel = "");

@@ -38,10 +38,11 @@ Event::Event(const path &file_root, const path &file_ini)
 void Event::LoadRootFile()
 {
     // std::cout<< "Loading Event: " << nr_str_ << std::endl;
-    if(nr_ == 0)
-    {
-        std::cout<< path_file_root_ << std:: endl;
-    }
+    // if(nr_ == 0)
+    // {
+    //     std::cout<< path_file_root_ << std:: endl;
+    // }
+
     TFile *file=NULL;
     file = new TFile(path_file_root_.string().c_str(), "open");
 
@@ -86,7 +87,14 @@ void Event::LoadPedestal()
 {
     for (auto &itr : channels_)
     {
-        itr.second->LoadPedestal();
+        try
+        {
+            itr.second->LoadPedestal();
+        }
+        catch(std::string exception)
+        {
+            std::cout<< "In event nr: " << nr_ << "\n" << exception << std::endl;
+        }
     }
 };
 
@@ -176,7 +184,10 @@ std::map<std::string, TH1I*> Event::GetPedestal()
 
     return rtn;
 };
-
+Channel* Event::GetChannel(std::string name)
+{
+    return channels_[name];
+}
 std::map<std::string, Channel*> Event::GetChannels()
 {
     return channels_;
@@ -202,12 +213,18 @@ std::map<std::string, double> Event::GetIntegral()
     return rtn;
 }
 
-std::vector<std::vector<float>*>    Event::GetWaveforms()
+// std::vector< double> GetIntegralVec()
+// {
+//     std::vector
+// }
+
+
+std::map<std::string, std::vector<float>*> Event::GetWaveforms()
 {
-    std::vector<std::vector<float>*> rtn;
-    for(auto& m : channels_)
+    std::map<std::string, std::vector<float>*>  rtn;
+    for(auto& mvec : channels_)
     {
-        rtn.push_back(m.second->GetWaveform());
+        rtn[mvec.first] = mvec.second->GetWaveform();
     }
     return rtn;
 };

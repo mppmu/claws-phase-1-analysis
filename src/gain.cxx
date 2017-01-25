@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <string>
 
 //root
 #include <TFile.h>
@@ -16,6 +17,7 @@ Gain::Gain(int run_nr):run_nr_(run_nr)
     for(auto & ivec : GS->GetChannels(2))
     {
         std::string title    = "run_" + std::to_string(run_nr_) + "_" + ivec + "_gain";
+        std::replace(title.begin(), title.end(), '-','_');
         channels_.push_back(new GainChannel(ivec, new TH1I(title.c_str(), title.c_str(),140,-210 ,2610),0, new std::vector<float>(230,0)));
     }
 
@@ -33,7 +35,7 @@ void Gain::AddValue(std::map<std::string, double> values)
 {
     for(auto & ivec : channels_)
     {
-        ivec->hist->Fill(-values[ivec->name]);
+        ivec->gain_hist->Fill(values[ivec->name]);
     }
         // for(unsigned i =0; i<channels_.size();i++)
         // {
@@ -41,32 +43,32 @@ void Gain::AddValue(std::map<std::string, double> values)
         // }
 };
 
-void Gain::AddValue(std::vector<double> values)
-{
-        if(values.size() != channels_.size())
-        {
-            std::cout << "\033[32;1mGain::AddValue: number of values and channels does not agree! \033[0m done!     "<< std::endl;
-        }
+// void Gain::AddValue(std::vector<double> values)
+// {
+//         if(values.size() != channels_.size())
+//         {
+//             std::cout << "\033[32;1mGain::AddValue: number of values and channels does not agree! \033[0m done!     "<< std::endl;
+//         }
+//
+//         for(unsigned i =0; i<channels_.size();i++)
+//         {
+//             channels_.at(i)->gain_hist->Fill(-values.at(i));
+//         }
+//         // for(unsigned i =0; i<channels_.size();i++)
+//         // {
+//         //     channels_.at(i)->Fill(-values.at(i));
+//         // }
+// };
 
-        for(unsigned i =0; i<channels_.size();i++)
-        {
-            channels_.at(i)->hist->Fill(-values.at(i));
-        }
-        // for(unsigned i =0; i<channels_.size();i++)
-        // {
-        //     channels_.at(i)->Fill(-values.at(i));
-        // }
-};
-
-void Gain::Fit()
+void Gain::FitGain()
 {
     for(auto & ivec : channels_)
     {
 
         TF1* gaussian=new TF1( (ivec->name + "_gaussian").c_str(),"gaus",-200, 2600);
 
-        ivec->hist->Fit(gaussian,"Q");
-        ivec->hist->Fit(gaussian,"Q");
+        ivec->gain_hist->Fit(gaussian,"Q");
+        ivec->gain_hist->Fit(gaussian,"Q");
 
         TF1* double_gaussian=new TF1( (ivec->name + "_double_gaussian").c_str(),"gaus(220)+gaus(420)",0,3*gaussian->GetParameter(1) );
 
@@ -81,7 +83,7 @@ void Gain::Fit()
         double_gaussian->SetParLimits(4,gaussian->GetParameter(1)*1.65, gaussian->GetParameter(1)*2.8);
         double_gaussian->SetParLimits(5,gaussian->GetParameter(2)*0.25, gaussian->GetParameter(2)*3.);
 
-        ivec->hist->Fit(double_gaussian,"WWQ");
+        ivec->gain_hist->Fit(double_gaussian,"WWQ");
         ivec->gain = double_gaussian->GetParameter(4) - double_gaussian->GetParameter(1);
     }
 };
@@ -98,31 +100,74 @@ void Gain::SaveGain(boost::filesystem::path path_run)
 
     for(auto & ivec : channels_)
     {
-        ivec->hist->Write();
+        ivec->gain_hist->Write();
     }
 
     rfile->Close();
     delete rfile;
 };
 
-void Gain::AddIntWf(std::vector<std::vector<float>*> wfs)
+void Gain::AddIntWf(std::map<std::string, std::vector<float>*> wfs, std::map<std::string, double>integral)
 {
-    for(unsigned i = 0; i < channels_.size(); i++)
+    for(unsigned i=0; i < GS->GetChannels(2).size(); i++ )
     {
-        std::transform(channels_.at(i)->avg_wf->begin(), channels_.at(i)->avg_wf->end(),wfs.at(i)->begin(), channels_.at(i)->avg_wf->begin(), std::plus<float>());
-    }
-};
-
-void Gain::NormalizeWaveforms(double norm)
-{
-    for(auto & ivec : channels_)
-    {
-        for(unsigned i = 0; i<ivec->avg_wf->size(); i++)
+        std::string ch_name = GS->GetChannels(2).at(i);
+        if(integral[ch_name]>= channels_.at(i)->gain*0.75 && integral[ch_name] <= channels_.at(i)->gain*1.25)
         {
-            ivec->avg_wf->at(i) /= norm;
+            std::transform(channels_.at(i)->avg_wf->begin(), channels_.at(i)->avg_wf->end(),wfs[ch_name]->begin(), channels_.at(i)->avg_wf->begin(), std::plus<float>());
         }
     }
 };
+
+void  Gain::AddIntWfs(std::vector<std::vector<Channel*>> int_channels)
+{
+    for(unsigned i = 0;  i < channels_.size(); i++)
+    {
+        int counter = 0;
+        for(auto &ivec : int_channels.at(i))
+        {
+            if(ivec->GetIntegral() >= channels_.at(i)->gain*(1-GS->GetAcceptedGain()) && ivec->GetIntegral() <= channels_.at(i)->gain*(1+GS->GetAcceptedGain()))
+            {
+                std::vector<float>* wf= ivec->GetWaveform();
+                std::transform(channels_.at(i)->avg_wf->begin(), channels_.at(i)->avg_wf->end(),wf->begin(), channels_.at(i)->avg_wf->begin(), std::plus<float>());
+                counter ++;
+            }
+        }
+        this->NormalizeWaveform(i, counter);
+    //channels_.at(i)->avg_hist->SetEntries(channels_.at(i)->avg_hist->GetEntries()*counter);
+
+    }
+};
+
+void Gain::NormalizeWaveform(int ch, double norm)
+{
+        for(unsigned i = 0; i<channels_.at(ch)->avg_wf->size(); i++)
+        {
+            channels_.at(ch)->avg_wf->at(i) /= norm;
+        }
+};
+
+void Gain::FitAvg()
+{
+    for(auto & ivec : channels_)
+    {
+        std::string name = ivec->name + "_exponential";
+        std::replace(name.begin(), name.end(), '-','_');
+        TF1* expo=new TF1( name.c_str(),"[0]*exp([1]*(x-[2]))", 1, ivec->avg_hist->GetNbinsX());
+        expo->SetParameter(0,-33);
+        expo->SetParameter(1,-0.040);
+        expo->SetParameter(2,97);
+        // expo->SetParameter(3,-0.11);
+        ivec->avg_hist->Fit(expo, "Q", "", ivec->avg_hist->GetMinimumBin()+10, ivec->avg_wf->size());
+        int end = round(expo->GetX(0.015));
+        for(signed i = ivec->avg_wf->size(); i < end + 1; i++)
+        {
+            ivec->avg_hist->SetBinContent(i, expo->Eval(i));
+        }
+        std::cout<< expo->GetX(-0.015) << std::endl;
+        // std::cout<< expo->GetX(0.015) << std::endl;
+    }
+}
 
 void Gain::SaveAvg(boost::filesystem::path path_run)
 {
@@ -136,21 +181,36 @@ void Gain::SaveAvg(boost::filesystem::path path_run)
 
     for(auto & ivec : channels_)
     {
-        std::string title = "run_" + std::to_string(run_nr_) + "_" + ivec->name + "_avg1pe";
-
-        TH1F* tmp = new TH1F(title.c_str(), title.c_str(),ivec->avg_wf->size() ,-0.5 ,ivec->avg_wf->size()+0.5 );
-        for(unsigned i=0; i < ivec->avg_wf->size(); i++)
-        {
-            tmp->SetBinContent(i+1, ivec->avg_wf->at(i));
-        }
-        tmp->Write();
-        delete tmp;
-        tmp = NULL;
+        // std::string title = "run_" + std::to_string(run_nr_) + "_" + ivec->name + "_avg1pe";
+        //
+        // TH1F* tmp = new TH1F(title.c_str(), title.c_str(),ivec->avg_wf->size() ,-0.5 ,ivec->avg_wf->size()+0.5 );
+        // for(unsigned i=0; i < ivec->avg_wf->size(); i++)
+        // {
+        //     tmp->SetBinContent(i+1, ivec->avg_wf->at(i));
+        // }
+        ivec->avg_hist->Write();
+        // delete tmp;
+        // tmp = NULL;
     }
 
     rfile->Close();
     delete rfile;
 };
+void Gain::WfToHist()
+{
+    for(auto & ivec : channels_)
+    {
+        delete ivec->avg_hist;
+
+        std::string title = "run_" + std::to_string(run_nr_) + "_" + ivec->name + "_avg1pe";
+        std::replace(title.begin(), title.end(), '-','_');
+        ivec->avg_hist = new TH1F(title.c_str(), title.c_str(),ivec->avg_wf->size() + 150 ,-0.5 ,ivec->avg_wf->size()+0.5 + 150 );
+        for(unsigned i=0; i < ivec->avg_wf->size(); i++)
+        {
+            ivec->avg_hist->SetBinContent(i+1, ivec->avg_wf->at(i));
+        }
+    }
+}
 
 double Gain::GetGain(std::string channel)
 {

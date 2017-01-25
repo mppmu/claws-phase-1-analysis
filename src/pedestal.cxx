@@ -41,8 +41,8 @@ Pedestal::Pedestal(int run_nr):run_nr_(run_nr)
     }
     for(auto &ch : GS->GetChannels(2))
     {
-        g_[ch]->SetMaximum(-4);
-        g_[ch]->SetMinimum(4);
+        g_[ch]->SetMaximum(4);
+        g_[ch]->SetMinimum(-4);
     }
 
 };

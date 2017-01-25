@@ -124,9 +124,12 @@ void Channel::LoadPedestal()
             i++;
         }
 
-        if((pedestal_->GetEntries()<waveform_->size()*0.01)) std::cout<< name_<< ":  (pedestal_->GetEntries(): "
-                                                             <<pedestal_->GetEntries()<< ", waveform_->size(): "
-                                                             <<waveform_->size() << std::endl;
+        if((pedestal_->GetEntries()<waveform_->size()*0.01))
+        {
+            std::string error = name_ + ":  (pedestal_->GetEntries(): " + to_string(pedestal_->GetEntries()) + ", waveform_->size(): "
+                                + to_string(waveform_->size());
+            throw error;
+        }
 
     }
 
@@ -264,4 +267,5 @@ void IntChannel::CalculateIntegral()
         integral_ += waveform_->at(i);
 
     }
+    integral_ *= -1;
 };

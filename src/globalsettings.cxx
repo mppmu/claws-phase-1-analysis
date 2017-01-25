@@ -177,7 +177,12 @@ namespace claws {
             }
             else if (type == 1) return channels_;
             else if (type == 2) return int_channels_;
-        }
+        };
+
+        double GlobalSettings::GetAcceptedGain()
+        {
+            return accepted_gain_;
+        };
 
         boost::filesystem::path GlobalSettings::GetHook()
         {

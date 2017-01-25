@@ -345,32 +345,22 @@ void Run::LoadRunSettings()
 
 void Run::SubtractPedestal()
 {
-
     double wall0 = claws::get_wall_time();
     double cpu0  = claws::get_cpu_time();
+
     std::cout << "\033[33;1mRun::Subtracting pedestal:\033[0m running" << "\r" << std::flush;
-//    std::cout << "Subtracting pedestal: running" << "\r" << std::flush;
 
     this->LoadPedestal();
     this->SavePedestal();
     this->Subtract();
 
-    // if(!boost::filesystem::is_directory(path_run_/boost::filesystem::path("Calibration")) )
-    // {
-    //     boost::filesystem::create_directory(path_run_/boost::filesystem::path("Calibration"));
-    // }
-    //
-    // boost::filesystem::path fname = path_run_.string()/boost::filesystem::path("/Calibration/run-"+run_nr_str_+"_events_subtracted.root");
-    // this->SaveEvents(fname);
     std::cout << "\033[32;1mRun::Subtracting pedestal:\033[0m done!       " << std::cout;
-//    std::cout << "Subtracting pedestal: done!   " << std::endl;
 
     double wall1 = claws::get_wall_time();
     double cpu1  = claws::get_cpu_time();
 
     cout << "Wall Time = " << wall1 - wall0 << endl;
     cout << "CPU Time  = " << cpu1  - cpu0  << endl;
-
 };
 
 void Run::LoadPedestal()
@@ -396,11 +386,10 @@ void Run::LoadPedestal()
     }
 
     // There is of course only one object of class Pedestal (pedestal_) all events need to access => no multi threading.
-
-    for(unsigned int i=0; i< events_.size();i++)
-    {
-        pedestal_->AddEvent(events_.at(i)->GetPedestal());
-    }
+    // for(unsigned int i=0; i< events_.size();i++)
+    // {
+    //     pedestal_->AddEvent(events_.at(i)->GetPedestal());
+    // }
 
     for(unsigned int i=0; i< int_events_.size();i++)
     {
@@ -473,7 +462,6 @@ void Run::SavePedestal()
     /*
         TODO description
     */
-
     if(!boost::filesystem::is_directory(path_run_/path("Calibration")) )
     {
         boost::filesystem::create_directory(path_run_/path("Calibration"));
@@ -533,8 +521,9 @@ void Run::GainCalibration()
         int_events_.at(i)->CalculateIntegral();
         gain_->AddValue(int_events_.at(i)->GetIntegral());
     }
-    gain_->Fit();
+    gain_->FitGain();
     gain_->SaveGain(path_run_);
+
 
     std::cout << "\033[32;1mRun::Calibrating gain:\033[0m done!     " << std::endl;
 
@@ -556,19 +545,20 @@ void Run::Average1PE()
     double wall0 = claws::get_wall_time();
     double cpu0  = claws::get_cpu_time();
 
-
-    // for(auto & v : GS->GetChannels(2))
+    // for(unsigned int i=0; i< int_events_.size();i++)
     // {
-    //     std::string title    = "run_" + std::to_string(run_nr_) + "_" + v + "_average1pe_v1";
-    //     average_1pe_[v] = new TH1F(title.c_str(), title.c_str(),120,-200 ,1200);
+    //     gain_->AddIntWf(int_events_.at(i)->GetWaveforms(), int_events_.at(i)->GetIntegral());
     // }
-    //
-    for(unsigned int i=0; i< int_events_.size();i++)
+    std::vector<std::vector<Channel*>> vec;
+    for(auto ivec : GS->GetChannels(2))
     {
-        gain_->AddIntWf(int_events_.at(i)->GetWaveforms());
+        vec.push_back(this->GetChannel(ivec));
     }
 
-    gain_->NormalizeWaveforms(int_events_.size());
+    gain_->AddIntWfs(vec);
+//    gain_->NormalizeWaveforms(int_events_.size());
+    gain_->WfToHist();
+    gain_->FitAvg();
     gain_->SaveAvg(path_run_);
 
     std::cout << "\033[32;1mRun::Extracting average 1 pe:\033[0m done!     " << std::endl;
@@ -655,6 +645,27 @@ TTree *Run::GetOfflineTree(){
     return tree_offline;
 };
 
+std::vector<Channel*> Run::GetChannel(std::string name)
+{
+    std::vector<Channel*> channel;
+    if(ends_with(name, "-INT"))
+    {
+        for(auto & ivec : int_events_)
+        {
+            channel.push_back(ivec->GetChannel(name));
+        }
+    }
+    else
+    {
+        for(auto & ivec : events_)
+        {
+            channel.push_back(ivec->GetChannel(name));
+        }
+    }
+    return channel;
+
+}
+
 int Run::WriteOnlineTree(TFile* file)
 {
     TTree *tout = new TTree("tout","tout");
@@ -702,258 +713,7 @@ int Run::WriteOnlineTree(TFile* file)
 
     }
 
-    // double ts, rate_fwd1, rate_fwd2, rate_fwd3, rate_fwd4, rate_bwd1, rate_bwd2, rate_bwd3, rate_bwd4;
-    // bool injection;
-    //
-    // tout->Branch("ts", &ts,     "ts/D");
-    // tout->Branch("fwd1_rate_on", &rate_fwd1,     "fwd1_rate_on/D");
-    // tout->Branch("fwd2_rate_on", &rate_fwd2,     "fwd2_rate_on/D");
-    // tout->Branch("fwd3_rate_on", &rate_fwd3,     "fwd3_rate_on/D");
-    // tout->Branch("fwd4_rate_on", &rate_fwd4,     "fwd4_rate_on/D");
-    // tout->Branch("bwd1_rate_on", &rate_bwd1,     "bwd1_rate_on/D");
-    // tout->Branch("bwd2_rate_on", &rate_bwd2,     "bwd2_rate_on/D");
-    // tout->Branch("bwd3_rate_on", &rate_bwd3,     "bwd3_rate_on/D");
-    // tout->Branch("bwd4_rate_on", &rate_bwd4,     "bwd4_rate_on/D");
-    //
-    // tout_inj->Branch("ts", &ts,     "ts/D");
-    // tout_inj->Branch("fwd1_rate_on", &rate_fwd1,     "fwd1_rate_on/D");
-    // tout_inj->Branch("fwd2_rate_on", &rate_fwd2,     "fwd2_rate_on/D");
-    // tout_inj->Branch("fwd3_rate_on", &rate_fwd3,     "fwd3_rate_on/D");
-    // tout_inj->Branch("fwd4_rate_on", &rate_fwd4,     "fwd4_rate_on/D");
-    // tout_inj->Branch("bwd1_rate_on", &rate_bwd1,     "bwd1_rate_on/D");
-    // tout_inj->Branch("bwd2_rate_on", &rate_bwd2,     "bwd2_rate_on/D");
-    // tout_inj->Branch("bwd3_rate_on", &rate_bwd3,     "bwd3_rate_on/D");
-    // tout_inj->Branch("bwd4_rate_on", &rate_bwd4,     "bwd4_rate_on/D");
-    //// int setStyle(TGraph* graph1,TGraph* graph2,TGraph* graph3,TGraph* graph4){
-//     double markersize=0.1;
-//
-//     graph1->SetMarkerColor(kAzure-3);
-//     graph1->SetMarkerStyle(20);
-//     graph1->SetMarkerSize(markersize);
-//     graph1->GetYaxis()->SetRangeUser(-32512., 32512);
-//
-//     graph2->SetMarkerColor(kOrange+7);
-//     graph2->SetMarkerStyle(20);
-//     graph2->SetMarkerSize(markersize);
-//
-//     graph3->SetMarkerColor(kGreen+2);
-//     graph3->SetMarkerStyle(20);
-//     graph3->SetMarkerSize(markersize);
-//
-//     graph4->SetMarkerColor(kRed);
-//     graph4->SetMarkerStyle(20);
-//     graph4->SetMarkerSize(markersize);
-//
-//     return 0;
-// }
-//
-// Event::Event(TTree* meta, TTree* data) {
-//
-//     // Check if everything is there.
-//     if (meta == NULL || data == NULL){
-//         std::cout << "Meta tree or data tree not found" << std::endl;
-//     }
-//
-//     // Extract the meta data aka timestamp and evt number
-//     meta->SetBranchAddress("evt_nr", &evt_nr);
-//     meta->SetBranchAddress("unixtime", &unixtime);
-//     meta->GetEntry(0);
-//
-//     delete meta;
-//     meta = NULL;
-//
-//     //TODO make this here dynamic, now only 8 channels are possible
-//     int16_t fwd1;
-//     data->SetBranchAddress("FWD1", &fwd1);
-//     FWD1=new TGraph();
-//
-//     int16_t fwd2;
-//     data->SetBranchAddress("FWD2", &fwd2);
-//     FWD2=new TGraph();
-//
-//     int16_t fwd3;
-//     data->SetBranchAddress("FWD3", &fwd3);
-//     FWD3=new TGraph();
-//
-//     int16_t fwd4;
-//     data->SetBranchAddress("FWD4", &fwd4);
-//     FWD4=new TGraph();
-//
-//     int16_t bwd1;
-//     data->SetBranchAddress("BWD1", &bwd1);
-//     BWD1=new TGraph();
-//
-//     int16_t bwd2;
-//     data->SetBranchAddress("BWD2", &bwd2);
-//     BWD2=new TGraph();
-//
-//     int16_t bwd3;
-//     data->SetBranchAddress("BWD3", &bwd3);
-//     BWD3=new TGraph();
-//
-//     int16_t bwd4;
-//     data->SetBranchAddress("BWD4", &bwd4);
-//     BWD4=new TGraph();
-//
-//     Long64_t n_entries = data->GetEntries();
-//
-//     //TODO Instead of i*0.8 use the appropriate timebase from the scope.
-//     for (Long64_t i = 0 ; i < n_entries ; i++) {
-//         data->GetEntry(i);
-//         FWD1->SetPoint(i, i * 0.8, fwd1);
-//         FWD2->SetPoint(i, i * 0.8, fwd2);
-//         FWD3->SetPoint(i, i * 0.8, fwd3);
-//         FWD4->SetPoint(i, i * 0.8, fwd4);
-//         BWD1->SetPoint(i, i * 0.8, bwd1);
-//         BWD2->SetPoint(i, i * 0.8, bwd2);
-//         BWD3->SetPoint(i, i * 0.8, bwd3);
-//         BWD4->SetPoint(i, i * 0.8, bwd4);
-//     }
-//
-//     delete data;
-//     data = NULL;
-//
-//     // TODO Auto-generated constructor stub
-// 	// TODO Autoflag on TGraph to check if is_clock=true, maybe GetYAxis->GetMean ~ (max - min)/2 + min ~ Wert
-//
-// }
-//
-// Event::~Event() {
-// 	// TODO Auto-generated destructor stub
-// }
-//
-//
-// TGraph* Event::getChannel(std::string channel){
-//
-//     if(channel == "FWD1"){
-//         return FWD1;
-//     }else if (channel == "FWD2"){
-//         return FWD2;
-//     }else if (channel == "FWD3"){
-//         return FWD3;
-//     }else if (channel == "FWD4"){
-//         return FWD4;
-//     }else if (channel == "BWD1"){
-//         return BWD1;
-//     }else if (channel == "BWD2"){
-//         return BWD2;
-//     }else if (channel == "BWD3"){
-//         return BWD3;
-//     }else if (channel == "BWD4"){
-//         return BWD4;
-//     }else{
-//         std::cout << "Channel " << channel << " not found! " << std::endl;
-//         return NULL;
-//     }
-//
-// }
-//
-// int Event::eventToPdf(std::string file){
-//
-//     setStyle(FWD1, FWD2, FWD3, FWD4);
-//     setStyle(BWD1, BWD2, BWD3, BWD4);
-//
-//     TCanvas *c1 = new TCanvas("c1","multipads",1200,750);
-//     c1->Divide(1,2,0,0);
-//
-//     c1->cd(1);
-//     FWD1->Draw("AP");
-//     FWD2->Draw("P");
-//     FWD3->Draw("P");
-//     FWD4->Draw("P");
-//
-//     c1->cd(2);
-//     BWD1->Draw("AP");
-//     BWD2->Draw("P");
-//     BWD3->Draw("P");
-//     BWD4->Draw("P");
-//
-//     c1->SaveAs(file.c_str());
-//
-//     return 0;
-//
-// }
-//
-// int Event::calcRate(std::string channel){
-//
-//
-//     return 0;
-// }
-//
-//
-// double Event::getRate(std::string channel){
-//     //TODO implementation
-//     return 0;
-// }
-//
-//
-//
-// Data::Data(TDirectory* dir){
-//
-//
-//
-// //    Event* event = new Event(meta, data);
-//     map<int,Event*> events;
-//     map<int,Event*>::iterator it;
-//
-//
-//     TIter next(dir->GetListOfKeys());
-//     TKey* key;
-//     while ((key = (TKey*)next())){
-//     		int evt_nr = std::stoi(string(key->GetName()).substr(0,9));
-//     		it = events.find(evt_nr);
-//     		if (it == events.end()){
-//                 TTree* meta = (TTree*)dir->Get((to_string(evt_nr)+"-meta").c_str());
-//                 TTree* data = (TTree*)dir->Get((to_string(evt_nr)+"-data").c_str());
-//                 Event* event=new Event(meta,data);
-//     			events.insert(pair<int,Event*>(evt_nr,event));
-//     		}
-//
-//     	}
-//
-//
-// //    it = events.begin();
-// //    while(it !=events.end()){
-// ////        data = (TTree*)dir->Get((to_string(it->first)+"-data").c_str());
-// ////        meta = (TTree*)dir->Get((to_string(it->first)+"-meta").c_str());
-// ////        it->second=new Event(meta, data);
-// //        cout << it->first << ", " << it->second->getEvtnr() <<endl;
-// //        ++it;
-// //    	}
-//
-// //    cout << events.size()<< endl;
-// }
-//
-// Data::~Data() {
-//     // TODO Auto-generated destructor stub
-// }
-//
-// Event* getEvent(int evt_nr){
-//     return NULL;
-// };
-//
-// int Data::appendEvent(Event* event){
-//
-//
-//     return 0;
-// }
-    // for(unsigned int i=0; i < events_.size(); i++){
-    //
-    //     ts = events_.at(i)->GetUnixtime();
-    //
-    //     rate_fwd1 = events_.at(i)->GetRateOnline()[0];
-    //     rate_fwd2 = events_.at(i)->GetRateOnline()[1];
-    //     rate_fwd3 = events_.at(i)->GetRateOnline()[2];
-    //     rate_fwd4 = events_.at(i)->GetRateOnline()[3];
-    //     rate_bwd1 = events_.at(i)->GetRateOnline()[4];
-    //     rate_bwd2 = events_.at(i)->GetRateOnline()[5];
-    //     rate_bwd3 = events_.at(i)->GetRateOnline()[6];
-    //     rate_bwd4 = events_.at(i)->GetRateOnline()[7];
-    //
-    //     if(events_.at(i)->GetInjection()) tout_inj->Fill();
-    //     else                             tout->Fill();
-    //
-    // }
+
 
     file->cd();
     tout->Write();

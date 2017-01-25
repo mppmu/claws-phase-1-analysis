@@ -62,7 +62,7 @@ class Event{
         Event(const path &file_root, const path &file_ini);
 
         virtual ~Event();
-        
+
         void SubtractPedestal();
         void SubtractPedestal(std::map<std::string, float> ped);
 
@@ -82,6 +82,7 @@ class Event{
 
         void                                CalculateIntegral();
         std::map<std::string, double>       GetIntegral();
+        std::vector< double>                GetIntegralVec();
 
 
         void                                SetBaseline(std::map<std::string, float> baseline);
@@ -89,8 +90,9 @@ class Event{
         int                                 GetNr()   const;
         std::string                         GetNrStr() const;
         std::map<std::string, TH1I*>        GetPedestal();
+        Channel*                            GetChannel(std::string name);
         std::map<std::string, Channel*>     GetChannels();
-        std::vector<std::vector<float>*>    GetWaveforms();
+        std::map<std::string, std::vector<float>*>    GetWaveforms();
     // protected:
 
     //    static int id_;

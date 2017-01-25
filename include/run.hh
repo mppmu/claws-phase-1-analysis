@@ -93,11 +93,7 @@ class Run{
         int WriteTimeStamp(TFile* file);
         int WriteNTuple(boost::filesystem::path path_ntuple);
 
-
-
-
         void Subtract();
-
 
         void DrawPedestal();
 
@@ -128,6 +124,8 @@ class Run{
         double GetStopTime();
         TTree *GetOnlineTree();
         TTree *GetOfflineTree();
+
+        std::vector<Channel*> GetChannel(std::string name);
 
     protected:
 
