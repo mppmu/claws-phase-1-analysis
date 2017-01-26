@@ -576,6 +576,57 @@ void Run::Average1PE()
     cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 };
 
+void Run::WaveformDecomposition()
+{
+    std::cout << "\033[33;1mRun::Decomposing waveforms:\033[0m running" << "\r" << std::flush;
+
+    double wall0 = claws::get_wall_time();
+    double cpu0  = claws::get_cpu_time();
+
+    this->Decompose();
+
+    std::cout << "\033[32;1mRun::Decomposing waveforms:\033[0m done!     " << std::endl;
+
+    double wall1 = claws::get_wall_time();
+    double cpu1  = claws::get_cpu_time();
+
+    cout << "Wall Time = " << wall1 - wall0 << endl;
+    cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+}
+
+void Run::Decompose()
+{
+
+//    std::map<std::string, std::vector<float>*> average_waveforms = gain_->GetWaveform();
+    int myarray[4]={0,1,2,3};
+
+    std::cout << "Starting decompse" << std::endl;
+
+    #pragma omp parallel for schedule(dynamic,1) num_threads(4) private(myarray)
+    for(unsigned int i=0; i< 16;i++)
+    {
+            int id =omp_get_thread_num();
+            sleep(id);
+            std::cout << "ID: " << id <<", i: "<< i<< ", value: " << myarray[id] << std::endl;
+            myarray[id] = 17;
+    }
+    for(unsigned int i=0; i< 4;i++)
+    {
+        std::cout << "myarray: " << myarray[i] << std::endl;
+    }
+    //TODO Finish implentation
+};
+
+void Run::Reconstruct()
+{
+    //TODO Implentation
+};
+
+void Run::CalculateChi2()
+{
+    //TODO Implentation
+};
+
 void Run::SaveEvents(boost::filesystem::path fname)
 {
     TFile *rfile = new TFile(fname.string().c_str(), "RECREATE");
@@ -710,7 +761,6 @@ int Run::WriteOnlineTree(TFile* file)
             tout_inj->Fill();
             if(events_.at(i)->GetScrubbing() == 3)   tscrub_inj->Fill();
         }
-
         else
         {
             tout->Fill();

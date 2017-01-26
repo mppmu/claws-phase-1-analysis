@@ -92,11 +92,11 @@ class Event{
         void                                SetBaseline(std::map<std::string, float> baseline);
 
         int                                 GetNr()   const;
-        std::string                         GetNrStr() const;
-        std::map<std::string, TH1I*>        GetPedestal();
-        Channel*                            GetChannel(std::string name);
-        std::map<std::string, Channel*>     GetChannels();
-        std::map<std::string, std::vector<float>*>    GetWaveforms();
+        std::string                                     GetNrStr() const;
+        std::map<std::string, TH1I*>                    GetPedestal();
+        Channel*                                        GetChannel(std::string name);
+        std::map<std::string, Channel*>                 GetChannels();
+        std::map<std::string, std::vector<float>*>      GetWaveforms();
     // protected:
 
     //    static int id_;

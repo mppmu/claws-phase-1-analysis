@@ -259,7 +259,25 @@ std::map<std::string, double> Gain::GetGain()
     //     rtn[channel_list_.at(i)] = gain_.at(i);
     // }
     return rtn;
-}
+};
+
+std::vector<float>* Gain::GetWaveform(std::string channel)
+{
+    std::vector<GainChannel*>::iterator ivec = std::find_if(channels_.begin(), channels_.end(), boost::bind(&GainChannel::name, _1) == channel);
+    return (*ivec)->avg_wf;
+};
+
+std::map<std::string, std::vector<float>*> Gain::GetWaveform()
+{
+    std::map<std::string, std::vector<float>*> rtn;
+    for(auto & ivec : channels_)
+    {
+        rtn[ivec->name] = ivec->avg_wf;
+    }
+    return rtn;
+};
+
+
 
 Gain::~Gain() {
 	// TODO Auto-generated destructor stub

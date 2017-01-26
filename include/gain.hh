@@ -60,6 +60,8 @@ class Gain
 
         std::map<std::string, double>       GetGain();
         double                              GetGain(std::string channel = "");
+        std::map<std::string, std::vector<float>*>                GetWaveform();
+        std::vector<float> *                GetWaveform(std::string channel = "");
 
     private:
         int         run_nr_;

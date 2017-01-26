@@ -38,7 +38,7 @@
 
 namespace pt = boost::property_tree;
 
-extern std::ofstream hendrik_file;
+
 
 namespace claws {
 

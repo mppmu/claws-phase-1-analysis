@@ -119,6 +119,12 @@ class Run{
 
         void Average1PE();
 
+        void WaveformDecomposition();
+
+            void Decompose();
+            void Reconstruct();
+            void CalculateChi2();
+            
         int    GetRunNr();
         double GetStartTime();
         double GetStopTime();
