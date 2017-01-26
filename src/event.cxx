@@ -87,32 +87,59 @@ void Event::LoadPedestal()
 {
     for (auto &itr : channels_)
     {
-        try
-        {
-            itr.second->LoadPedestal();
-        }
-        catch(std::string exception)
-        {
-            std::cout<< "In event nr: " << nr_ << "\n" << exception << std::endl;
-        }
+        itr.second->LoadPedestal();        
+        // catch(std::string exception)
+        // {
+        //     std::cout<< "In event nr: " << nr_ << "\n" << exception << std::endl;
+        // }
     }
 };
 
-void Event::SubtractPedestal()
+// void Event::SubtractPedestal()
+// {
+//     /* See "void Channel::Subtract()" for more information
+//     */
+//     for(auto &ch : channels_)
+//     {
+//         ch.second->Subtract();
+//     }
+// };
+
+void Event::SubtractPedestal(std::map<std::string, float> ped, bool backup)
 {
-    /* See "void Channel::Subtract()" for more information
+    /* Subtracts the pedestal from the individual waveforms. Input options:
+        1) If no parameters are specified, the pedestal from the indi -
+           vidual events will be used for the subtraction. Usually the
+           average run pedestal should be used, unstable pedestal over
+           time like with th pickup in intermediate events in phase one
+           this might lead to gains.
+        2) If the first input parameter is given (i.e. not an empty map
+           like default), it will be used for pedestal subtraction instead
+           of the event specific one.
+        3) If input pedestal is specified and backup == true, the individual
+           event pedestal is used, only if this equal to zero the run-wide
+           pedestal is used.
     */
-    for(auto &ch : channels_)
+    if( ped.empty() && !backup )
     {
-        ch.second->Subtract();
+        for(auto &ch : channels_)
+        {
+            ch.second->Subtract();
+        }
     }
-};
-
-void Event::SubtractPedestal(map<string, float> ped)
-{
-    for(auto &ch : channels_)
+    else if(!ped.empty() && !backup)
     {
-        ch.second->Subtract( ped[ch.first] );
+        for(auto &ch : channels_)
+        {
+            ch.second->Subtract( ped[ch.first] );
+        }
+    }
+    else if(!ped.empty() && backup)
+    {
+        for(auto &ch : channels_)
+        {
+            ch.second->Subtract( ped[ch.first], backup);
+        }
     }
 }
 

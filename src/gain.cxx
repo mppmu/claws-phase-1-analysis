@@ -1,7 +1,9 @@
 
-#include <iostream>
+
 #include <algorithm>
 #include <string>
+#include <iostream>
+#include <fstream>
 
 //root
 #include <TFile.h>
@@ -62,6 +64,8 @@ void Gain::AddValue(std::map<std::string, double> values)
 
 void Gain::FitGain()
 {
+    std::ofstream hendrik_file("/home/iwsatlas1/mgabriel/Plots/forHendyDany.txt", ios::app);
+
     for(auto & ivec : channels_)
     {
 
@@ -85,7 +89,10 @@ void Gain::FitGain()
 
         ivec->gain_hist->Fit(double_gaussian,"WWQ");
         ivec->gain = double_gaussian->GetParameter(4) - double_gaussian->GetParameter(1);
+        hendrik_file<< " "<< ivec->name << " " << ivec->gain;
     }
+    hendrik_file << std::endl;
+    hendrik_file.close();
 };
 
 void Gain::SaveGain(boost::filesystem::path path_run)

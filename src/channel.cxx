@@ -128,10 +128,10 @@ void Channel::LoadPedestal()
         if((pedestal_->GetEntries()<waveform_->size()*0.01))
         {
             std::string error = name_ + ":  (pedestal_->GetEntries(): " + to_string(pedestal_->GetEntries()) + ", waveform_->size(): "
-                                + to_string(waveform_->size())+ ", i: " + to_string(i) + ", pd_gap_: " + to_string(pd_gap_);
-            throw error;
+                                + to_string(waveform_->size())+ ", i: " + to_string(i) + ", pd_gap_: " + to_string(pd_gap_)+ ", threshold: " + to_string(threshold);
+            std::cout << error << std::endl;
         }
-
+        // std::cout << name_ << ": " << pedestal_->GetEntries() << std::endl;
     }
 
     else
@@ -146,20 +146,47 @@ void Channel::LoadPedestal()
 // void Channel::Subtract(double pedestal)
 //             }GetChannelsform_->at( i )
 
-void Channel::Subtract()
-{
-    /*
-        If no argument is given just use the mean value from the pedestal histogram, i.e. the event specific pedestal.
-        This can be usefull when the pedestal over time is experiencing a shift or some pickup!
-    */
-    this->Subtract(pedestal_->GetMean());
-};
+// void Channel::Subtract()
+// {
+//     /*
+//         If no argument is given just use the mean value from the pedestal histogram, i.e. the event specific pedestal.
+//         This can be usefull when the pedestal over time is experiencing a shift or some pickup!
+//     */
+//     this->Subtract(pedestal_->GetMean());
+// };
 
-void Channel::Subtract(double pedestal)
+void Channel::Subtract(double pedestal, bool backup)
 {
-    for (unsigned int i = 0; i < waveform_->size(); i++)
+    if( pedestal == 0 )
     {
-        waveform_->at(i) = waveform_->at(i)-pedestal;
+        for (unsigned int i = 0; i < waveform_->size(); i++)
+        {
+            waveform_->at(i) -= pedestal_->GetMean();
+        }
+    }
+    else if(pedestal != 0 && !backup)
+    {
+        for (unsigned int i = 0; i < waveform_->size(); i++)
+        {
+            waveform_->at(i) -= pedestal;
+        }
+    }
+    else if( backup )
+    {
+        if(pedestal_->GetEntries() == 0)
+        {
+            for (unsigned int i = 0; i < waveform_->size(); i++)
+            {
+                waveform_->at(i) -= pedestal;
+            }
+        }
+        else
+        {
+            for (unsigned int i = 0; i < waveform_->size(); i++)
+            {
+                waveform_->at(i) -= pedestal_->GetMean();
+            }
+        }
     }
 };
 

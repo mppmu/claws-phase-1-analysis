@@ -33,9 +33,12 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <iostream>
+#include <fstream>
 
 namespace pt = boost::property_tree;
 
+extern std::ofstream hendrik_file;
 
 namespace claws {
 

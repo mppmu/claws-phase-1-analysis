@@ -15,7 +15,7 @@
 #include <string>
 #include <cstdlib>
 #include <typeinfo>
-
+#include <fstream>
 // boost
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
@@ -143,14 +143,16 @@ int main(int argc, char* argv[]) {
 
 	TH1::AddDirectory(kFALSE);
 
+	std::ofstream hendrik_file("/home/iwsatlas1/mgabriel/Plots/forHendyDany.txt", ios::trunc);
+	hendrik_file.close();
 //	TApplication *app=new TApplication("app",0,0);
 //	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-23/Run-400999"));
 //	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2017-01-16/Run-401161"));
 //	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2017-01-16/Run-401140"));
 //	Run* myrun = new Run(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-25/Run-401140"));
-	Run* myrun = new Run(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-24/Run-401078"));
+//	Run* myrun = new Run(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-24/Run-401078"));
 //	Run* myrun = new Run(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2017-01-23/Run-401433"));
-	// Run* myrun = new Run(path("./Run-400999"));
+	Run* myrun = new Run(path("./Run-400999"));
 	myrun->SynchronizeFiles();
     myrun->LoadRawData();
 	myrun->SubtractPedestal();
@@ -171,7 +173,7 @@ int main(int argc, char* argv[]) {
 	// 	myrun->Average1PE();
 	// 	delete myrun;
 	// }
-
+	hendrik_file.close();
 //	app->Run();
 
 	return 0;

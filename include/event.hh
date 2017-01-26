@@ -63,8 +63,12 @@ class Event{
 
         virtual ~Event();
 
-        void SubtractPedestal();
-        void SubtractPedestal(std::map<std::string, float> ped);
+//        void SubtractPedestal();
+
+
+        void SubtractPedestal(std::map<std::string, float> ped = std::map<std::string, float>(), bool backup = false);
+
+
 
         void             LoadPedestal();
 

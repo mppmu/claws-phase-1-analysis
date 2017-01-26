@@ -18,6 +18,7 @@
  #include <typeinfo>
  #include <math.h>
  #include <stdlib.h>
+ #include <fstream>
 
 
 
@@ -76,6 +77,9 @@ Run::Run(boost::filesystem::path p)
     gain_       = new Gain(run_nr_);
     cout << "---------------------------------------------------------" << endl;
     cout << "\033[1;31mRun::Created run: \033[0m" << run_nr_ << endl;
+    std::ofstream hendrik_file("/home/iwsatlas1/mgabriel/Plots/forHendyDany.txt", ios::app);
+    hendrik_file << run_nr_str_;
+    hendrik_file.close();
     claws::print_local_time();
 };
 
@@ -386,10 +390,10 @@ void Run::LoadPedestal()
     }
 
     // There is of course only one object of class Pedestal (pedestal_) all events need to access => no multi threading.
-    // for(unsigned int i=0; i< events_.size();i++)
-    // {
-    //     pedestal_->AddEvent(events_.at(i)->GetPedestal());
-    // }
+    for(unsigned int i=0; i< events_.size();i++)
+    {
+        pedestal_->AddEvent(events_.at(i)->GetPedestal());
+    }
 
     for(unsigned int i=0; i< int_events_.size();i++)
     {
@@ -500,7 +504,7 @@ void Run::Subtract()
         #pragma omp for schedule(dynamic,1)
         for(unsigned int i=0; i< int_events_.size();i++)
         {
-            int_events_.at(i)->SubtractPedestal();
+            int_events_.at(i)->SubtractPedestal(tmp, true);
         }
     }
 };

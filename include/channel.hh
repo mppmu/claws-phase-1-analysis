@@ -39,8 +39,8 @@ class Channel
         virtual     void    DeleteHistogram();
 
         virtual     void    LoadPedestal();
-        virtual     void    Subtract();
-        virtual     void    Subtract(double pedestal);
+//        virtual     void    Subtract();
+        virtual     void    Subtract(double pedestal = 0, bool backup = false);
 
         virtual     void    PrintType() = 0;
 
