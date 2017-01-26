@@ -121,13 +121,14 @@ void Channel::LoadPedestal()
                 }
             }
 
+
             i++;
         }
 
         if((pedestal_->GetEntries()<waveform_->size()*0.01))
         {
             std::string error = name_ + ":  (pedestal_->GetEntries(): " + to_string(pedestal_->GetEntries()) + ", waveform_->size(): "
-                                + to_string(waveform_->size());
+                                + to_string(waveform_->size())+ ", i: " + to_string(i) + ", pd_gap_: " + to_string(pd_gap_);
             throw error;
         }
 
