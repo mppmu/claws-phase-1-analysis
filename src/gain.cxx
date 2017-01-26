@@ -159,8 +159,8 @@ void Gain::FitAvg()
         expo->SetParameter(2,97);
         // expo->SetParameter(3,-0.11);
         ivec->avg_hist->Fit(expo, "Q", "", ivec->avg_hist->GetMinimumBin()+10, ivec->avg_wf->size());
-        int end = round(expo->GetX(0.015));
-        for(signed i = ivec->avg_wf->size(); i < end + 1; i++)
+        ivec->end = round(expo->GetX(0.015));
+        for(signed i = ivec->avg_wf->size(); i < ivec->end + 1; i++)
         {
             ivec->avg_hist->SetBinContent(i, expo->Eval(i));
         }
@@ -211,6 +211,24 @@ void Gain::WfToHist()
         }
     }
 }
+
+void Gain::HistToWf()
+{
+
+    for(auto & ivec : channels_)
+    {
+        ivec->avg_wf->clear();
+        std::cout<< "1 Size: " << ivec->avg_wf->size() << ", Capacity: " << ivec->avg_wf->capacity()<< std::endl;
+        //if(ivec->end-129 > ivec->avg_wf->capacity()) ivec->avg_wf->reserve(ivec->end-129);
+        ivec->avg_wf->reserve(ivec->end-129);
+        std::cout<< "2 Size: " << ivec->avg_wf->size() << ", Capacity: " << ivec->avg_wf->capacity()<< std::endl;
+        for(unsigned i=129; i < ivec->end; i++)
+        {
+            ivec->avg_wf->push_back(ivec->avg_hist->GetBinContent(i));
+        }
+        std::cout<< "3 Size: " << ivec->avg_wf->size() << ", Capacity: " << ivec->avg_wf->capacity()<< std::endl;
+    }
+};
 
 double Gain::GetGain(std::string channel)
 {

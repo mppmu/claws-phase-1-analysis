@@ -127,6 +127,7 @@ namespace claws {
 
 
             double accepted_gain_             = 0.35;  // +- from mean gain accepted for avg wfs.
+
             boost::filesystem::path hook_;
 
         // enum data_type_ {NONE, RAW, NTP}             = NONE;

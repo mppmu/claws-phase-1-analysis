@@ -21,6 +21,7 @@ struct GainChannel
     GainChannel(std::string n, TH1I* h, double g, std::vector<float>* v):name(n),gain_hist(h), gain(g), avg_wf(v)
     {
         avg_hist = NULL;
+        end = 0;
     };
     ~GainChannel()
     {
@@ -33,6 +34,7 @@ struct GainChannel
     double      gain;
     std::vector<float>* avg_wf;
     TH1F*       avg_hist;
+    int         end;
 };
 
 class Gain
@@ -54,6 +56,7 @@ class Gain
         void                                SaveAvg(boost::filesystem::path path_run);
 
         void                                WfToHist();
+        void                                HistToWf();
 
         std::map<std::string, double>       GetGain();
         double                              GetGain(std::string channel = "");

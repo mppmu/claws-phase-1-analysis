@@ -559,6 +559,8 @@ void Run::Average1PE()
 //    gain_->NormalizeWaveforms(int_events_.size());
     gain_->WfToHist();
     gain_->FitAvg();
+    // gain_->HistToWf();
+    // gain_->WfToHist();
     gain_->SaveAvg(path_run_);
 
     std::cout << "\033[32;1mRun::Extracting average 1 pe:\033[0m done!     " << std::endl;

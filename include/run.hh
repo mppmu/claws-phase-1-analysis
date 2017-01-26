@@ -156,11 +156,10 @@ class Run{
         // std::map<std::string, TH1F*>   gain_;
         std::map<std::string, TH1F*>   average_1pe_;
 
-        // std::map<string, double> ped_;
-        // std::map<string, double> ped_int_;
-        //
-        // std::map<string, TH1I*> h_ped_;
-        // std::map<string, TH1I*> h_ped_int_;
+        int pre_samples_;
+        int post_samples_;
+        int int_pre_samples_;
+        int int_post_samples_;
 };
 
 #endif /* CLAWS_RUN_H_ */

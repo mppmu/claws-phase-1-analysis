@@ -150,27 +150,27 @@ int main(int argc, char* argv[]) {
 //	Run* myrun = new Run(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-25/Run-401140"));
 //	Run* myrun = new Run(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-24/Run-401068"));
 //	Run* myrun = new Run(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2017-01-23/Run-401433"));
-	Run* myrun = new Run(path("./Run-400999"));
-	myrun->SynchronizeFiles();
-    myrun->LoadRawData();
-	myrun->SubtractPedestal();
-	myrun->GainCalibration();
-	myrun->Average1PE();
-	delete myrun;
+	// Run* myrun = new Run(path("./Run-400999"));
+	// myrun->SynchronizeFiles();
+    // myrun->LoadRawData();
+	// myrun->SubtractPedestal();
+	// myrun->GainCalibration();
+	// myrun->Average1PE();
+	// delete myrun;
 
-	// std::vector <boost::filesystem::path> runs = GS->GetRuns(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-25"));
-	// for(unsigned i = 0 ; i<runs.size(); i++)
-	// {
-	// //	std::cout << runs.at(i) << std::endl;
-	// 	Run* myrun = new Run(runs.at(i));
-	//
-	// 	myrun->SynchronizeFiles();
-	// 	myrun->LoadRawData();
-	// 	myrun->SubtractPedestal();
-	// 	myrun->GainCalibration();
-	// 	myrun->Average1PE();
-	// 	delete myrun;
-	// }
+	std::vector <boost::filesystem::path> runs = GS->GetRuns(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-24"));
+	for(unsigned i = 0 ; i<runs.size(); i++)
+	{
+	//	std::cout << runs.at(i) << std::endl;
+		Run* myrun = new Run(runs.at(i));
+
+		myrun->SynchronizeFiles();
+		myrun->LoadRawData();
+		myrun->SubtractPedestal();
+		myrun->GainCalibration();
+		myrun->Average1PE();
+		delete myrun;
+	}
 
 //	app->Run();
 
