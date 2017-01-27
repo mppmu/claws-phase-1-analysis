@@ -270,15 +270,11 @@ Event::~Event() {
 
 PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini): Event(file_root ,file_ini)
 {
-
     fill_n(rate_online_, 6, -1);
     fill_n(rate_offline_, 8, -1);
 
     nr_     = atoi(file_root.filename().string().substr(6,15).c_str());
     nr_str_ = file_root.filename().string().substr(6,9);
-
-    // cout << "Listing gDirectory in PhysicsEvent::PhysicsEvent!" << endl;
-    // gDirectory->ls();
 
     /*
         TODO Implement a dynamic creation of channels getting the list list and therefore number of channels from somewhere else.
@@ -292,7 +288,6 @@ PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini): Event(f
     channels_["BWD2"] = new PhysicsChannel("BWD2");
     channels_["BWD3"] = new PhysicsChannel("BWD3");
     channels_["BWD4"] = new PhysicsChannel("BWD4");
-
 };
 
 PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini, const path &file_online_rate): PhysicsEvent(file_root, file_ini)
@@ -371,6 +366,25 @@ void PhysicsEvent::LoadOnlineRate(){
     ratefile.close();
 };
 
+void PhysicsEvent::Decompose(std::map<std::string, std::vector<float>*> avg_waveforms)
+{
+    //TODO Validation
+    for(auto& mvec : avg_waveforms)
+    {
+        channels_[mvec.first+"-INT"]->Decompose(mvec.second);
+    }
+};
+
+void PhysicsEvent::Reconstruct()
+{
+    //TODO Implentation
+};
+
+void PhysicsEvent::CalculateChi2()
+{
+    //TODO Implentation
+};
+
 double* PhysicsEvent::GetRateOnline(){
     return rate_online_;
 }
@@ -446,7 +460,10 @@ void IntEvent::LoadIniFile()
     }
 };
 
-
+IntChannel* IntEvent::GetChannel(std::string name)
+{
+    return channels_[name];
+}
 
 IntEvent::~IntEvent() {
 	// TODO Auto-generated destructor stub

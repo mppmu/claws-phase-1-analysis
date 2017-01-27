@@ -50,7 +50,7 @@ class Gain
         void                                SaveGain(boost::filesystem::path path_run);
 
         void                                AddIntWf(std::map<std::string, std::vector<float>*> wfs, std::map<std::string, double>integral);
-        void                                AddIntWfs(std::vector<std::vector<Channel*>> int_channels);
+        void                                AddIntWfs(std::vector<std::vector<IntChannel*>> int_channels);
         void                                NormalizeWaveform(int ch, double norm);
         void                                FitAvg();
         void                                SaveAvg(boost::filesystem::path path_run);
@@ -60,8 +60,8 @@ class Gain
 
         std::map<std::string, double>       GetGain();
         double                              GetGain(std::string channel = "");
-        std::map<std::string, std::vector<float>*>                GetWaveform();
-        std::vector<float> *                GetWaveform(std::string channel = "");
+        std::map<std::string, std::vector<float> *>                GetWaveform();
+        std::vector<float> *                GetWaveform(std::string channel);
 
     private:
         int         run_nr_;

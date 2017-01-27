@@ -124,14 +124,14 @@ class Run{
             void Decompose();
             void Reconstruct();
             void CalculateChi2();
-            
+
         int    GetRunNr();
         double GetStartTime();
         double GetStopTime();
         TTree *GetOnlineTree();
         TTree *GetOfflineTree();
 
-        std::vector<Channel*> GetChannel(std::string name);
+        std::vector<IntChannel*> GetIntChannel(std::string name);
 
     protected:
 

@@ -143,8 +143,8 @@ int main(int argc, char* argv[]) {
 
 	TH1::AddDirectory(kFALSE);
 
-	std::ofstream hendrik_file("/home/iwsatlas1/mgabriel/Plots/forHendyDany.txt", ios::trunc);
-	hendrik_file.close();
+	// std::ofstream hendrik_file("/home/iwsatlas1/mgabriel/Plots/forHendyDany.txt", ios::trunc);
+	// hendrik_file.close();
 //	TApplication *app=new TApplication("app",0,0);
 //	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-23/Run-400999"));
 //	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2017-01-16/Run-401161"));
@@ -174,7 +174,7 @@ int main(int argc, char* argv[]) {
 	// 	myrun->Average1PE();
 	// 	delete myrun;
 	// }
-	hendrik_file.close();
+//	hendrik_file.close();
 //	app->Run();
 
 	return 0;
