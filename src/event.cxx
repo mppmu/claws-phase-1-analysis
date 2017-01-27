@@ -87,7 +87,7 @@ void Event::LoadPedestal()
 {
     for (auto &itr : channels_)
     {
-        itr.second->LoadPedestal();        
+        itr.second->LoadPedestal();
         // catch(std::string exception)
         // {
         //     std::cout<< "In event nr: " << nr_ << "\n" << exception << std::endl;
@@ -267,6 +267,7 @@ Event::~Event() {
 //----------------------------------------------------------------------------------------------
 // Definition of the PhysicsEvent class derived from Event.
 //----------------------------------------------------------------------------------------------
+
 PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini): Event(file_root ,file_ini)
 {
 

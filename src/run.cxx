@@ -597,23 +597,22 @@ void Run::WaveformDecomposition()
 void Run::Decompose()
 {
 
-//    std::map<std::string, std::vector<float>*> average_waveforms = gain_->GetWaveform();
-    int myarray[4]={0,1,2,3};
+
+    std::map<std::string, std::vector<float>*> average_waveforms = gain_->GetWaveform();
+
+//    int myarray[4]={0,1,2,3};
 
     std::cout << "Starting decompse" << std::endl;
 
-    #pragma omp parallel for schedule(dynamic,1) num_threads(4) private(myarray)
+    #pragma omp parallel for schedule(dynamic,1) num_threads(4) firstprivate(average_waveforms)
     for(unsigned int i=0; i< 16;i++)
     {
-            int id =omp_get_thread_num();
-            sleep(id);
-            std::cout << "ID: " << id <<", i: "<< i<< ", value: " << myarray[id] << std::endl;
-            myarray[id] = 17;
+            // int id =omp_get_thread_num();
+            // sleep(5+id);
+            // std::cout << "ID: " << id <<", i: "<< i<< ", value: " << myarray[id] << std::endl;
+            // myarray[id] = 17;
     }
-    for(unsigned int i=0; i< 4;i++)
-    {
-        std::cout << "myarray: " << myarray[i] << std::endl;
-    }
+
     //TODO Finish implentation
 };
 

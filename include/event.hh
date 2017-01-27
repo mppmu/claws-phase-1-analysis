@@ -85,6 +85,7 @@ class Event{
         virtual void LoadIniFile() = 0;
 
         void                                CalculateIntegral();
+
         std::map<std::string, double>       GetIntegral();
         std::vector< double>                GetIntegralVec();
 
@@ -125,6 +126,10 @@ class PhysicsEvent : public Event{
 //        void                   LoadRootFile();
         void                   LoadIniFile();
         void                   LoadOnlineRate();
+
+        void                   Decompose();
+        void                   Reconstruct();
+        void                   CalculateChi2();
 
         double*                GetRateOnline();
         int                    GetLerBg()     const;
