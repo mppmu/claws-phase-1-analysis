@@ -7,6 +7,8 @@
 // Description :
 //============================================================================
 
+// boost
+#include <boost/algorithm/string/replace.hpp>
 // OpenMP
 #include <omp.h>
 
@@ -211,14 +213,16 @@ std::map<std::string, TH1I*> Event::GetPedestal()
 
     return rtn;
 };
+
 Channel* Event::GetChannel(std::string name)
 {
     return channels_[name];
 }
+
 std::map<std::string, Channel*> Event::GetChannels()
 {
     return channels_;
-}
+};
 
 void Event::CalculateIntegral()
 {
@@ -227,7 +231,8 @@ void Event::CalculateIntegral()
         itr.second->CalculateIntegral();
     }
 
-}
+};
+
 std::map<std::string, double> Event::GetIntegral()
 {
     std::map<std::string, double>    rtn;
@@ -270,15 +275,11 @@ Event::~Event() {
 
 PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini): Event(file_root ,file_ini)
 {
-
     fill_n(rate_online_, 6, -1);
     fill_n(rate_offline_, 8, -1);
 
     nr_     = atoi(file_root.filename().string().substr(6,15).c_str());
     nr_str_ = file_root.filename().string().substr(6,9);
-
-    // cout << "Listing gDirectory in PhysicsEvent::PhysicsEvent!" << endl;
-    // gDirectory->ls();
 
     /*
         TODO Implement a dynamic creation of channels getting the list list and therefore number of channels from somewhere else.
@@ -292,7 +293,6 @@ PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini): Event(f
     channels_["BWD2"] = new PhysicsChannel("BWD2");
     channels_["BWD3"] = new PhysicsChannel("BWD3");
     channels_["BWD4"] = new PhysicsChannel("BWD4");
-
 };
 
 PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini, const path &file_online_rate): PhysicsEvent(file_root, file_ini)
@@ -371,6 +371,29 @@ void PhysicsEvent::LoadOnlineRate(){
     ratefile.close();
 };
 
+void PhysicsEvent::Decompose(std::map<std::string, std::vector<float>*> avg_waveforms)
+{
+    //TODO Validation
+    for(auto& mvec : avg_waveforms)
+    {
+        std::string tmp_name = mvec.first;
+        replace_last(tmp_name, "-INT", "");
+        PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(channels_[tmp_name]);
+        tmp->Decompose(mvec.second);
+        //        tmp->Decompose();
+    }
+};
+
+void PhysicsEvent::Reconstruct()
+{
+    //TODO Implentation
+};
+
+void PhysicsEvent::CalculateChi2()
+{
+    //TODO Implentation
+};
+
 double* PhysicsEvent::GetRateOnline(){
     return rate_online_;
 }
@@ -446,7 +469,10 @@ void IntEvent::LoadIniFile()
     }
 };
 
-
+// IntChannel* IntEvent::GetChannel(std::string name)
+// {
+//     return channels_[name];
+// }
 
 IntEvent::~IntEvent() {
 	// TODO Auto-generated destructor stub

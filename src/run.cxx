@@ -19,6 +19,7 @@
  #include <math.h>
  #include <stdlib.h>
  #include <fstream>
+ #include <memory>
 
 
 
@@ -77,9 +78,9 @@ Run::Run(boost::filesystem::path p)
     gain_       = new Gain(run_nr_);
     cout << "---------------------------------------------------------" << endl;
     cout << "\033[1;31mRun::Created run: \033[0m" << run_nr_ << endl;
-    std::ofstream hendrik_file("/home/iwsatlas1/mgabriel/Plots/forHendyDany.txt", ios::app);
-    hendrik_file << run_nr_str_;
-    hendrik_file.close();
+    // std::ofstream hendrik_file("/home/iwsatlas1/mgabriel/Plots/forHendyDany.txt", ios::app);
+    // hendrik_file << run_nr_str_;
+    // hendrik_file.close();
     claws::print_local_time();
 };
 
@@ -418,10 +419,7 @@ void Run::CalculatePedestal()
     //     else if(itr.first == "FWD4")     section = "Scope-1-Channel-Settings-D";
     //
     //     else if(itr.first == "BWD1")     section = "Scope-2-Channel-Settings-A";
-    //     else if(itr.first == "BWD2")     section = "Scope-2-Channel-Settings-B";
-    //     else if(itr.first == "BWD3")     section = "Scope-2-Channel-Settings-C";
-    //     else if(itr.first == "BWD4")     section = "Scope-2-Channel-Settings-D";
-    //
+    //     else if(itr.first == "BWD2")   GetChannel
     //     int offset = claws::ConvertOffset(settings_.get<double>(section+".AnalogOffset"), settings_.get<int>(section+".Range"));
     //
     //     // TODO Check if a gaussain really is the best option to get the pedestral. A center of gravity might work better.
@@ -553,10 +551,10 @@ void Run::Average1PE()
     // {
     //     gain_->AddIntWf(int_events_.at(i)->GetWaveforms(), int_events_.at(i)->GetIntegral());
     // }
-    std::vector<std::vector<Channel*>> vec;
+    std::vector<std::vector<IntChannel*>> vec;
     for(auto ivec : GS->GetChannels(2))
     {
-        vec.push_back(this->GetChannel(ivec));
+        vec.push_back(this->GetIntChannel(ivec));
     }
 
     gain_->AddIntWfs(vec);
@@ -598,19 +596,12 @@ void Run::Decompose()
 {
 
 
-    std::map<std::string, std::vector<float>*> average_waveforms = gain_->GetWaveform();
+    std::map<std::string, std::vector<float>*> avg_waveforms = gain_->GetWaveform();
 
-//    int myarray[4]={0,1,2,3};
-
-    std::cout << "Starting decompse" << std::endl;
-
-    #pragma omp parallel for schedule(dynamic,1) num_threads(4) firstprivate(average_waveforms)
-    for(unsigned int i=0; i< 16;i++)
+//    #pragma omp parallel for schedule(dynamic,1) num_threads(4) firstprivate(avg_waveforms)
+    for(unsigned int i=0; i< events_.size(); i++)
     {
-            // int id =omp_get_thread_num();
-            // sleep(5+id);
-            // std::cout << "ID: " << id <<", i: "<< i<< ", value: " << myarray[id] << std::endl;
-            // myarray[id] = 17;
+        events_.at(i)->Decompose(avg_waveforms);
     }
 
     //TODO Finish implentation
@@ -701,26 +692,28 @@ TTree *Run::GetOfflineTree(){
     return tree_offline;
 };
 
-std::vector<Channel*> Run::GetChannel(std::string name)
+std::vector<IntChannel*> Run::GetIntChannel(std::string name)
 {
-    std::vector<Channel*> channel;
-    if(ends_with(name, "-INT"))
+    std::vector<IntChannel*> channel;
+    for(auto & ivec : int_events_)
     {
-        for(auto & ivec : int_events_)
-        {
-            channel.push_back(ivec->GetChannel(name));
-        }
-    }
-    else
-    {
-        for(auto & ivec : events_)
-        {
-            channel.push_back(ivec->GetChannel(name));
-        }
+        IntChannel* tmp = dynamic_cast<IntChannel*>(ivec->GetChannel(name));
+        channel.push_back(tmp);
     }
     return channel;
+};
 
+std::vector<PhysicsChannel*> Run::GetPhysicsChannel(std::string name)
+{
+    std::vector<PhysicsChannel*> channel;
+    for(auto & ivec : events_)
+    {
+        PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(ivec->GetChannel(name));
+        channel.push_back(tmp);
+    }
+    return channel;
 }
+
 
 int Run::WriteOnlineTree(TFile* file)
 {

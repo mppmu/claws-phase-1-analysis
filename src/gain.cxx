@@ -85,11 +85,11 @@ void Gain::FitGain()
         double_gaussian->SetParameter(5,gaussian->GetParameter(2));
 
         double_gaussian->SetParLimits(4,gaussian->GetParameter(1)*1.65, gaussian->GetParameter(1)*2.8);
-        double_gaussian->SetParLimits(5,gaussian->GetParameter(2)*0.25, gaussian->GetParameter(2)*3.);
+        double_gaussian->SetParLimits(5,gaussian->GetParameter(2)*0.5, gaussian->GetParameter(2)*2.);
 
-        ivec->gain_hist->Fit(double_gaussian,"WWQ");
-        ivec->gain = double_gaussian->GetParameter(4) - double_gaussian->GetParameter(1);
-        hendrik_file<< " "<< ivec->name << " " << ivec->gain;
+        // ivec->gain_hist->Fit(double_gaussian,"WWQ");
+        // ivec->gain = double_gaussian->GetParameter(4) - double_gaussian->GetParameter(1);
+        // hendrik_file<< " "<< ivec->name << " " << ivec->gain;
     }
     hendrik_file << std::endl;
     hendrik_file.close();
@@ -126,7 +126,7 @@ void Gain::AddIntWf(std::map<std::string, std::vector<float>*> wfs, std::map<std
     }
 };
 
-void  Gain::AddIntWfs(std::vector<std::vector<Channel*>> int_channels)
+void  Gain::AddIntWfs(std::vector<std::vector<IntChannel*>> int_channels)
 {
     for(unsigned i = 0;  i < channels_.size(); i++)
     {

@@ -21,8 +21,8 @@
 Channel::Channel(string ch_name): name_(ch_name)
 {
     //waveform_       = new vector<int8_t>();
-    waveform_       = new vector<float>();
-    string title    = name_+"_pd";
+    waveform_       = new std::vector<float>();
+    std::string title    = name_+"_pd";
     // Calling GetNBitsScope which returns the number of actual bits of the scope. That is not equal to the Max or Min values of the
     // integer values in the data.
     n_bits_         = GS->GetNBitsScope();
@@ -246,7 +246,7 @@ double Channel::GetIntegral()
 // TODO prper description
 //----------------------------------------------------------------------------------------------
 
-PhysicsChannel::PhysicsChannel(string ch_name): Channel(ch_name)
+PhysicsChannel::PhysicsChannel(std::string ch_name): Channel(ch_name)
 {
 
 };
@@ -266,6 +266,16 @@ void PhysicsChannel::CalculateIntegral()
     /*
         TODO Implement
     */
+};
+
+void PhysicsChannel::Decompose(std::vector<float>* avg_waveform)
+//void PhysicsChannel::Decompose()
+{
+    /*
+        TODO Implement
+    */
+    std::cout << "name: " << name_ << ", size: " << avg_waveform->size() << std::endl;
+//    std::cout << "name: " << name_ << ", size: " << std::endl;
 };
 
 //----------------------------------------------------------------------------------------------
