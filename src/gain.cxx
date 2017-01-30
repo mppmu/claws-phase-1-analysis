@@ -85,10 +85,10 @@ void Gain::FitGain()
         double_gaussian->SetParameter(5,gaussian->GetParameter(2));
 
         double_gaussian->SetParLimits(4,gaussian->GetParameter(1)*1.65, gaussian->GetParameter(1)*2.8);
-        double_gaussian->SetParLimits(5,gaussian->GetParameter(2)*0.5, gaussian->GetParameter(2)*2.);
+        double_gaussian->SetParLimits(5,gaussian->GetParameter(2)*0.5, gaussian->GetParameter(2)*1.5);
 
-        // ivec->gain_hist->Fit(double_gaussian,"WWQ");
-        // ivec->gain = double_gaussian->GetParameter(4) - double_gaussian->GetParameter(1);
+        ivec->gain_hist->Fit(double_gaussian,"WWQ");
+        ivec->gain = double_gaussian->GetParameter(4) - double_gaussian->GetParameter(1);
         // hendrik_file<< " "<< ivec->name << " " << ivec->gain;
     }
     hendrik_file << std::endl;
@@ -161,18 +161,16 @@ void Gain::FitAvg()
         std::string name = ivec->name + "_exponential";
         std::replace(name.begin(), name.end(), '-','_');
         TF1* expo=new TF1( name.c_str(),"[0]*exp([1]*(x-[2]))", 1, ivec->avg_hist->GetNbinsX());
-        expo->SetParameter(0,-33);
-        expo->SetParameter(1,-0.040);
-        expo->SetParameter(2,97);
+        expo->SetParameter(0, 37.9);
+        expo->SetParameter(1,-0.033);
+        expo->SetParameter(2,75.5);
         // expo->SetParameter(3,-0.11);
-        ivec->avg_hist->Fit(expo, "Q", "", ivec->avg_hist->GetMinimumBin()+10, ivec->avg_wf->size());
+        ivec->avg_hist->Fit(expo, "Q", "", ivec->avg_hist->GetMaximumBin()+10, ivec->avg_wf->size());
         ivec->end = round(expo->GetX(0.015));
         for(signed i = ivec->avg_wf->size(); i < ivec->end + 1; i++)
         {
             ivec->avg_hist->SetBinContent(i, expo->Eval(i));
         }
-        std::cout<< expo->GetX(-0.015) << std::endl;
-        // std::cout<< expo->GetX(0.015) << std::endl;
     }
 }
 

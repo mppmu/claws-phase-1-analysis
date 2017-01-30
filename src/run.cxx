@@ -583,10 +583,21 @@ void Run::WaveformDecomposition()
 
     this->Decompose();
 
-    std::cout << "\033[32;1mRun::Decomposing waveforms:\033[0m done!     " << std::endl;
-
     double wall1 = claws::get_wall_time();
     double cpu1  = claws::get_cpu_time();
+
+    cout << "Wall Time = " << wall1 - wall0 << endl;
+    cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+
+    wall0 = claws::get_wall_time();
+    cpu0  = claws::get_cpu_time();
+
+    this->SaveEvents("/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/Run-400999/Calibration/snapshot.root");
+
+    std::cout << "\033[32;1mRun::Decomposing waveforms:\033[0m done!     " << std::endl;
+
+    wall1 = claws::get_wall_time();
+    cpu1  = claws::get_cpu_time();
 
     cout << "Wall Time = " << wall1 - wall0 << endl;
     cout << "CPU Time  = " << cpu1  - cpu0  << endl;
@@ -633,7 +644,10 @@ void Run::SaveEvents(boost::filesystem::path fname)
         for(auto &ch : chs)
         {
             TCanvas c(ch.first.c_str(),ch.first.c_str(),500,500);
-            TH1F* hist ;
+            TH1F* hist = ch.second->GetWaveformHist();
+            hist->Draw();
+            c.Write();
+            delete hist;
             hist = NULL;
         }
 

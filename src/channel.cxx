@@ -21,7 +21,8 @@
 Channel::Channel(string ch_name): name_(ch_name)
 {
     //waveform_       = new vector<int8_t>();
-    waveform_       = new std::vector<float>();
+    waveform_           = new std::vector<float>();
+
     std::string title    = name_+"_pd";
     // Calling GetNBitsScope which returns the number of actual bits of the scope. That is not equal to the Max or Min values of the
     // integer values in the data.
@@ -62,7 +63,7 @@ void Channel::LoadWaveform()
 
     for(unsigned int i=0; i< n_sample_; i++)
     {
-        waveform_->push_back(int8_t(hist_->GetBinContent(i+1)/n_bits_));
+        waveform_->push_back(-int8_t(hist_->GetBinContent(i+1)/n_bits_));
     }
 
 };
@@ -81,7 +82,7 @@ void Channel::LoadPedestal()
 
         bool fillflag   = true;
 
-        float threshold = baseline_ - pd_delta_;
+        float threshold = baseline_ + pd_delta_;
 
         unsigned i = pd_gap_;
 
@@ -89,16 +90,16 @@ void Channel::LoadPedestal()
         {
 
 
-            if( waveform_->at( i ) > threshold && fillflag == true)
+            if( waveform_->at( i ) < threshold && fillflag == true)
             {
                 pedestal_->Fill(waveform_->at(i - pd_gap_) );
             }
 
-            else if( waveform_->at( i ) <= threshold && fillflag == true)
+            else if( waveform_->at( i ) >= threshold && fillflag == true)
             {
-                if( waveform_->at( i + 1 ) <= threshold &&
-                    waveform_->at( i + 2 ) <= threshold &&
-                    waveform_->at( i + 3 ) <= threshold )
+                if( waveform_->at( i + 1 ) >= threshold &&
+                    waveform_->at( i + 2 ) >= threshold &&
+                    waveform_->at( i + 3 ) >= threshold )
                 {
                     fillflag = false;
                 }
@@ -108,11 +109,11 @@ void Channel::LoadPedestal()
                 }
             }
 
-            else if( waveform_->at( i ) > threshold &&
+            else if( waveform_->at( i ) < threshold &&
                      fillflag == false &&
                      // When jumping the tail of the signal (2*gap) needed to make
                      // sure we are not jumping into a signal again.
-                     waveform_->at( i + 2 * pd_gap_ ) > threshold )
+                     waveform_->at( i + 2 * pd_gap_ ) < threshold )
             {
                 fillflag = true;
                 if( i < waveform_->size() - 2 * pd_gap_ )
@@ -212,7 +213,7 @@ TH1F* Channel::GetWaveformHist()
     {
         string title = name_+"_wf";
 
-        TH1F* hist_wf = new TH1F( title.c_str(), title.c_str(), waveform_->size(), 0 , waveform_->size()*0.8);
+        TH1F* hist_wf = new TH1F( title.c_str(), title.c_str(), waveform_->size(), 0.5 , waveform_->size()+0.5);
 
         for(unsigned int i = 0; i < waveform_->size(); i++)
         {
@@ -248,7 +249,8 @@ double Channel::GetIntegral()
 
 PhysicsChannel::PhysicsChannel(std::string ch_name): Channel(ch_name)
 {
-
+    waveform_workon_   = new std::vector<float>();
+    waveform_photon_    = new std::vector<unsigned int8_t>();
 };
 
 PhysicsChannel::~PhysicsChannel() {
@@ -274,8 +276,43 @@ void PhysicsChannel::Decompose(std::vector<float>* avg_waveform)
     /*
         TODO Implement
     */
-    std::cout << "name: " << name_ << ", size: " << avg_waveform->size() << std::endl;
-//    std::cout << "name: " << name_ << ", size: " << std::endl;
+
+    waveform_workon_->reserve(waveform_->size());
+    waveform_photon_->reserve(waveform_->size());
+
+    for(unsigned i = 0; i < waveform_->size(); i++)
+    {
+        // (*waveform_workon_)[i] = (*waveform_)[i];
+        // (*waveform_photon_)[i] = 0;
+        waveform_workon_->push_back(waveform_->at(i));
+        waveform_photon_->push_back(0);
+
+    }
+
+//    std::cout<< "Distance is: " << std::distance(waveform_workon_->begin(), max_element(waveform_workon_->begin(),waveform_workon_->end())) << std::endl;
+    std::cout<<"Size: " << waveform_workon_->size() << std::endl;
+};
+
+TH1F* PhysicsChannel::GetWaveformHist()
+{
+    if( waveform_->size() != 0 )
+    {
+        string title = name_+"_wf";
+
+        TH1F* hist_wf = new TH1F( title.c_str(), title.c_str(), waveform_->size(), 0.5 , waveform_->size()+0.5);
+
+        for(unsigned int i = 0; i < waveform_->size(); i++)
+        {
+            hist_wf->SetBinContent(i+1, waveform_->at(i));
+        }
+
+        return hist_wf;
+    }
+    else
+    {
+        return NULL;
+    }
+
 };
 
 //----------------------------------------------------------------------------------------------
@@ -305,5 +342,5 @@ void IntChannel::CalculateIntegral()
         integral_ += waveform_->at(i);
 
     }
-    integral_ *= -1;
+    // integral_ *= -1;
 };
