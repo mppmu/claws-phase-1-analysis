@@ -128,7 +128,7 @@ namespace claws {
                                                           "BWD1-INT", "BWD2-INT", "BWD3-INT"
                                                         };
 
-
+    //        std::string intermediate_suffix_          = GS->GetIntSuffix();
             double accepted_gain_             = 0.35;  // +- from mean gain accepted for avg wfs.
 
             boost::filesystem::path hook_;

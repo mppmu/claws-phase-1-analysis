@@ -85,7 +85,7 @@ void Gain::FitGain()
         double_gaussian->SetParameter(5,gaussian->GetParameter(2));
 
         double_gaussian->SetParLimits(4,gaussian->GetParameter(1)*1.65, gaussian->GetParameter(1)*2.8);
-        double_gaussian->SetParLimits(5,gaussian->GetParameter(2)*0.25, gaussian->GetParameter(2)*3.);
+        double_gaussian->SetParLimits(5,gaussian->GetParameter(2)*0.5, gaussian->GetParameter(2)*2.);
 
         // ivec->gain_hist->Fit(double_gaussian,"WWQ");
         // ivec->gain = double_gaussian->GetParameter(4) - double_gaussian->GetParameter(1);
