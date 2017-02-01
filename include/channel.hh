@@ -49,7 +49,7 @@ class Channel
 
         std::string             GetName();
         std::vector<float>*     GetWaveform();
-        virtual TH1F*                   GetWaveformHist();
+        virtual TH1F*           GetWaveformHist();
         TH1I*                   GetPedestal();
         float                   GetPDMean();
         float                   GetPDError();
@@ -91,10 +91,12 @@ class PhysicsChannel : public Channel
         void               CalculateIntegral();  // Pure Placeholder so far.
 
         void Decompose(std::vector<float>* avg_waveform);
+        void Reconstruct(std::vector<float>* avg_waveform);
+        void CalculateChi2();
         //void Decompose();
 
        std::vector<float>*     waveform_workon_          = NULL;
-        std::vector<unsigned int8_t>*    waveform_photon_   = NULL;
+    std::vector<unsigned int8_t>*    waveform_photon_   = NULL;
 
         TH1F*                   GetWaveformHist();
 };

@@ -143,8 +143,8 @@ int main(int argc, char* argv[]) {
 
 	TH1::AddDirectory(kFALSE);
 
-	std::ofstream hendrik_file("/home/iwsatlas1/mgabriel/Plots/forHendyDany.txt", ios::trunc);
-	hendrik_file.close();
+	// std::ofstream hendrik_file("/home/iwsatlas1/mgabriel/Plots/forHendyDany.txt", ios::trunc);
+	// hendrik_file.close();
 //	TApplication *app=new TApplication("app",0,0);
 //	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-23/Run-400999"));
 //	Run myrun(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2017-01-16/Run-401161"));
@@ -161,7 +161,7 @@ int main(int argc, char* argv[]) {
 	myrun->WaveformDecomposition();
 	delete myrun;
 
-	// std::vector <boost::filesystem::path> runs = GS->GetRuns(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-24"));
+	// std::vector <boost::filesystem::path> runs = GS->GetRuns(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-12-16"));
 	// for(unsigned i = 0 ; i<runs.size(); i++)
 	// {
 	// //	std::cout << runs.at(i) << std::endl;
@@ -174,7 +174,7 @@ int main(int argc, char* argv[]) {
 	// 	myrun->Average1PE();
 	// 	delete myrun;
 	// }
-	hendrik_file.close();
+//	hendrik_file.close();
 //	app->Run();
 
 	return 0;

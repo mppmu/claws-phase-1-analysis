@@ -384,14 +384,31 @@ void PhysicsEvent::Decompose(std::map<std::string, std::vector<float>*> avg_wave
     }
 };
 
-void PhysicsEvent::Reconstruct()
+void PhysicsEvent::Reconstruct(std::map<std::string, std::vector<float>*> avg_waveforms)
 {
     //TODO Implentation
+    for(auto& mvec : avg_waveforms)
+    {
+        std::string tmp_name = mvec.first;
+        replace_last(tmp_name, "-INT", "");
+        PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(channels_[tmp_name]);
+        tmp->Reconstruct(mvec.second);
+    }
 };
 
 void PhysicsEvent::CalculateChi2()
 {
     //TODO Implentation
+    for(auto& mmap : channels_)
+    {
+        // std::string tmp_name = mvec.first;
+        // replace_last(tmp_name, "-INT", "");
+        if( !ends_with(mmap.first, "4"))
+        {
+            PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(mmap.second);
+            tmp->CalculateChi2();
+        }
+    }
 };
 
 double* PhysicsEvent::GetRateOnline(){

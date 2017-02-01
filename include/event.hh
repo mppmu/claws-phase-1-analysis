@@ -129,7 +129,7 @@ class PhysicsEvent : public Event{
 
         void                   Decompose(std::map<std::string, std::vector<float>*> avg_waveforms);
 
-        void                   Reconstruct();
+        void                   Reconstruct(std::map<std::string, std::vector<float>*> avg_waveforms);
         void                   CalculateChi2();
 
         double*                GetRateOnline();

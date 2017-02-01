@@ -561,7 +561,7 @@ void Run::Average1PE()
 //    gain_->NormalizeWaveforms(int_events_.size());
     gain_->WfToHist();
     gain_->FitAvg();
-    // gain_->HistToWf();
+    gain_->HistToWf();
     // gain_->WfToHist();
     gain_->SaveAvg(path_run_);
 
@@ -583,6 +583,9 @@ void Run::WaveformDecomposition()
 
     this->Decompose();
 
+
+    std::cout << "\033[32;1mRun::Decomposing waveforms:\033[0m done!     " << std::endl;
+
     double wall1 = claws::get_wall_time();
     double cpu1  = claws::get_cpu_time();
 
@@ -594,7 +597,7 @@ void Run::WaveformDecomposition()
 
     this->SaveEvents("/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/Run-400999/Calibration/snapshot.root");
 
-    std::cout << "\033[32;1mRun::Decomposing waveforms:\033[0m done!     " << std::endl;
+//    std::cout << "\033[32;1mRun::Decomposing waveforms:\033[0m done!     " << std::endl;
 
     wall1 = claws::get_wall_time();
     cpu1  = claws::get_cpu_time();
@@ -609,10 +612,12 @@ void Run::Decompose()
 
     std::map<std::string, std::vector<float>*> avg_waveforms = gain_->GetWaveform();
 
-//    #pragma omp parallel for schedule(dynamic,1) num_threads(4) firstprivate(avg_waveforms)
+    #pragma omp parallel for num_threads(5) firstprivate(avg_waveforms)
     for(unsigned int i=0; i< events_.size(); i++)
     {
         events_.at(i)->Decompose(avg_waveforms);
+        events_.at(i)->Reconstruct(avg_waveforms);
+        events_.at(i)->CalculateChi2();
     }
 
     //TODO Finish implentation
@@ -644,6 +649,7 @@ void Run::SaveEvents(boost::filesystem::path fname)
         for(auto &ch : chs)
         {
             TCanvas c(ch.first.c_str(),ch.first.c_str(),500,500);
+
             TH1F* hist = ch.second->GetWaveformHist();
             hist->Draw();
             c.Write();
