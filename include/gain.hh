@@ -59,7 +59,7 @@ class Gain
         void                                HistToWf();
 
         std::map<std::string, double>       GetGain();
-        double                              GetGain(std::string channel = "");
+        double                              GetGain(std::string channel);
         std::map<std::string, std::vector<float> *>                GetWaveform();
         std::vector<float> *                GetWaveform(std::string channel);
 

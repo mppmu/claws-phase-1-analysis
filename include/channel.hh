@@ -32,7 +32,7 @@ class Channel
     public:
 
         Channel(std::string ch_name);
-        virtual ~Channel();
+        virtual ~Channel() = 0;
 
         virtual     void        LoadHistogram(TFile* file);
         virtual     void        LoadWaveform();
@@ -49,7 +49,7 @@ class Channel
 
         std::string             GetName();
         std::vector<float>*     GetWaveform();
-        TH1F*                   GetWaveformHist();
+        virtual TH1F*           GetWaveformHist();
         TH1I*                   GetPedestal();
         float                   GetPDMean();
         float                   GetPDError();
@@ -60,6 +60,7 @@ class Channel
         std::string             name_;
 
         std::vector<float>*     waveform_   = NULL;
+
         TH1I*                   hist_       = NULL;
         TH1I*                   pedestal_   = NULL;
         float                   pd_mean_;
@@ -90,7 +91,14 @@ class PhysicsChannel : public Channel
         void               CalculateIntegral();  // Pure Placeholder so far.
 
         void Decompose(std::vector<float>* avg_waveform);
+        void Reconstruct(std::vector<float>* avg_waveform);
+        void CalculateChi2();
+        //void Decompose();
 
+       std::vector<float>*     waveform_workon_          = NULL;
+    std::vector<unsigned int8_t>*    waveform_photon_   = NULL;
+
+        TH1F*                   GetWaveformHist();
 };
 
 class IntChannel : public Channel

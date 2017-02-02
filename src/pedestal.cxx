@@ -36,8 +36,8 @@ Pedestal::Pedestal(int run_nr):run_nr_(run_nr)
     for(auto &ch : GS->GetChannels(1))
     {
         // Fucking SetRangeUser does not work for TGraphs because the Min/Max is recalculated before drawing.
-        g_[ch]->SetMaximum(115);
-        g_[ch]->SetMinimum(113);
+        g_[ch]->SetMaximum(-113);
+        g_[ch]->SetMinimum(-115);
     }
     for(auto &ch : GS->GetChannels(2))
     {

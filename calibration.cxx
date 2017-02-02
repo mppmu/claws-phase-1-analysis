@@ -161,7 +161,7 @@ int main(int argc, char* argv[]) {
 	myrun->WaveformDecomposition();
 	delete myrun;
 
-	// std::vector <boost::filesystem::path> runs = GS->GetRuns(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-24"));
+	// std::vector <boost::filesystem::path> runs = GS->GetRuns(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-12-16"));
 	// for(unsigned i = 0 ; i<runs.size(); i++)
 	// {
 	// //	std::cout << runs.at(i) << std::endl;

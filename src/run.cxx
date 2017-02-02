@@ -561,7 +561,7 @@ void Run::Average1PE()
 //    gain_->NormalizeWaveforms(int_events_.size());
     gain_->WfToHist();
     gain_->FitAvg();
-    // gain_->HistToWf();
+    gain_->HistToWf();
     // gain_->WfToHist();
     gain_->SaveAvg(path_run_);
 
@@ -583,10 +583,24 @@ void Run::WaveformDecomposition()
 
     this->Decompose();
 
+
     std::cout << "\033[32;1mRun::Decomposing waveforms:\033[0m done!     " << std::endl;
 
     double wall1 = claws::get_wall_time();
     double cpu1  = claws::get_cpu_time();
+
+    cout << "Wall Time = " << wall1 - wall0 << endl;
+    cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+
+    wall0 = claws::get_wall_time();
+    cpu0  = claws::get_cpu_time();
+
+    this->SaveEvents("/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/Run-400999/Calibration/snapshot.root");
+
+//    std::cout << "\033[32;1mRun::Decomposing waveforms:\033[0m done!     " << std::endl;
+
+    wall1 = claws::get_wall_time();
+    cpu1  = claws::get_cpu_time();
 
     cout << "Wall Time = " << wall1 - wall0 << endl;
     cout << "CPU Time  = " << cpu1  - cpu0  << endl;
@@ -598,17 +612,12 @@ void Run::Decompose()
 
     std::map<std::string, std::vector<float>*> avg_waveforms = gain_->GetWaveform();
 
-//    int myarray[4]={0,1,2,3};
-
-    std::cout << "Starting decompse" << std::endl;
-
-    #pragma omp parallel for schedule(dynamic,1) num_threads(4) firstprivate(avg_waveforms)
-    for(unsigned int i=0; i< 16;i++)
+    #pragma omp parallel for num_threads(5) firstprivate(avg_waveforms)
+    for(unsigned int i=0; i< events_.size(); i++)
     {
-            // int id =omp_get_thread_num();
-            // sleep(5+id);
-            // std::cout << "ID: " << id <<", i: "<< i<< ", value: " << myarray[id] << std::endl;
-            // myarray[id] = 17;
+        events_.at(i)->Decompose(avg_waveforms);
+        events_.at(i)->Reconstruct(avg_waveforms);
+        events_.at(i)->CalculateChi2();
     }
 
     //TODO Finish implentation
@@ -640,7 +649,11 @@ void Run::SaveEvents(boost::filesystem::path fname)
         for(auto &ch : chs)
         {
             TCanvas c(ch.first.c_str(),ch.first.c_str(),500,500);
-            TH1F* hist ;
+
+            TH1F* hist = ch.second->GetWaveformHist();
+            hist->Draw();
+            c.Write();
+            delete hist;
             hist = NULL;
         }
 
@@ -702,23 +715,25 @@ TTree *Run::GetOfflineTree(){
 std::vector<IntChannel*> Run::GetIntChannel(std::string name)
 {
     std::vector<IntChannel*> channel;
-    // if(ends_with(name, "-INT"))
-    // {
-    //     for(auto & ivec : int_events_)
-    //     {
-    //         channel.push_back(ivec->GetChannel(name));
-    //     }
-    // }
-    // else
-    // {
-        for(auto & ivec : int_events_)
-        {
-            channel.push_back(ivec->GetChannel(name));
-        }
-    // }
+    for(auto & ivec : int_events_)
+    {
+        IntChannel* tmp = dynamic_cast<IntChannel*>(ivec->GetChannel(name));
+        channel.push_back(tmp);
+    }
     return channel;
+};
 
+std::vector<PhysicsChannel*> Run::GetPhysicsChannel(std::string name)
+{
+    std::vector<PhysicsChannel*> channel;
+    for(auto & ivec : events_)
+    {
+        PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(ivec->GetChannel(name));
+        channel.push_back(tmp);
+    }
+    return channel;
 }
+
 
 int Run::WriteOnlineTree(TFile* file)
 {

@@ -7,6 +7,8 @@
 // Description :
 //============================================================================
 
+// boost
+#include <boost/algorithm/string/replace.hpp>
 // OpenMP
 #include <omp.h>
 
@@ -211,14 +213,16 @@ std::map<std::string, TH1I*> Event::GetPedestal()
 
     return rtn;
 };
+
 Channel* Event::GetChannel(std::string name)
 {
     return channels_[name];
 }
+
 std::map<std::string, Channel*> Event::GetChannels()
 {
     return channels_;
-}
+};
 
 void Event::CalculateIntegral()
 {
@@ -227,7 +231,8 @@ void Event::CalculateIntegral()
         itr.second->CalculateIntegral();
     }
 
-}
+};
+
 std::map<std::string, double> Event::GetIntegral()
 {
     std::map<std::string, double>    rtn;
@@ -371,18 +376,39 @@ void PhysicsEvent::Decompose(std::map<std::string, std::vector<float>*> avg_wave
     //TODO Validation
     for(auto& mvec : avg_waveforms)
     {
-        channels_[mvec.first+"-INT"]->Decompose(mvec.second);
+        std::string tmp_name = mvec.first;
+        replace_last(tmp_name, "-INT", "");
+        PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(channels_[tmp_name]);
+        tmp->Decompose(mvec.second);
+        //        tmp->Decompose();
     }
 };
 
-void PhysicsEvent::Reconstruct()
+void PhysicsEvent::Reconstruct(std::map<std::string, std::vector<float>*> avg_waveforms)
 {
     //TODO Implentation
+    for(auto& mvec : avg_waveforms)
+    {
+        std::string tmp_name = mvec.first;
+        replace_last(tmp_name, "-INT", "");
+        PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(channels_[tmp_name]);
+        tmp->Reconstruct(mvec.second);
+    }
 };
 
 void PhysicsEvent::CalculateChi2()
 {
     //TODO Implentation
+    for(auto& mmap : channels_)
+    {
+        // std::string tmp_name = mvec.first;
+        // replace_last(tmp_name, "-INT", "");
+        if( !ends_with(mmap.first, "4"))
+        {
+            PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(mmap.second);
+            tmp->CalculateChi2();
+        }
+    }
 };
 
 double* PhysicsEvent::GetRateOnline(){
@@ -460,10 +486,10 @@ void IntEvent::LoadIniFile()
     }
 };
 
-IntChannel* IntEvent::GetChannel(std::string name)
-{
-    return channels_[name];
-}
+// IntChannel* IntEvent::GetChannel(std::string name)
+// {
+//     return channels_[name];
+// }
 
 IntEvent::~IntEvent() {
 	// TODO Auto-generated destructor stub

@@ -132,6 +132,7 @@ class Run{
         TTree *GetOfflineTree();
 
         std::vector<IntChannel*> GetIntChannel(std::string name);
+        std::vector<PhysicsChannel*> GetPhysicsChannel(std::string name);
 
     protected:
 
