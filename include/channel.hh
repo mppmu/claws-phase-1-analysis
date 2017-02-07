@@ -90,6 +90,7 @@ class PhysicsChannel : public Channel
 
         void               CalculateIntegral();  // Pure Placeholder so far.
 
+        void SetUpWaveforms();
         void Decompose(std::vector<float>* avg_waveform);
         void Reconstruct(std::vector<float>* avg_waveform);
         void CalculateChi2();

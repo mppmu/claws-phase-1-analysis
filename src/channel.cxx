@@ -285,6 +285,43 @@ void PhysicsChannel::CalculateIntegral()
     */
 };
 
+void PhysicsChannel::SetUpWaveforms()
+{
+    waveform_workon_->clear();
+    waveform_workon_->clear();
+
+    waveform_workon_->reserve(waveform_->size());
+    waveform_photon_->reserve(waveform_->size());
+    std::cout << "filling  " << name_  << std::endl;
+    for(unsigned i = 0; i < waveform_->size() ; i++)
+    {
+        // (*waveform_workon_)[i] = (*waveform_)[i];
+        // (*waveform_photon_)[i] = 0;
+    //    waveform_workon_->push_back(waveform_->at(i));
+//        std::cout << "i: " << i  << std::endl;
+        waveform_workon_->push_back(0);
+        waveform_photon_->push_back(0);
+    }
+    // double threshold = 0.5
+    // bool fillflag = false;
+    // for(unsigned i = 0; i < waveform_->size() -2; i++)
+    // {
+    //     if(    waveform_->at(i)   >= 1.0
+    //         && waveform_->at(i+1) >= 1.0
+    //         && waveform_->at(i+2) >= 1.0 )
+    //     {
+    //         fillflag = true;
+    //         waveform_workon_->push_back(waveform_->at(i));
+    //     }
+    //     else
+    //     {
+    //         waveform_workon_->push_back(0);
+    //     }
+    // }
+
+
+};
+
 void PhysicsChannel::Decompose(std::vector<float>* avg_waveform)
 //void PhysicsChannel::Decompose()
 {
@@ -305,17 +342,19 @@ void PhysicsChannel::Decompose(std::vector<float>* avg_waveform)
 
 //    std::cout<< name_<<" waveform_workon_->size(): " << waveform_workon_->size() << ", waveform_workon_->capacity(): " << waveform_workon_->capacity() << std::endl;
 //    std::cout<< name_<<" waveform_photon_->size(): " << waveform_photon_->size() << ", waveform_photon_->capacity(): " << waveform_photon_->capacity()<< std::endl;
-    waveform_workon_->reserve(waveform_->size()*1.5);
-    waveform_photon_->reserve(waveform_->size()*1.5);
+
+    // waveform_workon_->reserve(waveform_->size()+1);
+    // waveform_photon_->reserve(waveform_->size()+1);
+
 
 //    std::cout << name_<< std::endl;
-    for(unsigned i = 0; i < waveform_->size(); i++)
-    {
-        // (*waveform_workon_)[i] = (*waveform_)[i];
-        // (*waveform_photon_)[i] = 0;
-        waveform_workon_->push_back(waveform_->at(i));
-        waveform_photon_->push_back(0);
-    }
+    // for(unsigned i = 0; i < waveform_->size(); i++)
+    // {
+    //     // (*waveform_workon_)[i] = (*waveform_)[i];
+    //     // (*waveform_photon_)[i] = 0;
+    //     waveform_workon_->push_back(waveform_->at(i));
+    //     waveform_photon_->push_back(0);
+    // }
 //    if(name_ == "BWD4") std::cout<< "WF: "<< waveform_->size()<< " WF_workon: "<< waveform_workon_->size() << " WF_photon: " << waveform_photon_->size() <<std::endl;
     //  std::cout<< "Max is: " << *std::max_element(waveform_workon_->begin(),waveform_workon_->end()) << std::endl;
     //  std::cout<< "Distance is: " << std::distance(waveform_->begin(), std::max_element(waveform_->begin(),waveform_->end())) << std::endl;
@@ -341,19 +380,19 @@ void PhysicsChannel::Decompose(std::vector<float>* avg_waveform)
         waveform_photon_->at(max) ++;
 
     }
-    std::cout << "Subtracting of channel: " << name_ << " done!" << std::endl;
+//    std::cout << "Subtracting of channel: " << name_ << " done!" << std::endl;
 };
 
 void PhysicsChannel::Reconstruct(std::vector<float>* avg_waveform)
 {
     // std::fill(waveform_workon_->begin(), waveform_workon_->end(), 0);
-    std::cout << "Reconstruction of channel: " << name_ << " done!" << std::endl;
+    // std::cout << "Reconstruction of channel: " << name_ << " done!" << std::endl;
 
     for(unsigned i = 0; i < waveform_workon_->size(); i++)
     {
         waveform_workon_->at(i) = 0;
     }
-
+    std::cout << "avg_waveform: " << avg_waveform->size() << std::endl;
     int avg_peak = std::distance(avg_waveform->begin(), std::max_element(avg_waveform->begin(),avg_waveform->end()));
 
     for(unsigned i = 0; i < waveform_photon_->size(); i++)
@@ -365,10 +404,10 @@ void PhysicsChannel::Reconstruct(std::vector<float>* avg_waveform)
 
             if( add_stop > waveform_workon_->size() ) add_stop = waveform_workon_->size();
 
-            for(int i = add_start ; i < add_stop ; i++)
+            for(int j = add_start ; j < add_stop ; j++)
             {
     //            std::cout << "Subtracting: " << avg_waveform->at(i - sub_start )/20. << " at: " << i << ",  in avg at: "<< (i - sub_start ) << std::endl;
-                waveform_workon_->at(i) += avg_waveform->at(i - add_start ) * waveform_photon_->at(i)/20.;
+                waveform_workon_->at(j) += avg_waveform->at(j - add_start ) * waveform_photon_->at(i)/20.;
             }
 
         }

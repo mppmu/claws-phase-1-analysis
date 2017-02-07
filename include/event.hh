@@ -127,8 +127,8 @@ class PhysicsEvent : public Event{
         void                   LoadIniFile();
         void                   LoadOnlineRate();
 
+        void                   SetUpWaveforms();
         void                   Decompose(std::map<std::string, std::vector<float>*> avg_waveforms);
-
         void                   Reconstruct(std::map<std::string, std::vector<float>*> avg_waveforms);
         void                   CalculateChi2();
 
@@ -172,7 +172,7 @@ class IntEvent : public Event{
 
         double mean_online_[8];
         double accepted_online_[8];
-        std::map<std::string, IntChannel*> channels_;
+//        std::map<std::string, IntChannel*> channels_;
 
 
 };

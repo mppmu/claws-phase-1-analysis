@@ -612,12 +612,13 @@ void Run::Decompose()
 
     std::map<std::string, std::vector<float>*> avg_waveforms = gain_->GetWaveform();
 
-    #pragma omp parallel for num_threads(5) firstprivate(avg_waveforms)
+//    #pragma omp parallel for num_threads(5) firstprivate(avg_waveforms)
     for(unsigned int i=0; i< events_.size(); i++)
     {
-        events_.at(i)->Decompose(avg_waveforms);
-        events_.at(i)->Reconstruct(avg_waveforms);
-        events_.at(i)->CalculateChi2();
+        events_.at(i)->SetUpWaveforms();
+//        events_.at(i)->Decompose(avg_waveforms);
+//        events_.at(i)->Reconstruct(avg_waveforms);
+//        events_.at(i)->CalculateChi2();
     }
 
     //TODO Finish implentation
@@ -635,6 +636,7 @@ void Run::CalculateChi2()
 
 void Run::SaveEvents(boost::filesystem::path fname)
 {
+    std::cout << "Now saving events!" << std::endl;
     TFile *rfile = new TFile(fname.string().c_str(), "RECREATE");
 
     rfile->mkdir("events");

@@ -370,6 +370,23 @@ void PhysicsEvent::LoadOnlineRate(){
 
     ratefile.close();
 };
+void PhysicsEvent::SetUpWaveforms()
+{
+    //TODO Validation
+    for(auto& mvec : channels_)
+    {
+        if(!ends_with(mvec.first, "-INT") && !ends_with(mvec.first, "4"))
+        {   
+            PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(mvec.second);
+            tmp->SetUpWaveforms();
+        }
+        // std::string tmp_name = mvec.first;
+        // replace_last(tmp_name, "-INT", "");
+        //
+        // tmp->Decompose(mvec.second);
+        //        tmp->Decompose();
+    }
+};
 
 void PhysicsEvent::Decompose(std::map<std::string, std::vector<float>*> avg_waveforms)
 {
@@ -386,9 +403,12 @@ void PhysicsEvent::Decompose(std::map<std::string, std::vector<float>*> avg_wave
 
 void PhysicsEvent::Reconstruct(std::map<std::string, std::vector<float>*> avg_waveforms)
 {
-    //TODO Implentation
+    //TODO Implentation    // channels_["BWD1-INT"] = new IntChannel("BWD1");
     for(auto& mvec : avg_waveforms)
     {
+
+    // channels_["BWD2-INT"] = new IntChannel("BWD2");
+    // channels_["BWD3-INT"] = new IntChannel("BWD3");
         std::string tmp_name = mvec.first;
         replace_last(tmp_name, "-INT", "");
         PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(channels_[tmp_name]);
