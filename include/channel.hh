@@ -10,11 +10,16 @@
 
 // Std includes
  #include <iostream>
+// #include <cstdint>
+// #include <cstdio>
+// #include <cinttypes>
+
 // Root includes
 #include <TH1I.h>
 #include "TApplication.h"
 #include <TCanvas.h>
 #include <TFile.h>
+
 // Project includes
 // #include "GlobalSettings.hh"
 
@@ -32,7 +37,7 @@ class Channel
     public:
 
         Channel(std::string ch_name);
-        virtual ~Channel() = 0;
+        virtual ~Channel();
 
         virtual     void        LoadHistogram(TFile* file);
         virtual     void        LoadWaveform();
@@ -97,7 +102,7 @@ class PhysicsChannel : public Channel
         //void Decompose();
 
        std::vector<float>*     waveform_workon_          = NULL;
-    std::vector<unsigned int8_t>*    waveform_photon_   = NULL;
+       std::vector<std::uint8_t>*    waveform_photon_   = NULL;
 
         TH1F*                   GetWaveformHist();
 };

@@ -57,11 +57,11 @@
 #include <TF1.h>
 #include <TThread.h>
 // OpenMP
-#include <omp.h>
+//#include <omp.h>
 
 // google performance tools
-#include <gperftools/heap-profiler.h>
-#include <gperftools/profiler.h>
+// #include <gperftools/heap-profiler.h>
+// #include <gperftools/profiler.h>
 
 // Project includes
 #include "run.hh"
@@ -97,7 +97,8 @@ class Run{
 
         void DrawPedestal();
 
-        void SaveEvents(boost::filesystem::path fname);
+//        void SaveEvents(boost::filesystem::path fname);
+void SaveEvents();
 
         // These methods are meant to be public in the end and used by the user
         void SynchronizeFiles();

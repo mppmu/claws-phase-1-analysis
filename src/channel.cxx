@@ -6,7 +6,8 @@
  */
 
  // OpenMP
- #include <omp.h>
+// #include <omp.h>
+
 
 #include <assert.h>
 
@@ -29,18 +30,32 @@ Channel::Channel(string ch_name): name_(ch_name)
     n_bits_         = GS->GetNBitsScope();
     pedestal_      = new TH1I(title.c_str(), title.c_str(), n_bits_ , GS->GetXLow(), GS->GetXUp());
     pedestal_->SetDirectory(0);            // Root is the most stupid BITCH!!!
+
 };
 
-Channel::~Channel() {
+Channel::~Channel(){
 	// TODO Auto-generated destructor stub
     delete waveform_;
-    delete hist_;
+    if(hist_ != NULL) delete hist_;
     delete pedestal_;
 };
 
 void Channel::LoadHistogram(TFile* file)
 {
+
+    if(hist_ != NULL)
+    {
+      delete hist_;
+      hist_ = NULL;
+    }
+
+  //  double test = ((TH1I*)file->Get(name_.c_str()))->GetNbinsX();
+
+    // TODO WARNING!!!! Root version 6.08.00 and 6.08.02 are failing here.
+    //      The number of bins in the histogram from file is put to 1!!!!
+
     hist_= (TH1I*)file->Get(name_.c_str());
+
     hist_->SetDirectory(0);
     n_sample_  = hist_->GetNbinsX();
 
@@ -73,8 +88,12 @@ void Channel::LoadWaveform()
 
 void Channel::DeleteHistogram()
 {
-    delete hist_;
-    hist_ = NULL;
+    if(hist_ != NULL)
+    {
+      delete hist_;
+      hist_ = NULL;
+    }
+//    hist_ = NULL;
 };
 
 void Channel::LoadPedestal()
@@ -256,12 +275,11 @@ double Channel::GetIntegral()
 PhysicsChannel::PhysicsChannel(std::string ch_name): Channel(ch_name)
 {
     waveform_workon_   = new std::vector<float>();
-    waveform_photon_    = new std::vector<unsigned int8_t>();
+    waveform_photon_    = new std::vector<std::uint8_t>();
 };
 
 PhysicsChannel::~PhysicsChannel() {
 	// TODO Auto-generated destructor stub
-
 };
 
 void PhysicsChannel::PrintType()
@@ -292,7 +310,7 @@ void PhysicsChannel::SetUpWaveforms()
 
     waveform_workon_->reserve(waveform_->size());
     waveform_photon_->reserve(waveform_->size());
-    std::cout << "filling  " << name_  << std::endl;
+//    std::cout << "filling  " << name_  << std::endl;
     for(unsigned i = 0; i < waveform_->size() ; i++)
     {
         // (*waveform_workon_)[i] = (*waveform_)[i];
@@ -438,6 +456,19 @@ TH1F* PhysicsChannel::GetWaveformHist()
     // std::cout<< "PhysicsChannel::GetWaveformHist(), name: "<< name_ << std::endl;
     // std::cout<< "Size: "<< waveform_workon_->size() << std::endl;
     // std::cout<< "Element: "<< waveform_workon_->at(5000) << std::endl;
+    // if( waveform_->size() != 0 )
+    // {
+    //     string title = name_+"_wf";
+    //
+    //     TH1F* hist_wf = new TH1F( title.c_str(), title.c_str(), waveform_->size(), 0.5 , waveform_->size()+0.5);
+    //
+    //     for(unsigned int i = 0; i < waveform_->size(); i++)
+    //     {
+    //         hist_wf->SetBinContent(i+1, waveform_->at(i));
+    //     }
+    //
+    //     return hist_wf;
+    // }
     if( waveform_workon_->size() != 0 )
     {
         string title = name_+"_wf_workon";

@@ -75,7 +75,7 @@ class Event{
         static int GetId();
 
         int getCh(std::string ch);
-        virtual void Draw();
+  //      virtual void Draw();
 
 
         // Methods for loading data from disk
@@ -121,7 +121,7 @@ class PhysicsEvent : public Event{
         // PhysicsEvent();
         PhysicsEvent(const path &file_root, const path &file_ini);
         PhysicsEvent(const path &file_root, const path &file_ini, const path &file_online_rate);
-        ~PhysicsEvent();
+        virtual ~PhysicsEvent();
 
 //        void                   LoadRootFile();
         void                   LoadIniFile();
@@ -164,7 +164,7 @@ class IntEvent : public Event{
         // PhysicsEvent();
         IntEvent(const path &file_root, const path &file_ini);
 
-        ~IntEvent();
+        virtual ~IntEvent();
 
         void                   LoadIniFile();
 //        IntChannel*                                GetChannel(std::string name);

@@ -13,11 +13,12 @@
 #include <stdio.h>
 #include <sys/time.h>
 
+
 //project includes
 #include "globalsettings.hh"
 
 
-claws::GlobalSettings * GS = new claws::GlobalSettings();
+std::unique_ptr<claws::GlobalSettings>  GS = std::unique_ptr<claws::GlobalSettings>(new claws::GlobalSettings);
 
 namespace claws {
 
@@ -177,6 +178,10 @@ namespace claws {
             }
             else if (type == 1) return channels_;
             else if (type == 2) return int_channels_;
+            else
+            {
+              std::cout << "Wrong value for type given in GlobalSettings::GetChannels(int type)~!" << std::endl;
+            }
         };
 
         double GlobalSettings::GetAcceptedGain()

@@ -1,21 +1,44 @@
-
-
 -include src/subdir.mk
 
 
-
-CFLAGS   += -fopenmp `root-config --cflags` -I/remote/pcilc3/software/gperftools/include -g -rdynamic
-# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
-
-LFLAGS    += -fopenmp -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free `root-config --libs --glibs` -lboost_system -lboost_filesystem -L/remote/pcilc3/software/gperftools/lib -lprofiler -ltcmalloc
-# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
+ifeq ($(shell uname -s),Linux)
+	#CFLAGS += -fopenmp `root-config --cflags` -I/remote/pcilc3/software/gperftools/include -g -rdynamic
+	CFLAGS += -fopenmp `root-config --cflags` -I/remote/pcilc3/software/gperftools/include -g -rdynamic
+	# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
+	LFLAGS += -fopenmp -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free `root-config --libs --glibs` -lboost_system -lboost_filesystem
+	# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
+	CC = gcc
+endif
+ifeq ($(shell uname -s),Darwin)
+	#CFLAGS += -stdlib=libstdc++ `root-config --cflags` -I/opt/boost-1.63.0/include
+	CFLAGS += `root-config --cflags` -Wall -c -fmessage-length=0
+	#CFLAGS += -pthread -std=c++11 -m64 -I/opt/root/root/include -I/opt/boost-1.63.0/include/
+	# -pthread -std=c++11 -m64 -I/opt/root/root/include
+	# CFLAGS += -fopenmp -std=c++1y -pthread -m64 -I/opt/root/root/include -g
+	# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
+#	LFLAGS += `root-config --libs --glibs` -L/opt/boost/boost/bin.v2/libs/system/build/darwin-4.2.1/release/threading-multi -lboost_system -L/opt/boost/boost/bin.v2/libs/filesystem/build/darwin-4.2.1/release/threading-multi -lboost_filesystem
+#	LFLAGS += `root-config --libs --glibs` -L/opt/boost-1.63.0/lib -lboost_system-mt -lboost_filesystem-mt
+  LFLAGS += `root-config --libs --glibs` -lboost_system -lboost_filesystem
+	# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
+#	CC = g++-4.9
+#	CC = /usr/local/opt/llvm/bin/clang++
+ CC = g++
+endif
+# ifeq ($(shell uname -s),Darwin)
+# 	CFLAGS += `root-config --cflags` -g -std=gnu++1y
+# #	LFLAGS += -fopenmp -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free `root-config --libs --glibs` -lboost_system -lboost_filesystem
+# 	LFLAGS += -fopenmp  `root-config --libs --glibs` -lboost_system -lboost_filesystem
+# 	CC = /opt/gcc/gcc-5.4.0/bin/gcc -lstdc++
+# endif
 
 INCLUDES  += -I"./include"
-
 CALI_OBJS += ./build/calibration.o
 ANA_OBJS += ./build/analysis.o
 
-all: monkey clean build/calibration build/analysis
+all: monkey clean build/calibration
+
+debug: CFLAGS += -g -O0
+debug: monkey clean build/calibration
 
 
 # Link Calibration
@@ -23,7 +46,7 @@ build/calibration: $(CALI_OBJS)
 	@echo 'Linking target: $@ from: $<'
 	@mkdir -p './build/src'
 	@echo 'Invoking: GCC C++ Linker'
-	g++ -o "build/calibration" $(CALI_OBJS) $(LFLAGS)
+	$(CC) -o "build/calibration" $(CALI_OBJS) $(LFLAGS)
 	@echo 'Finished linking: $@ from: $<'
 	@echo ' '
 
@@ -32,7 +55,7 @@ build/analysis: $(ANA_OBJS)
 	@echo 'Linking target: $@ from: $<'
 	@mkdir -p './build/src'
 	@echo 'Invoking: GCC C++ Linker'
-	g++ -o "build/analysis" $(ANA_OBJS) $(LFLAGS)
+	$(CC) -o "build/analysis" $(ANA_OBJS) $(LFLAGS)
 	@echo 'Finished linking: $@ from: $<'
 	@echo ' '
 
@@ -41,7 +64,8 @@ build/%.o: ./%.cxx
 	@echo 'Building target: $@ from: $<'
 	@mkdir -p './build/src'
 	@echo 'Invoking: GCC C++ Compiler'
-	g++ $(CFLAGS) $(INCLUDES) -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
+	$(CC) $(CFLAGS) $(INCLUDES) -o "$@" "$<"
+	#-E"@:%.o=%.d" > main.i
 	@echo 'Finished building: $@ from: $<'
 	@echo ' '
 
@@ -68,3 +92,4 @@ monkey:
 	@echo ┈┈╲┈┈▕▔▔▔▔▏┈┈╱╲╲╲▏
 	@echo ┈╱▔┈┈▕┈┈┈┈▏┈┈▔╲▔▔
 	@echo ┈╲▂▂▂╱┈┈┈┈╲▂▂▂╱┈
+	@echo $(CC)

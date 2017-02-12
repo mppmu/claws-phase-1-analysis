@@ -16,6 +16,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <memory>
 // boost includes
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
@@ -143,6 +144,6 @@ namespace claws {
 
 };
 
-extern claws::GlobalSettings * GS;
+extern std::unique_ptr<claws::GlobalSettings>  GS;
 
 #endif /* GLOBAL_SETTINGS_H_ */

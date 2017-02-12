@@ -10,7 +10,7 @@
 // boost
 #include <boost/algorithm/string/replace.hpp>
 // OpenMP
-#include <omp.h>
+//#include <omp.h>
 
 #include "event.hh"
 
@@ -54,7 +54,7 @@ void Event::LoadRootFile()
         exit(-1);
     }
 
-    for (auto &itr : channels_)
+    for (const auto &itr : channels_)
     {
         itr.second->LoadHistogram(file);
     }
@@ -67,18 +67,22 @@ void Event::LoadRootFile()
 
 void Event::LoadWaveform()
 {
+  // for (auto &mmap : channels_)
+  // {
+  //     std::cout<< mmap.first << std::endl;
+  // }
 
-    for (auto &itr : channels_)
-    {
+  for (const auto & itr : channels_)
+  {
         itr.second->LoadWaveform();
-    }
+  }
 
 };
 
 void Event::DeleteHistograms()
 {
 
-    for (auto &itr : channels_)
+    for (const auto &itr : channels_)
     {
         itr.second->DeleteHistogram();
     }
@@ -169,36 +173,36 @@ int Event::getCh(string ch){
     return 0;
 }
 
-void Event::Draw(){
-
-    cout << "Drawing PhysicsEvent: "<< nr_ << endl;
-
-    TCanvas * c = new TCanvas(to_string(nr_).c_str(),to_string(nr_).c_str(), 1600, 1200);
-    c->Divide(2, channels_.size()/2);
-    unsigned int pad=0;
-
-    for(auto i : channels_)
-    {
-        pad+=+2;
-        if(pad > channels_.size()) pad =1;
-        c->cd(pad);
-        i.second->GetWaveformHist()->Draw();
-    }
-
-    string ped_can_name = to_string(nr_) + " Pedestal";
-    TCanvas * c_ped = new TCanvas(ped_can_name.c_str(), ped_can_name.c_str(), 1600, 1200);
-    c_ped->Divide(2, channels_.size()/2);
-    pad=0;
-    for(auto i : channels_)
-    {
-        pad+=+2;
-        if(pad > channels_.size() ) pad =1;
-        c_ped->cd(pad);
-        i.second->GetPedestal()->Draw();
-    }
-
-
-}
+// void Event::Draw(){
+//
+//     cout << "Drawing PhysicsEvent: "<< nr_ << endl;
+//
+//     TCanvas * c = new TCanvas(to_string(nr_).c_str(),to_string(nr_).c_str(), 1600, 1200);
+//     c->Divide(2, channels_.size()/2);
+//     unsigned int pad=0;
+//
+//     for(auto i : channels_)
+//     {
+//         pad+=+2;
+//         if(pad > channels_.size()) pad =1;
+//         c->cd(pad);
+//         i.second->GetWaveformHist()->Draw();
+//     }
+//
+//     string ped_can_name = to_string(nr_) + " Pedestal";
+//     TCanvas * c_ped = new TCanvas(ped_can_name.c_str(), ped_can_name.c_str(), 1600, 1200);
+//     c_ped->Divide(2, channels_.size()/2);
+//     pad=0;
+//     for(auto i : channels_)
+//     {
+//         pad+=+2;
+//         if(pad > channels_.size() ) pad =1;
+//         c_ped->cd(pad);
+//         i.second->GetPedestal()->Draw();
+//     }
+//
+//
+// }
 
 std::map<std::string, TH1I*> Event::GetPedestal()
 {
@@ -376,7 +380,7 @@ void PhysicsEvent::SetUpWaveforms()
     for(auto& mvec : channels_)
     {
         if(!ends_with(mvec.first, "-INT") && !ends_with(mvec.first, "4"))
-        {   
+        {
             PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(mvec.second);
             tmp->SetUpWaveforms();
         }
@@ -496,13 +500,13 @@ void IntEvent::LoadIniFile()
 
     for(int i=1;i<5;i++)
     {
-        mean_online_[i] = pt_.get<double>("FWD."+std::to_string(i)+"-Mean");
-        accepted_online_[i] = pt_.get<double>("FWD."+std::to_string(i)+"-Accepted");
+        mean_online_[i-1] = pt_.get<double>("FWD."+std::to_string(i)+"-Mean");
+        accepted_online_[i-1] = pt_.get<double>("FWD."+std::to_string(i)+"-Accepted");
     }
     for(int i=1;i<5;i++)
     {
-        mean_online_[i+4] = pt_.get<double>("BWD."+std::to_string(i)+"-Mean");
-        accepted_online_[i+4] = pt_.get<double>("BWD."+std::to_string(i)+"-Accepted");
+        mean_online_[i+4-1] = pt_.get<double>("BWD."+std::to_string(i)+"-Mean");
+        accepted_online_[i+4-1] = pt_.get<double>("BWD."+std::to_string(i)+"-Accepted");
     }
 };
 

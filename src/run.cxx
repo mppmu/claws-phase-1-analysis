@@ -45,7 +45,7 @@
 #include <TF1.h>
 #include <TThread.h>
 // OpenMP
-#include <omp.h>
+//#include <omp.h>
 
 // google performance tools
 #include <gperftools/heap-profiler.h>
@@ -293,8 +293,8 @@ void Run::LoadWaveforms()
     // double cpu0  = claws::get_cpu_time();
 
 
-    #pragma omp parallel num_threads(7)
-    {
+//    #pragma omp parallel num_threads(7)
+  //  {
         // When all the histograms are copyed into memory and than the the vectors are filled in a second (multi threaded) step, a
         // full run would use more than my full r
         // #pragma omp for schedule(dynamic,1)
@@ -303,14 +303,14 @@ void Run::LoadWaveforms()
         //     events_.at(i)->LoadWaveform();
         //     events_.at(i)->DeleteHistograms();
         // }
-        #pragma omp for schedule(dynamic,1)
+    //    #pragma omp for schedule(dynamic,1)
         for(unsigned int i=0; i< int_events_.size();i++)
         {
             int_events_.at(i)->LoadWaveform();
             int_events_.at(i)->DeleteHistograms();
         }
 
-    }
+    //}
 
     // double wall1 = claws::get_wall_time();
     // double cpu1  = claws::get_cpu_time();
@@ -359,7 +359,7 @@ void Run::SubtractPedestal()
     this->SavePedestal();
     this->Subtract();
 
-    std::cout << "\033[32;1mRun::Subtracting pedestal:\033[0m done!       " << std::cout;
+    std::cout << "\033[32;1mRun::Subtracting pedestal:\033[0m done!       " << std::endl;
 
     double wall1 = claws::get_wall_time();
     double cpu1  = claws::get_cpu_time();
@@ -374,21 +374,21 @@ void Run::LoadPedestal()
         TODO description
     */
 
-    #pragma omp parallel num_threads(7)
-    {
-        #pragma omp for schedule(dynamic,1)
+//    #pragma omp parallel num_threads(7)
+  //  {
+  //      #pragma omp for schedule(dynamic,1)
         for(unsigned int i=0; i< events_.size();i++)
         {
             events_.at(i)->LoadPedestal();
         }
 
-        #pragma omp for schedule(dynamic,1)
+    //    #pragma omp for schedule(dynamic,1)
         for(unsigned int i=0; i< int_events_.size();i++)
         {
             int_events_.at(i)->LoadPedestal();
         }
 
-    }
+  //  }
 
     // There is of course only one object of class Pedestal (pedestal_) all events need to access => no multi threading.
     for(unsigned int i=0; i< events_.size();i++)
@@ -484,27 +484,27 @@ void Run::Subtract()
     /*
         TODO description
     */
-    #pragma omp parallel num_threads(7)
-    {
+//    #pragma omp parallel num_threads(7)
+//    {
         std::map<std::string, float> tmp = pedestal_->GetPedestal(1);
 
-        #pragma omp for schedule(dynamic,1)
+  //      #pragma omp for schedule(dynamic,1)
         for(unsigned int i=0; i< events_.size();i++)
         {
             events_.at(i)->SubtractPedestal(tmp);
         }
-    }
+  //  }
 
-    #pragma omp parallel num_threads(7)
-    {
-        std::map<std::string, float> tmp = pedestal_->GetPedestal(2);
+  //  #pragma omp parallel num_threads(7)
+  //  {
+        std::map<std::string, float> tmp_int = pedestal_->GetPedestal(2);
 
-        #pragma omp for schedule(dynamic,1)
+    //    #pragma omp for schedule(dynamic,1)
         for(unsigned int i=0; i< int_events_.size();i++)
         {
-            int_events_.at(i)->SubtractPedestal(tmp, true);
+            int_events_.at(i)->SubtractPedestal(tmp_int, true);
         }
-    }
+  //  }
 };
 
 void Run::GainCalibration()
@@ -523,6 +523,7 @@ void Run::GainCalibration()
         int_events_.at(i)->CalculateIntegral();
         gain_->AddValue(int_events_.at(i)->GetIntegral());
     }
+
     gain_->FitGain();
     gain_->SaveGain(path_run_);
 
@@ -595,9 +596,9 @@ void Run::WaveformDecomposition()
     wall0 = claws::get_wall_time();
     cpu0  = claws::get_cpu_time();
 
-    this->SaveEvents("/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/Run-400999/Calibration/snapshot.root");
+    this->SaveEvents();
 
-//    std::cout << "\033[32;1mRun::Decomposing waveforms:\033[0m done!     " << std::endl;
+    // std::cout << "\033[32;1mRun::Decomposing waveforms:\033[0m done!     " << std::endl;
 
     wall1 = claws::get_wall_time();
     cpu1  = claws::get_cpu_time();
@@ -634,11 +635,19 @@ void Run::CalculateChi2()
     //TODO Implentation
 };
 
-void Run::SaveEvents(boost::filesystem::path fname)
+void Run::SaveEvents()
 {
     std::cout << "Now saving events!" << std::endl;
-    TFile *rfile = new TFile(fname.string().c_str(), "RECREATE");
 
+
+    if(!boost::filesystem::is_directory(path_run_/boost::filesystem::path("Calibration")) )
+    {
+        boost::filesystem::create_directory(path_run_/boost::filesystem::path("Calibration"));
+    }
+
+    std::string fname = path_run_.string()+"/Calibration/run_"+std::to_string(run_nr_)+"_snapshoot.root";
+
+    TFile *rfile = new TFile(fname.c_str(), "RECREATE");
     rfile->mkdir("events");
     for(auto &e : events_)
     {
@@ -872,22 +881,22 @@ void Run::DrawPedestal()
 Run::~Run() {
 	// TODO Auto-generated destructor stub
     std::cout << "Deleteing Run object!" << std::endl;
-    #pragma omp parallel num_threads(7)
-    {
-        #pragma omp for schedule(dynamic,1)
+  //  #pragma omp parallel num_threads(7)
+  //  {
+    //    #pragma omp for schedule(dynamic,1)
         for(unsigned int i=0; i< events_.size();i++)
         {
             delete events_.at(i);
             events_.at(i) = NULL;
         }
 
-        #pragma omp for schedule(dynamic,1)
+  //      #pragma omp for schedule(dynamic,1)
         for(unsigned int i=0; i< int_events_.size();i++)
         {
             delete int_events_.at(i);
             int_events_.at(i) = NULL;
         }
-    }
+  //  }
     delete pedestal_;
     delete gain_;
 

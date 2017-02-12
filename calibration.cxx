@@ -16,6 +16,7 @@
 #include <cstdlib>
 #include <typeinfo>
 #include <fstream>
+#include <iomanip>
 // boost
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
@@ -90,40 +91,40 @@ int main(int argc, char* argv[]) {
 	cout << "|            CLAWS phase I data calibration             |" << endl;
 	cout << "---------------------------------------------------------" << endl;
 
-	gStyle->SetOptFit(1111);
-//-------------------------------------------------------------
-// First get the corresponding Tmin and Tmac from the beast run
-//-------------------------------------------------------------
-
-
-	static unsigned int lastTs=0;
-
-	std::ifstream runfile("./runs.txt", std::ios_base::in);
-	std::string line;
-
-
-	double runnumber = 5001;
-
-	double runnumbertmp, tsMin, tsMax;
-
-
-	if(!runfile) {
-	  std::cout << "ERROR: run number file not found. Exiting." << std::endl;
-	  exit(1);
-	}
-	else {
-	  while (std::getline(runfile,line)) {
-		std::istringstream iss(line);
-
-		iss >> runnumbertmp;
-
-		if(runnumber == runnumbertmp) {
-			iss >> tsMin >> tsMax;
-		}
-
-	  }
-	}
-	std::cout << "Nr: " << runnumber << std::setprecision(12)<< ", tsMin: " << tsMin << ", tsMax: " << tsMax << std::endl;
+// 	gStyle->SetOptFit(1111);
+// //-------------------------------------------------------------
+// // First get the corresponding Tmin and Tmac from the beast run
+// //-------------------------------------------------------------
+//
+//
+// 	static unsigned int lastTs=0;
+//
+// 	std::ifstream runfile("./runs.txt", std::ios_base::in);
+// 	std::string line;
+//
+//
+// 	double runnumber = 5001;
+//
+// 	double runnumbertmp, tsMin, tsMax;
+//
+//
+// 	if(!runfile) {
+// 	  std::cout << "ERROR: run number file not found. Exiting." << std::endl;
+// 	  exit(1);
+// 	}
+// 	else {
+// 	  while (std::getline(runfile,line)) {
+// 		std::istringstream iss(line);
+//
+// 		iss >> runnumbertmp;
+//
+// 		if(runnumber == runnumbertmp) {
+// 			iss >> tsMin >> tsMax;
+// 		}
+//
+// 	  }
+// 	}
+// 	std::cout << "Nr: " << runnumber << std::setprecision(12)<< ", tsMin: " << tsMin << ", tsMax: " << tsMax << std::endl;
 
 //----------------------------------------------------------------------------------------------
 // Now search for the right claws runs & events corresponding to the timestamp of the beast run
@@ -154,7 +155,7 @@ int main(int argc, char* argv[]) {
 //	Run* myrun = new Run(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/2017-01-23/Run-401433"));
 	Run* myrun = new Run(path("./Run-400999"));
 	myrun->SynchronizeFiles();
-    myrun->LoadRawData();
+  myrun->LoadRawData();
 	myrun->SubtractPedestal();
 	myrun->GainCalibration();
 	myrun->Average1PE();

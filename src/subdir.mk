@@ -24,6 +24,10 @@ ANA_OBJS += ./build/src/globalsettings.o
 	@echo 'Building target: $@ from: $<'
 	@mkdir -p './build/src'
 	@echo 'Invoking: GCC C++ Compiler'
-	g++ $(CFLAGS) $(INCLUDES) -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
+	$(CC) $(CFLAGS) $(INCLUDES) -o "$@" "$<"
 	@echo 'Finished building: $@ from: $<'
 	@echo ' '
+
+
+
+	#$(CC) $(CFLAGS) $(INCLUDES)  -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"

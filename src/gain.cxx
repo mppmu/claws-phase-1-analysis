@@ -64,7 +64,7 @@ void Gain::AddValue(std::map<std::string, double> values)
 
 void Gain::FitGain()
 {
-    std::ofstream hendrik_file("/home/iwsatlas1/mgabriel/Plots/forHendyDany.txt", ios::app);
+//    std::ofstream hendrik_file("/home/iwsatlas1/mgabriel/Plots/forHendyDany.txt", ios::app);
 
     for(auto & ivec : channels_)
     {
@@ -91,8 +91,8 @@ void Gain::FitGain()
         ivec->gain = double_gaussian->GetParameter(4) - double_gaussian->GetParameter(1);
         // hendrik_file<< " "<< ivec->name << " " << ivec->gain;
     }
-    hendrik_file << std::endl;
-    hendrik_file.close();
+    // hendrik_file << std::endl;
+    // hendrik_file.close();
 };
 
 void Gain::SaveGain(boost::filesystem::path path_run)
@@ -167,7 +167,7 @@ void Gain::FitAvg()
         // expo->SetParameter(3,-0.11);
         ivec->avg_hist->Fit(expo, "Q", "", ivec->avg_hist->GetMaximumBin()+10, ivec->avg_wf->size());
         ivec->end = round(expo->GetX(0.005));
-        std::cout<< "ivec->end: " << ivec->end << std::endl;
+        // std::cout<< "ivec->end: " << ivec->end << std::endl;
         for(signed i = ivec->avg_wf->size(); i < ivec->end + 1; i++)
         {
             ivec->avg_hist->SetBinContent(i, expo->Eval(i));
@@ -224,15 +224,15 @@ void Gain::HistToWf()
     for(auto & ivec : channels_)
     {
         ivec->avg_wf->clear();
-        std::cout<< "1 Size: " << ivec->avg_wf->size() << ", Capacity: " << ivec->avg_wf->capacity()<< std::endl;
+        // std::cout<< "1 Size: " << ivec->avg_wf->size() << ", Capacity: " << ivec->avg_wf->capacity()<< std::endl;
         //if(ivec->end-129 > ivec->avg_wf->capacity()) ivec->avg_wf->reserve(ivec->end-129);
         ivec->avg_wf->reserve(ivec->end -129);
-        std::cout<< "2 Size: " << ivec->avg_wf->size() << ", Capacity: " << ivec->avg_wf->capacity()<< std::endl;
+        // std::cout<< "2 Size: " << ivec->avg_wf->size() << ", Capacity: " << ivec->avg_wf->capacity()<< std::endl;
         for( unsigned i = 129; i < ivec->end; i++)
         {
             ivec->avg_wf->push_back(ivec->avg_hist->GetBinContent(i));
         }
-        std::cout<< "3 Size: " << ivec->avg_wf->size() << ", Capacity: " << ivec->avg_wf->capacity()<< std::endl;
+        // std::cout<< "3 Size: " << ivec->avg_wf->size() << ", Capacity: " << ivec->avg_wf->capacity()<< std::endl;
     }
 };
 
