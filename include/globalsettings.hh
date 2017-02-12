@@ -17,6 +17,7 @@
 #include <sstream>
 #include <vector>
 #include <memory>
+#include <utility>
 // boost includes
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
@@ -74,7 +75,7 @@ namespace claws {
     int8_t ConvertOffset(double offset, int rn);
     std::string StringRunMode(RunMode mode);
     std::string indent(int level);
-    void printTree (pt::ptree &pt, int level=0) ;
+    void printTree (boost::property_tree::ptree &pt, int level=0) ;
     void handler(int sig);
 
     class GlobalSettings
@@ -95,6 +96,8 @@ namespace claws {
             float GetXUp();
             std::vector <std::string> GetChannels(int type=0);
             double GetAcceptedGain();
+            std::pair<double, double> GetPEtoMIP(std::string detector, unsigned int time = 0);
+
             boost::filesystem::path GetHook();
             boost::filesystem::path GetDetector();
 
@@ -128,6 +131,8 @@ namespace claws {
             std::vector <std::string>   int_channels_ = {"FWD1-INT", "FWD2-INT", "FWD3-INT"
                                                           ,"BWD1-INT", "BWD2-INT", "BWD3-INT"
                                                         };
+
+            boost::property_tree::ptree pe_to_mip_;
 
     //        std::string intermediate_suffix_          = GS->GetIntSuffix();
             double accepted_gain_             = 0.35;  // +- from mean gain accepted for avg wfs.

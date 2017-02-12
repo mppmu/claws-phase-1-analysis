@@ -141,6 +141,8 @@ namespace claws {
 
         GlobalSettings::GlobalSettings() : hook_("")
         {
+          boost::filesystem::path ini_file = "/Users/mgabriel/workspace/claws/claws_calibration/pe_to_mip.ini";
+          boost::property_tree::ini_parser::read_ini(ini_file.string(), pe_to_mip_);
 
         };
 
@@ -187,6 +189,44 @@ namespace claws {
         double GlobalSettings::GetAcceptedGain()
         {
             return accepted_gain_;
+        };
+
+        std::pair<double, double> GlobalSettings::GetPEtoMIP(std::string detector, unsigned int time)
+        {
+            if(detector == "FWD1")
+            {
+                if(time < 1463716800)
+                {
+                    detector += "/1";
+                }
+                else
+                {
+                    detector += "/2";
+                }
+            }
+            else if (detector == "BWD1")
+            {
+                if(time < 1463716800)
+                {
+                    detector += "/1";
+                }
+                else
+                {
+                    detector += "/2";
+                }
+            }
+            else if (detector == "BWD2")
+            {
+                if(time < 1463716800)
+                {
+                    detector += "/1";
+                }
+                else
+                {
+                    detector += "/2";
+                }
+            }
+            return std::make_pair(pe_to_mip_.get<double>( detector + ".Value" ), pe_to_mip_.get<double>( detector + ".Error" ) );
         };
 
         boost::filesystem::path GlobalSettings::GetHook()

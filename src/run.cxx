@@ -640,12 +640,13 @@ void Run::SaveEvents()
     std::cout << "Now saving events!" << std::endl;
 
 
-    if(!boost::filesystem::is_directory(path_run_/boost::filesystem::path("Calibration")) )
+    boost::filesystem::path folder = path_run_/boost::filesystem::path("Calibration");
+    if(!boost::filesystem::is_directory(folder) )
     {
-        boost::filesystem::create_directory(path_run_/boost::filesystem::path("Calibration"));
+        boost::filesystem::create_directory(folder);
     }
 
-    std::string fname = path_run_.string()+"/Calibration/run_"+std::to_string(run_nr_)+"_snapshoot.root";
+    std::string fname = folder.string()+"/run_"+std::to_string(run_nr_)+"_snapshoot.root";
 
     TFile *rfile = new TFile(fname.c_str(), "RECREATE");
     rfile->mkdir("events");
@@ -664,6 +665,7 @@ void Run::SaveEvents()
             TH1F* hist = ch.second->GetWaveformHist();
             hist->Draw();
             c.Write();
+            c.SaveAs((folder.string()+"/Original/run_"+std::to_string(run_nr_)+"_"+e->GetNrStr()+"_"+ch.second->GetName()+"_original.pdf").c_str());
             delete hist;
             hist = NULL;
         }

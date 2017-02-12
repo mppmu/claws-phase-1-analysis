@@ -8,7 +8,7 @@
  // OpenMP
 // #include <omp.h>
 
-
+#include <utility>
 #include <assert.h>
 
 #include "channel.hh"
@@ -306,18 +306,20 @@ void PhysicsChannel::CalculateIntegral()
 void PhysicsChannel::SetUpWaveforms()
 {
     waveform_workon_->clear();
-    waveform_workon_->clear();
+    waveform_photon_->clear();
 
     waveform_workon_->reserve(waveform_->size());
     waveform_photon_->reserve(waveform_->size());
-//    std::cout << "filling  " << name_  << std::endl;
-    for(unsigned i = 0; i < waveform_->size() ; i++)
+
+    std::pair<double, double> test = GS->GetPEtoMIP(name_);
+
+    for(unsigned i = 0; i < waveform_->size(); i++)
     {
         // (*waveform_workon_)[i] = (*waveform_)[i];
         // (*waveform_photon_)[i] = 0;
     //    waveform_workon_->push_back(waveform_->at(i));
 //        std::cout << "i: " << i  << std::endl;
-        waveform_workon_->push_back(0);
+        waveform_workon_->push_back(waveform_->at(i));
         waveform_photon_->push_back(0);
     }
     // double threshold = 0.5
@@ -495,6 +497,7 @@ TH1F* PhysicsChannel::GetWaveformHist()
     //
     //     return hist_wf;
     // }
+
     else if( waveform_->size() != 0 )
     {
         string title = name_+"_wf";
