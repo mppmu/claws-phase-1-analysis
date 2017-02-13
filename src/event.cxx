@@ -392,6 +392,19 @@ void PhysicsEvent::SetUpWaveforms()
     }
 };
 
+void PhysicsEvent::FastRate(std::map<std::string, std::vector<float>*> avg_waveforms, std::map<std::string, double> pe_to_mips)
+{
+    //TODO Validation
+    for(auto& mvec : avg_waveforms)
+    {
+        std::string tmp_name = mvec.first;
+        replace_last(tmp_name, "-INT", "");
+        PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(channels_[tmp_name]);
+        tmp->FastRate(mvec.second, pe_to_mips[tmp_name]);
+        //        tmp->Decompose();
+    }
+};
+
 void PhysicsEvent::Decompose(std::map<std::string, std::vector<float>*> avg_waveforms)
 {
     //TODO Validation

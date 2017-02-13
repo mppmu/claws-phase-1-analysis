@@ -122,6 +122,7 @@ void SaveEvents();
 
         void WaveformDecomposition();
 
+            void FastRate();
             void Decompose();
             void Reconstruct();
             void CalculateChi2();

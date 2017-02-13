@@ -319,28 +319,87 @@ void PhysicsChannel::SetUpWaveforms()
         // (*waveform_photon_)[i] = 0;
     //    waveform_workon_->push_back(waveform_->at(i));
 //        std::cout << "i: " << i  << std::endl;
-        waveform_workon_->push_back(waveform_->at(i));
+    //    waveform_workon_->push_back(waveform_->at(i));
         waveform_photon_->push_back(0);
     }
-    // double threshold = 0.5
-    // bool fillflag = false;
-    // for(unsigned i = 0; i < waveform_->size() -2; i++)
-    // {
-    //     if(    waveform_->at(i)   >= 1.0
-    //         && waveform_->at(i+1) >= 1.0
-    //         && waveform_->at(i+2) >= 1.0 )
-    //     {
-    //         fillflag = true;
-    //         waveform_workon_->push_back(waveform_->at(i));
-    //     }
-    //     else
-    //     {
-    //         waveform_workon_->push_back(0);
-    //     }
-    // }
+
+    double threshold = 0.5;
+    bool fillflag = false;
+    unsigned counter = 0;
+
+    for(unsigned i = 0; i < waveform_->size() -2; i++)
+    {
+        if(    waveform_->at(i)   > threshold
+            && waveform_->at(i+1) > threshold
+            && waveform_->at(i+2) > threshold )
+        {
+            fillflag = true;
+            waveform_workon_->push_back(waveform_->at(i));
+        }
+        else if( fillflag )
+        {
+            fillflag = false;
+            counter = 100;
+            if(waveform_->at(i) >= 0) waveform_workon_->push_back(waveform_->at(i));
+            else                      waveform_workon_->push_back(0);
+        }
+        else if( !fillflag && counter > 0)
+        {
+            if(waveform_->at(i) >= 0) waveform_workon_->push_back(waveform_->at(i));
+            else                      waveform_workon_->push_back(0);
+
+            counter--;
+        }
+        else
+        {
+            waveform_workon_->push_back(0);
+        }
+    }
+    if(fillflag || (counter > 1))
+    {
+        if(waveform_->at(waveform_->size()-2) >= 0) waveform_workon_->push_back(waveform_->at(waveform_->size()-2));
+        else                                        waveform_workon_->push_back(0);
+        if(waveform_->at(waveform_->size()-1) >= 0) waveform_workon_->push_back(waveform_->at(waveform_->size()-1));
+        else                                        waveform_workon_->push_back(0);
+
+    }
+    else if(counter == 1)
+    {
+        if(waveform_->at(waveform_->size()-2) >= 0) waveform_workon_->push_back(waveform_->at(waveform_->size()-2));
+        else                                        waveform_workon_->push_back(0);
+
+        waveform_workon_->push_back(0);
+    }
+    else
+    {
+        waveform_workon_->push_back(0);
+        waveform_workon_->push_back(0);
+    }
+
 
 
 };
+void PhysicsChannel::FastRate(std::vector<float>* avg_waveform, double pe_to_mip)
+{
+    double one_pe_int = 0;
+    for(auto & ivec: (*avg_waveform))
+    {
+        one_pe_int += ivec;
+    }
+
+    one_pe_int /= 20.; // Scaling factor because of different voltag ranges;
+
+    double integral = 0;
+    for(auto & ivec: (*waveform_workon_))
+    {
+        integral += ivec;
+    }
+
+    fast_rate_ = integral/one_pe_int;
+    fast_rate_ /= pe_to_mip;
+    fast_rate_ /= (n_sample_ * 0.8* 10e-9);
+
+}
 
 void PhysicsChannel::Decompose(std::vector<float>* avg_waveform)
 //void PhysicsChannel::Decompose()

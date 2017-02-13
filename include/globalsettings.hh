@@ -97,6 +97,7 @@ namespace claws {
             std::vector <std::string> GetChannels(int type=0);
             double GetAcceptedGain();
             std::pair<double, double> GetPEtoMIP(std::string detector, unsigned int time = 0);
+            std::map<std::string, double> GetPEtoMIPs( unsigned int time = 0);
 
             boost::filesystem::path GetHook();
             boost::filesystem::path GetDetector();

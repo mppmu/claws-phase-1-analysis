@@ -96,15 +96,19 @@ class PhysicsChannel : public Channel
         void               CalculateIntegral();  // Pure Placeholder so far.
 
         void SetUpWaveforms();
+        void FastRate(std::vector<float>* avg_waveform, double pe_to_mip = 16.);
         void Decompose(std::vector<float>* avg_waveform);
         void Reconstruct(std::vector<float>* avg_waveform);
         void CalculateChi2();
         //void Decompose();
 
-       std::vector<float>*     waveform_workon_          = NULL;
+       std::vector<float>*           waveform_workon_   = NULL;
        std::vector<std::uint8_t>*    waveform_photon_   = NULL;
 
-        TH1F*                   GetWaveformHist();
+       TH1F*                   GetWaveformHist();
+
+       double                  fast_rate_ = 0;
+       double                  rate_      = 0;
 };
 
 class IntChannel : public Channel

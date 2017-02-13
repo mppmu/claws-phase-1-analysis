@@ -128,6 +128,7 @@ class PhysicsEvent : public Event{
         void                   LoadOnlineRate();
 
         void                   SetUpWaveforms();
+        void                   FastRate(std::map<std::string, std::vector<float>*> avg_waveforms, std::map<std::string, double> pe_to_mips);
         void                   Decompose(std::map<std::string, std::vector<float>*> avg_waveforms);
         void                   Reconstruct(std::map<std::string, std::vector<float>*> avg_waveforms);
         void                   CalculateChi2();

@@ -229,6 +229,50 @@ namespace claws {
             return std::make_pair(pe_to_mip_.get<double>( detector + ".Value" ), pe_to_mip_.get<double>( detector + ".Error" ) );
         };
 
+        std::map<std::string, double> GlobalSettings::GetPEtoMIPs( unsigned int time )
+        {
+            std::map<std::string, double> rtn;
+            for(auto & ivec : channels_)
+            {
+                std::string ini_key = ivec;
+                if(ivec == "FWD1")
+                {
+                    if(time < 1463716800)
+                    {
+                        ini_key += "/1";
+                    }
+                    else
+                    {
+                        ini_key += "/2";
+                    }
+                }
+                else if (ivec == "BWD1")
+                {
+                    if(time < 1463716800)
+                    {
+                        ini_key += "/1";
+                    }
+                    else
+                    {
+                        ini_key += "/2";
+                    }
+                }
+                else if (ivec == "BWD2")
+                {
+                    if(time < 1463716800)
+                    {
+                        ini_key += "/1";
+                    }
+                    else
+                    {
+                        ini_key += "/2";
+                    }
+                }
+                rtn[ivec] = pe_to_mip_.get<double>( ini_key + ".Value" );
+            }
+            return rtn;
+        }
+
         boost::filesystem::path GlobalSettings::GetHook()
         {
             std::cout << hook_ << std::endl;

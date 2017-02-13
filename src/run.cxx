@@ -612,11 +612,12 @@ void Run::Decompose()
 
 
     std::map<std::string, std::vector<float>*> avg_waveforms = gain_->GetWaveform();
-
+    std::map<std::string, double> pe_to_mips = GS->GetPEtoMIPs();
 //    #pragma omp parallel for num_threads(5) firstprivate(avg_waveforms)
     for(unsigned int i=0; i< events_.size(); i++)
     {
         events_.at(i)->SetUpWaveforms();
+        events_.at(i)->FastRate(avg_waveforms, pe_to_mips);
 //        events_.at(i)->Decompose(avg_waveforms);
 //        events_.at(i)->Reconstruct(avg_waveforms);
 //        events_.at(i)->CalculateChi2();
@@ -646,7 +647,7 @@ void Run::SaveEvents()
         boost::filesystem::create_directory(folder);
     }
 
-    std::string fname = folder.string()+"/run_"+std::to_string(run_nr_)+"_snapshoot.root";
+    std::string fname = folder.string()+"/run_"+std::to_string(run_nr_)+"_snapshoot_selectedv1.root";
 
     TFile *rfile = new TFile(fname.c_str(), "RECREATE");
     rfile->mkdir("events");
@@ -665,7 +666,7 @@ void Run::SaveEvents()
             TH1F* hist = ch.second->GetWaveformHist();
             hist->Draw();
             c.Write();
-            c.SaveAs((folder.string()+"/Original/run_"+std::to_string(run_nr_)+"_"+e->GetNrStr()+"_"+ch.second->GetName()+"_original.pdf").c_str());
+            // c.SaveAs((folder.string()+"/Original/run_"+std::to_string(run_nr_)+"_"+e->GetNrStr()+"_"+ch.second->GetName()+"_original.pdf").c_str());
             delete hist;
             hist = NULL;
         }
