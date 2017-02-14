@@ -3,7 +3,7 @@
 
 ifeq ($(shell uname -s),Linux)
 	#CFLAGS += -fopenmp `root-config --cflags` -I/remote/pcilc3/software/gperftools/include -g -rdynamic
-	CFLAGS += -fopenmp `root-config --cflags` -Wall -c -fmessage-length=0
+	CFLAGS += -fopenmp `root-config --cflags` -c -fmessage-length=0
 	# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
 	LFLAGS += -fopenmp `root-config --libs --glibs` -lboost_system -lboost_filesystem
 	# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
@@ -11,7 +11,7 @@ ifeq ($(shell uname -s),Linux)
 endif
 ifeq ($(shell uname -s),Darwin)
 	#CFLAGS += -stdlib=libstdc++ `root-config --cflags` -I/opt/boost-1.63.0/include
-	CFLAGS += `root-config --cflags` -Wall -c -fmessage-length=0
+	CFLAGS += `root-config --cflags`  -c -fmessage-length=0
 	#CFLAGS += -pthread -std=c++11 -m64 -I/opt/root/root/include -I/opt/boost-1.63.0/include/
 	# -pthread -std=c++11 -m64 -I/opt/root/root/include
 	# CFLAGS += -fopenmp -std=c++1y -pthread -m64 -I/opt/root/root/include -g
@@ -38,9 +38,11 @@ ANA_OBJS += ./build/analysis.o
 
 all: monkey clean build/calibration
 
-debug: CFLAGS += -g -O0
+debug: CFLAGS += -g -O0 -Wall
 debug: monkey clean build/calibration
 
+release: CFLAGS += -O3
+release: monkey clean build/calibration
 
 # Link Calibration
 build/calibration: $(CALI_OBJS)
