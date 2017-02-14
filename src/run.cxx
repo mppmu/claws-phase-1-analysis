@@ -48,8 +48,8 @@
 //#include <omp.h>
 
 // google performance tools
-#include <gperftools/heap-profiler.h>
-#include <gperftools/profiler.h>
+// #include <gperftools/heap-profiler.h>
+// #include <gperftools/profiler.h>
 
 
 // Project includes
