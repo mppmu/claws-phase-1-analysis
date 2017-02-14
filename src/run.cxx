@@ -71,12 +71,14 @@ Run::Run(boost::filesystem::path p)
 {
 
     path_run_ = p;
+
     // Extract the runnumer from the path to the folder and convert it to int.
     run_nr_     = atoi(path_run_.filename().string().substr(4,20).c_str());
     run_nr_str_ = path_run_.filename().string().substr(4,20);
     pedestal_   = new Pedestal(run_nr_);
     gain_       = new Gain(run_nr_);
     cout << "---------------------------------------------------------" << endl;
+    std::cout << p << std::endl;
     cout << "\033[1;31mRun::Created run: \033[0m" << run_nr_ << endl;
     // std::ofstream hendrik_file("/home/iwsatlas1/mgabriel/Plots/forHendyDany.txt", ios::app);
     // hendrik_file << run_nr_str_;

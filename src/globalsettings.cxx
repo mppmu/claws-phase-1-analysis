@@ -141,7 +141,7 @@ namespace claws {
 
         GlobalSettings::GlobalSettings() : hook_("")
         {
-          boost::filesystem::path ini_file = "/Users/mgabriel/workspace/claws/claws_calibration/pe_to_mip.ini";
+          boost::filesystem::path ini_file = "./pe_to_mip.ini";
           boost::property_tree::ini_parser::read_ini(ini_file.string(), pe_to_mip_);
 
         };
@@ -275,7 +275,7 @@ namespace claws {
 
         boost::filesystem::path GlobalSettings::GetHook()
         {
-            std::cout << hook_ << std::endl;
+            //std::cout << hook_ << std::endl;
             return hook_;
         };
 
