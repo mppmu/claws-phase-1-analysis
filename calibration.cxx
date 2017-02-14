@@ -163,7 +163,7 @@ int main(int argc, char* argv[]) {
 	// myrun->WriteNTuple();
 	// delete myrun;
 	std::string day = argv[1];
-	std::cout << GS->GetRuns(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/" + day )) << std::endl;
+
 	std::vector <boost::filesystem::path> runs = GS->GetRuns(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/" + day ));
 	for(unsigned i = 0 ; i<runs.size(); i++)
 	{

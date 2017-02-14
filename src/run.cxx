@@ -78,7 +78,7 @@ Run::Run(boost::filesystem::path p)
     pedestal_   = new Pedestal(run_nr_);
     gain_       = new Gain(run_nr_);
     cout << "---------------------------------------------------------" << endl;
-    std::cout << p << std::endl;
+    std::cout << p.string() << std::endl;
     cout << "\033[1;31mRun::Created run: \033[0m" << run_nr_ << endl;
     // std::ofstream hendrik_file("/home/iwsatlas1/mgabriel/Plots/forHendyDany.txt", ios::app);
     // hendrik_file << run_nr_str_;

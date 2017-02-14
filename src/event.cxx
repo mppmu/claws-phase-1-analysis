@@ -538,13 +538,41 @@ void IntEvent::LoadIniFile()
 
     for(int i=1;i<5;i++)
     {
-        mean_online_[i-1] = pt_.get<double>("FWD."+std::to_string(i)+"-Mean");
+        try
+        {
+            mean_online_[i-1] = pt_.get<double>("FWD."+std::to_string(i)+"-Mean");
+        }
+        catch(...)
+        {
+            mean_online_[i-1] = 0;
+        }
+        try
+        {
         accepted_online_[i-1] = pt_.get<double>("FWD."+std::to_string(i)+"-Accepted");
+        }
+        catch(...)
+        {
+            accepted_online_[i-1] = 0;
+        }
     }
     for(int i=1;i<5;i++)
     {
-        mean_online_[i+4-1] = pt_.get<double>("BWD."+std::to_string(i)+"-Mean");
-        accepted_online_[i+4-1] = pt_.get<double>("BWD."+std::to_string(i)+"-Accepted");
+        try
+        {
+            mean_online_[i+4-1] = pt_.get<double>("BWD."+std::to_string(i)+"-Mean");
+        }
+        catch(...)
+        {
+            mean_online_[i+4-1] =0;
+        }
+        try
+        {
+            accepted_online_[i+4-1] = pt_.get<double>("BWD."+std::to_string(i)+"-Accepted");
+        }
+        catch(...)
+        {
+            accepted_online_[i+4-1] = 0;
+        }
     }
 };
 
