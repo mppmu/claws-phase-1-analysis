@@ -162,8 +162,8 @@ int main(int argc, char* argv[]) {
 	// myrun->WaveformDecomposition();
 	// myrun->WriteNTuple();
 	// delete myrun;
-
-	std::vector <boost::filesystem::path> runs = GS->GetRuns(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/" + to_string(argv[1]));
+	std::string day = argv[1];
+	std::vector <boost::filesystem::path> runs = GS->GetRuns(path("/remote/ceph/group/ilc/claws/data/RAW/connecticut/" + day ));
 	for(unsigned i = 0 ; i<runs.size(); i++)
 	{
 	//	std::cout << runs.at(i) << std::endl;
@@ -175,7 +175,7 @@ int main(int argc, char* argv[]) {
 		myrun->GainCalibration();
 		myrun->Average1PE();
 		myrun->WaveformDecomposition();
-		myrun->WriteNTuple(GS->ResetHook()->SetData()->SetNtp()->SetDetector(claws::CLW)->SetDate(atoi(argv[1]), 6, 16)->GetHook());
+		myrun->WriteNTuple(path(GS->ResetHook()->SetData()->SetNtp()->SetDetector(claws::CLW)->GetHook()/day));
 		delete myrun;
 	}
 //	hendrik_file.close();
