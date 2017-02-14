@@ -582,7 +582,8 @@ void Run::WaveformDecomposition()
     double wall0 = claws::get_wall_time();
     double cpu0  = claws::get_cpu_time();
 
-    this->Decompose();
+    this->SetUpWaveforms();
+    this->FastRate();
 
 
     std::cout << "\033[32;1mRun::Decomposing waveforms:\033[0m done!     " << std::endl;
@@ -598,6 +599,7 @@ void Run::WaveformDecomposition()
 
     this->SaveEvents();
 
+
     // std::cout << "\033[32;1mRun::Decomposing waveforms:\033[0m done!     " << std::endl;
 
     wall1 = claws::get_wall_time();
@@ -606,6 +608,24 @@ void Run::WaveformDecomposition()
     cout << "Wall Time = " << wall1 - wall0 << endl;
     cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 }
+void Run::SetUpWaveforms()
+{
+    for(unsigned int i=0; i< events_.size(); i++)
+    {
+        events_.at(i)->SetUpWaveforms();
+    }
+};
+
+void Run::FastRate()
+{
+    std::map<std::string, std::vector<float>*> avg_waveforms = gain_->GetWaveform();
+    std::map<std::string, double> pe_to_mips = GS->GetPEtoMIPs();
+
+    for(unsigned int i=0; i< events_.size(); i++)
+    {
+        events_.at(i)->FastRate(avg_waveforms, pe_to_mips);
+    }
+};
 
 void Run::Decompose()
 {
@@ -616,8 +636,8 @@ void Run::Decompose()
 //    #pragma omp parallel for num_threads(5) firstprivate(avg_waveforms)
     for(unsigned int i=0; i< events_.size(); i++)
     {
-        events_.at(i)->SetUpWaveforms();
-        events_.at(i)->FastRate(avg_waveforms, pe_to_mips);
+
+
 //        events_.at(i)->Decompose(avg_waveforms);
 //        events_.at(i)->Reconstruct(avg_waveforms);
 //        events_.at(i)->CalculateChi2();

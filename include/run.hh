@@ -122,6 +122,7 @@ void SaveEvents();
 
         void WaveformDecomposition();
 
+            void SetUpWaveforms();
             void FastRate();
             void Decompose();
             void Reconstruct();
