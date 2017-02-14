@@ -624,7 +624,10 @@ void Run::FastRate()
     for(unsigned int i=0; i< events_.size(); i++)
     {
         events_.at(i)->FastRate(avg_waveforms, pe_to_mips);
+//        auto test =  events_.at(i)->GetPV<std::string>("SuperKEKBStatus");
+
     }
+
 };
 
 void Run::Decompose()
@@ -636,11 +639,9 @@ void Run::Decompose()
 //    #pragma omp parallel for num_threads(5) firstprivate(avg_waveforms)
     for(unsigned int i=0; i< events_.size(); i++)
     {
-
-
-//        events_.at(i)->Decompose(avg_waveforms);
-//        events_.at(i)->Reconstruct(avg_waveforms);
-//        events_.at(i)->CalculateChi2();
+       events_.at(i)->Decompose(avg_waveforms);
+       events_.at(i)->Reconstruct(avg_waveforms);
+       events_.at(i)->CalculateChi2();
     }
 
     //TODO Finish implentation
@@ -766,8 +767,29 @@ std::vector<PhysicsChannel*> Run::GetPhysicsChannel(std::string name)
         channel.push_back(tmp);
     }
     return channel;
-}
+};
 
+int Run::WriteNTuple(path path_ntuple){
+
+    if(path_ntuple.string() == "")
+    {
+        if(!boost::filesystem::is_directory(path_run_/boost::filesystem::path("Calibration")) )
+        {
+            boost::filesystem::create_directory(path_run_/boost::filesystem::path("Calibration"));
+        }
+        path_ntuple = path_run_/boost::filesystem::path("Calibration");
+    }
+    path_ntuple = path_ntuple / ("CLWv2_beta_" +to_string(run_nr_) + "_" + to_string((int)tsMin) + ".root" );
+    TFile * root_file  = new TFile(path_ntuple.string().c_str(), "RECREATE");
+
+    // this->WriteTimeStamp(root_file);
+    // this->WriteOnlineTree(root_file);
+    this->WriteTree(root_file);
+
+    root_file->Close();
+
+    return 0;
+};
 
 int Run::WriteOnlineTree(TFile* file)
 {
@@ -795,12 +817,12 @@ int Run::WriteOnlineTree(TFile* file)
 
         ts = events_.at(i)->GetUnixtime();
 
-        rate_on[0] = events_.at(i)->GetRateOnline()[0];
-        rate_on[1] = events_.at(i)->GetRateOnline()[1];
-        rate_on[2] = events_.at(i)->GetRateOnline()[2];
-        rate_on[3] = events_.at(i)->GetRateOnline()[3];
-        rate_on[4] = events_.at(i)->GetRateOnline()[4];
-        rate_on[5] = events_.at(i)->GetRateOnline()[5];
+        rate_on[0] = events_.at(i)->GetRate()[0];
+        rate_on[1] = events_.at(i)->GetRate()[1];
+        rate_on[2] = events_.at(i)->GetRate()[2];
+        rate_on[3] = events_.at(i)->GetRate()[3];
+        rate_on[4] = events_.at(i)->GetRate()[4];
+        rate_on[5] = events_.at(i)->GetRate()[5];
 
         if(events_.at(i)->GetInjection())
         {
@@ -814,8 +836,6 @@ int Run::WriteOnlineTree(TFile* file)
         }
 
     }
-
-
 
     file->cd();
     tout->Write();
@@ -845,10 +865,7 @@ int Run::WriteTimeStamp(TFile* file)
 
         injection = events_.at(i)->GetInjection();
         ts        = events_.at(i)->GetUnixtime();
-
         tout->Fill();
-
-
     }
 
     file->cd();
@@ -859,19 +876,48 @@ int Run::WriteTimeStamp(TFile* file)
     return 0;
 };
 
-int Run::WriteNTuple(path path_ntuple){
+int Run::WriteTree(TFile* file, std::string type)
+{
+    //TODO Validate
+    TTree* t_auto = new TTree("t_auto", "t_auto");
+    TTree* t_inj = new TTree("t_inj", "t_inj");
 
-    path_ntuple = path_ntuple / ("CLWv0.1-" +to_string(run_nr_) +"-" + to_string((int)tsMin) +".root");
-    TFile * root_file  = new TFile(path_ntuple.string().c_str(), "RECREATE");
+    double ts;
+    double rate_online[6];
+    double fast_rate[3];
 
-    this->WriteTimeStamp(root_file);
-    this->WriteOnlineTree(root_file);
+    t_auto->Branch("ts", &ts,     "ts/D");
+    t_auto->Branch("rate_online",       rate_online,           "rate_online[6]/D");
+    t_auto->Branch("fast_rate", fast_rate,     "fast_rate[3]/D");
 
-    root_file->Close();
+    t_inj->Branch("ts", &ts,     "ts/D");
+    t_inj->Branch("rate_online",       rate_online,           "rate_online[6]/D");
+    t_inj->Branch("fast_rate", fast_rate,     "fast_rate[3]/D");
 
-    return 0;
+    for(unsigned int i=0; i < events_.size(); i++)
+    {
+        ts                  = events_.at(i)->GetUnixtime();
+
+        rate_online[0] = events_.at(i)->GetRate()[0];
+        rate_online[1] = events_.at(i)->GetRate()[1];
+        rate_online[2] = events_.at(i)->GetRate()[2];
+        rate_online[3] = events_.at(i)->GetRate()[3];
+        rate_online[4] = events_.at(i)->GetRate()[4];
+        rate_online[5] = events_.at(i)->GetRate()[5];
+
+        fast_rate[0] = events_.at(i)->GetRate(1)[0];
+        fast_rate[1] = events_.at(i)->GetRate(1)[1];
+        fast_rate[2] = events_.at(i)->GetRate(1)[2];
+
+        if(events_.at(i)->GetInjection())   t_inj->Fill();
+        else                                t_auto->Fill();
+    }
+
+    file->cd();
+    t_auto->Write();
+    t_inj->Write();
+
 };
-
 
 void Run::DrawPedestal()
 {

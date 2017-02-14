@@ -91,7 +91,8 @@ class Run{
 
         int WriteOnlineTree(TFile* file);
         int WriteTimeStamp(TFile* file);
-        int WriteNTuple(boost::filesystem::path path_ntuple);
+        int WriteTree(TFile* file, std::string type = "-1" );
+        int WriteNTuple(boost::filesystem::path path_ntuple = "" );
 
         void Subtract();
 

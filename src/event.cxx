@@ -279,8 +279,9 @@ Event::~Event() {
 
 PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini): Event(file_root ,file_ini)
 {
-    fill_n(rate_online_, 6, -1);
-    fill_n(rate_offline_, 8, -1);
+    fill_n(online_rate_, 6, -1);
+    fill_n(fast_rate_, 3, -1);
+    fill_n(rate_, 3, -1);
 
     nr_     = atoi(file_root.filename().string().substr(6,15).c_str());
     nr_str_ = file_root.filename().string().substr(6,9);
@@ -339,7 +340,7 @@ PhysicsEvent::~PhysicsEvent() {
 
 void PhysicsEvent::LoadIniFile(){
 
-    property_tree::ptree pt_;
+
 	property_tree::ini_parser::read_ini(path_file_ini_.string(), pt_);
 
     unixtime_       = pt_.get<double>("Properties.UnixTime");
@@ -370,7 +371,7 @@ void PhysicsEvent::LoadOnlineRate(){
         exit(1);
     }
     double dummy;
-    ratefile >> rate_online_[0] >> rate_online_[1] >> rate_online_[2] >> dummy >> rate_online_[3] >> rate_online_[4] >> rate_online_[5] >> dummy;
+    ratefile >> online_rate_[0] >> online_rate_[1] >> online_rate_[2] >> dummy >> online_rate_[3] >> online_rate_[4] >> online_rate_[5] >> dummy;
 
     ratefile.close();
 };
@@ -402,6 +403,9 @@ void PhysicsEvent::FastRate(std::map<std::string, std::vector<float>*> avg_wavef
         PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(channels_[tmp_name]);
         tmp->FastRate(mvec.second, pe_to_mips[tmp_name]);
         //        tmp->Decompose();
+        if(tmp_name == "FWD1") fast_rate_[0] = tmp->GetRate();
+        else if(tmp_name == "FWD2") fast_rate_[1] = tmp->GetRate();
+        else if(tmp_name == "FWD3") fast_rate_[2] = tmp->GetRate();
     }
 };
 
@@ -448,8 +452,23 @@ void PhysicsEvent::CalculateChi2()
     }
 };
 
-double* PhysicsEvent::GetRateOnline(){
-    return rate_online_;
+double* PhysicsEvent::GetRate(int type){
+    if( type == 0 )
+    {
+        return online_rate_;
+    }
+    else if( type == 1 )
+    {
+        return fast_rate_;
+    }
+    else if( type == 2 )
+    {
+        return rate_;
+    }
+    else
+    {
+        return NULL;
+    }
 }
 
 bool PhysicsEvent::GetInjection()  const
@@ -475,6 +494,12 @@ double PhysicsEvent::GetUnixtime() const
 {
     return unixtime_;
 }
+
+// template<typename T>;
+// T PhysicsEvent::GetPV(std::string pv)
+// {
+//     return pt_.get<T>( "SuperKEKBData." + pv );
+// };
 
 // std::map<std::string, double> PhysicsEvent::GetIntegral()
 // {

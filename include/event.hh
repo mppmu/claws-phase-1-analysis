@@ -114,6 +114,7 @@ class Event{
         std::map<std::string, Channel*> channels_;
 };
 
+
 class PhysicsEvent : public Event{
 
     public:
@@ -133,15 +134,26 @@ class PhysicsEvent : public Event{
         void                   Reconstruct(std::map<std::string, std::vector<float>*> avg_waveforms);
         void                   CalculateChi2();
 
-        double*                GetRateOnline();
+        // Type O: online       double[6]
+        // Type 1: fast offline double[3]
+        // Type 2: offline      double[3]
+        double*                GetRate( int type = 0);
+        
         int                    GetLerBg()     const;
         int                    GetHerBg()     const;
         bool                   GetInjection() const;
         int                    GetScrubbing() const;
         double                 GetUnixtime()  const;
 
+        template<typename T>
+        T GetPV(std::string pv)
+        {
+            return pt_.get<T>( "SuperKEKBData." + pv );
+        };
+
 //        std::map<std::string, double> GetIntegral(); // Pure Placeholder fo far
 
+        boost::property_tree::ptree pt_;
         path path_online_rate_;
 
         double unixtime_        = -1;
@@ -153,8 +165,10 @@ class PhysicsEvent : public Event{
         std::string her_status_ = "";
         int scrubbing_        = 0;
 
-        double rate_online_[6];
-        double rate_offline_[8];
+        double online_rate_[6];
+        double fast_rate_[3];
+        double rate_[3];
+
 
 };
 

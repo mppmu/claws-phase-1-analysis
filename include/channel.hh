@@ -107,6 +107,10 @@ class PhysicsChannel : public Channel
 
        TH1F*                   GetWaveformHist();
 
+       // Type 1: fast offline double[3]
+       // Type 2: offline      double[3]
+       double                  GetRate(int type = 1);
+
        double                  fast_rate_ = 0;
        double                  rate_      = 0;
 };

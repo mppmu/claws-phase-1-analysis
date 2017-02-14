@@ -323,15 +323,17 @@ void PhysicsChannel::SetUpWaveforms()
         waveform_photon_->push_back(0);
     }
 
-    double threshold = 0.5;
+    double threshold = 1.5;
     bool fillflag = false;
     unsigned counter = 0;
 
-    for(unsigned i = 0; i < waveform_->size() -2; i++)
+    for(unsigned i = 0; i < waveform_->size() -4; i++)
     {
         if(    waveform_->at(i)   > threshold
             && waveform_->at(i+1) > threshold
-            && waveform_->at(i+2) > threshold )
+            && waveform_->at(i+2) > threshold
+            && waveform_->at(i+3) > threshold
+            && waveform_->at(i+4) > threshold)
         {
             fillflag = true;
             waveform_workon_->push_back(waveform_->at(i));
@@ -355,23 +357,36 @@ void PhysicsChannel::SetUpWaveforms()
             waveform_workon_->push_back(0);
         }
     }
-    if(fillflag || (counter > 1))
+    if(fillflag || (counter > 2))
     {
+        if(waveform_->at(waveform_->size()-3) >= 0) waveform_workon_->push_back(waveform_->at(waveform_->size()-3));
+        else                                        waveform_workon_->push_back(0);
         if(waveform_->at(waveform_->size()-2) >= 0) waveform_workon_->push_back(waveform_->at(waveform_->size()-2));
         else                                        waveform_workon_->push_back(0);
         if(waveform_->at(waveform_->size()-1) >= 0) waveform_workon_->push_back(waveform_->at(waveform_->size()-1));
         else                                        waveform_workon_->push_back(0);
 
     }
-    else if(counter == 1)
+    else if(fillflag || (counter == 2))
     {
-        if(waveform_->at(waveform_->size()-2) >= 0) waveform_workon_->push_back(waveform_->at(waveform_->size()-2));
+        if(waveform_->at(waveform_->size()-3) >= 0) waveform_workon_->push_back(waveform_->at(waveform_->size()-2));
+        else                                        waveform_workon_->push_back(0);
+        if(waveform_->at(waveform_->size()-2) >= 0) waveform_workon_->push_back(waveform_->at(waveform_->size()-1));
         else                                        waveform_workon_->push_back(0);
 
         waveform_workon_->push_back(0);
     }
+    else if(counter == 1)
+    {
+        if(waveform_->at(waveform_->size()-3) >= 0) waveform_workon_->push_back(waveform_->at(waveform_->size()-2));
+        else                                        waveform_workon_->push_back(0);
+
+        waveform_workon_->push_back(0);
+        waveform_workon_->push_back(0);
+    }
     else
     {
+        waveform_workon_->push_back(0);
         waveform_workon_->push_back(0);
         waveform_workon_->push_back(0);
     }
@@ -381,6 +396,7 @@ void PhysicsChannel::SetUpWaveforms()
 };
 void PhysicsChannel::FastRate(std::vector<float>* avg_waveform, double pe_to_mip)
 {
+    fast_rate_ = 0;
     double one_pe_int = 0;
     for(auto & ivec: (*avg_waveform))
     {
@@ -398,7 +414,6 @@ void PhysicsChannel::FastRate(std::vector<float>* avg_waveform, double pe_to_mip
     fast_rate_ = integral/one_pe_int;
     fast_rate_ /= pe_to_mip;
     fast_rate_ /= (n_sample_ * 0.8* 10e-9);
-
 }
 
 void PhysicsChannel::Decompose(std::vector<float>* avg_waveform)
@@ -577,6 +592,12 @@ TH1F* PhysicsChannel::GetWaveformHist()
 
 };
 
+double PhysicsChannel::GetRate(int type)
+{
+    if(type == 1)           return fast_rate_;
+    else if( type == 2 )    return rate_;
+    else                    0;
+};
 //----------------------------------------------------------------------------------------------
 // Definition of the PhysicsChannel class derived from Event.
 // TODO prper description

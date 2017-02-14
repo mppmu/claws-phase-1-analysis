@@ -3,11 +3,11 @@
 
 ifeq ($(shell uname -s),Linux)
 	#CFLAGS += -fopenmp `root-config --cflags` -I/remote/pcilc3/software/gperftools/include -g -rdynamic
-	CFLAGS += -fopenmp `root-config --cflags` -I/remote/pcilc3/software/gperftools/include -g -rdynamic
+	CFLAGS += -fopenmp `root-config --cflags` -Wall -c -fmessage-length=0
 	# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
-	LFLAGS += -fopenmp -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free `root-config --libs --glibs` -lboost_system -lboost_filesystem
+	LFLAGS += -fopenmp `root-config --libs --glibs` -lboost_system -lboost_filesystem
 	# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
-	CC = gcc
+	CC = g++
 endif
 ifeq ($(shell uname -s),Darwin)
 	#CFLAGS += -stdlib=libstdc++ `root-config --cflags` -I/opt/boost-1.63.0/include
@@ -22,7 +22,8 @@ ifeq ($(shell uname -s),Darwin)
 	# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
 #	CC = g++-4.9
 #	CC = /usr/local/opt/llvm/bin/clang++
- CC = g++
+	#CC = /usr/local/opt/llvm/bin/clang-3.9
+ 	CC = g++
 endif
 # ifeq ($(shell uname -s),Darwin)
 # 	CFLAGS += `root-config --cflags` -g -std=gnu++1y
