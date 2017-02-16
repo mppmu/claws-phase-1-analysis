@@ -399,13 +399,14 @@ namespace claws {
             }
             else if (boost::filesystem::is_directory(p))
             {
-                copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), back_inserter(runs));
-                std::sort(runs.begin(), runs.end());
+                std::vector <boost::filesystem::path> folder_content;
+                copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), back_inserter(folder_content));
+                std::sort(folder_content.begin(), folder_content.end());
 
                 boost::filesystem::directory_iterator end_itr;
                 // cycle through the directory
             //	for (boost::filesystem::directory_iterator itr(p); itr != end_itr; ++itr)
-                for (std::vector <boost::filesystem::path>::const_iterator itr(runs.begin()), it_end(runs.end()); itr != it_end; ++itr)
+                for (std::vector <boost::filesystem::path>::const_iterator itr(folder_content.begin()), it_end(folder_content.end()); itr != it_end; ++itr)
             	{
             		if (boost::filesystem::is_regular_file(*itr))
                     {
