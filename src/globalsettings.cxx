@@ -383,36 +383,40 @@ namespace claws {
             this->ResetHook();
 
             return files;
-        }
+        };
 
         std::vector <boost::filesystem::path> GlobalSettings::GetRuns(boost::filesystem::path p)
         {
             std::vector <boost::filesystem::path> runs;
-
             // if(boost::filesystem::is_regular_file(p))
             // {
             //     files.push_back(p);
             // }
-            if (boost::filesystem::is_directory(p)) {
+            if ( boost::filesystem::is_directory(p) && boost::starts_with(p.filename().string(), "Run-") )
+            {
+                runs.push_back(p);
+            }
+            else if (boost::filesystem::is_directory(p))
+            {
+                copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), boost::filesystem::back_inserter(runs));
+                std::sort(runs.begin(), runs.end());
 
                 boost::filesystem::directory_iterator end_itr;
                 // cycle through the directory
-            	for (boost::filesystem::directory_iterator itr(p); itr != end_itr; ++itr)
+            //	for (boost::filesystem::directory_iterator itr(p); itr != end_itr; ++itr)
+                for (std::vector <boost::filesystem::path>::const_iterator itr(runs.begin()), it_end(runs.end()); itr != it_end; ++it)
             	{
-            		if (boost::filesystem::is_regular_file(itr->path())) {
+            		if (boost::filesystem::is_regular_file(*itr)
+                    {
             			// If it is a file do not do anything!
             		}
-
-            		else if(boost::filesystem::is_directory(itr->path()) && boost::starts_with(itr->path().filename().string(), "Run-")){
+            		else if(boost::filesystem::is_directory(*itr) && boost::starts_with((*itr).filename().string(), "Run-"))
+                    {
             			// If it is a directory check if it is a Run folder and proceed.
-                        runs.push_back(itr->path());
+                        runs.push_back(*itr;
             		}
             	}
-
             }
-
-        //    this->ResetHook();
-
             return runs;
-        }
+        };
 }

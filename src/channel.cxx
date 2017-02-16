@@ -411,9 +411,9 @@ void PhysicsChannel::FastRate(std::vector<float>* avg_waveform, double pe_to_mip
         integral += ivec;
     }
 
-    fast_rate_ = integral/one_pe_int;
+    fast_rate_  = integral/one_pe_int;
     fast_rate_ /= pe_to_mip;
-    fast_rate_ /= (n_sample_ * 0.8* 10e-9);
+    fast_rate_ /= ( n_sample_ * 0.8 * 10e-9 );
 }
 
 void PhysicsChannel::Decompose(std::vector<float>* avg_waveform)
