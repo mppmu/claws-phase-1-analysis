@@ -394,26 +394,27 @@ namespace claws {
             // }
             if ( boost::filesystem::is_directory(p) && boost::starts_with(p.filename().string(), "Run-") )
             {
+                std::cout << p.string() <<std::endl;
                 runs.push_back(p);
             }
             else if (boost::filesystem::is_directory(p))
             {
-                copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), boost::filesystem::back_inserter(runs));
+                copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), back_inserter(runs));
                 std::sort(runs.begin(), runs.end());
 
                 boost::filesystem::directory_iterator end_itr;
                 // cycle through the directory
             //	for (boost::filesystem::directory_iterator itr(p); itr != end_itr; ++itr)
-                for (std::vector <boost::filesystem::path>::const_iterator itr(runs.begin()), it_end(runs.end()); itr != it_end; ++it)
+                for (std::vector <boost::filesystem::path>::const_iterator itr(runs.begin()), it_end(runs.end()); itr != it_end; ++itr)
             	{
-            		if (boost::filesystem::is_regular_file(*itr)
+            		if (boost::filesystem::is_regular_file(*itr))
                     {
             			// If it is a file do not do anything!
             		}
             		else if(boost::filesystem::is_directory(*itr) && boost::starts_with((*itr).filename().string(), "Run-"))
                     {
             			// If it is a directory check if it is a Run folder and proceed.
-                        runs.push_back(*itr;
+                        runs.push_back(*itr);
             		}
             	}
             }
