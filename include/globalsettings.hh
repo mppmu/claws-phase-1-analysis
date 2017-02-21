@@ -114,6 +114,11 @@ namespace claws {
             std::vector <boost::filesystem::path> GetNtpFiles(float tsMin = 0, float tsMax = 0);
             std::vector <boost::filesystem::path> GetRuns(boost::filesystem::path p);
 
+            template<typename T>
+            T GetCaliPar(std::string par_name)
+            {
+                return config_calibration_.get<T>( par_name );
+            };
 
 
 
@@ -133,7 +138,10 @@ namespace claws {
                                                           ,"BWD1-INT", "BWD2-INT", "BWD3-INT"
                                                         };
 
+            // pttree containing settings from ini files
             boost::property_tree::ptree pe_to_mip_;
+            boost::property_tree::ptree config_architecture_;
+            boost::property_tree::ptree config_calibration_;
 
     //        std::string intermediate_suffix_          = GS->GetIntSuffix();
             double accepted_gain_             = 0.35;  // +- from mean gain accepted for avg wfs.

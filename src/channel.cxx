@@ -57,8 +57,9 @@ void Channel::LoadHistogram(TFile* file)
     hist_= (TH1I*)file->Get(name_.c_str());
 
     hist_->SetDirectory(0);
-    n_sample_  = hist_->GetNbinsX();
-
+    // if(boost::ends_with(name_,"-INT") ) n_sample_  = c
+    // else n_sample_  = 1000000;
+    hist_->GetNbinsX();
     //Last bin in physics wavefroms is filled with 0, takes care of that bug.
     if(hist_->GetBinContent(hist_->GetNbinsX()) == 0) n_sample_--;
 };
@@ -323,7 +324,7 @@ void PhysicsChannel::SetUpWaveforms()
         waveform_photon_->push_back(0);
     }
 
-    double threshold = 1.5;
+    double threshold = GS->GetCaliPar<double>("PhysicsChannel.SignalFlagThreshold");
     bool fillflag = false;
     unsigned counter = 0;
 
@@ -413,7 +414,7 @@ void PhysicsChannel::FastRate(std::vector<float>* avg_waveform, double pe_to_mip
 
     fast_rate_  = integral/one_pe_int;
     fast_rate_ /= pe_to_mip;
-    fast_rate_ /= ( n_sample_ * 0.8 * 10e-9 );
+    fast_rate_ /= ( n_sample_ * GS->GetCaliPar<double>("PhysicsChannel.BinWidth") );
 }
 
 void PhysicsChannel::Decompose(std::vector<float>* avg_waveform)

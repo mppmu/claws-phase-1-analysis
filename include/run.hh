@@ -99,7 +99,7 @@ class Run{
         void DrawPedestal();
 
 //        void SaveEvents(boost::filesystem::path fname);
-void SaveEvents();
+
 
         // These methods are meant to be public in the end and used by the user
         void SynchronizeFiles();
@@ -128,6 +128,10 @@ void SaveEvents();
             void Decompose();
             void Reconstruct();
             void CalculateChi2();
+
+        void SaveEvents();
+        void SaveRates();
+
 
         int    GetRunNr();
         double GetStartTime();

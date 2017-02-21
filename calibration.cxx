@@ -178,7 +178,7 @@ int main(int argc, char* argv[]) {
 		myrun->GainCalibration();
 		myrun->Average1PE();
 		myrun->WaveformDecomposition();
-
+		myrun->SaveRates();
 		std::string day = runs.at(i).parent_path().filename().string();
 		myrun->WriteNTuple(path(GS->ResetHook()->SetData()->SetNtp()->SetDetector(claws::CLW)->GetHook()/day));
 		delete myrun;

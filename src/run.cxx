@@ -724,7 +724,87 @@ void Run::SaveEvents()
 
 };
 
+void Run::SaveRates()
+{
+    /*
+        TODO description
+    */
+    if(!boost::filesystem::is_directory(path_run_/path("Calibration")) )
+    {
+        boost::filesystem::create_directory(path_run_/path("Calibration"));
+    }
 
+    std::string filename = path_run_.string()+"/Calibration/run-"+run_nr_str_+"_rates_version_"+ std::to_string(GS->GetCaliPar<double>("General.CalibrationVersion"))+".root";
+    TFile *rfile = new TFile(filename.c_str(), "RECREATE");
+
+
+    TGraph* fast_rates[3];
+    TGraph* online_rates[6];
+    TGraph* current[2];
+    TGraph* injection[2];
+
+    for(int i = 0; i < 3; i++)
+    {
+        fast_rates[i] = new TGraph();
+        fast_rates[i]->SetName(("FastRateFWD"+std::to_string(i+1)).c_str());
+        online_rates[i] = new TGraph();
+        online_rates[i]->SetName(("OnlineRateFWD"+std::to_string(i+1)).c_str());
+    }
+    for(int i = 3; i < 6; i++)
+    {
+        online_rates[i] = new TGraph();
+        online_rates[i]->SetName(("OnlineRateBWD"+std::to_string(i+1)).c_str());
+    }
+
+    current[0] = new TGraph();
+    current[0]->SetName("LERCurrent");
+    current[1] = new TGraph();
+    current[1]->SetName("HERCurrent");
+
+    injection[0] = new TGraph();
+    injection[0]->SetName("LERInj");
+    injection[1] = new TGraph();
+    injection[1]->SetName("HERInj");
+
+    for(unsigned int i=0; i < events_.size(); i++)
+    {
+        double ts = events_.at(i)->GetUnixtime();
+
+        for(int j = 0; j < 3; j++)
+        {
+            online_rates[j]->SetPoint(i, ts, events_.at(i)->GetRate()[j]);
+            fast_rates[j]->SetPoint(i, ts, events_.at(i)->GetRate(1)[j]);
+        }
+        for(int j = 3; j < 6; j++)
+        {
+            online_rates[j]->SetPoint(i, ts, events_.at(i)->GetRate()[j]);
+        }
+
+        current[0]->SetPoint(i, ts, events_.at(i)->GetPV<double>("LERCurrent"));
+        current[1]->SetPoint(i, ts, events_.at(i)->GetPV<double>("HERCurrent"));
+        injection[0]->SetPoint(i, ts, events_.at(i)->GetPV<double>("LERInj"));
+        injection[1]->SetPoint(i, ts, events_.at(i)->GetPV<double>("HERInj"));
+    }
+
+    for(int i = 0; i < 3; i++)
+    {
+        fast_rates[i]->Write();
+        online_rates[i]->Write();
+    }
+    for(int i = 3; i < 6; i++)
+    {
+        online_rates[i]->Write();
+    }
+    current[0]->Write();
+    current[1]->Write();
+
+    injection[0]->Write();
+    injection[1]->Write();
+
+    rfile->Close();
+    delete rfile;
+
+};
 double Run::GetStartTime(){
     return tsMin;
 };
@@ -883,10 +963,13 @@ int Run::WriteTree(TFile* file, std::string type)
     //TODO Validate
     TTree* t_auto = new TTree("t_auto", "t_auto");
     TTree* t_inj = new TTree("t_inj", "t_inj");
+    TTree* t_comb = new TTree("t_comb", "t_comb");
 
     double ts;
     double rate_online[6];
     double fast_rate[3];
+    double current[2];
+    double injection[2];
 
     t_auto->Branch("ts", &ts,     "ts/D");
     t_auto->Branch("rate_online",       rate_online,           "rate_online[6]/D");
@@ -895,6 +978,12 @@ int Run::WriteTree(TFile* file, std::string type)
     t_inj->Branch("ts", &ts,     "ts/D");
     t_inj->Branch("rate_online",       rate_online,           "rate_online[6]/D");
     t_inj->Branch("fast_rate", fast_rate,     "fast_rate[3]/D");
+
+    t_comb->Branch("ts", &ts,     "ts/D");
+    t_comb->Branch("rate_online",       rate_online,           "rate_online[6]/D");
+    t_comb->Branch("fast_rate", fast_rate,     "fast_rate[3]/D");
+    t_comb->Branch("current", current,     "current[2]/D");
+    t_comb->Branch("injection", current,     "injection[2]/D");
 
     for(unsigned int i=0; i < events_.size(); i++)
     {
@@ -911,13 +1000,21 @@ int Run::WriteTree(TFile* file, std::string type)
         fast_rate[1] = events_.at(i)->GetRate(1)[1];
         fast_rate[2] = events_.at(i)->GetRate(1)[2];
 
+        current[0] = events_.at(i)->GetPV<double>("LERCurrent");
+        current[1] = events_.at(i)->GetPV<double>("HERCurrent");
+
+        injection[0] = events_.at(i)->GetPV<double>("LERInj");
+        injection[1] = events_.at(i)->GetPV<double>("HERInj");
+
         if(events_.at(i)->GetInjection())   t_inj->Fill();
         else                                t_auto->Fill();
+        t_comb->Fill();
     }
 
     file->cd();
     t_auto->Write();
     t_inj->Write();
+    t_comb->Write();
 
 };
 
