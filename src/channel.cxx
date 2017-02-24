@@ -58,8 +58,8 @@ void Channel::LoadHistogram(TFile* file)
 
     hist_->SetDirectory(0);
     // if(boost::ends_with(name_,"-INT") ) n_sample_  = c
-    // else n_sample_  = 1000000;
-    hist_->GetNbinsX();
+    // else n_sample_  = 1000000;c
+    n_sample_ = hist_->GetNbinsX();
     //Last bin in physics wavefroms is filled with 0, takes care of that bug.
     if(hist_->GetBinContent(hist_->GetNbinsX()) == 0) n_sample_--;
 };
@@ -82,7 +82,7 @@ void Channel::LoadWaveform()
 
     for(unsigned int i=0; i< n_sample_; i++)
     {
-        waveform_->push_back(-int8_t(hist_->GetBinContent(i+1)/n_bits_));
+        waveform_->push_back(-hist_->GetBinContent(i+1)/n_bits_);
     }
 
 };

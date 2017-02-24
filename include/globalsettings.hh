@@ -131,7 +131,7 @@ namespace claws {
             const float x_up_         =  x_low_ +  n_bits_scope_;
 
             std::vector <std::string>   channels_ = {"FWD1", "FWD2", "FWD3", "FWD4"
-                                                      ,"BWD1", "BWD2", "BWD3", "BWD4"
+						                              ,"BWD1", "BWD2", "BWD3", "BWD4"
                                                     };
 
             std::vector <std::string>   int_channels_ = {"FWD1-INT", "FWD2-INT", "FWD3-INT"
