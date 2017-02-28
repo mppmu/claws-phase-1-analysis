@@ -699,9 +699,8 @@ void Run::Average1PE()
     gain_->AddIntWfs(vec);
 //    gain_->NormalizeWaveforms(int_events_.size());
     gain_->WfToHist();
-    gain_->SaveAvg(path_run_);
     gain_->FitAvg();
-
+    gain_->SaveAvg(path_run_);
     gain_->HistToWf();
     // gain_->WfToHist();
 

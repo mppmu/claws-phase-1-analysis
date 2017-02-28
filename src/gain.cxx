@@ -76,18 +76,21 @@ void Gain::FitGain()
 
         TF1* double_gaussian=new TF1( (ivec->name + "_double_gaussian").c_str(),"gaus(220)+gaus(420)",0,3*gaussian->GetParameter(1) );
 
+        double mean_bias = 25;
+
         double_gaussian->SetParameter(0,gaussian->GetParameter(0));
         double_gaussian->SetParameter(1,gaussian->GetParameter(1));
         double_gaussian->SetParameter(2,gaussian->GetParameter(2));
 
         double_gaussian->SetParameter(3,gaussian->GetParameter(0)*0.1);
-        double_gaussian->SetParameter(4,gaussian->GetParameter(1)*2);
+        double_gaussian->SetParameter(4,(gaussian->GetParameter(1)-mean_bias)*2 + mean_bias);
         double_gaussian->SetParameter(5,gaussian->GetParameter(2));
 
-        double_gaussian->SetParLimits(4,gaussian->GetParameter(1)*1.65, gaussian->GetParameter(1)*2.8);
-        double_gaussian->SetParLimits(5,gaussian->GetParameter(2)*0.5, gaussian->GetParameter(2)*1.5);
+        double_gaussian->SetParLimits(4,(gaussian->GetParameter(1)- mean_bias)*1.75 + mean_bias, (gaussian->GetParameter(1)-mean_bias)*2.25+mean_bias);
+        double_gaussian->SetParLimits(5,gaussian->GetParameter(2)*0.75, gaussian->GetParameter(2)*1.25);
 
-        ivec->gain_hist->Fit(double_gaussian,"WWQ");
+//        ivec->gain_hist->Fit(double_gaussian,"WWQ",(gaussian->GetParameter(1)-2*gaussian->GetParameter(2)),((gaussian->GetParameter(1)-mean_bias)*2+2*gaussian->GetParameter(2)+mean_bias));
+        ivec->gain_hist->Fit(double_gaussian,"LQ","",(gaussian->GetParameter(1)-2*gaussian->GetParameter(2)),((gaussian->GetParameter(1)-mean_bias)*2+2*gaussian->GetParameter(2)+mean_bias));
         ivec->gain = double_gaussian->GetParameter(4) - double_gaussian->GetParameter(1);
         // hendrik_file<< " "<< ivec->name << " " << ivec->gain;
     }
@@ -170,10 +173,10 @@ void Gain::FitAvg()
             ivec->avg_hist->Fit(expo, "Q", "", ivec->avg_hist->GetMaximumBin()+10, ivec->avg_wf->size());
             ivec->end = round(expo->GetX(0.005));
             // std::cout<< "ivec->end: " << ivec->end << std::endl;
-            // for(signed i = ivec->avg_wf->size()+1; i < ivec->end + 1; i++)
-            // {
-            //     ivec->avg_hist->SetBinContent(i, expo->Eval(i));
-            // }
+            for(signed i = ivec->avg_wf->size()+1; i < ivec->end + 1; i++)
+            {
+                ivec->avg_hist->SetBinContent(i, expo->Eval(i));
+            }
         }
     }
 }
