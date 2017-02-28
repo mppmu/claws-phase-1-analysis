@@ -67,7 +67,7 @@ class Event{
 
 
         void SubtractPedestal(std::map<std::string, float> ped = std::map<std::string, float>(), bool backup = false);
-
+        void SetPedestal(std::map<std::string, float> ped = std::map<std::string, float>(), bool backup = false);
 
 
         void             LoadPedestal();
@@ -82,6 +82,7 @@ class Event{
         virtual void LoadRootFile();
         virtual void LoadWaveform();
         virtual void DeleteHistograms();
+        virtual void DeleteWaveforms();
         virtual void LoadIniFile() = 0;
 
         void                                CalculateIntegral();

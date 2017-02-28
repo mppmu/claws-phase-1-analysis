@@ -173,14 +173,16 @@ int main(int argc, char* argv[]) {
 		Run* myrun = new Run(runs.at(i));
 
 		myrun->SynchronizeFiles();
-		myrun->LoadRawData();
-		myrun->SubtractPedestal();
+
+		myrun->LoadData();
+		myrun->SubtractPedestal2();
+//		myrun->DeletePhysicsData();
 		myrun->GainCalibration();
 		myrun->Average1PE();
-		myrun->WaveformDecomposition();
-		myrun->SaveRates();
-		std::string day = runs.at(i).parent_path().filename().string();
-		myrun->WriteNTuple(path(GS->ResetHook()->SetData()->SetNtp()->SetDetector(claws::CLW)->GetHook()/day));
+		// myrun->WaveformDecomposition();
+		// myrun->SaveRates();
+		// std::string day = runs.at(i).parent_path().filename().string();
+		// myrun->WriteNTuple(path(GS->ResetHook()->SetData()->SetNtp()->SetDetector(claws::CLW)->GetHook()/day));
 		delete myrun;
 	}
 //	hendrik_file.close();

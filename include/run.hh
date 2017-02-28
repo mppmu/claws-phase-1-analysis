@@ -104,18 +104,22 @@ class Run{
         // These methods are meant to be public in the end and used by the user
         void SynchronizeFiles();
 
-        void LoadRawData();
+        void LoadData();
 
-            void LoadEventFiles();
-            void LoadIntFiles();
-            void LoadWaveforms();
-            void LoadRunSettings();
+            void LoadIntermediate();
+            void LoadMetaData();
+                void LoadRunSettings();
+            void LoadPhysicsData();
 
         void SubtractPedestal();
 
             void LoadPedestal();
             void CalculatePedestal(); // Outdated, needs to be removed
             void SavePedestal();
+
+        void SubtractPedestal2();
+
+        void DeletePhysicsData();
 
         void GainCalibration();
 
@@ -129,8 +133,13 @@ class Run{
             void Reconstruct();
             void CalculateChi2();
 
+        void WaveformDecomposition2();
+
         void SaveEvents();
         void SaveRates();
+
+            void LoadEventFiles();
+            void LoadWaveforms();
 
 
         int    GetRunNr();

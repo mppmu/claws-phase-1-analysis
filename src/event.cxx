@@ -89,6 +89,16 @@ void Event::DeleteHistograms()
 
 };
 
+void Event::DeleteWaveforms()
+{
+
+    for (const auto &itr : channels_)
+    {
+        itr.second->DeleteWaveform();
+    }
+
+};
+
 void Event::LoadPedestal()
 {
     for (auto &itr : channels_)
@@ -130,21 +140,59 @@ void Event::SubtractPedestal(std::map<std::string, float> ped, bool backup)
     {
         for(auto &ch : channels_)
         {
-            ch.second->Subtract();
+            ch.second->SubtractPedestal();
         }
     }
     else if(!ped.empty() && !backup)
     {
         for(auto &ch : channels_)
         {
-            ch.second->Subtract( ped[ch.first] );
+            ch.second->SubtractPedestal( ped[ch.first] );
         }
     }
     else if(!ped.empty() && backup)
     {
         for(auto &ch : channels_)
         {
-            ch.second->Subtract( ped[ch.first], backup);
+            ch.second->SubtractPedestal( ped[ch.first], backup);
+        }
+    }
+}
+
+void Event::SetPedestal(std::map<std::string, float> ped, bool backup)
+{
+    /* Subtracts the pedestal from the individual waveforms. Input options:
+        1) If no parameters are specified, the pedestal from the indi -
+           vidual events will be used for the subtraction. Usually the
+           average run pedestal should be used, unstable pedestal over
+           time like with th pickup in intermediate events in phase one
+           this might lead to gains.
+        2) If the first input parameter is given (i.e. not an empty map
+           like default), it will be used for pedestal subtraction instead
+           of the event specific one.
+        3) If input pedestal is specified and backup == true, the individual
+           event pedestal is used, only if this equal to zero the run-wide
+           pedestal is used.
+    */
+    if( ped.empty() && !backup )
+    {
+        for(auto &ch : channels_)
+        {
+            ch.second->SetPedestal();
+        }
+    }
+    else if(!ped.empty() && !backup)
+    {
+        for(auto &ch : channels_)
+        {
+            ch.second->SetPedestal( ped[ch.first] );
+        }
+    }
+    else if(!ped.empty() && backup)
+    {
+        for(auto &ch : channels_)
+        {
+            ch.second->SetPedestal( ped[ch.first], backup);
         }
     }
 }

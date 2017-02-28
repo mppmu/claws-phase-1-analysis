@@ -42,10 +42,14 @@ class Channel
         virtual     void        LoadHistogram(TFile* file);
         virtual     void        LoadWaveform();
         virtual     void        DeleteHistogram();
+        virtual     void        DeleteWaveform();
 
         virtual     void        LoadPedestal();
 //        virtual     void    Subtract();
-        virtual     void        Subtract(double pedestal = 0, bool backup = false);
+        virtual     void        SubtractPedestal(double pedestal = 0, bool backup = false);
+        virtual     void        SetPedestal(double pedestal = 0, bool backup = false);
+//        virtual     void        Subtract2(double pedestal = 0, bool backup = false);
+
 
         virtual     void        PrintType() = 0;
 
@@ -64,10 +68,13 @@ class Channel
 
         std::string             name_;
 
-        std::vector<float>*     waveform_   = NULL;
+        std::vector<float>*     waveform_      = NULL;
 
-        TH1I*                   hist_       = NULL;
-        TH1I*                   pedestal_   = NULL;
+        TH1I*                   hist_          = NULL;
+        TH1I*                   pedestal_hist_      = NULL;
+        float                   pedestal_   = 0;
+        float                   baseline_   = 0;
+
         float                   pd_mean_;
         float                   pd_error_;
 
@@ -77,7 +84,7 @@ class Channel
 
         int                     pd_gap_      = 25;
         float                   pd_delta_   = 4;
-        float                   baseline_;
+
 
         // void Draw();
 
@@ -94,6 +101,7 @@ class PhysicsChannel : public Channel
         void    PrintType();
 
         void               CalculateIntegral();  // Pure Placeholder so far.
+        virtual     void        DeleteWaveform();
 
         void SetUpWaveforms();
         void FastRate(std::vector<float>* avg_waveform, double pe_to_mip = 16.);

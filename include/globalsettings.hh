@@ -98,7 +98,7 @@ namespace claws {
             double GetAcceptedGain();
             std::pair<double, double> GetPEtoMIP(std::string detector, unsigned int time = 0);
             std::map<std::string, double> GetPEtoMIPs( unsigned int time = 0);
-
+            int GetNThreads();
             boost::filesystem::path GetHook();
             boost::filesystem::path GetDetector();
 
@@ -124,6 +124,7 @@ namespace claws {
 
         private:
 
+            const int n_threads_     = 7;
             const int n_bits_       = 65536;
             const int n_bits_scope_  = 256;
 

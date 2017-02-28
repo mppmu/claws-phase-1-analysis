@@ -28,8 +28,8 @@ Channel::Channel(string ch_name): name_(ch_name)
     // Calling GetNBitsScope which returns the number of actual bits of the scope. That is not equal to the Max or Min values of the
     // integer values in the data.
     n_bits_         = GS->GetNBitsScope();
-    pedestal_      = new TH1I(title.c_str(), title.c_str(), n_bits_ , GS->GetXLow(), GS->GetXUp());
-    pedestal_->SetDirectory(0);            // Root is the most stupid BITCH!!!
+    pedestal_hist_      = new TH1I(title.c_str(), title.c_str(), n_bits_ , GS->GetXLow(), GS->GetXUp());
+    pedestal_hist_->SetDirectory(0);            // Root is the most stupid BITCH!!!
 
 };
 
@@ -37,7 +37,7 @@ Channel::~Channel(){
 	// TODO Auto-generated destructor stub
     delete waveform_;
     if(hist_ != NULL) delete hist_;
-    delete pedestal_;
+    delete pedestal_hist_;
 };
 
 void Channel::LoadHistogram(TFile* file)
@@ -61,7 +61,7 @@ void Channel::LoadHistogram(TFile* file)
     // else n_sample_  = 1000000;c
     n_sample_ = hist_->GetNbinsX();
     //Last bin in physics wavefroms is filled with 0, takes care of that bug.
-    if(hist_->GetBinContent(hist_->GetNbinsX()) == 0) n_sample_--;
+    if( hist_->GetBinContent(hist_->GetNbinsX()) == 0 && !boost::algorithm::ends_with(name_,"-INT") ) n_sample_--;
 };
 
 // void Channel::LoadPedestaet(name_.c_str());
@@ -82,7 +82,7 @@ void Channel::LoadWaveform()
 
     for(unsigned int i=0; i< n_sample_; i++)
     {
-        waveform_->push_back(-hist_->GetBinContent(i+1)/n_bits_);
+        waveform_->push_back( - hist_->GetBinContent(i+1)/n_bits_ + baseline_ - pedestal_);
     }
 
 };
@@ -95,6 +95,12 @@ void Channel::DeleteHistogram()
       hist_ = NULL;
     }
 //    hist_ = NULL;
+};
+
+void Channel::DeleteWaveform()
+{
+    std::vector<float>().swap(*waveform_);
+    std::cout << "" << std::endl;
 };
 
 void Channel::LoadPedestal()
@@ -115,7 +121,7 @@ void Channel::LoadPedestal()
 
             if( waveform_->at( i ) < threshold && fillflag == true)
             {
-                pedestal_->Fill(waveform_->at(i - pd_gap_) );
+                pedestal_hist_->Fill(waveform_->at(i - pd_gap_) );
             }
 
             else if( waveform_->at( i ) >= threshold && fillflag == true)
@@ -128,7 +134,7 @@ void Channel::LoadPedestal()
                 }
                 else
                 {
-                    pedestal_->Fill(waveform_->at(i - pd_gap_) );
+                    pedestal_hist_->Fill(waveform_->at(i - pd_gap_) );
                 }
             }
 
@@ -149,13 +155,13 @@ void Channel::LoadPedestal()
             i++;
         }
 
-        // if((pedestal_->GetEntries()<waveform_->size()*0.01))
+        // if((pedestal_hist_->GetEntries()<waveform_->size()*0.01))
         // {
-        //     std::string error = name_ + ":  (pedestal_->GetEntries(): " + to_string(pedestal_->GetEntries()) + ", waveform_->size(): "
+        //     std::string error = name_ + ":  (pedestal_hist_->GetEntries(): " + to_string(pedestal_hist_->GetEntries()) + ", waveform_->size(): "
         //                         + to_string(waveform_->size())+ ", i: " + to_string(i) + ", pd_gap_: " + to_string(pd_gap_)+ ", threshold: " + to_string(threshold);
         //     std::cout << error << std::endl;
         // }
-        // std::cout << name_ << ": " << pedestal_->GetEntries() << std::endl;
+        // std::cout << name_ << ": " << pedestal_hist_->GetEntries() << std::endl;
     }
 
     else
@@ -163,8 +169,8 @@ void Channel::LoadPedestal()
         exit(1);
     }
 
-    pd_mean_    =   pedestal_->GetMean();
-    pd_error_   =   pedestal_->GetMeanError();
+    pd_mean_    =   pedestal_hist_->GetMean();
+    pd_error_   =   pedestal_hist_->GetMeanError();
 };
 
 // void Channel::Subtract(double pedestal)
@@ -176,18 +182,19 @@ void Channel::LoadPedestal()
 //         If no argument is given just use the mean value from the pedestal histogram, i.e. the event specific pedestal.
 //         This can be usefull when the pedestal over time is experiencing a shift or some pickup!
 //     */
-//     this->Subtract(pedestal_->GetMean());
+//     this->Subtract(pedestal_hist_->GetMean());
 // };
 
-// void Channel::Subtract(double pedestal, double pedestal_sigma, bool backup)
-void Channel::Subtract(double pedestal, bool backup)
+// void Channel::Subtract(double pedestal, double pedestal_hist_sigma, bool backup)
+void Channel::SubtractPedestal(double pedestal, bool backup)
 {
     // TODO Pasing the sigma of the pedestal for the signal rejection in the wavefrom decomposition
     if( pedestal == 0 )
     {
+        pedestal_ = pedestal_hist_->GetMean();
         for (unsigned int i = 0; i < waveform_->size(); i++)
         {
-            waveform_->at(i) -= pedestal_->GetMean();
+            waveform_->at(i) -= pedestal_;
         }
     }
     else if(pedestal != 0 && !backup)
@@ -196,22 +203,49 @@ void Channel::Subtract(double pedestal, bool backup)
         {
             waveform_->at(i) -= pedestal;
         }
+        pedestal_ = pedestal;
     }
     else if( backup )
     {
-        if(pedestal_->GetEntries() == 0)
+        if(pedestal_hist_->GetEntries() == 0)
         {
             for (unsigned int i = 0; i < waveform_->size(); i++)
             {
                 waveform_->at(i) -= pedestal;
             }
+            pedestal_ -= pedestal;
         }
         else
         {
+            pedestal_ = pedestal_hist_->GetMean();
             for (unsigned int i = 0; i < waveform_->size(); i++)
             {
-                waveform_->at(i) -= pedestal_->GetMean();
+                waveform_->at(i) -= pedestal_;
             }
+        }
+    }
+};
+
+void Channel::SetPedestal(double pedestal, bool backup)
+{
+    // TODO Pasing the sigma of the pedestal for the signal rejection in the wavefrom decomposition
+    if( pedestal == 0 )
+    {
+        pedestal_= pedestal_hist_->GetMean();
+    }
+    else if(pedestal != 0 && !backup)
+    {
+        pedestal_ = pedestal;
+    }
+    else if( backup )
+    {
+        if(pedestal_hist_->GetEntries() == 0)
+        {
+            pedestal_ = pedestal;
+        }
+        else
+        {
+            pedestal_ = pedestal_hist_->GetMean();
         }
     }
 };
@@ -258,7 +292,7 @@ TH1F* Channel::GetWaveformHist()
 
 TH1I* Channel::GetPedestal()
 {
-    return pedestal_;
+    return pedestal_hist_;
 };
 
 double Channel::GetIntegral()
@@ -598,6 +632,13 @@ double PhysicsChannel::GetRate(int type)
     if(type == 1)           return fast_rate_;
     else if( type == 2 )    return rate_;
     else                    0;
+};
+
+void PhysicsChannel::DeleteWaveform()
+{
+    std::vector<float>().swap(*waveform_);
+    std::vector<float>().swap(*waveform_workon_);
+    std::vector<std::uint8_t>().swap(*waveform_photon_);
 };
 //----------------------------------------------------------------------------------------------
 // Definition of the PhysicsChannel class derived from Event.

@@ -45,7 +45,7 @@
 #include <TF1.h>
 #include <TThread.h>
 // OpenMP
-//#include <omp.h>
+#include <omp.h>
 
 // google performance tools
 // #include <gperftools/heap-profiler.h>
@@ -204,7 +204,7 @@ void Run::SynchronizeFiles()
 };
 
 
-void Run::LoadRawData()
+void Run::LoadData()
 {
     double wall0 = claws::get_wall_time();
     double cpu0  = claws::get_cpu_time();
@@ -213,10 +213,13 @@ void Run::LoadRawData()
 
 //    std::cout << "Loading data:  " << run_nr_ << "\r" << std::flush;
 
-    this->LoadEventFiles();
-    this->LoadIntFiles();
-    this->LoadWaveforms();
-    this->LoadRunSettings();
+    this->LoadIntermediate();
+    this->LoadMetaData();
+//    this->LoadPhysicsData();
+    // this->LoadEventFiles();
+    //
+    // this->LoadWaveforms();
+//    this->LoadRunSettings();
 
     std::cout << "\033[32;1mRun::Loading data:\033[0m done!   " << "\r" << std::endl;
 //    std::cout << "Loading data done!                  " << std::endl;
@@ -243,82 +246,37 @@ void Run::LoadRawData()
     cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 };
 
-void Run::LoadEventFiles()
-{
-    // Method to load all the information that is located in the data_root folder with
-    // following steps:
-    //      1. Look into the data_root folder and create a PhysicalEvent object for
-    //         each event.root file & check if file for online particle rate and
-    //         do exist
-    //      2. Loop through all objects in events_ and load the raw data from the
-    //         corresponding root file
-    //      3. Loop through all objects in events_ and load the oneline monitor
-    //         pacout << "Loading Raw Data:  " << run_nr_ << endl;
-    // Look into the data folder of the run and get a list/vector of all the events inside
-
-    for(unsigned int i=0; i< events_.size();i++)
-    {
-        events_.at(i)->LoadRootFile();
-        events_.at(i)->LoadWaveform();
-        events_.at(i)->DeleteHistograms();
-    }
-
-    for(unsigned int i=0; i< events_.size();i++)
-    {
-        events_.at(i)->LoadOnlineRate();
-    }
-
-    for(unsigned int i=0; i< events_.size();i++)
-    {
-        events_.at(i)->LoadIniFile();
-    }
-
-};
-
-void Run::LoadIntFiles()
+void Run::LoadIntermediate()
 {
     for(unsigned int i=0; i< int_events_.size();i++)
     {
         int_events_.at(i)->LoadRootFile();
     }
 
-    for(unsigned int i=0; i< int_events_.size();i++)
+    #pragma omp parallel num_threads(7)
     {
-        int_events_.at(i)->LoadIniFile();
+        #pragma omp for schedule(dynamic,1)
+        for(unsigned int i=0; i< int_events_.size();i++)
+        {
+            int_events_.at(i)->LoadIniFile();
+            int_events_.at(i)->LoadWaveform();
+        //    int_events_.at(i)->DeleteHistograms();
+        }
     }
 };
 
-void Run::LoadWaveforms()
+void Run::LoadMetaData()
 {
-    // cout<<"Run::LoadWaveforms" <<endl;
-    // double wall0 = claws::get_wall_time();
-    // double cpu0  = claws::get_cpu_time();
-
-
-//    #pragma omp parallel num_threads(7)
-  //  {
-        // When all the histograms are copyed into memory and than the the vectors are filled in a second (multi threaded) step, a
-        // full run would use more than my full r
-        // #pragma omp for schedule(dynamic,1)
-        // for(unsigned int i=0; i< events_.size();i++)
-        // {
-        //     events_.at(i)->LoadWaveform();
-        //     events_.at(i)->DeleteHistograms();
-        // }
-    //    #pragma omp for schedule(dynamic,1)
-        for(unsigned int i=0; i< int_events_.size();i++)
+    #pragma omp parallel num_threads(7)
+    {
+        #pragma omp for schedule(dynamic,1)
+        for(unsigned int i=0; i< events_.size();i++)
         {
-            int_events_.at(i)->LoadWaveform();
-            int_events_.at(i)->DeleteHistograms();
+            events_.at(i)->LoadOnlineRate();
+            events_.at(i)->LoadIniFile();
         }
-
-    //}
-
-    // double wall1 = claws::get_wall_time();
-    // double cpu1  = claws::get_cpu_time();
-    //
-    // cout << "Wall Time = " << wall1 - wall0 << endl;
-    // cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+    }
+    this->LoadRunSettings();
 };
 
 void Run::LoadRunSettings()
@@ -350,6 +308,99 @@ void Run::LoadRunSettings()
     }
 };
 
+void Run::LoadPhysicsData()
+{
+    // Method to load all the information that is located in the data_root folder with
+    // following steps:
+    //      1. Look into the data_root folder and create a PhysicalEvent object for
+    //         each event.root file & check if file for online particle rate and
+    //         do exist
+    //      2. Loop through all objects in events_ and load the raw data from the
+    //         corresponding root file
+    //      3. Loop through all objects in events_ and load the oneline monitor
+    //         pacout << "Loading Raw Data:  " << run_nr_ << endl;
+    // Look into the data folder of the run and get a list/vector of all the events inside
+
+    for(unsigned int i=0; i< events_.size();i++)
+    {
+        events_.at(i)->LoadRootFile();
+    }
+
+    #pragma omp parallel num_threads(7)
+    {
+        #pragma omp for schedule(dynamic,1)
+        for(unsigned int i=0; i< events_.size();i++)
+        {
+            events_.at(i)->LoadWaveform();
+            events_.at(i)->DeleteHistograms();
+        }
+    }
+}
+
+void Run::LoadEventFiles()
+{
+
+    // Legacy Methode - Use is deprechiated!
+
+    // Method to load all the information that is located in the data_root folder with
+    // following steps:
+    //      1. Look into the data_root folder and create a PhysicalEvent object for
+    //         each event.root file & check if file for online particle rate and
+    //         do exist
+    //      2. Loop through all objects in events_ and load the raw data from the
+    //         corresponding root file
+    //      3. Loop through all objects in events_ and load the oneline monitor
+    //         pacout << "Loading Raw Data:  " << run_nr_ << endl;
+    // Look into the data folder of the run and get a list/vector of all the events inside
+
+    for(unsigned int i=0; i< events_.size();i++)
+    {
+        events_.at(i)->LoadRootFile();
+        events_.at(i)->LoadWaveform();
+        events_.at(i)->DeleteHistograms();
+    }
+};
+
+
+
+void Run::LoadWaveforms()
+{
+
+    // Legacy Methode - Use is deprechiated!
+
+    // cout<<"Run::LoadWaveforms" <<endl;
+    // double wall0 = claws::get_wall_time();
+    // double cpu0  = claws::get_cpu_time();
+
+
+//    #pragma omp parallel num_threads(7)
+  //  {
+        // When all the histograms are copyed into memory and than the the vectors are filled in a second (multi threaded) step, a
+        // full run would use more than my full r
+        // #pragma omp for schedule(dynamic,1)
+        // for(unsigned int i=0; i< events_.size();i++)
+        // {
+        //     events_.at(i)->LoadWaveform();
+        //     events_.at(i)->DeleteHistograms();
+        // }
+    //    #pragma omp for schedule(dynamic,1)
+        for(unsigned int i=0; i< int_events_.size();i++)
+        {
+            int_events_.at(i)->LoadWaveform();
+            int_events_.at(i)->DeleteHistograms();
+        }
+
+    //}
+
+    // double wall1 = claws::get_wall_time();
+    // double cpu1  = claws::get_cpu_time();
+    //
+    // cout << "Wall Time = " << wall1 - wall0 << endl;
+    // cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+};
+
+
+
 void Run::SubtractPedestal()
 {
     double wall0 = claws::get_wall_time();
@@ -376,21 +427,21 @@ void Run::LoadPedestal()
         TODO description
     */
 
-//    #pragma omp parallel num_threads(7)
-  //  {
-  //      #pragma omp for schedule(dynamic,1)
+    #pragma omp parallel num_threads(7)
+    {
+        #pragma omp for schedule(dynamic,1)
         for(unsigned int i=0; i< events_.size();i++)
         {
             events_.at(i)->LoadPedestal();
         }
 
-    //    #pragma omp for schedule(dynamic,1)
+        #pragma omp for schedule(dynamic,1)
         for(unsigned int i=0; i< int_events_.size();i++)
         {
             int_events_.at(i)->LoadPedestal();
         }
 
-  //  }
+    }
 
     // There is of course only one object of class Pedestal (pedestal_) all events need to access => no multi threading.
     for(unsigned int i=0; i< events_.size();i++)
@@ -486,29 +537,114 @@ void Run::Subtract()
     /*
         TODO description
     */
-//    #pragma omp parallel num_threads(7)
-//    {
+    #pragma omp parallel num_threads(7)
+    {
         std::map<std::string, float> tmp = pedestal_->GetPedestal(1);
 
-  //      #pragma omp for schedule(dynamic,1)
+        #pragma omp for schedule(dynamic,1)
         for(unsigned int i=0; i< events_.size();i++)
         {
             events_.at(i)->SubtractPedestal(tmp);
         }
-  //  }
+    }
 
-  //  #pragma omp parallel num_threads(7)
-  //  {
+    #pragma omp parallel num_threads(7)
+    {
         std::map<std::string, float> tmp_int = pedestal_->GetPedestal(2);
 
-    //    #pragma omp for schedule(dynamic,1)
+        #pragma omp for schedule(dynamic,1)
         for(unsigned int i=0; i< int_events_.size();i++)
         {
             int_events_.at(i)->SubtractPedestal(tmp_int, true);
         }
-  //  }
+    }
 };
 
+void Run::SubtractPedestal2()
+{
+    double wall0 = claws::get_wall_time();
+    double cpu0  = claws::get_cpu_time();
+
+    std::cout << "\033[33;1mRun::Subtracting pedestal:\033[0m running" << "\r" << std::flush;
+
+    // First intermediate
+
+    #pragma omp parallel num_threads(7)
+    {
+        #pragma omp for schedule(dynamic,1)
+        for(unsigned int i=0; i< int_events_.size();i++)
+        {
+            int_events_.at(i)->LoadPedestal();
+        }
+    }
+
+        for(unsigned int i=0; i< int_events_.size();i++)
+        {
+            pedestal_->AddEvent(int_events_.at(i)->GetPedestal());
+        }
+
+    #pragma omp parallel num_threads(7)
+    {
+        std::map<std::string, float> tmp_int = pedestal_->GetPedestal(2);
+
+        #pragma omp for schedule(dynamic,1)
+        for(unsigned int i=0; i< int_events_.size();i++)
+        {
+            int_events_.at(i)->SubtractPedestal(tmp_int, true);
+        }
+    }
+
+    // Now Physics
+
+    for(unsigned int i=0; i< events_.size();i++)
+    {
+        events_.at(i)->LoadRootFile();
+        events_.at(i)->LoadWaveform();
+
+        events_.at(i)->LoadPedestal();
+
+        pedestal_->AddEvent(events_.at(i)->GetPedestal());
+
+        events_.at(i)->DeleteHistograms();
+        events_.at(i)->DeleteWaveforms();
+    }
+
+//    #pragma omp parallel num_threads(7)
+//    {
+        std::map<std::string, float> tmp = pedestal_->GetPedestal(1);
+
+//        #pragma omp for schedule(dynamic,1)
+        for(unsigned int i=0; i< events_.size();i++)
+        {
+            events_.at(i)->SetPedestal(tmp);
+        }
+//    }
+
+    this->SavePedestal();
+
+    std::cout << "\033[32;1mRun::Subtracting pedestal:\033[0m done!       " << std::endl;
+
+    double wall1 = claws::get_wall_time();
+    double cpu1  = claws::get_cpu_time();
+
+    cout << "Wall Time = " << wall1 - wall0 << endl;
+    cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+};
+
+
+
+void Run::DeletePhysicsData()
+{
+    #pragma omp parallel num_threads(GS->GetNThreads())
+    {
+        #pragma omp for schedule(dynamic,1)
+        for(unsigned int i=0; i< events_.size();i++)
+        {
+            events_.at(i)->DeleteHistograms();
+            events_.at(i)->DeleteWaveforms();
+        }
+    }
+}
 void Run::GainCalibration()
 {
     /*
@@ -563,10 +699,12 @@ void Run::Average1PE()
     gain_->AddIntWfs(vec);
 //    gain_->NormalizeWaveforms(int_events_.size());
     gain_->WfToHist();
+    gain_->SaveAvg(path_run_);
     gain_->FitAvg();
+
     gain_->HistToWf();
     // gain_->WfToHist();
-    gain_->SaveAvg(path_run_);
+
 
     std::cout << "\033[32;1mRun::Extracting average 1 pe:\033[0m done!     " << std::endl;
 
@@ -610,6 +748,7 @@ void Run::WaveformDecomposition()
     cout << "Wall Time = " << wall1 - wall0 << endl;
     cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 }
+
 void Run::SetUpWaveforms()
 {
     for(unsigned int i=0; i< events_.size(); i++)
@@ -659,6 +798,29 @@ void Run::CalculateChi2()
     //TODO Implentation
 };
 
+void Run::WaveformDecomposition2()
+{
+    std::cout << "\033[33;1mRun::Decomposing waveforms:\033[0m running" << "\r" << std::flush;
+
+    double wall0 = claws::get_wall_time();
+    double cpu0  = claws::get_cpu_time();
+
+    for(unsigned int i=0; i< events_.size(); i++)
+    {
+        events_.at(i)->SetUpWaveforms();
+    }
+
+
+    std::cout << "\033[32;1mRun::Decomposing waveforms:\033[0m done!     " << std::endl;
+
+    double wall1 = claws::get_wall_time();
+    double cpu1  = claws::get_cpu_time();
+
+    cout << "Wall Time = " << wall1 - wall0 << endl;
+    cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+
+};
+
 void Run::SaveEvents()
 {
     std::cout << "Now saving events!" << std::endl;
@@ -700,6 +862,7 @@ void Run::SaveEvents()
 
     for(auto &e : int_events_)
     {
+
         rfile->cd();
         rfile->mkdir(("int/"+e->GetNrStr()).c_str());
         rfile->cd(("int/"+e->GetNrStr()).c_str());

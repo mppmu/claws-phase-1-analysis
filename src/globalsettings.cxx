@@ -273,6 +273,11 @@ namespace claws {
             return rtn;
         }
 
+        int GlobalSettings::GetNThreads()
+        {
+            return n_threads_;
+        };
+
         boost::filesystem::path GlobalSettings::GetHook()
         {
             //std::cout << hook_ << std::endl;

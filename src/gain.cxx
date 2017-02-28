@@ -158,19 +158,22 @@ void Gain::FitAvg()
 {
     for(auto & ivec : channels_)
     {
-        std::string name = ivec->name + "_exponential";
-        std::replace(name.begin(), name.end(), '-','_');
-        TF1* expo=new TF1( name.c_str(),"[0]*exp([1]*(x-[2]))", 1, ivec->avg_hist->GetNbinsX());
-        expo->SetParameter(0, 37.9);
-        expo->SetParameter(1,-0.033);
-        expo->SetParameter(2,75.5);
-        // expo->SetParameter(3,-0.11);
-        ivec->avg_hist->Fit(expo, "Q", "", ivec->avg_hist->GetMaximumBin()+10, ivec->avg_wf->size());
-        ivec->end = round(expo->GetX(0.005));
-        // std::cout<< "ivec->end: " << ivec->end << std::endl;
-        for(signed i = ivec->avg_wf->size(); i < ivec->end + 1; i++)
+        if(ivec->avg_wf->size() <= 250)
         {
-            ivec->avg_hist->SetBinContent(i, expo->Eval(i));
+            std::string name = ivec->name + "_exponential";
+            std::replace(name.begin(), name.end(), '-','_');
+            TF1* expo=new TF1( name.c_str(),"[0]*exp([1]*(x-[2]))", 1, ivec->avg_hist->GetNbinsX());
+            expo->SetParameter(0, 37.9);
+            expo->SetParameter(1,-0.033);
+            expo->SetParameter(2,75.5);
+            // expo->SetParameter(3,-0.11);
+            ivec->avg_hist->Fit(expo, "Q", "", ivec->avg_hist->GetMaximumBin()+10, ivec->avg_wf->size());
+            ivec->end = round(expo->GetX(0.005));
+            // std::cout<< "ivec->end: " << ivec->end << std::endl;
+            // for(signed i = ivec->avg_wf->size()+1; i < ivec->end + 1; i++)
+            // {
+            //     ivec->avg_hist->SetBinContent(i, expo->Eval(i));
+            // }
         }
     }
 }
@@ -211,7 +214,7 @@ void Gain::WfToHist()
 
         std::string title = "run_" + std::to_string(run_nr_) + "_" + ivec->name + "_avg1pe";
         std::replace(title.begin(), title.end(), '-','_');
-        ivec->avg_hist = new TH1F(title.c_str(), title.c_str(),ivec->avg_wf->size() + 150 , 0.5 , ivec->avg_wf->size()+0.5 + 150 );
+        ivec->avg_hist = new TH1F(title.c_str(), title.c_str(),ivec->avg_wf->size() + 150 , -0.5 , ivec->avg_wf->size()+0.5 + 150 );
         for(unsigned i=0; i < ivec->avg_wf->size(); i++)
         {
             ivec->avg_hist->SetBinContent(i+1, ivec->avg_wf->at(i));
@@ -226,7 +229,7 @@ void Gain::HistToWf()
         ivec->avg_wf->clear();
         // std::cout<< "1 Size: " << ivec->avg_wf->size() << ", Capacity: " << ivec->avg_wf->capacity()<< std::endl;
         //if(ivec->end-129 > ivec->avg_wf->capacity()) ivec->avg_wf->reserve(ivec->end-129);
-        ivec->avg_wf->reserve(ivec->end -129);
+        ivec->avg_wf->reserve(ivec->end - 129);
         // std::cout<< "2 Size: " << ivec->avg_wf->size() << ", Capacity: " << ivec->avg_wf->capacity()<< std::endl;
         for( unsigned i = 129; i < ivec->end; i++)
         {
