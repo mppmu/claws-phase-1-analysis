@@ -39,7 +39,7 @@
 #include <TFile.h>
 #include <TH1D.h>
 #include <TH1I.h>
-
+#include <TLegend.h>
 #include <TApplication.h>
 #include <TCanvas.h>
 #include <TF1.h>
@@ -721,9 +721,32 @@ void Run::WaveformDecomposition()
     double wall0 = claws::get_wall_time();
     double cpu0  = claws::get_cpu_time();
 
-    this->SetUpWaveforms();
-    this->FastRate();
+    // this->SetUpWaveforms();
+    // this->FastRate();
+    // this->SaveEvents();
 
+    // New Version
+
+    std::map<std::string, std::vector<float>*> avg_waveforms = gain_->GetWaveform();
+    std::map<std::string, double> pe_to_mips = GS->GetPEtoMIPs();
+
+    for(unsigned int i=0; i< events_.size();i++)
+    {
+        events_.at(i)->LoadRootFile();
+        events_.at(i)->LoadWaveform();
+
+        events_.at(i)->SetUpWaveforms();
+
+        events_.at(i)->FastRate(avg_waveforms, pe_to_mips);
+
+        // events_.at(i)->Decompose(avg_waveforms);
+        // events_.at(i)->Reconstruct(avg_waveforms);
+        // events_.at(i)->CalculateChi2();
+        // events_.at(i)->SaveEvent(path_run_/boost::filesystem::path("ResultsRoot"));
+
+        events_.at(i)->DeleteHistograms();
+        events_.at(i)->DeleteWaveforms();
+    }
 
     std::cout << "\033[32;1mRun::Decomposing waveforms:\033[0m done!     " << std::endl;
 
@@ -736,7 +759,7 @@ void Run::WaveformDecomposition()
     wall0 = claws::get_wall_time();
     cpu0  = claws::get_cpu_time();
 
-    this->SaveEvents();
+
 
 
     // std::cout << "\033[32;1mRun::Decomposing waveforms:\033[0m done!     " << std::endl;
@@ -764,8 +787,6 @@ void Run::FastRate()
     for(unsigned int i=0; i< events_.size(); i++)
     {
         events_.at(i)->FastRate(avg_waveforms, pe_to_mips);
-//        auto test =  events_.at(i)->GetPV<std::string>("SuperKEKBStatus");
-
     }
 
 };
@@ -904,33 +925,104 @@ void Run::SaveRates()
     TGraph* online_rates[6];
     TGraph* current[2];
     TGraph* injection[2];
+    TGraph* injection_bg[2];
 
     for(int i = 0; i < 3; i++)
     {
         fast_rates[i] = new TGraph();
         fast_rates[i]->SetName(("FastRateFWD"+std::to_string(i+1)).c_str());
+        fast_rates[i]->SetMarkerColor(kRed+i*2);
+        fast_rates[i]->SetMarkerStyle(34);
+        fast_rates[i]->SetMarkerSize(2.0);
+        fast_rates[i]->SetMinimum(0);
+        fast_rates[i]->SetMaximum(600000);
+        fast_rates[i]->GetXaxis()->SetTitle("time [Ms]");
+        fast_rates[i]->GetXaxis()->SetNdivisions(405);
+
         online_rates[i] = new TGraph();
         online_rates[i]->SetName(("OnlineRateFWD"+std::to_string(i+1)).c_str());
+        online_rates[i]->SetMarkerColor(kBlue+i*2);
+        online_rates[i]->SetMarkerStyle(33);
+        online_rates[i]->SetMarkerSize(2.0);
+        online_rates[i]->SetMinimum(0);
+        online_rates[i]->SetMaximum(600000);
+        online_rates[i]->GetXaxis()->SetTitle("time [Ms]");
+        online_rates[i]->GetXaxis()->SetNdivisions(405);
     }
     for(int i = 3; i < 6; i++)
     {
         online_rates[i] = new TGraph();
         online_rates[i]->SetName(("OnlineRateBWD"+std::to_string(i+1)).c_str());
+        online_rates[i]->SetMarkerColor(kOrange+i-2);
+        online_rates[i]->SetMarkerStyle(29);
+        online_rates[i]->SetMarkerSize(2.0);
+        online_rates[i]->SetMinimum(0);
+        online_rates[i]->SetMaximum(600000);
+        online_rates[i]->GetXaxis()->SetTitle("time [Ms]");
+        online_rates[i]->GetXaxis()->SetNdivisions(405);
     }
 
     current[0] = new TGraph();
     current[0]->SetName("LERCurrent");
+    current[0]->GetXaxis()->SetTitle("time [s x 10^6]");
+    current[0]->GetXaxis()->SetNdivisions(405);
+    current[0]->SetMarkerColor(kRed);
+    current[0]->SetMarkerStyle(22);
+    current[0]->SetMinimum(-25);
+    current[0]->SetMaximum(850);
+
     current[1] = new TGraph();
     current[1]->SetName("HERCurrent");
+    current[1]->GetXaxis()->SetTitle("time [s x 10^6]");
+    current[1]->GetXaxis()->SetNdivisions(405);
+    current[1]->SetMarkerColor(kBlue);
+    current[1]->SetMarkerStyle(23);
+    current[1]->SetMinimum(-25);
+    current[1]->SetMaximum(850);
 
     injection[0] = new TGraph();
     injection[0]->SetName("LERInj");
+    injection[0]->GetXaxis()->SetTitle("time [Ms]");
+    injection[0]->GetXaxis()->SetTitle("time [s x 10^6]");
+    injection[0]->GetXaxis()->SetNdivisions(405);
+    injection[0]->SetMarkerColor(kRed);
+    injection[0]->SetMarkerStyle(22);
+    injection[0]->SetMinimum(0);
+    injection[0]->SetMaximum(30);
+
     injection[1] = new TGraph();
     injection[1]->SetName("HERInj");
+    injection[1]->GetXaxis()->SetTitle("time [Ms]");
+    injection[1]->GetXaxis()->SetTitle("time [s x 10^6]");
+    injection[1]->GetXaxis()->SetNdivisions(405);
+    injection[1]->SetMarkerColor(kBlue);
+    injection[1]->SetMarkerStyle(23);
+    injection[1]->SetMinimum(0);
+    injection[1]->SetMaximum(30);
+
+    injection_bg[0] = new TGraph();
+    injection_bg[0]->SetName("LERInj_BG");
+    injection_bg[0]->GetXaxis()->SetTitle("time [Ms]");
+    injection_bg[0]->GetXaxis()->SetTitle("time [s x 10^6]");
+    injection_bg[0]->GetXaxis()->SetNdivisions(505);
+    injection_bg[0]->SetMarkerColor(kRed);
+    injection_bg[0]->SetMarkerStyle(22);
+    injection_bg[0]->SetMinimum(0);
+    injection_bg[0]->SetMaximum(2);
+
+    injection_bg[1] = new TGraph();
+    injection_bg[1]->SetName("HERInj_BG");
+    injection_bg[1]->GetXaxis()->SetTitle("time [Ms]");
+    injection_bg[1]->GetXaxis()->SetTitle("time [s x 10^6]");
+    injection_bg[1]->GetXaxis()->SetNdivisions(505);
+    injection_bg[1]->SetMarkerColor(kBlue);
+    injection_bg[1]->SetMarkerStyle(23);
+    injection_bg[1]->SetMinimum(0);
+    injection_bg[1]->SetMaximum(2);
 
     for(unsigned int i=0; i < events_.size(); i++)
     {
-        double ts = events_.at(i)->GetUnixtime();
+        double ts = events_.at(i)->GetUnixtime()/10e6;
 
         for(int j = 0; j < 3; j++)
         {
@@ -946,6 +1038,9 @@ void Run::SaveRates()
         current[1]->SetPoint(i, ts, events_.at(i)->GetPV<double>("HERCurrent"));
         injection[0]->SetPoint(i, ts, events_.at(i)->GetPV<double>("LERInj"));
         injection[1]->SetPoint(i, ts, events_.at(i)->GetPV<double>("HERInj"));
+
+        injection_bg[0]->SetPoint(i, ts, events_.at(i)->GetPV<double>("LERBg"));
+        injection_bg[1]->SetPoint(i, ts, events_.at(i)->GetPV<double>("HERBg"));
     }
 
     for(int i = 0; i < 3; i++)
@@ -962,6 +1057,38 @@ void Run::SaveRates()
 
     injection[0]->Write();
     injection[1]->Write();
+
+    injection_bg[0]->Write();
+    injection_bg[1]->Write();
+
+    std::string title = "Rates";
+    TCanvas c(title.c_str(),title.c_str(),500,500);
+
+    fast_rates[0]->Draw("AP");
+    fast_rates[1]->Draw("P");
+    fast_rates[2]->Draw("P");
+
+    online_rates[0]->Draw("P");
+    online_rates[1]->Draw("P");
+    online_rates[2]->Draw("P");
+    online_rates[3]->Draw("P");
+    online_rates[4]->Draw("P");
+    online_rates[5]->Draw("P");
+
+    TLegend* leg = new TLegend(0.1,0.7,0.48,0.9);
+    leg->AddEntry(fast_rates[0], fast_rates[0]->GetName(),"P");
+    leg->AddEntry(fast_rates[1], fast_rates[1]->GetName(),"P");
+    leg->AddEntry(fast_rates[2], fast_rates[2]->GetName(),"P");
+
+    leg->AddEntry(online_rates[0], online_rates[0]->GetName(),"P");
+    leg->AddEntry(online_rates[1], online_rates[1]->GetName(),"P");
+    leg->AddEntry(online_rates[2], online_rates[2]->GetName(),"P");
+    leg->AddEntry(online_rates[3], online_rates[3]->GetName(),"P");
+    leg->AddEntry(online_rates[4], online_rates[4]->GetName(),"P");
+    leg->AddEntry(online_rates[5], online_rates[5]->GetName(),"P");
+
+    leg->Draw("same");
+    c.Write();
 
     rfile->Close();
     delete rfile;

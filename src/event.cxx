@@ -11,6 +11,9 @@
 #include <boost/algorithm/string/replace.hpp>
 // OpenMP
 //#include <omp.h>
+// root
+#include <TFile.h>
+
 
 #include "event.hh"
 
@@ -498,6 +501,27 @@ void PhysicsEvent::CalculateChi2()
             tmp->CalculateChi2();
         }
     }
+};
+
+void PhysicsEvent::SaveEvent(boost::filesystem::path folder)
+{
+    if(!boost::filesystem::is_directory( folder ))
+    {
+        boost::filesystem::create_directory( folder );
+    }
+
+    std::string fname = folder.string()+"/event_"+std::to_string(nr_)+"_mips.root";
+    TFile *rfile = new TFile(fname.c_str(), "RECREATE");
+
+    for(auto& imap : channels_)
+    {
+        // std::string tmp_name = mvec.first;
+        // replace_last(tmp_name, "-INT", "");
+            // PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(mmap.second);
+//        imap.second->GetHistogram()->Write();
+    }
+    rfile->Close();
+    delete rfile;
 };
 
 double* PhysicsEvent::GetRate(int type){

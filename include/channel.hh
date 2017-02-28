@@ -115,6 +115,9 @@ class PhysicsChannel : public Channel
 
        TH1F*                   GetWaveformHist();
 
+    //    void CreateHistogram(std::string type = "raw");
+    //    TH1* GetHistogram(std::string type);
+
        // Type 1: fast offline double[3]
        // Type 2: offline      double[3]
        double                  GetRate(int type = 1);

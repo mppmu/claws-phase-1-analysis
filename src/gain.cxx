@@ -90,7 +90,7 @@ void Gain::FitGain()
         double_gaussian->SetParLimits(5,gaussian->GetParameter(2)*0.75, gaussian->GetParameter(2)*1.25);
 
 //        ivec->gain_hist->Fit(double_gaussian,"WWQ",(gaussian->GetParameter(1)-2*gaussian->GetParameter(2)),((gaussian->GetParameter(1)-mean_bias)*2+2*gaussian->GetParameter(2)+mean_bias));
-        ivec->gain_hist->Fit(double_gaussian,"LQ","",(gaussian->GetParameter(1)-2*gaussian->GetParameter(2)),((gaussian->GetParameter(1)-mean_bias)*2+2*gaussian->GetParameter(2)+mean_bias));
+        ivec->gain_hist->Fit(double_gaussian,"LQ","",(gaussian->GetParameter(1)-3*gaussian->GetParameter(2)),((gaussian->GetParameter(1)-mean_bias)*2+3*gaussian->GetParameter(2)+mean_bias));
         ivec->gain = double_gaussian->GetParameter(4) - double_gaussian->GetParameter(1);
         // hendrik_file<< " "<< ivec->name << " " << ivec->gain;
     }

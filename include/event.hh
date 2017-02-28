@@ -134,6 +134,7 @@ class PhysicsEvent : public Event{
         void                   Decompose(std::map<std::string, std::vector<float>*> avg_waveforms);
         void                   Reconstruct(std::map<std::string, std::vector<float>*> avg_waveforms);
         void                   CalculateChi2();
+        void                   SaveEvent(boost::filesystem::path result_folder);
 
         // Type O: online       double[6]
         // Type 1: fast offline double[3]

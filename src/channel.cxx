@@ -627,6 +627,30 @@ TH1F* PhysicsChannel::GetWaveformHist()
 
 };
 
+// void PhysicsChannel::CreateHistogram(std::string type)
+// {
+//
+// }
+
+// TH1* PhysicsChannel::GetHistogram(std::string type)
+// {
+//
+//     if(type == "raw")
+//     {
+//         return hist_
+//     }
+//     //TODO Find better name for workon
+//     else if(type == "workon")
+//     {
+//         this->CreateHistogram()
+//         return
+//     }
+//     else
+//     {
+//         return NULL;
+//     }
+// }
+
 double PhysicsChannel::GetRate(int type)
 {
     if(type == 1)           return fast_rate_;
