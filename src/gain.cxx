@@ -8,6 +8,9 @@
 //root
 #include <TFile.h>
 #include <TF1.h>
+#include <TGraph.h>
+#include <TFitResultPtr.h>
+#include <TFitResult.h>
 
 
 #include "gain.hh"
@@ -69,29 +72,43 @@ void Gain::FitGain()
     for(auto & ivec : channels_)
     {
 
-        TF1* gaussian=new TF1( (ivec->name + "_gaussian").c_str(),"gaus",-200, 2600);
+        TF1* gaus=new TF1( (ivec->name + "_gaus").c_str(),"gaus",-200, 2600);
 
-        ivec->gain_hist->Fit(gaussian,"Q");
-        ivec->gain_hist->Fit(gaussian,"Q");
+        //TODO make them dinamically loaded from config file.
+        gaus->SetParameter(0, ivec->gain_hist->GetMaximum());
+        gaus->SetParameter(1, ivec->gain_hist->GetBinCenter(ivec->gain_hist->GetMaximumBin()));
+        gaus->SetParameter(2, 31.);
+        // gaus->SetParLimits(2, 0, 100000);
+        TFitResultPtr result = ivec->gain_hist->Fit(gaus,"QS","",0,ivec->gain_hist->GetBinCenter(ivec->gain_hist->GetMaximumBin())*5);
+        if( (result->Chi2()/result->Ndf() > 10) || (int(result) != 0 ) )
+        {
+            std::cout << "Fit failing in : "<< ivec->name <<"Gain::FitGain(): fit gaus. Chi2: " << result->Chi2()<< ", ndf: "<< result->Ndf()<< ", status: " << int(result) << std::endl;
+            exit(1);
+        }
 
-        TF1* double_gaussian=new TF1( (ivec->name + "_double_gaussian").c_str(),"gaus(220)+gaus(420)",0,3*gaussian->GetParameter(1) );
+        TF1* d_gaus=new TF1( (ivec->name + "_d_gaus").c_str(),"gaus(220)+gaus(420)",0,3*gaus->GetParameter(1) );
 
         double mean_bias = 25;
 
-        double_gaussian->SetParameter(0,gaussian->GetParameter(0));
-        double_gaussian->SetParameter(1,gaussian->GetParameter(1));
-        double_gaussian->SetParameter(2,gaussian->GetParameter(2));
+        d_gaus->SetParameter(0,gaus->GetParameter(0));
+        d_gaus->SetParameter(1,gaus->GetParameter(1));
+        d_gaus->SetParameter(2,gaus->GetParameter(2));
 
-        double_gaussian->SetParameter(3,gaussian->GetParameter(0)*0.1);
-        double_gaussian->SetParameter(4,(gaussian->GetParameter(1)-mean_bias)*2 + mean_bias);
-        double_gaussian->SetParameter(5,gaussian->GetParameter(2));
+        d_gaus->SetParameter(3,gaus->GetParameter(0)*0.1);
+        d_gaus->SetParameter(4,(gaus->GetParameter(1)-mean_bias)*2 + mean_bias);
+        d_gaus->SetParameter(5,gaus->GetParameter(2));
 
-        double_gaussian->SetParLimits(4,(gaussian->GetParameter(1)- mean_bias)*1.75 + mean_bias, (gaussian->GetParameter(1)-mean_bias)*2.25+mean_bias);
-        double_gaussian->SetParLimits(5,gaussian->GetParameter(2)*0.75, gaussian->GetParameter(2)*1.25);
+        d_gaus->SetParLimits(4,(gaus->GetParameter(1)- mean_bias)*1.75 + mean_bias, (gaus->GetParameter(1)-mean_bias)*2.25+mean_bias);
+        d_gaus->SetParLimits(5,gaus->GetParameter(2)*0.75, gaus->GetParameter(2)*1.25);
+        //
+        result = ivec->gain_hist->Fit(d_gaus,"SLQ","",(gaus->GetParameter(1)-3*gaus->GetParameter(2)),((gaus->GetParameter(1)-mean_bias)*2+3*gaus->GetParameter(2)+mean_bias));
+        if( (result->Chi2()/result->Ndf() > 10) || (int(result) != 0 ) )
+        {
+            std::cout << "Fit failing in Gain::FitGain(): fit double gaus. Chi2: " << result->Chi2() << ", ndf: "<< result->Ndf() << ", status: " << int(result) << std::endl;
+            exit(1);
+        }
 
-//        ivec->gain_hist->Fit(double_gaussian,"WWQ",(gaussian->GetParameter(1)-2*gaussian->GetParameter(2)),((gaussian->GetParameter(1)-mean_bias)*2+2*gaussian->GetParameter(2)+mean_bias));
-        ivec->gain_hist->Fit(double_gaussian,"LQ","",(gaussian->GetParameter(1)-3*gaussian->GetParameter(2)),((gaussian->GetParameter(1)-mean_bias)*2+3*gaussian->GetParameter(2)+mean_bias));
-        ivec->gain = double_gaussian->GetParameter(4) - double_gaussian->GetParameter(1);
+        ivec->gain = d_gaus->GetParameter(4) - d_gaus->GetParameter(1);
         // hendrik_file<< " "<< ivec->name << " " << ivec->gain;
     }
     // hendrik_file << std::endl;
@@ -105,13 +122,29 @@ void Gain::SaveGain(boost::filesystem::path path_run)
         boost::filesystem::create_directory(path_run/boost::filesystem::path("Calibration"));
     }
 
-    std::string fname = path_run.string()+"/Calibration/run_"+std::to_string(run_nr_)+"_gain_v1.root";
+    std::string fname = path_run.string()+"/Calibration/run_"+std::to_string(run_nr_)+"_gain" +"_v"+ std::to_string(GS->GetCaliPar<int>("General.CalibrationVersion"))+".root";
     TFile *rfile = new TFile(fname.c_str(), "RECREATE");
 
+    TGraph* total_gain = new TGraph();
+    total_gain->SetName("total_gain");
+    total_gain->SetTitle("Extracted gain for all channels");
+    total_gain->SetMarkerColor(kRed);
+    total_gain->SetMarkerStyle(34);
+    total_gain->SetMarkerSize(1.8);
+    total_gain->SetMinimum(0);
+    total_gain->SetMaximum(1000);
+    total_gain->GetXaxis()->SetTitle("channel FWD1-3 BWD1-3");
+    total_gain->GetYaxis()->SetTitle("gain");
+
+    int i =0;
     for(auto & ivec : channels_)
     {
         ivec->gain_hist->Write();
+        total_gain->SetPoint(i, i+1, ivec->gain);
+        i++;
     }
+
+    total_gain->Write();
 
     rfile->Close();
     delete rfile;
@@ -188,9 +221,21 @@ void Gain::SaveAvg(boost::filesystem::path path_run)
         boost::filesystem::create_directory(path_run/boost::filesystem::path("Calibration"));
     }
 
-    std::string fname = path_run.string()+"/Calibration/run_"+std::to_string(run_nr_)+"_avg1pe_v1.root";
+    std::string fname = path_run.string()+"/Calibration/run_"+std::to_string(run_nr_)+"_avg1pe" +"_v"+ std::to_string(GS->GetCaliPar<int>("General.CalibrationVersion"))+".root";
     TFile *rfile = new TFile(fname.c_str(), "RECREATE");
 
+    TGraph* total_avg1pe = new TGraph();
+    total_avg1pe->SetName("total_avg1pe");
+    total_avg1pe->SetTitle("Average 1 PE integral for all channles");
+    total_avg1pe->SetMarkerColor(kRed);
+    total_avg1pe->SetMarkerStyle(34);
+    total_avg1pe->SetMarkerSize(1.8);
+    total_avg1pe->SetMinimum(0);
+    total_avg1pe->SetMaximum(1e-6);
+    total_avg1pe->GetXaxis()->SetTitle("channel FWD1-3 BWD1-3");
+    total_avg1pe->GetYaxis()->SetTitle("Integral of average 1 pe waveform [IntCountsX0.8e-9ns]");
+
+    int i=0;
     for(auto & ivec : channels_)
     {
         // std::string title = "run_" + std::to_string(run_nr_) + "_" + ivec->name + "_avg1pe";
@@ -201,9 +246,13 @@ void Gain::SaveAvg(boost::filesystem::path path_run)
         //     tmp->SetBinContent(i+1, ivec->avg_wf->at(i));
         // }
         ivec->avg_hist->Write();
+        total_avg1pe->SetPoint(i, i+1, ivec->avg_hist->Integral()*GS->GetCaliPar<double>("General.BinWidth"));
+        i++;
         // delete tmp;
         // tmp = NULL;
     }
+
+    total_avg1pe->Write();
 
     rfile->Close();
     delete rfile;

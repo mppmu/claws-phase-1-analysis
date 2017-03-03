@@ -64,14 +64,18 @@ class Channel
         float                   GetPDError();
         double                  GetIntegral();
 
+        virtual TH1*            GetHistogram();
+        virtual void            CreateHistogram();
+
     protected:
 
         std::string             name_;
 
         std::vector<float>*     waveform_      = NULL;
 
-        TH1I*                   hist_          = NULL;
+        TH1*                   hist_          = NULL;
         TH1I*                   pedestal_hist_      = NULL;
+
         float                   pedestal_   = 0;
         float                   baseline_   = 0;
 
@@ -104,6 +108,14 @@ class PhysicsChannel : public Channel
         virtual     void        DeleteWaveform();
 
         void SetUpWaveforms();
+        void SetUpWaveforms2();
+
+            void InitCleanWF();
+            void InitMipWF();
+
+            void BuildCleanWF();
+
+
         void FastRate(std::vector<float>* avg_waveform, double pe_to_mip = 16.);
         void Decompose(std::vector<float>* avg_waveform);
         void Reconstruct(std::vector<float>* avg_waveform);
@@ -113,10 +125,13 @@ class PhysicsChannel : public Channel
        std::vector<float>*           waveform_workon_   = NULL;
        std::vector<std::uint8_t>*    waveform_photon_   = NULL;
 
+       std::vector<float>*                clean_wf_     = NULL;
+       std::vector<std::uint8_t>*         mip_wf_       = NULL;
+
        TH1F*                   GetWaveformHist();
 
-    //    void CreateHistogram(std::string type = "raw");
-    //    TH1* GetHistogram(std::string type);
+       void                 CreateHistogram(std::string type = "raw");
+       TH1*                 GetHistogram(std::string type = "raw");
 
        // Type 1: fast offline double[3]
        // Type 2: offline      double[3]

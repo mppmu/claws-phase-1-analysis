@@ -16,6 +16,7 @@
 
 
 #include "event.hh"
+#include "globalsettings.hh"
 
 
 using namespace std;
@@ -298,12 +299,28 @@ std::map<std::string, double> Event::GetIntegral()
     }
 
     return rtn;
+};
+
+void Event::CreateHistograms()
+{
+    for(auto & itr : channels_)
+    {
+        itr.second->CreateHistogram();
+    }
+};
+
+std::map<std::string, TH1*> Event::GetHistograms()
+{
+    std::map<std::string, TH1*>    rtn;
+
+    for(auto & itr : channels_)
+    {
+        rtn[itr.first]  =  itr.second->GetHistogram();
+    }
+
+    return rtn;
 }
 
-// std::vector< double> GetIntegralVec()
-// {
-//     std::vector
-// }
 
 
 std::map<std::string, std::vector<float>*> Event::GetWaveforms()
@@ -444,6 +461,19 @@ void PhysicsEvent::SetUpWaveforms()
     }
 };
 
+void PhysicsEvent::SetUpWaveforms2()
+{
+    //TODO Validation
+    for(auto& mvec : channels_)
+    {
+        if(!ends_with(mvec.first, "-INT") && !ends_with(mvec.first, "4"))
+        {
+            PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(mvec.second);
+            tmp->SetUpWaveforms2();
+        }
+    }
+};
+
 void PhysicsEvent::FastRate(std::map<std::string, std::vector<float>*> avg_waveforms, std::map<std::string, double> pe_to_mips)
 {
     //TODO Validation
@@ -503,26 +533,46 @@ void PhysicsEvent::CalculateChi2()
     }
 };
 
-void PhysicsEvent::SaveEvent(boost::filesystem::path folder)
+void PhysicsEvent::SaveEvent(boost::filesystem::path folder, std::string type)
 {
     if(!boost::filesystem::is_directory( folder ))
     {
         boost::filesystem::create_directory( folder );
     }
 
-    std::string fname = folder.string()+"/event_"+std::to_string(nr_)+"_mips.root";
+//    std::string fname = folder.string()+"/event_"+std::to_string(nr_)+"_" + type +"_v"+ std::to_string(GS->GetCaliPar<int>("General.CalibrationVersion")) + ".root";
+    std::string fname = folder.string()+"/event_"+std::to_string(nr_)+"_" + type + ".root";
     TFile *rfile = new TFile(fname.c_str(), "RECREATE");
 
-    for(auto& imap : channels_)
+    for(auto imap : this->GetHistograms(type))
     {
-        // std::string tmp_name = mvec.first;
-        // replace_last(tmp_name, "-INT", "");
-            // PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(mmap.second);
-//        imap.second->GetHistogram()->Write();
+        imap.second->Write();
     }
+
     rfile->Close();
     delete rfile;
 };
+
+void PhysicsEvent::CreateHistograms(std::string type)
+{
+    for(auto & imap : channels_)
+    {
+        PhysicsChannel* p_ch = dynamic_cast<PhysicsChannel*>(imap.second);
+        p_ch->CreateHistogram(type);
+    }
+};
+
+std::map<std::string, TH1*> PhysicsEvent::GetHistograms(std::string type)
+{
+    std::map<std::string, TH1*>    rtn;
+
+    for(auto & imap : channels_)
+    {
+        PhysicsChannel* p_ch = dynamic_cast<PhysicsChannel*>(imap.second);
+        rtn[imap.first]  =  p_ch->GetHistogram(type);
+    }
+    return rtn;
+}
 
 double* PhysicsEvent::GetRate(int type){
     if( type == 0 )

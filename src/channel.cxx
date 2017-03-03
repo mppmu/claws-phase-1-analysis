@@ -94,6 +94,7 @@ void Channel::DeleteHistogram()
       delete hist_;
       hist_ = NULL;
     }
+
 //    hist_ = NULL;
 };
 
@@ -289,6 +290,27 @@ TH1F* Channel::GetWaveformHist()
 
 };
 
+void Channel::CreateHistogram()
+{
+    if( waveform_->size() != 0 )
+    {
+        this->DeleteHistogram();
+
+        std::string title = name_+"_wf";
+        hist_ = new TH1F( title.c_str(), title.c_str(), waveform_->size(), 0.5 , waveform_->size()+0.5);
+
+        for(unsigned int i = 0; i < waveform_->size(); i++)
+        {
+            hist_->SetBinContent(i+1, waveform_->at(i));
+        }
+    }
+}
+
+TH1* Channel::GetHistogram()
+{
+    this->CreateHistogram();
+    return hist_;
+};
 
 TH1I* Channel::GetPedestal()
 {
@@ -310,7 +332,10 @@ double Channel::GetIntegral()
 PhysicsChannel::PhysicsChannel(std::string ch_name): Channel(ch_name)
 {
     waveform_workon_   = new std::vector<float>();
-    waveform_photon_    = new std::vector<std::uint8_t>();
+    waveform_photon_   = new std::vector<std::uint8_t>();
+
+    clean_wf_           =   new std::vector<float>();
+    mip_wf_             =   new std::vector<std::uint8_t>();
 };
 
 PhysicsChannel::~PhysicsChannel() {
@@ -386,6 +411,7 @@ void PhysicsChannel::SetUpWaveforms()
             else                      waveform_workon_->push_back(0);
 
             counter--;
+
         }
         else
         {
@@ -429,6 +455,54 @@ void PhysicsChannel::SetUpWaveforms()
 
 
 };
+
+void PhysicsChannel::SetUpWaveforms2()
+{
+    this->InitCleanWF();
+    this->InitMipWF();
+    this->BuildCleanWF();
+}
+
+void PhysicsChannel::InitCleanWF()
+{
+    clean_wf_->clear();
+    clean_wf_->resize(waveform_->size(), 0);
+};
+
+void PhysicsChannel::InitMipWF()
+{
+    // TODO not calling a clear, but just setting every entry to 0 by std::fill would be more efficient. However, this will most likely
+    //      online get called on an empty vecotr anyway.
+    mip_wf_->clear();
+    mip_wf_->resize(waveform_->size(), 0);
+};
+
+void PhysicsChannel::BuildCleanWF()
+{
+    double threshold            = GS->GetCaliPar<double>("PhysicsChannel.SignalFlagThreshold");
+    int    bins_over_threshold  = int(GS->GetCaliPar<double>("PhysicsChannel.BinsOverThreshold"));
+    bool fillflag = false;
+    unsigned counter = 0;
+
+    for(unsigned i = 0; i < waveform_->size() - bins_over_threshold; i++)
+    {
+
+        // First check if bin_i and it's subsequent bins are over the signal threshold.
+        bool over_threshold = false;
+        if( waveform_->at(i) >= threshold )
+        {
+            over_threshold = true;
+            for(unsigned j = i + 1; j < i + bins_over_threshold; j++ )
+            {
+                if( waveform_->at(j) < threshold ) over_threshold = false;
+            }
+        }
+
+        if( over_threshold )                 clean_wf_->at(i) = waveform_->at(i);
+        else                                 clean_wf_->at(i) = 0;
+    }
+}
+
 void PhysicsChannel::FastRate(std::vector<float>* avg_waveform, double pe_to_mip)
 {
     fast_rate_ = 0;
@@ -627,29 +701,55 @@ TH1F* PhysicsChannel::GetWaveformHist()
 
 };
 
-// void PhysicsChannel::CreateHistogram(std::string type)
-// {
-//
-// }
+void PhysicsChannel::CreateHistogram(std::string type)
+{
+    //TODO If this method gets called for BWD4 or FWD4 clean_wf_size() == 0 and nothing happens. This is wanted for now.
+    if( type == "raw" )
+    {
+        this->Channel::CreateHistogram();
+    }
+    else if( type == "clean" )
+    {
+        if( clean_wf_->size() != 0 )
+        {
+            this->DeleteHistogram();
 
-// TH1* PhysicsChannel::GetHistogram(std::string type)
-// {
-//
-//     if(type == "raw")
-//     {
-//         return hist_
-//     }
-//     //TODO Find better name for workon
-//     else if(type == "workon")
-//     {
-//         this->CreateHistogram()
-//         return
-//     }
-//     else
-//     {
-//         return NULL;
-//     }
-// }
+            std::string title = name_+"_clean_wf";
+            hist_ = new TH1F( title.c_str(), title.c_str(), clean_wf_->size(), 0.5 , clean_wf_->size()+0.5);
+
+            for(unsigned int i = 0; i <clean_wf_->size(); i++)
+            {
+                hist_->SetBinContent(i+1, clean_wf_->at(i));
+            }
+        }
+    }
+    else if( type == "mip" )
+    {
+        if( mip_wf_->size() != 0 )
+        {
+            this->DeleteHistogram();
+
+            std::string title = name_+"_mip_wf";
+            hist_ = new TH1F( title.c_str(), title.c_str(), mip_wf_->size(), 0.5 , mip_wf_->size()+0.5);
+
+            for(unsigned int i = 0; i < mip_wf_->size(); i++)
+            {
+                hist_->SetBinContent(i+1, mip_wf_->at(i));
+            }
+        }
+    }
+    else
+    {
+        this->DeleteHistogram();
+        //TODO TBD
+    }
+}
+
+TH1* PhysicsChannel::GetHistogram(std::string type)
+{
+    this->CreateHistogram(type);
+    return hist_;
+};
 
 double PhysicsChannel::GetRate(int type)
 {

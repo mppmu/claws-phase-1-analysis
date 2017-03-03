@@ -77,6 +77,8 @@ Run::Run(boost::filesystem::path p)
     run_nr_str_ = path_run_.filename().string().substr(4,20);
     pedestal_   = new Pedestal(run_nr_);
     gain_       = new Gain(run_nr_);
+    tsMin       = 1e10;
+    tsMax       = 0;
     cout << "---------------------------------------------------------" << endl;
     std::cout << p.string() << std::endl;
     cout << "\033[1;31mRun::Created run: \033[0m" << run_nr_ << endl;
@@ -133,7 +135,7 @@ void Run::SynchronizeFiles()
 //    #pragma omp parallel num_threads(7)
 //    {
 //       #pragma omp for ordered schedule(dynamic,1)
-        for (signed int i=0; i<folder_content.size(); ++i)
+        for ( signed int i=0; i < folder_content.size(); ++i)
         {
     //     //claws::ProgressBar((itr - folder_content.begin()+1.)/(folder_content.end()-folder_content.begin()));
             if(    boost::filesystem::is_regular_file(folder_content.at(i))
@@ -267,15 +269,18 @@ void Run::LoadIntermediate()
 
 void Run::LoadMetaData()
 {
-    #pragma omp parallel num_threads(7)
-    {
-        #pragma omp for schedule(dynamic,1)
+//    #pragma omp parallel num_threads(7)
+//    {
+//        #pragma omp for schedule(dynamic,1)
         for(unsigned int i=0; i< events_.size();i++)
         {
             events_.at(i)->LoadOnlineRate();
             events_.at(i)->LoadIniFile();
+            double ts = events_.at(i)->GetUnixtime();
+            if(tsMin > ts ) tsMin = ts;
+            if(tsMax < ts ) tsMax = ts;
         }
-    }
+//    }
     this->LoadRunSettings();
 };
 
@@ -522,14 +527,13 @@ void Run::SavePedestal()
         boost::filesystem::create_directory(path_run_/path("Calibration"));
     }
 
-    std::string filename = path_run_.string()+"/Calibration/run-"+run_nr_str_+"_pedestal_subtraction_v1.root";
+    std::string filename = path_run_.string()+"/Calibration/run-"+run_nr_str_+"_pedestal_subtraction"+"_v"+ std::to_string(GS->GetCaliPar<double>("General.CalibrationVersion"))+".root";
     TFile *rfile = new TFile(filename.c_str(), "RECREATE");
 
     pedestal_->SavePedestal(rfile);
 
     rfile->Close();
     delete rfile;
-
 };
 
 void Run::Subtract()
@@ -723,7 +727,7 @@ void Run::WaveformDecomposition()
 
     // this->SetUpWaveforms();
     // this->FastRate();
-    // this->SaveEvents();
+//    this->SaveEvents();
 
     // New Version
 
@@ -739,14 +743,17 @@ void Run::WaveformDecomposition()
 
         events_.at(i)->FastRate(avg_waveforms, pe_to_mips);
 
-        // events_.at(i)->Decompose(avg_waveforms);
-        // events_.at(i)->Reconstruct(avg_waveforms);
-        // events_.at(i)->CalculateChi2();
+        //  events_.at(i)->Decompose(avg_waveforms);
+        //  events_.at(i)->Reconstruct(avg_waveforms);
+        //  events_.at(i)->CalculateChi2();
+        //
         // events_.at(i)->SaveEvent(path_run_/boost::filesystem::path("ResultsRoot"));
 
         events_.at(i)->DeleteHistograms();
         events_.at(i)->DeleteWaveforms();
     }
+
+
 
     std::cout << "\033[32;1mRun::Decomposing waveforms:\033[0m done!     " << std::endl;
 
@@ -756,19 +763,19 @@ void Run::WaveformDecomposition()
     cout << "Wall Time = " << wall1 - wall0 << endl;
     cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 
-    wall0 = claws::get_wall_time();
-    cpu0  = claws::get_cpu_time();
-
-
-
-
-    // std::cout << "\033[32;1mRun::Decomposing waveforms:\033[0m done!     " << std::endl;
-
-    wall1 = claws::get_wall_time();
-    cpu1  = claws::get_cpu_time();
-
-    cout << "Wall Time = " << wall1 - wall0 << endl;
-    cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+    // wall0 = claws::get_wall_time();
+    // cpu0  = claws::get_cpu_time();
+    //
+    //
+    //
+    //
+    // // std::cout << "\033[32;1mRun::Decomposing waveforms:\033[0m done!     " << std::endl;
+    //
+    // wall1 = claws::get_wall_time();
+    // cpu1  = claws::get_cpu_time();
+    //
+    // cout << "Wall Time = " << wall1 - wall0 << endl;
+    // cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 }
 
 void Run::SetUpWaveforms()
@@ -825,11 +832,31 @@ void Run::WaveformDecomposition2()
     double wall0 = claws::get_wall_time();
     double cpu0  = claws::get_cpu_time();
 
-    for(unsigned int i=0; i< events_.size(); i++)
-    {
-        events_.at(i)->SetUpWaveforms();
-    }
 
+    std::map<std::string, std::vector<float>*> avg_waveforms = gain_->GetWaveform();
+    std::map<std::string, double> pe_to_mips = GS->GetPEtoMIPs();
+
+    for(unsigned int i=0; i< events_.size();i++)
+    {
+        events_.at(i)->LoadRootFile();
+        events_.at(i)->LoadWaveform();
+
+        events_.at(i)->SetUpWaveforms2();
+
+        events_.at(i)->FastRate(avg_waveforms, pe_to_mips);
+
+        // events_.at(i)->Decompose(avg_waveforms);
+        // events_.at(i)->Reconstruct(avg_waveforms);
+        // events_.at(i)->CalculateChi2();
+        std::string folder = "Results_SignalFlagThreshold_"+ std::to_string(GS->GetCaliPar<double>("PhysicsChannel.SignalFlagThreshold"))
+        +"_BinsOverThreshold_"+ std::to_string(GS->GetCaliPar<int>("PhysicsChannel.BinsOverThreshold"))
+        +"_TailLength_"+ std::to_string(GS->GetCaliPar<int>("PhysicsChannel.TailLength"));
+        events_.at(i)->SaveEvent(path_run_/boost::filesystem::path(folder), "clean");
+        events_.at(i)->SaveEvent(path_run_/boost::filesystem::path(folder), "raw");
+
+        events_.at(i)->DeleteHistograms();
+        events_.at(i)->DeleteWaveforms();
+    }
 
     std::cout << "\033[32;1mRun::Decomposing waveforms:\033[0m done!     " << std::endl;
 
@@ -926,6 +953,8 @@ void Run::SaveRates()
     TGraph* current[2];
     TGraph* injection[2];
     TGraph* injection_bg[2];
+    TGraph* ratios[3]; // Fastrate/OnlineRate
+
 
     for(int i = 0; i < 3; i++)
     {
@@ -935,7 +964,7 @@ void Run::SaveRates()
         fast_rates[i]->SetMarkerStyle(34);
         fast_rates[i]->SetMarkerSize(2.0);
         fast_rates[i]->SetMinimum(0);
-        fast_rates[i]->SetMaximum(600000);
+        fast_rates[i]->SetMaximum(700000);
         fast_rates[i]->GetXaxis()->SetTitle("time [Ms]");
         fast_rates[i]->GetXaxis()->SetNdivisions(405);
 
@@ -945,9 +974,19 @@ void Run::SaveRates()
         online_rates[i]->SetMarkerStyle(33);
         online_rates[i]->SetMarkerSize(2.0);
         online_rates[i]->SetMinimum(0);
-        online_rates[i]->SetMaximum(600000);
+        online_rates[i]->SetMaximum(700000);
         online_rates[i]->GetXaxis()->SetTitle("time [Ms]");
         online_rates[i]->GetXaxis()->SetNdivisions(405);
+
+        ratios[i] = new TGraph();
+        ratios[i]->SetName(("FastRateOnlineRateFWD"+std::to_string(i+1)).c_str());
+        ratios[i]->SetTitle(("FastRate/OnlineRate FWD"+std::to_string(i+1)).c_str());
+        ratios[i]->SetMarkerStyle(20);
+        ratios[i]->SetMarkerSize(2.0);
+        ratios[i]->SetMinimum(0);
+        ratios[i]->SetMaximum(10);
+        ratios[i]->GetXaxis()->SetTitle("time [Ms]");
+        ratios[i]->GetXaxis()->SetNdivisions(405);
     }
     for(int i = 3; i < 6; i++)
     {
@@ -957,7 +996,7 @@ void Run::SaveRates()
         online_rates[i]->SetMarkerStyle(29);
         online_rates[i]->SetMarkerSize(2.0);
         online_rates[i]->SetMinimum(0);
-        online_rates[i]->SetMaximum(600000);
+        online_rates[i]->SetMaximum(700000);
         online_rates[i]->GetXaxis()->SetTitle("time [Ms]");
         online_rates[i]->GetXaxis()->SetNdivisions(405);
     }
@@ -1026,8 +1065,14 @@ void Run::SaveRates()
 
         for(int j = 0; j < 3; j++)
         {
-            online_rates[j]->SetPoint(i, ts, events_.at(i)->GetRate()[j]);
-            fast_rates[j]->SetPoint(i, ts, events_.at(i)->GetRate(1)[j]);
+
+            double online = events_.at(i)->GetRate()[j];
+            double fast   = events_.at(i)->GetRate(1)[j];
+
+            online_rates[j]->SetPoint(i, ts, online);
+            fast_rates[j]->SetPoint(i, ts, fast);
+            //ratios[j]->SetPoint(i, ts, i);
+            ratios[j]->SetPoint(i, ts, (fast/online));
         }
         for(int j = 3; j < 6; j++)
         {
@@ -1043,10 +1088,15 @@ void Run::SaveRates()
         injection_bg[1]->SetPoint(i, ts, events_.at(i)->GetPV<double>("HERBg"));
     }
 
+    ratios[0]->SetMarkerColor(kRed);
+    ratios[1]->SetMarkerColor(kBlue);
+    ratios[2]->SetMarkerColor(kGreen+2);
+
     for(int i = 0; i < 3; i++)
     {
         fast_rates[i]->Write();
         online_rates[i]->Write();
+        ratios[i]->Write();
     }
     for(int i = 3; i < 6; i++)
     {
@@ -1089,6 +1139,21 @@ void Run::SaveRates()
 
     leg->Draw("same");
     c.Write();
+
+    title += "_ratios";
+    TCanvas c2(title.c_str(),title.c_str(),500,500);
+    c2.cd();
+    ratios[0]->Draw("AP");
+    ratios[1]->Draw("P");
+    ratios[2]->Draw("P");
+
+    leg->Clear();
+    leg->AddEntry(ratios[0], ratios[0]->GetTitle(),"P");
+    leg->AddEntry(ratios[1], ratios[1]->GetTitle(),"P");
+    leg->AddEntry(ratios[2], ratios[2]->GetTitle(),"P");
+    leg->Draw("same");
+
+    c2.Write();
 
     rfile->Close();
     delete rfile;
@@ -1142,6 +1207,12 @@ std::vector<PhysicsChannel*> Run::GetPhysicsChannel(std::string name)
 
 int Run::WriteNTuple(path path_ntuple){
 
+    std::cout << "\033[33;1mRun::Writing NTuples:\033[0m running" << "\r" << std::flush;
+
+    double wall0 = claws::get_wall_time();
+    double cpu0  = claws::get_cpu_time();
+
+
     if(path_ntuple.string() == "")
     {
         if(!boost::filesystem::is_directory(path_run_/boost::filesystem::path("Calibration")) )
@@ -1150,7 +1221,8 @@ int Run::WriteNTuple(path path_ntuple){
         }
         path_ntuple = path_run_/boost::filesystem::path("Calibration");
     }
-    path_ntuple = path_ntuple / ("CLWv2_beta_" +to_string(run_nr_) + "_" + to_string((int)tsMin) + ".root" );
+    path_ntuple = path_ntuple / ("CLW_" +to_string(run_nr_) + "_" + to_string(int(tsMin)) + "_v"+std::to_string(GS->GetCaliPar<int>("General.CalibrationVersion"))+".root" );
+
     TFile * root_file  = new TFile(path_ntuple.string().c_str(), "RECREATE");
 
     // this->WriteTimeStamp(root_file);
@@ -1158,6 +1230,15 @@ int Run::WriteNTuple(path path_ntuple){
     this->WriteTree(root_file);
 
     root_file->Close();
+
+    std::cout << "\033[32;1mRun::Writing NTuples:\033[0m done!     " << std::endl;
+
+    double wall1 = claws::get_wall_time();
+    double cpu1  = claws::get_cpu_time();
+
+    cout << "Wall Time = " << wall1 - wall0 << endl;
+    cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+
 
     return 0;
 };

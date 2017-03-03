@@ -99,6 +99,9 @@ class Event{
         virtual Channel*                                GetChannel(std::string name);
         std::map<std::string, Channel*>                 GetChannels();
         std::map<std::string, std::vector<float>*>      GetWaveforms();
+
+        virtual void CreateHistograms();
+        virtual std::map<std::string, TH1*> GetHistograms();
     // protected:
 
     //    static int id_;
@@ -130,11 +133,12 @@ class PhysicsEvent : public Event{
         void                   LoadOnlineRate();
 
         void                   SetUpWaveforms();
+        void                   SetUpWaveforms2();
         void                   FastRate(std::map<std::string, std::vector<float>*> avg_waveforms, std::map<std::string, double> pe_to_mips);
         void                   Decompose(std::map<std::string, std::vector<float>*> avg_waveforms);
         void                   Reconstruct(std::map<std::string, std::vector<float>*> avg_waveforms);
         void                   CalculateChi2();
-        void                   SaveEvent(boost::filesystem::path result_folder);
+        void                   SaveEvent(boost::filesystem::path result_folder, std::string type = "raw");
 
         // Type O: online       double[6]
         // Type 1: fast offline double[3]
@@ -146,6 +150,9 @@ class PhysicsEvent : public Event{
         bool                   GetInjection() const;
         int                    GetScrubbing() const;
         double                 GetUnixtime()  const;
+
+        virtual void CreateHistograms(std::string type = "raw");
+        virtual std::map<std::string, TH1*> GetHistograms(std::string type = "raw");
 
         template<typename T>
         T GetPV(std::string pv)
