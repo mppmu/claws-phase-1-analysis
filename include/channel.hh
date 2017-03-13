@@ -114,7 +114,7 @@ class PhysicsChannel : public Channel
             void InitMipWF();
 
             void BuildCleanWF();
-
+            void RunFFT();
 
         void FastRate(std::vector<float>* avg_waveform, double pe_to_mip = 16.);
         void Decompose(std::vector<float>* avg_waveform);

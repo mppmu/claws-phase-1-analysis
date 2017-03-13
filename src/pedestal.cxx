@@ -19,9 +19,9 @@
 #include "pedestal.hh"
 
 
-Pedestal::Pedestal(int run_nr):run_nr_(run_nr)
+Pedestal::Pedestal(int run_nr, int int_nr):run_nr_(run_nr), int_nr_(int_nr)
 {
-    for(auto &ch : GS->GetChannels())
+    for(auto &ch : GS->GetChannels(1))
     {
         std::string title    = "Run-" + std::to_string(run_nr_) + "-" + ch + "_pd";
         h_[ch]               = new TH1I(title.c_str(), title.c_str(), GS->GetNBitsScope() , GS->GetXLow(), GS->GetXUp());
@@ -33,6 +33,20 @@ Pedestal::Pedestal(int run_nr):run_nr_(run_nr)
         g_[ch]->SetMarkerColor(kRed);
         g_[ch]->SetMarkerSize(2);
     }
+    
+    for(auto &ch : GS->GetChannels(2))
+    {
+        std::string title    = "Run-" + std::to_string(int_nr) + "-" + ch + "_pd";
+        h_[ch]               = new TH1I(title.c_str(), title.c_str(), GS->GetNBitsScope() , GS->GetXLow(), GS->GetXUp());
+        g_[ch]               = new TGraphErrors();
+        title                = "Run-" + std::to_string(int_nr) + "-" + ch + "_pdg";
+        g_[ch]->SetName(title.c_str());
+        // This should be eventually removed by my own global root style for the TBrowser
+        g_[ch]->SetMarkerStyle(2);
+        g_[ch]->SetMarkerColor(kRed);
+        g_[ch]->SetMarkerSize(2);
+    }
+
     for(auto &ch : GS->GetChannels(1))
     {
         // Fucking SetRangeUser does not work for TGraphs because the Min/Max is recalculated before drawing.

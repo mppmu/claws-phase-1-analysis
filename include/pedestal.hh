@@ -20,7 +20,7 @@
 class Pedestal{
 
     public:
-                                            Pedestal(int run_nr);
+                                            Pedestal(int run_nr, int int_nr);
         virtual                             ~Pedestal();
 
         void                                AddEvent(std::map<std::string, TH1I*> event);
@@ -36,7 +36,7 @@ class Pedestal{
         std::map<std::string, TH1I*>             h_;
         std::map<std::string, TGraphErrors*>     g_;
         int                                 run_nr_;
-
+        int                                 int_nr_;
 
 
 };

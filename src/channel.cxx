@@ -503,6 +503,11 @@ void PhysicsChannel::BuildCleanWF()
     }
 }
 
+void PhysicsChannel::RunFFT()
+{
+    
+}
+
 void PhysicsChannel::FastRate(std::vector<float>* avg_waveform, double pe_to_mip)
 {
     fast_rate_ = 0;

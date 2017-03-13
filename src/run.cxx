@@ -47,6 +47,7 @@
 // OpenMP
 #include <omp.h>
 
+
 // google performance tools
 // #include <gperftools/heap-profiler.h>
 // #include <gperftools/profiler.h>
@@ -75,8 +76,7 @@ Run::Run(boost::filesystem::path p)
     // Extract the runnumer from the path to the folder and convert it to int.
     run_nr_     = atoi(path_run_.filename().string().substr(4,20).c_str());
     run_nr_str_ = path_run_.filename().string().substr(4,20);
-    pedestal_   = new Pedestal(run_nr_);
-    gain_       = new Gain(run_nr_);
+    int_nr_     = run_nr_;
     tsMin       = 1e10;
     tsMax       = 0;
     cout << "---------------------------------------------------------" << endl;
@@ -108,14 +108,13 @@ void Run::SynchronizeFiles()
     }
 
     if( !boost::filesystem::is_directory(path_run_/path("data_root"))
-        && boost::filesystem::is_empty(path_run_/path("data_root"))    )
+        || boost::filesystem::is_empty(path_run_/path("data_root"))    )
     {
         cout << "data_root folder does not exits!" << endl;
         exit(-1);
     }
 
-    if( !boost::filesystem::is_directory(path_run_/path("int_root"))
-        && boost::filesystem::is_empty(path_run_/path("int_root"))     )
+    if( !boost::filesystem::is_directory(path_run_/path("int_root")))
     {
         cout << "int_root folder does not exits!" << endl;
         exit(-1);
@@ -157,7 +156,7 @@ void Run::SynchronizeFiles()
                 path path_online_rate = path_run_ / ratefile;
 
                 // Check if the .ini & online monitor exist for the event.
-                if( boost::filesystem::exists( path_file_ini) && boost::filesystem::exists( path_online_rate))
+                if( boost::filesystem::exists( path_file_ini) )
                 {
                         events_.push_back(new PhysicsEvent(path_file_root, path_file_ini, path_online_rate));
                 }
@@ -167,19 +166,28 @@ void Run::SynchronizeFiles()
             }
         }
 //    }
-
     path path_int = path_run_/path("int_root");
+    while(boost::filesystem::is_empty(path_int) || !exists(path_int))
+    {
+        int new_run = atoi(path_int.parent_path().filename().string().substr(4,6).c_str())-1;
+        int_nr_ = new_run;
+        path_int = path_run_.parent_path()/("Run-" + to_string(new_run) );
+        path_int /= "int_root";
+    }
+
     folder_content.clear();
+
     copy(directory_iterator(path_int), directory_iterator(), back_inserter(folder_content));
     std::sort(folder_content.begin(),folder_content.end());
 
 //    #pragma omp parallel num_threads(7)
 //    {
     //    #pragma omp for ordered schedule(dynamic,1)
+
         for (signed int i=0; i<folder_content.size(); ++i)
         {
             if(    boost::filesystem::is_regular_file(folder_content.at(i))
-                && starts_with((folder_content.at(i)).filename().string(), ("Run-"+ to_string(run_nr_) +"-Int") )
+                && starts_with((folder_content.at(i)).filename().string(), ("Run-"+ to_string(int_nr_) +"-Int") )
                 && ends_with((folder_content.at(i)).filename().string(), ".root"))
                 {
                 // Get the paths to the .root file of the event.
@@ -202,6 +210,8 @@ void Run::SynchronizeFiles()
         }
         cout << "\033[32;1mRun::Synchronizing run:\033[0m done!   " << "\r" << std::endl;
 
+    pedestal_   = new Pedestal(run_nr_, int_nr_);
+    gain_       = new Gain(int_nr_);
 
 };
 
@@ -527,7 +537,7 @@ void Run::SavePedestal()
         boost::filesystem::create_directory(path_run_/path("Calibration"));
     }
 
-    std::string filename = path_run_.string()+"/Calibration/run-"+run_nr_str_+"_pedestal_subtraction"+"_v"+ std::to_string(GS->GetCaliPar<double>("General.CalibrationVersion"))+".root";
+    std::string filename = path_run_.string()+"/Calibration/run-"+run_nr_str_+"_pedestal_subtraction"+"_v"+ std::to_string(GS->GetCaliPar<int>("General.CalibrationVersion"))+".root";
     TFile *rfile = new TFile(filename.c_str(), "RECREATE");
 
     pedestal_->SavePedestal(rfile);
@@ -944,7 +954,7 @@ void Run::SaveRates()
         boost::filesystem::create_directory(path_run_/path("Calibration"));
     }
 
-    std::string filename = path_run_.string()+"/Calibration/run-"+run_nr_str_+"_rates_version_"+ std::to_string(GS->GetCaliPar<double>("General.CalibrationVersion"))+".root";
+    std::string filename = path_run_.string()+"/Calibration/run-"+run_nr_str_+"_rates_version_"+ std::to_string(GS->GetCaliPar<int>("General.CalibrationVersion"))+".root";
     TFile *rfile = new TFile(filename.c_str(), "RECREATE");
 
 

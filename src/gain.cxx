@@ -17,11 +17,11 @@
 #include "globalsettings.hh"
 
 
-Gain::Gain(int run_nr):run_nr_(run_nr)
+Gain::Gain(int int_nr):int_nr_(int_nr)
 {
     for(auto & ivec : GS->GetChannels(2))
     {
-        std::string title    = "run_" + std::to_string(run_nr_) + "_" + ivec + "_gain";
+        std::string title    = "run_" + std::to_string(int_nr_) + "_" + ivec + "_gain";
         std::replace(title.begin(), title.end(), '-','_');
         channels_.push_back(new GainChannel(ivec, new TH1I(title.c_str(), title.c_str(),140,-210 ,2610),0, new std::vector<float>(230,0)));
     }
@@ -122,7 +122,7 @@ void Gain::SaveGain(boost::filesystem::path path_run)
         boost::filesystem::create_directory(path_run/boost::filesystem::path("Calibration"));
     }
 
-    std::string fname = path_run.string()+"/Calibration/run_"+std::to_string(run_nr_)+"_gain" +"_v"+ std::to_string(GS->GetCaliPar<int>("General.CalibrationVersion"))+".root";
+    std::string fname = path_run.string()+"/Calibration/run_"+std::to_string(int_nr_)+"_gain" +"_v"+ std::to_string(GS->GetCaliPar<int>("General.CalibrationVersion"))+".root";
     TFile *rfile = new TFile(fname.c_str(), "RECREATE");
 
     TGraph* total_gain = new TGraph();
@@ -221,7 +221,7 @@ void Gain::SaveAvg(boost::filesystem::path path_run)
         boost::filesystem::create_directory(path_run/boost::filesystem::path("Calibration"));
     }
 
-    std::string fname = path_run.string()+"/Calibration/run_"+std::to_string(run_nr_)+"_avg1pe" +"_v"+ std::to_string(GS->GetCaliPar<int>("General.CalibrationVersion"))+".root";
+    std::string fname = path_run.string()+"/Calibration/run_"+std::to_string(int_nr_)+"_avg1pe" +"_v"+ std::to_string(GS->GetCaliPar<int>("General.CalibrationVersion"))+".root";
     TFile *rfile = new TFile(fname.c_str(), "RECREATE");
 
     TGraph* total_avg1pe = new TGraph();
@@ -264,7 +264,7 @@ void Gain::WfToHist()
     {
         delete ivec->avg_hist;
 
-        std::string title = "run_" + std::to_string(run_nr_) + "_" + ivec->name + "_avg1pe";
+        std::string title = "run_" + std::to_string(int_nr_) + "_" + ivec->name + "_avg1pe";
         std::replace(title.begin(), title.end(), '-','_');
         ivec->avg_hist = new TH1F(title.c_str(), title.c_str(),ivec->avg_wf->size() + 150 , -0.5 , ivec->avg_wf->size()+0.5 + 150 );
         for(unsigned i=0; i < ivec->avg_wf->size(); i++)

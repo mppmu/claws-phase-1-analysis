@@ -434,15 +434,23 @@ void PhysicsEvent::LoadOnlineRate(){
 
     std::ifstream ratefile(path_online_rate_.string());
 
-    if (!ratefile){
-        cerr << "not file" << endl;
-        exit(1);
+    if (ratefile)
+    {
+        double dummy;
+        ratefile >> online_rate_[0] >> online_rate_[1] >> online_rate_[2] >> dummy >> online_rate_[3] >> online_rate_[4] >> online_rate_[5] >> dummy;
     }
-    double dummy;
-    ratefile >> online_rate_[0] >> online_rate_[1] >> online_rate_[2] >> dummy >> online_rate_[3] >> online_rate_[4] >> online_rate_[5] >> dummy;
-
+    else
+    {
+        cout << "\033[1;31mOnlinerate missing:   \033[0m" << nr_ << endl;
+        for(int i=0; i<6; i++)
+        {
+            online_rate_[i] = 0;
+        }
+    }
     ratefile.close();
 };
+
+
 void PhysicsEvent::SetUpWaveforms()
 {
     //TODO Validation

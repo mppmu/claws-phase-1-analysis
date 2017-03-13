@@ -163,6 +163,7 @@ class Run{
         double tsMax;
 
         int run_nr_;
+        int int_nr_;
         std::string run_nr_str_;
 
         TTree *tree_online;

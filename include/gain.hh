@@ -40,7 +40,7 @@ struct GainChannel
 class Gain
 {
     public:
-                                            Gain(int run_nr);
+                                            Gain(int int_nr);
         virtual                             ~Gain();
 
         void                                AddValue(std::map<std::string, double> values);
@@ -64,7 +64,7 @@ class Gain
         std::vector<float> *                GetWaveform(std::string channel);
 
     private:
-        int         run_nr_;
+        int         int_nr_;
         std::vector<GainChannel*> channels_;
         // std::vector<std::string> channel_list_;
         // std::vector<TH1I*> channels_;
