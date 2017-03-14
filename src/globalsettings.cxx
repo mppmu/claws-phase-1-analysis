@@ -22,6 +22,17 @@ std::unique_ptr<claws::GlobalSettings>  GS = std::unique_ptr<claws::GlobalSettin
 
 namespace claws {
 
+    bool CheckIntFolder(boost::filesystem::path p)
+    {
+        // Function returns true if folder exists and is not empty.
+        bool int_folder_good = false;
+        if( exists(p) )
+        {
+            if( !boost::filesystem::is_empty(p) ) int_folder_good = true;
+        }
+        return int_folder_good;
+    };
+
     void handler(int sig) {
         void *array[10];
         size_t size;

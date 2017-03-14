@@ -66,6 +66,7 @@ namespace claws {
         ORION           // assigned 5
     };
 
+    bool CheckIntFolder(boost::filesystem::path p);
     double get_wall_time();
     double get_cpu_time();
     void print_local_time();

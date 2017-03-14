@@ -167,7 +167,8 @@ void Run::SynchronizeFiles()
         }
 //    }
     path path_int = path_run_/path("int_root");
-    while(boost::filesystem::is_empty(path_int) || !exists(path_int))
+
+    while( !claws::CheckIntFolder(path_int) )
     {
         int new_run = atoi(path_int.parent_path().filename().string().substr(4,6).c_str())-1;
         int_nr_ = new_run;
