@@ -112,6 +112,8 @@ namespace claws {
             GlobalSettings* SetDate(int day, int month, int year = 16);
 
 
+
+
             std::vector <boost::filesystem::path> GetNtpFiles(float tsMin = 0, float tsMax = 0);
             std::vector <boost::filesystem::path> GetRuns(boost::filesystem::path p);
 
@@ -121,6 +123,7 @@ namespace claws {
                 return config_calibration_.get<T>( par_name );
             };
 
+            void SaveConfigFiles(boost::filesystem::path folder);
 
 
         private:

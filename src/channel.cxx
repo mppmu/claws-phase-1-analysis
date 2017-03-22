@@ -10,6 +10,11 @@
 
 #include <utility>
 #include <assert.h>
+#include <stdio.h>
+#include <math.h>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_fft_real.h>
+#include <gsl/gsl_fft_halfcomplex.h>
 
 #include "channel.hh"
 #include "globalsettings.hh"
@@ -505,7 +510,13 @@ void PhysicsChannel::BuildCleanWF()
 
 void PhysicsChannel::RunFFT()
 {
-    
+    gsl_fft_real_wavetable *        real;
+    gsl_fft_halfcomplex_wavetable * hc;
+    gsl_fft_real_workspace *        work;
+
+//    clean_wf_.size()
+    work = gsl_fft_real_workspace_alloc (clean_wf_->size());
+    real = gsl_fft_real_wavetable_alloc (clean_wf_->size());
 }
 
 void PhysicsChannel::FastRate(std::vector<float>* avg_waveform, double pe_to_mip)

@@ -1103,9 +1103,16 @@ void Run::SaveRates()
     ratios[1]->SetMarkerColor(kBlue);
     ratios[2]->SetMarkerColor(kGreen+2);
 
+    TF1 *fit = new TF1("fit","[0]");
+    fast_rates[0]->Fit(fit,"Q");
+    delete fit;
     for(int i = 0; i < 3; i++)
     {
+        TF1 *fit = new TF1("fit","[0]");
+        fast_rates[i]->Fit(fit,"Q");
         fast_rates[i]->Write();
+        delete fit;
+        
         online_rates[i]->Write();
         ratios[i]->Write();
     }
@@ -1445,7 +1452,15 @@ Run::~Run() {
             delete int_events_.at(i);
             int_events_.at(i) = NULL;
         }
+
   //  }
+
+    if(!boost::filesystem::is_directory(path_run_/path("Calibration")) )
+    {
+      boost::filesystem::create_directory(path_run_/path("Calibration"));
+    }
+    GS->SaveConfigFiles(path_run_/path("Calibration"));
+
     delete pedestal_;
     delete gain_;
 

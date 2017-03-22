@@ -128,6 +128,7 @@ class PhysicsChannel : public Channel
        std::vector<float>*                clean_wf_     = NULL;
        std::vector<std::uint8_t>*         mip_wf_       = NULL;
 
+
        TH1F*                   GetWaveformHist();
 
        void                 CreateHistogram(std::string type = "raw");

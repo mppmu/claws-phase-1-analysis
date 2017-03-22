@@ -5,7 +5,7 @@ ifeq ($(shell uname -s),Linux)
 	#CFLAGS += -fopenmp `root-config --cflags` -I/remote/pcilc3/software/gperftools/include -g -rdynamic
 	CFLAGS += -fopenmp `root-config --cflags` -c -fmessage-length=0
 	# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
-	LFLAGS += -fopenmp `root-config --libs --glibs` -lboost_system -lboost_filesystem
+	LFLAGS += -fopenmp `root-config --libs --glibs` -lboost_system -lboost_filesystem -lgsl
 	# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
 	CC = g++
 endif
@@ -18,7 +18,7 @@ ifeq ($(shell uname -s),Darwin)
 	# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
 #	LFLAGS += `root-config --libs --glibs` -L/opt/boost/boost/bin.v2/libs/system/build/darwin-4.2.1/release/threading-multi -lboost_system -L/opt/boost/boost/bin.v2/libs/filesystem/build/darwin-4.2.1/release/threading-multi -lboost_filesystem
 #	LFLAGS += `root-config --libs --glibs` -L/opt/boost-1.63.0/lib -lboost_system-mt -lboost_filesystem-mt
-  LFLAGS += `root-config --libs --glibs` -lboost_system -lboost_filesystem
+  	LFLAGS += `root-config --libs --glibs` -lboost_system -lboost_filesystem
 	# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
 #	CC = g++-4.9
 #	CC = /usr/local/opt/llvm/bin/clang++
