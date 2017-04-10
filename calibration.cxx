@@ -165,6 +165,27 @@ int main(int argc, char* argv[]) {
 
 
 
+// 	std::vector <boost::filesystem::path> runs = GS->GetRuns(path(argv[1]));
+// 	for(unsigned i = 0 ; i<runs.size(); i++)
+// 	{
+//
+// 	//	std::cout << runs.at(i) << std::endl;
+// 		Run* myrun = new Run(runs.at(i));
+//
+// 		myrun->SynchronizeFiles();
+//
+// 		myrun->LoadData();
+// 		myrun->SubtractPedestal2();
+// //		myrun->DeletePhysicsData();
+// 		myrun->GainCalibration();
+// 		myrun->Average1PE();
+// 		myrun->WaveformDecomposition();
+// 		myrun->SaveRates();
+// 		std::string day = runs.at(i).parent_path().filename().string();
+// 		myrun->WriteNTuple(path(GS->ResetHook()->SetData()->SetNtp()->SetDetector(claws::CLW)->GetHook()/day));
+// 		delete myrun;
+// 	}
+
 	std::vector <boost::filesystem::path> runs = GS->GetRuns(path(argv[1]));
 	for(unsigned i = 0 ; i<runs.size(); i++)
 	{
@@ -179,12 +200,18 @@ int main(int argc, char* argv[]) {
 //		myrun->DeletePhysicsData();
 		myrun->GainCalibration();
 		myrun->Average1PE();
-		myrun->WaveformDecomposition();
+		myrun->WaveformDecomposition2();
 		myrun->SaveRates();
-		std::string day = runs.at(i).parent_path().filename().string();
-		myrun->WriteNTuple(path(GS->ResetHook()->SetData()->SetNtp()->SetDetector(claws::CLW)->GetHook()/day));
+		// std::string day = runs.at(i).parent_path().filename().string();
+		// myrun->WriteNTuple(path(GS->ResetHook()->SetData()->SetNtp()->SetDetector(claws::CLW)->GetHook()/day));
 		delete myrun;
 	}
+
+
+
+
+
+
 //	hendrik_file.close();
 //	app->Run();
 

@@ -72,6 +72,8 @@ build/%.o: ./%.cxx
 	@echo 'Finished building: $@ from: $<'
 	@echo ' '
 
+docs:
+	doxygen doxygen_config
 
 clean:
 	@echo 'Cleaning up!'

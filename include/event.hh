@@ -17,7 +17,10 @@
 #include <cstdlib>
 #include <typeinfo>
 // boost
+#define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
+#undef BOOST_NO_CXX11_SCOPED_ENUMS
+
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/replace.hpp>
@@ -118,7 +121,9 @@ class Event{
         std::map<std::string, Channel*> channels_;
 };
 
-
+/**
+*   Description of the PhysicsEvent class.
+*/
 class PhysicsEvent : public Event{
 
     public:
@@ -139,6 +144,7 @@ class PhysicsEvent : public Event{
         void                   Reconstruct(std::map<std::string, std::vector<float>*> avg_waveforms);
         void                   CalculateChi2();
         void                   SaveEvent(boost::filesystem::path result_folder, std::string type = "raw");
+
 
         // Type O: online       double[6]
         // Type 1: fast offline double[3]

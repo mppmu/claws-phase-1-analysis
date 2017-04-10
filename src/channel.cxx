@@ -476,14 +476,19 @@ void PhysicsChannel::InitCleanWF()
 
 void PhysicsChannel::InitMipWF()
 {
-    // TODO not calling a clear, but just setting every entry to 0 by std::fill would be more efficient. However, this will most likely
-    //      online get called on an empty vecotr anyway.
+    /** \todo not calling a clear, but just setting every entry to 0 by std::fill would be more efficient. However, this will most likely
+    *      online get called on an empty vecotr anyway.
+    */
     mip_wf_->clear();
     mip_wf_->resize(waveform_->size(), 0);
 };
 
 void PhysicsChannel::BuildCleanWF()
 {
+    /**
+     * [PhysicsChannel::RunFFT descript]
+     * \todo Increase the tail length
+     */
     double threshold            = GS->GetCaliPar<double>("PhysicsChannel.SignalFlagThreshold");
     int    bins_over_threshold  = int(GS->GetCaliPar<double>("PhysicsChannel.BinsOverThreshold"));
     bool fillflag = false;

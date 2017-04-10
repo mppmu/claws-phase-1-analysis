@@ -370,8 +370,9 @@ PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini): Event(f
 
 PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini, const path &file_online_rate): PhysicsEvent(file_root, file_ini)
 {
-    path_online_rate_ = file_online_rate;
+  path_online_rate_ = file_online_rate;
 };
+
 
 PhysicsEvent::~PhysicsEvent() {
 	// TODO Auto-generated destructor stub
@@ -405,6 +406,7 @@ PhysicsEvent::~PhysicsEvent() {
 //     // cout << "Listing gDirectory in PhysicsEvent::LoadRootFile() after closing the file!" << endl;
 //     // gDirectory->ls();
 // }
+
 
 void PhysicsEvent::LoadIniFile(){
 
@@ -447,13 +449,35 @@ void PhysicsEvent::LoadOnlineRate(){
             online_rate_[i] = 0;
         }
     }
+
     ratefile.close();
+
+
+
+    for(unsigned i = 0; i < 4; i++)
+    {
+      if(!ends_with(GS->GetChannels(1).at(i), "4"))
+      {
+        pt_.put("OnlineRate." + GS->GetChannels(1).at(i), online_rate_[i]);
+      }
+    }
+    for(unsigned i = 4; i < 8; i++)
+    {
+      if(!ends_with(GS->GetChannels(1).at(i), "4"))
+      {
+        pt_.put("OnlineRate." + GS->GetChannels(1).at(i), online_rate_[i-1]);
+      }
+    }
+
+
 };
 
 
 void PhysicsEvent::SetUpWaveforms()
 {
-    //TODO Validation
+    /**
+     * [PhysicsEvent::SetUpWaveforms2 description]
+     */
     for(auto& mvec : channels_)
     {
         if(!ends_with(mvec.first, "-INT") && !ends_with(mvec.first, "4"))
@@ -492,10 +516,27 @@ void PhysicsEvent::FastRate(std::map<std::string, std::vector<float>*> avg_wavef
         PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(channels_[tmp_name]);
         tmp->FastRate(mvec.second, pe_to_mips[tmp_name]);
         //        tmp->Decompose();
-        if(tmp_name == "FWD1") fast_rate_[0] = tmp->GetRate();
-        else if(tmp_name == "FWD2") fast_rate_[1] = tmp->GetRate();
-        else if(tmp_name == "FWD3") fast_rate_[2] = tmp->GetRate();
+        // double rate = tmp->GetRate();
+
+        if(tmp_name == "FWD1")
+        {
+          fast_rate_[0] = tmp->GetRate();
+          pt_.put("FastRate." + tmp_name, fast_rate_[0]);
+        }
+        else if(tmp_name == "FWD2")
+        {
+          fast_rate_[1] = tmp->GetRate();
+          pt_.put("FastRate." + tmp_name, fast_rate_[1]);
+        }
+        else if(tmp_name == "FWD3")
+        {
+          fast_rate_[2] = tmp->GetRate();
+          pt_.put("FastRate." + tmp_name, fast_rate_[2]);
+        }
+
     }
+
+
 };
 
 void PhysicsEvent::Decompose(std::map<std::string, std::vector<float>*> avg_waveforms)
@@ -559,7 +600,16 @@ void PhysicsEvent::SaveEvent(boost::filesystem::path folder, std::string type)
 
     rfile->Close();
     delete rfile;
+
+
+    boost::property_tree::write_ini(folder.string()+"/event_"+std::to_string(nr_)+".ini", pt_);
+
+    // boost::filesystem::path dest = folder/path_file_ini_.filename();
+    // boost::filesystem::copy_file(path_file_ini_, dest, copy_option::overwrite_if_exists );
 };
+
+
+
 
 void PhysicsEvent::CreateHistograms(std::string type)
 {

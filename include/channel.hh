@@ -31,7 +31,11 @@ using namespace std;
 // TODO(mgabriel@mpp.mpg.de): Add some description
 //----------------------------------------------------------------------------------------------
 
-
+/**
+ *
+ * @param  file [description]
+ * @return      [description]
+ */
 class Channel
 {
     public:

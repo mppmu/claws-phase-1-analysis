@@ -134,7 +134,7 @@ void Run::SynchronizeFiles()
 //    #pragma omp parallel num_threads(7)
 //    {
 //       #pragma omp for ordered schedule(dynamic,1)
-        for ( signed int i=0; i < folder_content.size(); ++i)
+        for ( unsigned int i=0; i < folder_content.size(); ++i)
         {
     //     //claws::ProgressBar((itr - folder_content.begin()+1.)/(folder_content.end()-folder_content.begin()));
             if(    boost::filesystem::is_regular_file(folder_content.at(i))
@@ -185,7 +185,7 @@ void Run::SynchronizeFiles()
 //    {
     //    #pragma omp for ordered schedule(dynamic,1)
 
-        for (signed int i=0; i<folder_content.size(); ++i)
+        for (unsigned int i=0; i<folder_content.size(); ++i)
         {
             if(    boost::filesystem::is_regular_file(folder_content.at(i))
                 && starts_with((folder_content.at(i)).filename().string(), ("Run-"+ to_string(int_nr_) +"-Int") )
@@ -285,8 +285,8 @@ void Run::LoadMetaData()
 //        #pragma omp for schedule(dynamic,1)
         for(unsigned int i=0; i< events_.size();i++)
         {
-            events_.at(i)->LoadOnlineRate();
             events_.at(i)->LoadIniFile();
+            events_.at(i)->LoadOnlineRate();
             double ts = events_.at(i)->GetUnixtime();
             if(tsMin > ts ) tsMin = ts;
             if(tsMax < ts ) tsMax = ts;
@@ -859,11 +859,14 @@ void Run::WaveformDecomposition2()
         // events_.at(i)->Decompose(avg_waveforms);
         // events_.at(i)->Reconstruct(avg_waveforms);
         // events_.at(i)->CalculateChi2();
-        std::string folder = "Results_SignalFlagThreshold_"+ std::to_string(GS->GetCaliPar<double>("PhysicsChannel.SignalFlagThreshold"))
-        +"_BinsOverThreshold_"+ std::to_string(GS->GetCaliPar<int>("PhysicsChannel.BinsOverThreshold"))
-        +"_TailLength_"+ std::to_string(GS->GetCaliPar<int>("PhysicsChannel.TailLength"));
-        events_.at(i)->SaveEvent(path_run_/boost::filesystem::path(folder), "clean");
-        events_.at(i)->SaveEvent(path_run_/boost::filesystem::path(folder), "raw");
+        // std::string folder = "Results_SignalFlagThreshold_"+ std::to_string(GS->GetCaliPar<double>("PhysicsChannel.SignalFlagThreshold"))
+        // +"_BinsOverThreshold_"+ std::to_string(GS->GetCaliPar<int>("PhysicsChannel.BinsOverThreshold"))
+        // +"_TailLength_"+ std::to_string(GS->GetCaliPar<int>("PhysicsChannel.TailLength"));
+        // events_.at(i)->SaveEvent(path_run_/boost::filesystem::path(folder), "clean");
+        // events_.at(i)->SaveEvent(path_run_/boost::filesystem::path(folder), "raw");
+
+        events_.at(i)->SaveEvent(path_run_/boost::filesystem::path("Results"), "clean");
+        events_.at(i)->SaveEvent(path_run_/boost::filesystem::path("Results"), "raw");
 
         events_.at(i)->DeleteHistograms();
         events_.at(i)->DeleteWaveforms();
@@ -1090,8 +1093,16 @@ void Run::SaveRates()
             online_rates[j]->SetPoint(i, ts, events_.at(i)->GetRate()[j]);
         }
 
-        current[0]->SetPoint(i, ts, events_.at(i)->GetPV<double>("LERCurrent"));
-        current[1]->SetPoint(i, ts, events_.at(i)->GetPV<double>("HERCurrent"));
+        try
+        {
+          current[0]->SetPoint(i, ts, events_.at(i)->GetPV<double>("LERCurrent"));
+          current[1]->SetPoint(i, ts, events_.at(i)->GetPV<double>("HERCurrent"));
+        }
+        catch(boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::property_tree::ptree_bad_path> >)
+        {
+          current[0]->SetPoint(i, ts, -1);
+          current[1]->SetPoint(i, ts, -1);
+        }
         injection[0]->SetPoint(i, ts, events_.at(i)->GetPV<double>("LERInj"));
         injection[1]->SetPoint(i, ts, events_.at(i)->GetPV<double>("HERInj"));
 
@@ -1112,7 +1123,7 @@ void Run::SaveRates()
         fast_rates[i]->Fit(fit,"Q");
         fast_rates[i]->Write();
         delete fit;
-        
+
         online_rates[i]->Write();
         ratios[i]->Write();
     }
@@ -1387,9 +1398,16 @@ int Run::WriteTree(TFile* file, std::string type)
         fast_rate[0] = events_.at(i)->GetRate(1)[0];
         fast_rate[1] = events_.at(i)->GetRate(1)[1];
         fast_rate[2] = events_.at(i)->GetRate(1)[2];
-
+      try
+      {
         current[0] = events_.at(i)->GetPV<double>("LERCurrent");
         current[1] = events_.at(i)->GetPV<double>("HERCurrent");
+      }
+      catch(boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::property_tree::ptree_bad_path> >)
+      {
+        current[0] = -1;
+        current[1] = -1;
+      }
 
         injection[0] = events_.at(i)->GetPV<double>("LERInj");
         injection[1] = events_.at(i)->GetPV<double>("HERInj");
@@ -1403,7 +1421,7 @@ int Run::WriteTree(TFile* file, std::string type)
     t_auto->Write();
     t_inj->Write();
     t_comb->Write();
-
+    return 0;
 };
 
 void Run::DrawPedestal()
