@@ -581,21 +581,40 @@ void PhysicsEvent::Rate(std::map<std::string, double> pe_to_mips)
 
 void PhysicsEvent::Decompose(std::map<std::string, std::vector<float>*> avg_waveforms)
 {
-    //TODO Validation
-    std::vector<std::string> keys;
+    /**
+     * [for description]
+     * @param  i [description]
+     * @return   [description]
+     * \todo
+     */
+    // std::vector<std::string> keys;
+    //
+    // for(auto& mvec : avg_waveforms)
+    // {
+    //     keys.push_back(mvec.first);
+    // }
+    //
+    // for(auto& mvec : avg_waveforms)
+    // {
+    //     std::string tmp_name = mvec.first;
+    //     replace_last(tmp_name, "-INT", "");
+    //     PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(channels_[tmp_name]);
+    //     double chi2 = tmp->DecomposeV2(mvec.second);
+    //     pt_.put("DecompositionResults." + tmp_name, chi2);
+    // }
 
-    for(auto& mvec : avg_waveforms)
-    {
-        keys.push_back(mvec.first);
-    }
+    std::vector<std::string> vch = GS->GetChannels(1);
 
-    for(auto& mvec : avg_waveforms)
+    #pragma omp parallel for num_threads(6) firstprivate(avg_waveforms)
+    for(unsigned i = 0; i < vch.size(); i++)
     {
-        std::string tmp_name = mvec.first;
-        replace_last(tmp_name, "-INT", "");
-        PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(channels_[tmp_name]);
-        double chi2 = tmp->DecomposeV2(mvec.second);
-        pt_.put("DecompositionResults." + tmp_name, chi2);
+        std::string ch_name = vch.at(i);
+        if(!ends_with(ch_name, "4"))
+        {
+            PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(channels_[ch_name]);
+            double chi2 = tmp->DecomposeV2(avg_waveforms[ch_name + "-INT"]);
+            pt_.put("DecompositionResults." + ch_name, chi2);
+        }
     }
 };
 
