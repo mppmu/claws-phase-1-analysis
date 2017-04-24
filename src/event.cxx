@@ -76,21 +76,19 @@ void Event::LoadWaveform()
   //     std::cout<< mmap.first << std::endl;
   // }
 
-  for (const auto & itr : channels_)
+  for (const auto &mvec : channels_)
   {
-        itr.second->LoadWaveform();
+        mvec.second->LoadWaveform();
   }
 
 };
 
 void Event::DeleteHistograms()
 {
-
-    for (const auto &itr : channels_)
+    for (const auto &mvec : channels_)
     {
-        itr.second->DeleteHistogram();
+        mvec.second->DeleteHistogram();
     }
-
 };
 
 void Event::DeleteWaveforms()
@@ -493,22 +491,38 @@ void PhysicsEvent::SetUpWaveforms()
     }
 };
 
-void PhysicsEvent::SetUpWaveforms2()
+void PhysicsEvent::SetUpWaveformsV2()
 {
     //TODO Validation
+    //    #pragma omp parallel for num_threads(5) firstprivate(avg_waveforms)
+    //
     for(auto& mvec : channels_)
     {
         if(!ends_with(mvec.first, "-INT") && !ends_with(mvec.first, "4"))
         {
             PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(mvec.second);
-            tmp->SetUpWaveforms2();
+            tmp->SetUpWaveformsV2();
         }
+    }
+};
+
+void PhysicsEvent::DeleteWaveforms()
+{
+    for (const auto &mvec : channels_)
+    {
+        if(!ends_with(mvec.first, "-INT") && !ends_with(mvec.first, "4"))
+        {
+            PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(mvec.second);
+            tmp->DeleteWaveform();
+          }
     }
 };
 
 void PhysicsEvent::FastRate(std::map<std::string, std::vector<float>*> avg_waveforms, std::map<std::string, double> pe_to_mips)
 {
-    //TODO Validation
+    /**
+     * \todo Validation
+     */
     for(auto& mvec : avg_waveforms)
     {
         std::string tmp_name = mvec.first;
@@ -533,22 +547,55 @@ void PhysicsEvent::FastRate(std::map<std::string, std::vector<float>*> avg_wavef
           fast_rate_[2] = tmp->GetRate();
           pt_.put("FastRate." + tmp_name, fast_rate_[2]);
         }
-
     }
+};
 
+void PhysicsEvent::Rate(std::map<std::string, double> pe_to_mips)
+{
+    /**
+     * \todo Validation
+     */
+    for(auto& mvec : pe_to_mips)
+    {
+        std::string tmp_name = mvec.first;
+        PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(channels_[tmp_name]);
+        tmp->Rate(pe_to_mips[tmp_name]);
 
+        if(tmp_name == "FWD1")
+        {
+          rate_[0] = tmp->GetRate(2);
+          pt_.put("Rate." + tmp_name, rate_[0]);
+        }
+        else if(tmp_name == "FWD2")
+        {
+          rate_[1] = tmp->GetRate(2);
+          pt_.put("Rate." + tmp_name, rate_[1]);
+        }
+        else if(tmp_name == "FWD3")
+        {
+          rate_[2] = tmp->GetRate(2);
+          pt_.put("Rate." + tmp_name, rate_[2]);
+        }
+    }
 };
 
 void PhysicsEvent::Decompose(std::map<std::string, std::vector<float>*> avg_waveforms)
 {
     //TODO Validation
+    std::vector<std::string> keys;
+
+    for(auto& mvec : avg_waveforms)
+    {
+        keys.push_back(mvec.first);
+    }
+
     for(auto& mvec : avg_waveforms)
     {
         std::string tmp_name = mvec.first;
         replace_last(tmp_name, "-INT", "");
         PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(channels_[tmp_name]);
-        tmp->Decompose(mvec.second);
-        //        tmp->Decompose();
+        double chi2 = tmp->DecomposeV2(mvec.second);
+        pt_.put("DecompositionResults." + tmp_name, chi2);
     }
 };
 

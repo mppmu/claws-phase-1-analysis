@@ -25,12 +25,6 @@ ifeq ($(shell uname -s),Darwin)
 	#CC = /usr/local/opt/llvm/bin/clang-3.9
  	CC = g++
 endif
-# ifeq ($(shell uname -s),Darwin)
-# 	CFLAGS += `root-config --cflags` -g -std=gnu++1y
-# #	LFLAGS += -fopenmp -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free `root-config --libs --glibs` -lboost_system -lboost_filesystem
-# 	LFLAGS += -fopenmp  `root-config --libs --glibs` -lboost_system -lboost_filesystem
-# 	CC = /opt/gcc/gcc-5.4.0/bin/gcc -lstdc++
-# endif
 
 INCLUDES  += -I"./include"
 CALI_OBJS += ./build/calibration.o

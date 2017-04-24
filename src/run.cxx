@@ -753,7 +753,7 @@ void Run::WaveformDecomposition()
         events_.at(i)->SetUpWaveforms();
 
         events_.at(i)->FastRate(avg_waveforms, pe_to_mips);
-
+        events_.at(i)->Rate(pe_to_mips);
         //  events_.at(i)->Decompose(avg_waveforms);
         //  events_.at(i)->Reconstruct(avg_waveforms);
         //  events_.at(i)->CalculateChi2();
@@ -836,7 +836,7 @@ void Run::CalculateChi2()
     //TODO Implentation
 };
 
-void Run::WaveformDecomposition2()
+void Run::WaveformDecompositionV2()
 {
     std::cout << "\033[33;1mRun::Decomposing waveforms:\033[0m running" << "\r" << std::flush;
 
@@ -852,11 +852,11 @@ void Run::WaveformDecomposition2()
         events_.at(i)->LoadRootFile();
         events_.at(i)->LoadWaveform();
 
-        events_.at(i)->SetUpWaveforms2();
-
+        events_.at(i)->SetUpWaveformsV2();
+        events_.at(i)->Decompose(avg_waveforms);
+        events_.at(i)->Rate(pe_to_mips);
         events_.at(i)->FastRate(avg_waveforms, pe_to_mips);
 
-        // events_.at(i)->Decompose(avg_waveforms);
         // events_.at(i)->Reconstruct(avg_waveforms);
         // events_.at(i)->CalculateChi2();
         // std::string folder = "Results_SignalFlagThreshold_"+ std::to_string(GS->GetCaliPar<double>("PhysicsChannel.SignalFlagThreshold"))
@@ -865,8 +865,10 @@ void Run::WaveformDecomposition2()
         // events_.at(i)->SaveEvent(path_run_/boost::filesystem::path(folder), "clean");
         // events_.at(i)->SaveEvent(path_run_/boost::filesystem::path(folder), "raw");
 
-        events_.at(i)->SaveEvent(path_run_/boost::filesystem::path("Results"), "clean");
         events_.at(i)->SaveEvent(path_run_/boost::filesystem::path("Results"), "raw");
+        events_.at(i)->SaveEvent(path_run_/boost::filesystem::path("Results"), "clean");
+        events_.at(i)->SaveEvent(path_run_/boost::filesystem::path("Results"), "workhorse");
+        events_.at(i)->SaveEvent(path_run_/boost::filesystem::path("Results"), "mip");
 
         events_.at(i)->DeleteHistograms();
         events_.at(i)->DeleteWaveforms();
@@ -961,27 +963,17 @@ void Run::SaveRates()
     std::string filename = path_run_.string()+"/Calibration/run-"+run_nr_str_+"_rates_version_"+ std::to_string(GS->GetCaliPar<int>("General.CalibrationVersion"))+".root";
     TFile *rfile = new TFile(filename.c_str(), "RECREATE");
 
-
+    TGraph* rates[3];
     TGraph* fast_rates[3];
     TGraph* online_rates[6];
     TGraph* current[2];
     TGraph* injection[2];
     TGraph* injection_bg[2];
     TGraph* ratios[3]; // Fastrate/OnlineRate
-
+    TGraph* ratios2[3];
 
     for(int i = 0; i < 3; i++)
     {
-        fast_rates[i] = new TGraph();
-        fast_rates[i]->SetName(("FastRateFWD"+std::to_string(i+1)).c_str());
-        fast_rates[i]->SetMarkerColor(kRed+i*2);
-        fast_rates[i]->SetMarkerStyle(34);
-        fast_rates[i]->SetMarkerSize(2.0);
-        fast_rates[i]->SetMinimum(0);
-        fast_rates[i]->SetMaximum(700000);
-        fast_rates[i]->GetXaxis()->SetTitle("time [Ms]");
-        fast_rates[i]->GetXaxis()->SetNdivisions(405);
-
         online_rates[i] = new TGraph();
         online_rates[i]->SetName(("OnlineRateFWD"+std::to_string(i+1)).c_str());
         online_rates[i]->SetMarkerColor(kBlue+i*2);
@@ -992,6 +984,26 @@ void Run::SaveRates()
         online_rates[i]->GetXaxis()->SetTitle("time [Ms]");
         online_rates[i]->GetXaxis()->SetNdivisions(405);
 
+        fast_rates[i] = new TGraph();
+        fast_rates[i]->SetName(("FastRateFWD"+std::to_string(i+1)).c_str());
+        fast_rates[i]->SetMarkerColor(kRed+i*2);
+        fast_rates[i]->SetMarkerStyle(34);
+        fast_rates[i]->SetMarkerSize(2.0);
+        fast_rates[i]->SetMinimum(0);
+        fast_rates[i]->SetMaximum(700000);
+        fast_rates[i]->GetXaxis()->SetTitle("time [Ms]");
+        fast_rates[i]->GetXaxis()->SetNdivisions(405);
+
+        rates[i] = new TGraph();
+        rates[i]->SetName(("RateFWD"+std::to_string(i+1)).c_str());
+        rates[i]->SetMarkerColor(kGreen+i*2);
+        rates[i]->SetMarkerStyle(21);
+        rates[i]->SetMarkerSize(2.0);
+        rates[i]->SetMinimum(0);
+        rates[i]->SetMaximum(700000);
+        rates[i]->GetXaxis()->SetTitle("time [Ms]");
+        rates[i]->GetXaxis()->SetNdivisions(405);
+
         ratios[i] = new TGraph();
         ratios[i]->SetName(("FastRateOnlineRateFWD"+std::to_string(i+1)).c_str());
         ratios[i]->SetTitle(("FastRate/OnlineRate FWD"+std::to_string(i+1)).c_str());
@@ -1001,6 +1013,16 @@ void Run::SaveRates()
         ratios[i]->SetMaximum(10);
         ratios[i]->GetXaxis()->SetTitle("time [Ms]");
         ratios[i]->GetXaxis()->SetNdivisions(405);
+
+        ratios2[i] = new TGraph();
+        ratios2[i]->SetName(("RateFastRateFWD"+std::to_string(i+1)).c_str());
+        ratios2[i]->SetTitle(("Rate/FastRate FWD"+std::to_string(i+1)).c_str());
+        ratios2[i]->SetMarkerStyle(20);
+        ratios2[i]->SetMarkerSize(2.0);
+        ratios2[i]->SetMinimum(0);
+        ratios2[i]->SetMaximum(10);
+        ratios2[i]->GetXaxis()->SetTitle("time [Ms]");
+        ratios2[i]->GetXaxis()->SetNdivisions(405);
     }
     for(int i = 3; i < 6; i++)
     {
@@ -1013,6 +1035,7 @@ void Run::SaveRates()
         online_rates[i]->SetMaximum(700000);
         online_rates[i]->GetXaxis()->SetTitle("time [Ms]");
         online_rates[i]->GetXaxis()->SetNdivisions(405);
+
     }
 
     current[0] = new TGraph();
@@ -1082,11 +1105,15 @@ void Run::SaveRates()
 
             double online = events_.at(i)->GetRate()[j];
             double fast   = events_.at(i)->GetRate(1)[j];
+            double rate   = events_.at(i)->GetRate(2)[j];
+
 
             online_rates[j]->SetPoint(i, ts, online);
             fast_rates[j]->SetPoint(i, ts, fast);
+            rates[j]->SetPoint(i, ts, rate);
             //ratios[j]->SetPoint(i, ts, i);
             ratios[j]->SetPoint(i, ts, (fast/online));
+            ratios2[j]->SetPoint(i, ts, (rate/fast));
         }
         for(int j = 3; j < 6; j++)
         {
@@ -1114,6 +1141,10 @@ void Run::SaveRates()
     ratios[1]->SetMarkerColor(kBlue);
     ratios[2]->SetMarkerColor(kGreen+2);
 
+    ratios2[0]->SetMarkerColor(kRed);
+    ratios2[1]->SetMarkerColor(kBlue);
+    ratios2[2]->SetMarkerColor(kGreen+2);
+
     TF1 *fit = new TF1("fit","[0]");
     fast_rates[0]->Fit(fit,"Q");
     delete fit;
@@ -1124,8 +1155,10 @@ void Run::SaveRates()
         fast_rates[i]->Write();
         delete fit;
 
+        rates[i]->Write();
         online_rates[i]->Write();
         ratios[i]->Write();
+        ratios2[i]->Write();
     }
     for(int i = 3; i < 6; i++)
     {
@@ -1147,6 +1180,10 @@ void Run::SaveRates()
     fast_rates[1]->Draw("P");
     fast_rates[2]->Draw("P");
 
+    rates[0]->Draw("P");
+    rates[1]->Draw("P");
+    rates[2]->Draw("P");
+
     online_rates[0]->Draw("P");
     online_rates[1]->Draw("P");
     online_rates[2]->Draw("P");
@@ -1158,6 +1195,10 @@ void Run::SaveRates()
     leg->AddEntry(fast_rates[0], fast_rates[0]->GetName(),"P");
     leg->AddEntry(fast_rates[1], fast_rates[1]->GetName(),"P");
     leg->AddEntry(fast_rates[2], fast_rates[2]->GetName(),"P");
+
+    leg->AddEntry(rates[0], rates[0]->GetName(),"P");
+    leg->AddEntry(rates[1], rates[1]->GetName(),"P");
+    leg->AddEntry(rates[2], rates[2]->GetName(),"P");
 
     leg->AddEntry(online_rates[0], online_rates[0]->GetName(),"P");
     leg->AddEntry(online_rates[1], online_rates[1]->GetName(),"P");
@@ -1183,6 +1224,21 @@ void Run::SaveRates()
     leg->Draw("same");
 
     c2.Write();
+
+    title = "Rates_ratios2";
+    TCanvas c3(title.c_str(),title.c_str(),500,500);
+    c3.cd();
+    ratios2[0]->Draw("AP");
+    ratios2[1]->Draw("P");
+    ratios2[2]->Draw("P");
+
+    leg->Clear();
+    leg->AddEntry(ratios2[0], ratios2[0]->GetTitle(),"P");
+    leg->AddEntry(ratios2[1], ratios2[1]->GetTitle(),"P");
+    leg->AddEntry(ratios2[2], ratios2[2]->GetTitle(),"P");
+    leg->Draw("same");
+
+    c3.Write();
 
     rfile->Close();
     delete rfile;
@@ -1367,20 +1423,24 @@ int Run::WriteTree(TFile* file, std::string type)
     double ts;
     double rate_online[6];
     double fast_rate[3];
+    double rate[3];
     double current[2];
     double injection[2];
 
     t_auto->Branch("ts", &ts,     "ts/D");
     t_auto->Branch("rate_online",       rate_online,           "rate_online[6]/D");
     t_auto->Branch("fast_rate", fast_rate,     "fast_rate[3]/D");
+    t_auto->Branch("rate", rate,     "rate[3]/D");
 
     t_inj->Branch("ts", &ts,     "ts/D");
     t_inj->Branch("rate_online",       rate_online,           "rate_online[6]/D");
     t_inj->Branch("fast_rate", fast_rate,     "fast_rate[3]/D");
+    t_inj->Branch("rate", rate,     "rate[3]/D");
 
     t_comb->Branch("ts", &ts,     "ts/D");
     t_comb->Branch("rate_online",       rate_online,           "rate_online[6]/D");
     t_comb->Branch("fast_rate", fast_rate,     "fast_rate[3]/D");
+    t_comb->Branch("rate", rate,     "rate[3]/D");
     t_comb->Branch("current", current,     "current[2]/D");
     t_comb->Branch("injection", current,     "injection[2]/D");
 
@@ -1398,6 +1458,10 @@ int Run::WriteTree(TFile* file, std::string type)
         fast_rate[0] = events_.at(i)->GetRate(1)[0];
         fast_rate[1] = events_.at(i)->GetRate(1)[1];
         fast_rate[2] = events_.at(i)->GetRate(1)[2];
+
+        rate[0] = events_.at(i)->GetRate(2)[0];
+        rate[1] = events_.at(i)->GetRate(2)[1];
+        rate[2] = events_.at(i)->GetRate(2)[2];
       try
       {
         current[0] = events_.at(i)->GetPV<double>("LERCurrent");

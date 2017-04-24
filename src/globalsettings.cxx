@@ -245,41 +245,44 @@ namespace claws {
             std::map<std::string, double> rtn;
             for(auto & ivec : channels_)
             {
-                std::string ini_key = ivec;
-                if(ivec == "FWD1")
+                if(!boost::algorithm::ends_with(ivec, "4"))
                 {
-                    if(time < 1463716800)
+                    std::string ini_key = ivec;
+                    if(ivec == "FWD1")
                     {
-                        ini_key += "/1";
+                        if(time < 1463716800)
+                        {
+                            ini_key += "/1";
+                        }
+                        else
+                        {
+                            ini_key += "/2";
+                        }
                     }
-                    else
+                    else if (ivec == "BWD1")
                     {
-                        ini_key += "/2";
+                        if(time < 1463716800)
+                        {
+                            ini_key += "/1";
+                        }
+                        else
+                        {
+                            ini_key += "/2";
+                        }
                     }
+                    else if (ivec == "BWD2")
+                    {
+                        if(time < 1463716800)
+                        {
+                            ini_key += "/1";
+                        }
+                        else
+                        {
+                            ini_key += "/2";
+                        }
+                    }
+                    rtn[ivec] = pe_to_mip_.get<double>( ini_key + ".Value" );
                 }
-                else if (ivec == "BWD1")
-                {
-                    if(time < 1463716800)
-                    {
-                        ini_key += "/1";
-                    }
-                    else
-                    {
-                        ini_key += "/2";
-                    }
-                }
-                else if (ivec == "BWD2")
-                {
-                    if(time < 1463716800)
-                    {
-                        ini_key += "/1";
-                    }
-                    else
-                    {
-                        ini_key += "/2";
-                    }
-                }
-                rtn[ivec] = pe_to_mip_.get<double>( ini_key + ".Value" );
             }
             return rtn;
         }

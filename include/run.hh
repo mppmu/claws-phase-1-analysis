@@ -133,7 +133,7 @@ class Run{
             void Reconstruct();
             void CalculateChi2();
 
-        void WaveformDecomposition2();
+        void WaveformDecompositionV2();
 
         void SaveEvents();
         void SaveRates();

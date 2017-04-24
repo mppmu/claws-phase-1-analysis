@@ -112,15 +112,27 @@ class PhysicsChannel : public Channel
         virtual     void        DeleteWaveform();
 
         void SetUpWaveforms();
-        void SetUpWaveforms2();
+        void SetUpWaveformsV2();
 
             void InitCleanWF();
+            void InitWorkhorseWF();
             void InitMipWF();
 
             void BuildCleanWF();
-            void RunFFT();
+            void BuildWorkhorseWF();
+
+        double DecomposeV2(std::vector<float>* avg_wf);
+
+                void    Subtract1PE(std::vector<float>* avg_wf);
+                void    ReconstructV2(std::vector<float>* avg_waveform);
+                void    CalculateChi2V2();
+                double  GetChi2();
+
+        void RunFFT();
 
         void FastRate(std::vector<float>* avg_waveform, double pe_to_mip = 16.);
+        void Rate(double pe_to_mip = 16.);
+
         void Decompose(std::vector<float>* avg_waveform);
         void Reconstruct(std::vector<float>* avg_waveform);
         void CalculateChi2();
@@ -130,7 +142,10 @@ class PhysicsChannel : public Channel
        std::vector<std::uint8_t>*    waveform_photon_   = NULL;
 
        std::vector<float>*                clean_wf_     = NULL;
+       std::vector<float>*                wh_wf_     = NULL;
        std::vector<std::uint8_t>*         mip_wf_       = NULL;
+
+       double                               chi2_ = 0;
 
 
        TH1F*                   GetWaveformHist();
@@ -141,6 +156,7 @@ class PhysicsChannel : public Channel
        // Type 1: fast offline double[3]
        // Type 2: offline      double[3]
        double                  GetRate(int type = 1);
+
 
        double                  fast_rate_ = 0;
        double                  rate_      = 0;

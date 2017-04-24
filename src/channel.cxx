@@ -336,10 +336,11 @@ double Channel::GetIntegral()
 
 PhysicsChannel::PhysicsChannel(std::string ch_name): Channel(ch_name)
 {
-    waveform_workon_   = new std::vector<float>();
-    waveform_photon_   = new std::vector<std::uint8_t>();
+    waveform_workon_    =   new std::vector<float>();
+    waveform_photon_    =   new std::vector<std::uint8_t>();
 
     clean_wf_           =   new std::vector<float>();
+    wh_wf_              =   new std::vector<float>();
     mip_wf_             =   new std::vector<std::uint8_t>();
 };
 
@@ -461,17 +462,26 @@ void PhysicsChannel::SetUpWaveforms()
 
 };
 
-void PhysicsChannel::SetUpWaveforms2()
+void PhysicsChannel::SetUpWaveformsV2()
 {
     this->InitCleanWF();
+    this->InitWorkhorseWF();
     this->InitMipWF();
+
     this->BuildCleanWF();
+    this->BuildWorkhorseWF();
 }
 
 void PhysicsChannel::InitCleanWF()
 {
     clean_wf_->clear();
     clean_wf_->resize(waveform_->size(), 0);
+};
+
+void PhysicsChannel::InitWorkhorseWF()
+{
+    wh_wf_->clear();
+    wh_wf_->resize(waveform_->size(), 0);
 };
 
 void PhysicsChannel::InitMipWF()
@@ -488,30 +498,157 @@ void PhysicsChannel::BuildCleanWF()
     /**
      * [PhysicsChannel::RunFFT descript]
      * \todo Increase the tail length
+     * \todo acoount for the last bins affected by: waveform_->size() - bins_over_threshold
      */
-    double threshold            = GS->GetCaliPar<double>("PhysicsChannel.SignalFlagThreshold");
-    int    bins_over_threshold  = int(GS->GetCaliPar<double>("PhysicsChannel.BinsOverThreshold"));
-    bool fillflag = false;
-    unsigned counter = 0;
+    double      threshold            = GS->GetCaliPar<double>("PhysicsChannel.SignalFlagThreshold");
+    int         bins_over_threshold  = int(GS->GetCaliPar<double>("PhysicsChannel.BinsOverThreshold"));
+    int         tail_length          = int(GS->GetCaliPar<double>("PhysicsChannel.TailLength"));
+    int         offset               = int(GS->GetCaliPar<double>("PhysicsChannel.Offset"));
+    int         fillflag             = 0;
 
-    for(unsigned i = 0; i < waveform_->size() - bins_over_threshold; i++)
+    for(unsigned i = 0; i < waveform_->size() - bins_over_threshold - offset; i++)
     {
-
         // First check if bin_i and it's subsequent bins are over the signal threshold.
         bool over_threshold = false;
-        if( waveform_->at(i) >= threshold )
+        if( waveform_->at(i + offset) >= threshold )
         {
             over_threshold = true;
-            for(unsigned j = i + 1; j < i + bins_over_threshold; j++ )
+            for(unsigned j = i + 1 + offset; j < i + bins_over_threshold + offset; j++ )
             {
-                if( waveform_->at(j) < threshold ) over_threshold = false;
+                if( waveform_->at(j) < threshold )
+                {
+                    over_threshold = false;
+                }
             }
         }
 
-        if( over_threshold )                 clean_wf_->at(i) = waveform_->at(i);
-        else                                 clean_wf_->at(i) = 0;
+        // Second: If yes we are still in a signal and the tail should be long.
+        if(over_threshold)
+        {
+            fillflag = tail_length;
+        }
+
+
+        //Third: If we are in a signal or tail, fill, else set to 0;
+        if( fillflag > 0 && waveform_->at(i) >= 0 )
+        {
+            clean_wf_->at(i) = waveform_->at(i);
+            fillflag --;
+        }
+        else
+        {
+            clean_wf_->at(i) = 0;
+        }
+
     }
+
+
 }
+
+void PhysicsChannel::BuildWorkhorseWF()
+{
+  for(unsigned i = 0; i < waveform_->size() ; i++)
+  {
+    wh_wf_->at(i) = clean_wf_->at(i);
+  }
+};
+
+double PhysicsChannel::DecomposeV2(std::vector<float>* avg_wf)
+{
+  this->Subtract1PE(avg_wf);
+  this->ReconstructV2(avg_wf);
+  this->CalculateChi2V2();
+
+  return this->GetChi2();
+};
+
+void PhysicsChannel::Subtract1PE(std::vector<float>* avg_wf)
+{
+    double avg_max  = *std::max_element(avg_wf->begin(),avg_wf->end());
+    int avg_peak = std::distance(avg_wf->begin(), std::max_element(avg_wf->begin(),avg_wf->end()));
+
+    while((*std::max_element(wh_wf_->begin(), wh_wf_->end())) > 2*avg_max/20.)
+    {
+        int max = std::distance(wh_wf_->begin(), std::max_element(wh_wf_->begin(), wh_wf_->end()));
+
+        int sub_start = max - avg_peak;
+        int sub_stop  = max + (avg_wf->size() - avg_peak);
+
+        if( sub_stop > wh_wf_->size() ) sub_stop = wh_wf_->size();
+
+        for(int i = sub_start ; i < sub_stop ; i++)
+        {
+//            std::cout << "Subtracting: " << avg_waveform->at(i - sub_start )/20. << " at: " << i << ",  in avg at: "<< (i - sub_start ) << std::endl;
+            // if( (wh_wf_->at(i) - avg_wf->at(i - sub_start )/20.) >= 0 ) wh_wf_->at(i) -= avg_wf->at(i - sub_start )/20.;
+            // else                                                        wh_wf_->at(i) = 0;
+            if( (wh_wf_->at(i) - avg_wf->at(i - sub_start )/20.) >= 0)
+            {
+                wh_wf_->at(i) -= avg_wf->at(i - sub_start )/20.;
+            }
+            else
+            {
+                wh_wf_->at(i) = 0;
+            }
+        }
+        mip_wf_->at(max) ++;
+    }
+};
+
+void PhysicsChannel::ReconstructV2(std::vector<float>* avg_waveform)
+{
+    /**
+     * \todo Validate
+     * \todo Line 621 make avg_waveform height 20 dynamic;
+     */
+
+    for(unsigned i = 0; i < wh_wf_->size(); i++)
+    {
+        wh_wf_->at(i) = 0;
+    }
+
+    int avg_peak = std::distance(avg_waveform->begin(), std::max_element(avg_waveform->begin(),avg_waveform->end()));
+
+    for(unsigned i = 0; i < mip_wf_->size(); i++)
+    {
+        if( mip_wf_->at(i) != 0 )
+        {
+            int add_start = i - avg_peak;
+            int add_stop  = i + (avg_waveform->size() - avg_peak);
+
+            if( add_stop > wh_wf_->size() ) add_stop = wh_wf_->size();
+
+            for(int j = add_start ; j < add_stop ; j++)
+            {
+    //            std::cout << "Subtracting: " << avg_waveform->at(i - sub_start )/20. << " at: " << i << ",  in avg at: "<< (i - sub_start ) << std::endl;
+                wh_wf_->at(j) += avg_waveform->at(j - add_start ) * mip_wf_->at(i)/20.;
+            }
+
+        }
+    }
+};
+
+void PhysicsChannel::CalculateChi2V2()
+{
+  /**
+   * \todo Validate
+   * \todo implement useful definition of Chi2 and it's sigma. Maybe with Poisson/Binomial of number of detected photons.
+   *
+   */
+   double sigma = GS->GetCaliPar<double>("PhysicsChannel.Chi2Sigma");
+   int n = 0;
+
+   chi2_ = 0;
+
+   for(unsigned i = 0 ; i < wh_wf_->size() ; i++)
+   {
+
+       if(wh_wf_->at(i) != 0) n++;
+       chi2_ += ( clean_wf_->at(i) - wh_wf_->at(i) ) * ( clean_wf_->at(i) - wh_wf_->at(i) ) / ( sigma * sigma );
+   }
+
+   chi2_ /= n;
+//   std::cout << "Channel: " <<  name_<< " Chi2 " << chi2_ << std::endl;
+};
 
 void PhysicsChannel::RunFFT()
 {
@@ -533,10 +670,14 @@ void PhysicsChannel::FastRate(std::vector<float>* avg_waveform, double pe_to_mip
         one_pe_int += ivec;
     }
 
-    one_pe_int /= 20.; // Scaling factor because of different voltag ranges;
+    /**  Scaling factor because of different voltag ranges;
+    *    \todo Replace hardcoded 20. by dynamic factor from ini file.
+    *    \todo Adapt to new naming in v2: clean_wf_, mip_wf_
+    */
+    one_pe_int /= 20.;
 
     double integral = 0;
-    for(auto & ivec: (*waveform_workon_))
+    for(auto & ivec: (*clean_wf_))
     {
         integral += ivec;
     }
@@ -544,6 +685,24 @@ void PhysicsChannel::FastRate(std::vector<float>* avg_waveform, double pe_to_mip
     fast_rate_  = integral/one_pe_int;
     fast_rate_ /= pe_to_mip;
     fast_rate_ /= ( n_sample_ * GS->GetCaliPar<double>("PhysicsChannel.BinWidth") );
+}
+
+void PhysicsChannel::Rate(double pe_to_mip)
+{
+    rate_ = 0;
+
+    /**  Scaling factor because of different voltag ranges;
+    *    \todo Replace hardcoded 20. by dynamic factor from ini file.
+    *    \todo Adapt to new naming in v2: clean_wf_, mip_wf_
+    */
+
+    double integral = 0;
+    for(auto &ivec: (*mip_wf_))
+    {
+        integral += ivec;
+    }
+    rate_ = integral/pe_to_mip;
+    rate_ /= ( n_sample_ * GS->GetCaliPar<double>("PhysicsChannel.BinWidth") );
 }
 
 void PhysicsChannel::Decompose(std::vector<float>* avg_waveform)
@@ -744,6 +903,21 @@ void PhysicsChannel::CreateHistogram(std::string type)
             }
         }
     }
+    else if( type == "workhorse")
+    {
+      if( wh_wf_->size() != 0 )
+      {
+          this->DeleteHistogram();
+
+          std::string title = name_+"_wh_wf";
+          hist_ = new TH1F( title.c_str(), title.c_str(), wh_wf_->size(), 0.5 , wh_wf_->size()+0.5);
+
+          for(unsigned int i = 0; i < wh_wf_->size(); i++)
+          {
+              hist_->SetBinContent(i+1, wh_wf_->at(i));
+          }
+      }
+    }
     else if( type == "mip" )
     {
         if( mip_wf_->size() != 0 )
@@ -776,7 +950,12 @@ double PhysicsChannel::GetRate(int type)
 {
     if(type == 1)           return fast_rate_;
     else if( type == 2 )    return rate_;
-    else                    0;
+    else                    return 0;
+};
+
+double PhysicsChannel::GetChi2()
+{
+    return chi2_;
 };
 
 void PhysicsChannel::DeleteWaveform()
@@ -784,6 +963,10 @@ void PhysicsChannel::DeleteWaveform()
     std::vector<float>().swap(*waveform_);
     std::vector<float>().swap(*waveform_workon_);
     std::vector<std::uint8_t>().swap(*waveform_photon_);
+
+    std::vector<float>().swap(*clean_wf_);
+    std::vector<float>().swap(*wh_wf_);
+    std::vector<std::uint8_t>().swap(*mip_wf_);
 };
 //----------------------------------------------------------------------------------------------
 // Definition of the PhysicsChannel class derived from Event.
