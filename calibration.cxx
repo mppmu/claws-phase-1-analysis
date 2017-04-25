@@ -74,13 +74,13 @@ int error(){
 //===============================================================================
 
 // Hold run number metadata
-struct run {
-  std::string name;
-  unsigned int run_num;
-  unsigned int sub_run;
-  unsigned int tsMin;
-  unsigned int tsMax;
-};
+// struct run {
+//   std::string name;
+//   unsigned int run_num;
+//   unsigned int sub_run;
+//   unsigned int tsMin;
+//   unsigned int tsMax;
+// };
 
 
 
@@ -191,7 +191,7 @@ int main(int argc, char* argv[]) {
 	{
 
 	//	std::cout << runs.at(i) << std::endl;
-		Run* myrun = new Run(runs.at(i));
+		CalibrationRun* myrun = new CalibrationRun(runs.at(i));
 
 		myrun->SynchronizeFiles();
 

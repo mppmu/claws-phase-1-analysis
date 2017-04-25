@@ -146,7 +146,7 @@ class PhysicsChannel : public Channel
        std::vector<std::uint8_t>*         mip_wf_       = NULL;
 
        double                               chi2_ = 0;
-
+       int                                  nr_ph_ = 0;
 
        TH1F*                   GetWaveformHist();
 

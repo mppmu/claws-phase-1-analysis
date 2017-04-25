@@ -68,7 +68,7 @@ using namespace std;
 // Definition of the Run class.
 //----------------------------------------------------------------------------------------------
 
-Run::Run(boost::filesystem::path p)
+CalibrationRun::CalibrationRun(boost::filesystem::path p)
 {
 
     path_run_ = p;
@@ -88,7 +88,7 @@ Run::Run(boost::filesystem::path p)
     claws::print_local_time();
 };
 
-void Run::SynchronizeFiles()
+void CalibrationRun::SynchronizeFiles()
 {
     /*
     This method uses the path to the run folder to determine the number of events.
@@ -217,7 +217,7 @@ void Run::SynchronizeFiles()
 };
 
 
-void Run::LoadData()
+void CalibrationRun::LoadData()
 {
     double wall0 = claws::get_wall_time();
     double cpu0  = claws::get_cpu_time();
@@ -259,7 +259,7 @@ void Run::LoadData()
     cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 };
 
-void Run::LoadIntermediate()
+void CalibrationRun::LoadIntermediate()
 {
     for(unsigned int i=0; i< int_events_.size();i++)
     {
@@ -278,7 +278,7 @@ void Run::LoadIntermediate()
     }
 };
 
-void Run::LoadMetaData()
+void CalibrationRun::LoadMetaData()
 {
 //    #pragma omp parallel num_threads(7)
 //    {
@@ -295,7 +295,7 @@ void Run::LoadMetaData()
     this->LoadRunSettings();
 };
 
-void Run::LoadRunSettings()
+void CalibrationRun::LoadRunSettings()
 {
     path ini_file  = path_run_ / ("Run-" + to_string(run_nr_) + "-Settings.ini");
 
@@ -324,7 +324,7 @@ void Run::LoadRunSettings()
     }
 };
 
-void Run::LoadPhysicsData()
+void CalibrationRun::LoadPhysicsData()
 {
     // Method to load all the information that is located in the data_root folder with
     // following steps:
@@ -353,7 +353,7 @@ void Run::LoadPhysicsData()
     }
 }
 
-void Run::LoadEventFiles()
+void CalibrationRun::LoadEventFiles()
 {
 
     // Legacy Methode - Use is deprechiated!
@@ -379,7 +379,7 @@ void Run::LoadEventFiles()
 
 
 
-void Run::LoadWaveforms()
+void CalibrationRun::LoadWaveforms()
 {
 
     // Legacy Methode - Use is deprechiated!
@@ -417,7 +417,7 @@ void Run::LoadWaveforms()
 
 
 
-void Run::SubtractPedestal()
+void CalibrationRun::SubtractPedestal()
 {
     double wall0 = claws::get_wall_time();
     double cpu0  = claws::get_cpu_time();
@@ -437,7 +437,7 @@ void Run::SubtractPedestal()
     cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 };
 
-void Run::LoadPedestal()
+void CalibrationRun::LoadPedestal()
 {
     /*
         TODO description
@@ -471,7 +471,7 @@ void Run::LoadPedestal()
     }
 
 };
-void Run::CalculatePedestal()
+void CalibrationRun::CalculatePedestal()
 {
 
     // ped_.clear();
@@ -528,7 +528,7 @@ void Run::CalculatePedestal()
     // pedestal_->CalculatePedestal();
 };
 
-void Run::SavePedestal()
+void CalibrationRun::SavePedestal()
 {
     /*
         TODO description
@@ -547,7 +547,7 @@ void Run::SavePedestal()
     delete rfile;
 };
 
-void Run::Subtract()
+void CalibrationRun::Subtract()
 {
     /*
         TODO description
@@ -575,7 +575,7 @@ void Run::Subtract()
     }
 };
 
-void Run::SubtractPedestal2()
+void CalibrationRun::SubtractPedestal2()
 {
     double wall0 = claws::get_wall_time();
     double cpu0  = claws::get_cpu_time();
@@ -648,7 +648,7 @@ void Run::SubtractPedestal2()
 
 
 
-void Run::DeletePhysicsData()
+void CalibrationRun::DeletePhysicsData()
 {
     #pragma omp parallel num_threads(GS->GetNThreads())
     {
@@ -690,7 +690,7 @@ void Run::GainCalibration()
     cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 }
 
-void Run::Average1PE()
+void CalibrationRun::Average1PE()
 {
     /*
         TODO description
@@ -729,7 +729,7 @@ void Run::Average1PE()
     cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 };
 
-void Run::WaveformDecomposition()
+void CalibrationRun::WaveformDecomposition()
 {
     std::cout << "\033[33;1mRun::Decomposing waveforms:\033[0m running" << "\r" << std::flush;
 
@@ -789,7 +789,7 @@ void Run::WaveformDecomposition()
     // cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 }
 
-void Run::SetUpWaveforms()
+void CalibrationRun::SetUpWaveforms()
 {
     for(unsigned int i=0; i< events_.size(); i++)
     {
@@ -797,7 +797,7 @@ void Run::SetUpWaveforms()
     }
 };
 
-void Run::FastRate()
+void CalibrationRun::FastRate()
 {
     std::map<std::string, std::vector<float>*> avg_waveforms = gain_->GetWaveform();
     std::map<std::string, double> pe_to_mips = GS->GetPEtoMIPs();
@@ -809,7 +809,7 @@ void Run::FastRate()
 
 };
 
-void Run::Decompose()
+void CalibrationRun::Decompose()
 {
 
 
@@ -826,17 +826,17 @@ void Run::Decompose()
     //TODO Finish implentation
 };
 
-void Run::Reconstruct()
+void CalibrationRun::Reconstruct()
 {
     //TODO Implentation
 };
 
-void Run::CalculateChi2()
+void CalibrationRun::CalculateChi2()
 {
     //TODO Implentation
 };
 
-void Run::WaveformDecompositionV2()
+void CalibrationRun::WaveformDecompositionV2()
 {
     std::cout << "\033[33;1mRun::Decomposing waveforms:\033[0m running" << "\r" << std::flush;
 
@@ -884,7 +884,7 @@ void Run::WaveformDecompositionV2()
 
 };
 
-void Run::SaveEvents()
+void CalibrationRun::SaveEvents()
 {
     std::cout << "Now saving events!" << std::endl;
 
@@ -950,7 +950,7 @@ void Run::SaveEvents()
 
 };
 
-void Run::SaveRates()
+void CalibrationRun::SaveRates()
 {
     /*
         TODO description
@@ -1244,31 +1244,31 @@ void Run::SaveRates()
     delete rfile;
 
 };
-double Run::GetStartTime(){
+double CalibrationRun::GetStartTime(){
     return tsMin;
 };
-double Run::GetStopTime(){
+double CalibrationRun::GetStopTime(){
     return tsMax;
 };
 
-int Run::BuildOnlineTree(){
+int CalibrationRun::BuildOnlineTree(){
     // TODO Implentation
     return 0;
 };
-int Run::BuildOfflineTree(){
+int CalibrationRun::BuildOfflineTree(){
     // TODO Implentation
     return 0;
 };
-TTree *Run::GetOnlineTree(){
+TTree *CalibrationRun::GetOnlineTree(){
     this->BuildOnlineTree();
     return tree_online;
 };
-TTree *Run::GetOfflineTree(){
+TTree *CalibrationRun::GetOfflineTree(){
     this->BuildOfflineTree();
     return tree_offline;
 };
 
-std::vector<IntChannel*> Run::GetIntChannel(std::string name)
+std::vector<IntChannel*> CalibrationRun::GetIntChannel(std::string name)
 {
     std::vector<IntChannel*> channel;
     for(auto & ivec : int_events_)
@@ -1279,7 +1279,7 @@ std::vector<IntChannel*> Run::GetIntChannel(std::string name)
     return channel;
 };
 
-std::vector<PhysicsChannel*> Run::GetPhysicsChannel(std::string name)
+std::vector<PhysicsChannel*> CalibrationRun::GetPhysicsChannel(std::string name)
 {
     std::vector<PhysicsChannel*> channel;
     for(auto & ivec : events_)
@@ -1290,7 +1290,7 @@ std::vector<PhysicsChannel*> Run::GetPhysicsChannel(std::string name)
     return channel;
 };
 
-int Run::WriteNTuple(path path_ntuple){
+int CalibrationRun::WriteNTuple(path path_ntuple){
 
     std::cout << "\033[33;1mRun::Writing NTuples:\033[0m running" << "\r" << std::flush;
 
@@ -1328,7 +1328,7 @@ int Run::WriteNTuple(path path_ntuple){
     return 0;
 };
 
-int Run::WriteOnlineTree(TFile* file)
+int CalibrationRun::WriteOnlineTree(TFile* file)
 {
     TTree *tout = new TTree("tout","tout");
     TTree *tout_inj = new TTree("tout_inj","tout_inj");
@@ -1388,7 +1388,7 @@ int Run::WriteOnlineTree(TFile* file)
     return 0;
 };
 
-int Run::WriteTimeStamp(TFile* file)
+int CalibrationRun::WriteTimeStamp(TFile* file)
 {
     TTree *tout = new TTree("tout","tout");
 
@@ -1413,7 +1413,7 @@ int Run::WriteTimeStamp(TFile* file)
     return 0;
 };
 
-int Run::WriteTree(TFile* file, std::string type)
+int CalibrationRun::WriteTree(TFile* file, std::string type)
 {
     //TODO Validate
     TTree* t_auto = new TTree("t_auto", "t_auto");
@@ -1488,7 +1488,7 @@ int Run::WriteTree(TFile* file, std::string type)
     return 0;
 };
 
-void Run::DrawPedestal()
+void CalibrationRun::DrawPedestal()
 {
     // string title = to_string(run_nr_);
     // TCanvas * c = new TCanvas(title.c_str(), title.c_str(), 1600, 1200);
@@ -1516,7 +1516,7 @@ void Run::DrawPedestal()
     // }
 }
 
-Run::~Run() {
+CalibrationRun::~CalibrationRun() {
 	// TODO Auto-generated destructor stub
     std::cout << "Deleteing Run object!" << std::endl;
   //  #pragma omp parallel num_threads(7)

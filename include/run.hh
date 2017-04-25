@@ -76,13 +76,16 @@
 // Definition of the Run class. This class is supposed to do all gthe organization of a run.
 // TODO(mgabriel@mpp.mpg.de): Add some description
 //----------------------------------------------------------------------------------------------
-
 class Run{
+    Run(boost::filesystem::path p);
+    virtual ~Run();
+}
+class CalibrationRun : public Run{
 
     public:
 
-        Run(boost::filesystem::path p);
-        virtual ~Run();
+        CalibrationRun(boost::filesystem::path p);
+        virtual ~CalibrationRun();
 
         int BuildOnlineTree();
         int BuildOfflineTree();

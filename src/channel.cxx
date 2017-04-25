@@ -592,6 +592,11 @@ void PhysicsChannel::Subtract1PE(std::vector<float>* avg_wf)
         }
         mip_wf_->at(max) ++;
     }
+
+    for(auto &ivec: (*mip_wf_))
+    {
+        nr_ph_ += ivec;
+    }
 };
 
 void PhysicsChannel::ReconstructV2(std::vector<float>* avg_waveform)
@@ -646,7 +651,7 @@ void PhysicsChannel::CalculateChi2V2()
        chi2_ += ( clean_wf_->at(i) - wh_wf_->at(i) ) * ( clean_wf_->at(i) - wh_wf_->at(i) ) / ( sigma * sigma );
    }
 
-   chi2_ /= n;
+   chi2_ /= wh_wf_->size();
 //   std::cout << "Channel: " <<  name_<< " Chi2 " << chi2_ << std::endl;
 };
 
@@ -696,12 +701,7 @@ void PhysicsChannel::Rate(double pe_to_mip)
     *    \todo Adapt to new naming in v2: clean_wf_, mip_wf_
     */
 
-    double integral = 0;
-    for(auto &ivec: (*mip_wf_))
-    {
-        integral += ivec;
-    }
-    rate_ = integral/pe_to_mip;
+    rate_ = nr_ph_/pe_to_mip;
     rate_ /= ( n_sample_ * GS->GetCaliPar<double>("PhysicsChannel.BinWidth") );
 }
 

@@ -30,13 +30,13 @@ INCLUDES  += -I"./include"
 CALI_OBJS += ./build/calibration.o
 ANA_OBJS += ./build/analysis.o
 
-all: monkey clean build/calibration
+all: monkey clean build/calibration build/analysis docs
 
 debug: CFLAGS += -g -O0 -Wall
-debug: monkey clean build/calibration
+debug: monkey clean build/calibration build/analysis
 
 release: CFLAGS += -O3
-release: monkey clean build/calibration
+release: monkey clean build/calibration build/analysis
 
 # Link Calibration
 build/calibration: $(CALI_OBJS)

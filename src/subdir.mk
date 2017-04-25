@@ -13,8 +13,12 @@ CALI_OBJS += ./build/src/pedestal.o
 CALI_OBJS += ./build/src/run.o
 CALI_OBJS += ./build/src/globalsettings.o
 
+ANA_OBJS += ./build/src/channel.o
+ANA_OBJS += ./build/src/event.o
+ANA_OBJS += ./build/src/gain.o
+ANA_OBJS += ./build/src/pedestal.o
+ANA_OBJS += ./build/src/run.o
 ANA_OBJS += ./build/src/globalsettings.o
-
 # CALI_CPP_DEPS += ./build/src/EVENT.d
 # CALI_CPP_DEPS += ./build/src/Gloablsettings.d
 

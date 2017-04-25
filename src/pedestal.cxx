@@ -33,7 +33,7 @@ Pedestal::Pedestal(int run_nr, int int_nr):run_nr_(run_nr), int_nr_(int_nr)
         g_[ch]->SetMarkerColor(kRed);
         g_[ch]->SetMarkerSize(2);
     }
-    
+
     for(auto &ch : GS->GetChannels(2))
     {
         std::string title    = "Run-" + std::to_string(int_nr) + "-" + ch + "_pd";
@@ -63,6 +63,12 @@ Pedestal::Pedestal(int run_nr, int int_nr):run_nr_(run_nr), int_nr_(int_nr)
 
 void Pedestal::AddEvent(std::map<std::string, TH1I*> event)
 {
+    /**
+     * [Pedestal::SavePedestal description]
+     * @param file [description]
+     * \todo check if ch.secon->GetMeanError is the right thing. According to the histogram it's supposed to be around 0.44
+     *        but the error on the points seems to be to small.
+     */
     for (auto &ch : event)
     {
         h_[ch.first]->Add(ch.second);
