@@ -67,21 +67,44 @@ using namespace std;
 //----------------------------------------------------------------------------------------------
 // Definition of the Run class.
 //----------------------------------------------------------------------------------------------
-
-CalibrationRun::CalibrationRun(boost::filesystem::path p)
+Run::Run(boost::filesystem::path p)
 {
-
     path_run_ = p;
 
     // Extract the runnumer from the path to the folder and convert it to int.
     run_nr_     = atoi(path_run_.filename().string().substr(4,20).c_str());
     run_nr_str_ = path_run_.filename().string().substr(4,20);
     int_nr_     = run_nr_;
+
     tsMin       = 1e10;
     tsMax       = 0;
     cout << "---------------------------------------------------------" << endl;
     std::cout << p.string() << std::endl;
     cout << "\033[1;31mRun::Created run: \033[0m" << run_nr_ << endl;
+};
+
+void Run::LoadRunSettings()
+{
+    path ini_file  = path_run_ / ("Run-" + to_string(run_nr_) + "-Settings.ini");
+
+    if( boost::filesystem::is_regular_file(ini_file) && exists(ini_file) )
+    {
+        property_tree::ini_parser::read_ini(ini_file.string(), settings_);
+    }
+};
+
+Run::~Run()
+{
+
+};
+
+
+//----------------------------------------------------------------------------------------------
+// Definition of the CalibrationRun class.
+//----------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------
+CalibrationRun::CalibrationRun(boost::filesystem::path p): Run(p)
+{
     // std::ofstream hendrik_file("/home/iwsatlas1/mgabriel/Plots/forHendyDany.txt", ios::app);
     // hendrik_file << run_nr_str_;
     // hendrik_file.close();
@@ -297,12 +320,13 @@ void CalibrationRun::LoadMetaData()
 
 void CalibrationRun::LoadRunSettings()
 {
-    path ini_file  = path_run_ / ("Run-" + to_string(run_nr_) + "-Settings.ini");
-
-    if( boost::filesystem::is_regular_file(ini_file) && exists(ini_file) )
-    {
-        property_tree::ini_parser::read_ini(ini_file.string(), settings_);
-    }
+    // path ini_file  = path_run_ / ("Run-" + to_string(run_nr_) + "-Settings.ini");
+    //
+    // if( boost::filesystem::is_regular_file(ini_file) && exists(ini_file) )
+    // {
+    //     property_tree::ini_parser::read_ini(ini_file.string(), settings_);
+    // }
+    this->Run::LoadRunSettings();
 
     // Data taking in the phyics events has been conducted with an vertical offset.
     std::string ch[8]       = {"FWD1", "FWD2", "FWD3", "FWD4", "BWD1", "BWD2", "BWD3", "BWD4"};
@@ -659,8 +683,9 @@ void CalibrationRun::DeletePhysicsData()
             events_.at(i)->DeleteWaveforms();
         }
     }
-}
-void Run::GainCalibration()
+};
+
+void  CalibrationRun::GainCalibration()
 {
     /*
         TODO description
@@ -1545,5 +1570,23 @@ CalibrationRun::~CalibrationRun() {
 
     delete pedestal_;
     delete gain_;
+
+};
+
+
+//----------------------------------------------------------------------------------------------
+// Definition of the AnalysisRun class.
+//----------------------------------------------------------------------------------------------
+
+AnalysisRun::AnalysisRun(boost::filesystem::path p): Run(p)
+{
+    // std::ofstream hendrik_file("/home/iwsatlas1/mgabriel/Plots/forHendyDany.txt", ios::app);
+    // hendrik_file << run_nr_str_;
+    // hendrik_file.close();
+    claws::print_local_time();
+};
+
+AnalysisRun::~AnalysisRun()
+{
 
 };

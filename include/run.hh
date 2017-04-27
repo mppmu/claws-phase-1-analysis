@@ -76,10 +76,25 @@
 // Definition of the Run class. This class is supposed to do all gthe organization of a run.
 // TODO(mgabriel@mpp.mpg.de): Add some description
 //----------------------------------------------------------------------------------------------
-class Run{
-    Run(boost::filesystem::path p);
-    virtual ~Run();
-}
+
+class Run
+{
+    public:
+        Run(boost::filesystem::path p);
+        virtual ~Run();
+
+        virtual void LoadRunSettings();
+
+        boost::filesystem::path path_run_;
+        double tsMin;
+        double tsMax;
+
+        int run_nr_;
+        int int_nr_;
+        std::string run_nr_str_;
+        boost::property_tree::ptree settings_;
+};
+
 class CalibrationRun : public Run{
 
     public:
@@ -161,19 +176,11 @@ class CalibrationRun : public Run{
 
         int PathToRunNumber(boost::filesystem::path p);
 
-        boost::filesystem::path path_run_;
-        double tsMin;
-        double tsMax;
 
-        int run_nr_;
-        int int_nr_;
-        std::string run_nr_str_;
 
         TTree *tree_online;
         TTree *tree_offline;
         TTree *tree_skb;
-
-        boost::property_tree::ptree settings_;
 
         std::vector<PhysicsEvent*>   events_;
         std::vector<IntEvent*>       int_events_;
@@ -188,6 +195,13 @@ class CalibrationRun : public Run{
         int post_samples_;
         int int_pre_samples_;
         int int_post_samples_;
+};
+
+class AnalysisRun : public Run
+{
+    public:
+        AnalysisRun(boost::filesystem::path p);
+        virtual ~AnalysisRun();
 };
 
 #endif /* CLAWS_RUN_H_ */

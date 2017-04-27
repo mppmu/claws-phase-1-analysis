@@ -436,6 +436,13 @@ namespace claws {
             			// If it is a directory check if it is a Run folder and proceed.
                         runs.push_back(*itr);
             		}
+                    else if(boost::filesystem::is_directory(*itr)
+                            && (boost::starts_with((*itr).filename().string(), "2016") || boost::starts_with((*itr).filename().string(), "2017")) )
+                    {
+                        // If it is a directory check if it is a Run folder and proceed.
+                        std::vector <boost::filesystem::path> tmp = GlobalSettings::GetRuns(*itr);
+                        runs.insert(runs.end(),tmp.begin(), tmp.end() );
+                    }
             	}
             }
             return runs;

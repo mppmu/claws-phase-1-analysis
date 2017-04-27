@@ -5,7 +5,7 @@ ifeq ($(shell uname -s),Linux)
 	#CFLAGS += -fopenmp `root-config --cflags` -I/remote/pcilc3/software/gperftools/include -g -rdynamic
 	CFLAGS += -fopenmp `root-config --cflags` -c -fmessage-length=0
 	# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
-	LFLAGS += -fopenmp `root-config --libs --glibs` -lboost_system -lboost_filesystem -lgsl
+	LFLAGS += -fopenmp `root-config --libs --glibs` -lboost_system -lboost_filesystem -lgsl -lboost_program_options
 	# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
 	CC = g++
 endif
