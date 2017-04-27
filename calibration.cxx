@@ -91,40 +91,38 @@ int main(int argc, char* argv[]) {
 	cout << "|            CLAWS phase I data calibration             |" << endl;
 	cout << "---------------------------------------------------------" << endl;
 
-// 	gStyle->SetOptFit(1111);
-// //-------------------------------------------------------------
-// // First get the corresponding Tmin and Tmac from the beast run
-// //-------------------------------------------------------------
-//
-//
-// 	static unsigned int lastTs=0;
-//
-// 	std::ifstream runfile("./runs.txt", std::ios_base::in);
-// 	std::string line;
-//
-//
-// 	double runnumber = 5001;
-//
-// 	double runnumbertmp, tsMin, tsMax;
-//
-//
-// 	if(!runfile) {
-// 	  std::cout << "ERROR: run number file not found. Exiting." << std::endl;
-// 	  exit(1);
-// 	}
-// 	else {
-// 	  while (std::getline(runfile,line)) {
-// 		std::istringstream iss(line);
-//
-// 		iss >> runnumbertmp;
-//
-// 		if(runnumber == runnumbertmp) {
-// 			iss >> tsMin >> tsMax;
-// 		}
-//
-// 	  }
-// 	}
-// 	std::cout << "Nr: " << runnumber << std::setprecision(12)<< ", tsMin: " << tsMin << ", tsMax: " << tsMax << std::endl;
+
+	boost::program_options::options_description options("Generic options");
+	options.add_options()
+		("help", "Displays this help message.")
+		("config-file,c", boost::program_options::value<boost::filesystem::path>()->default_value("./config/config_calibration.ini"), "Config file to get parameters from.")
+		("data.input", boost::program_options::value<boost::filesystem::path>()->default_value("./"), "Data directory containing runs meant to be analysed.")
+		("write-ntp", boost::program_options::value<bool>()->default_value(false), "Data directory containing runs meant to be analysed.")
+		;
+
+	boost::program_options::variables_map config_map;
+	boost::program_options::store(boost::program_options::parse_command_line(argc, argv, options), config_map);
+	boost::program_options::notify(config_map);
+
+	if (config_map.count("help")) {
+	// std::cout << generic_options << "\n";
+		std::cout << options << "\n";
+	    return 1;
+	}
+
+	std::ifstream ifs(config_map["config-file"].as<boost::filesystem::path>().c_str());
+	if (!ifs)
+	{
+		cout << "Can not open config file: " << config_map["config-file"].as<boost::filesystem::path>() << "\n";
+		return 0;
+	}
+	else
+	{
+		std::cout << "Using config file: " << config_map["config-file"].as<boost::filesystem::path>() << ".\n";
+		GS->LoadCalibrationConfig(config_map["config-file"].as<boost::filesystem::path>());
+	}
+
+	std::cout << config_map["data.input"].as<boost::filesystem::path>() << "\n";
 
 //----------------------------------------------------------------------------------------------
 // Now search for the right claws runs & events corresponding to the timestamp of the beast run
@@ -186,7 +184,8 @@ int main(int argc, char* argv[]) {
 // 		delete myrun;
 // 	}
 
-	std::vector <boost::filesystem::path> runs = GS->GetRuns(path(argv[1]));
+	std::vector <boost::filesystem::path> runs = GS->GetRuns( config_map["data.input"].as<boost::filesystem::path>());
+
 	for(unsigned i = 0 ; i<runs.size(); i++)
 	{
 
@@ -202,8 +201,12 @@ int main(int argc, char* argv[]) {
 		myrun->Average1PE();
 		myrun->WaveformDecompositionV2();
 		myrun->SaveRates();
-		std::string day = runs.at(i).parent_path().filename().string();
-		myrun->WriteNTuple(path(GS->ResetHook()->SetData()->SetNtp()->SetDetector(claws::CLW)->GetHook()/day));
+		if(config_map["write-ntp"].as<bool>())
+		{
+			std::string day = runs.at(i).parent_path().filename().string();
+			myrun->WriteNTuple(path(GS->ResetHook()->SetData()->SetNtp()->SetDetector(claws::CLW)->GetHook()/day));
+		}
+
 		delete myrun;
 	}
 

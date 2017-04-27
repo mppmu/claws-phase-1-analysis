@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
 	boost::program_options::options_description data_options("Data");
 	data_options.add_options()
 		("data.test", boost::program_options::value<std::string>()->default_value("default_value"), "test value")
-		("data.dir", boost::program_options::value<boost::filesystem::path>(), "Data directory containing runs meant to be analysed.")
+		("data.input", boost::program_options::value<boost::filesystem::path>(), "Data directory containing runs meant to be analysed.")
 		("data.ts_min", boost::program_options::value<double>(), "If selected, smallest timestamp of events used.")
 		("data.ts_max", boost::program_options::value<double>(), "If selected, largest timestamp of events used.")
 		("data.event_min", boost::program_options::value<int>(), "If selected, smallest event number of events used.")
@@ -81,21 +81,22 @@ int main(int argc, char* argv[]) {
 		boost::program_options::notify(config_map);
 	}
 
-	std::cout << config_map["data.dir"].as<boost::filesystem::path>() << "\n";
+	std::cout << config_map["data.input"].as<boost::filesystem::path>() << "\n";
 
 	std::vector <AnalysisRun*> runs;
 
 	/** Check which runs are supposed to go into
 	 *
-	 */
-	for(auto & itr_vec : GS->GetRuns(config_map["data.dir"].as<boost::filesystem::path>()) )
-	{
-		if()
-		{
-			runs.push_back(new AnalysisRun());
-		}
-		//std::cout << itr_vec.string() << "\n";
-	}
+     */
+
+	// for(auto & itr_vec : GS->GetRuns(config_map["data.input"].as<boost::filesystem::path>()) )
+	// {
+	// 	if()
+	// 	{
+	// 		runs.push_back(new AnalysisRun());
+	// 	}
+	// 	//std::cout << itr_vec.string() << "\n";
+	// }
 	// app->Run();
 	return 0;
 }

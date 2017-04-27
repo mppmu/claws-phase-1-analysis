@@ -154,13 +154,17 @@ namespace claws {
         {
           boost::property_tree::ini_parser::read_ini(boost::filesystem::path("./config/pe_to_mip.ini").string(), pe_to_mip_);
           boost::property_tree::ini_parser::read_ini(boost::filesystem::path("./config/config_architecture.ini").string(), config_architecture_);
-          boost::property_tree::ini_parser::read_ini(boost::filesystem::path("./config/config_calibration.ini").string(), config_calibration_);
         };
 
         GlobalSettings::~GlobalSettings()
         {
             // TODO Auto-generated destructor stub
         };
+
+        void GlobalSettings::LoadCalibrationConfig(boost::filesystem::path p)
+        {
+            boost::property_tree::ini_parser::read_ini(p.string(), config_calibration_);
+        }
 
         int GlobalSettings::GetNBits()
         {

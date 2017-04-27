@@ -17,18 +17,29 @@
 #include "globalsettings.hh"
 
 
-Gain::Gain(int int_nr):int_nr_(int_nr)
+Gain::Gain(int int_nr) : int_nr_(int_nr)
 {
     for(auto & ivec : GS->GetChannels(2))
     {
         std::string title    = "run_" + std::to_string(int_nr_) + "_" + ivec + "_gain";
         std::replace(title.begin(), title.end(), '-','_');
-        channels_.push_back(new GainChannel(ivec, new TH1I(title.c_str(), title.c_str(),140,-210 ,2610),0, new std::vector<float>(230,0)));
+        channels_.push_back(
+            new GainChannel(
+                ivec,
+                new TH1I(title.c_str(),
+                         title.c_str(),
+                         GS->GetCaliPar<int>("Gain.hist_n_bins"),
+                         GS->GetCaliPar<int>("Gain.hist_lower_bound"),
+                         GS->GetCaliPar<int>("Gain.hist_upper_bound") ),
+                 0,
+                 new std::vector<float>(GS->GetCaliPar<int>("Gain.vector_size"),0)
+             )
+         );
     }
 
     // for(auto & v : channel_list_)
     // {
-    //     // TODO make the vector initialization proper.
+    //     \todo make the vector initialization proper.
     //     std::string title    = "run_" + std::to_string(run_nr_) + "_" + v + "_gain";
     //     channels_.push_back(new TH1I(title.c_str(), title.c_str(),140,-210 ,2610));
     //     gain_.push_back(0);
@@ -79,8 +90,10 @@ void Gain::FitGain()
         gaus->SetParameter(1, ivec->gain_hist->GetBinCenter(ivec->gain_hist->GetMaximumBin()));
         gaus->SetParameter(2, 31.);
         // gaus->SetParLimits(2, 0, 100000);
+        //
         TFitResultPtr result = ivec->gain_hist->Fit(gaus,"QS","",0,ivec->gain_hist->GetBinCenter(ivec->gain_hist->GetMaximumBin())*5);
-        if( (result->Chi2()/result->Ndf() > 10) || (int(result) != 0 ) )
+
+        if( (result->Chi2()/result->Ndf() > GS->GetCaliPar<double>("Gain.chi2_bound")) || (int(result) != 0 ) )
         {
             std::cout << "Fit failing in : "<< ivec->name <<"Gain::FitGain(): fit gaus. Chi2: " << result->Chi2()<< ", ndf: "<< result->Ndf()<< ", status: " << int(result) << std::endl;
             exit(1);
@@ -102,7 +115,7 @@ void Gain::FitGain()
         d_gaus->SetParLimits(5,gaus->GetParameter(2)*0.75, gaus->GetParameter(2)*1.25);
         //
         result = ivec->gain_hist->Fit(d_gaus,"SLQ","",(gaus->GetParameter(1)-3*gaus->GetParameter(2)),((gaus->GetParameter(1)-mean_bias)*2+3*gaus->GetParameter(2)+mean_bias));
-        if( (result->Chi2()/result->Ndf() > 10) || (int(result) != 0 ) )
+        if( (result->Chi2()/result->Ndf() > GS->GetCaliPar<double>("Gain.chi2_bound") ) || (int(result) != 0 ) )
         {
             std::cout << "Fit failing in Gain::FitGain(): fit double gaus. Chi2: " << result->Chi2() << ", ndf: "<< result->Ndf() << ", status: " << int(result) << std::endl;
             exit(1);

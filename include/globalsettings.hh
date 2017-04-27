@@ -91,6 +91,7 @@ namespace claws {
             GlobalSettings();
             virtual ~GlobalSettings();
 
+            void LoadCalibrationConfig(boost::filesystem::path p);
             int GetNBits();
             int GetNBitsScope();
             float GetXLow();
