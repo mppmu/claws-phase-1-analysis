@@ -17,7 +17,6 @@
 //project includes
 #include "globalsettings.hh"
 
-
 std::unique_ptr<claws::GlobalSettings>  GS = std::unique_ptr<claws::GlobalSettings>(new claws::GlobalSettings);
 
 namespace claws {
@@ -152,7 +151,7 @@ namespace claws {
 
         GlobalSettings::GlobalSettings() : hook_("")
         {
-          boost::property_tree::ini_parser::read_ini(boost::filesystem::path("./config/pe_to_mip.ini").string(), pe_to_mip_);
+        //   boost::property_tree::ini_parser::read_ini(boost::filesystem::path("./config/pe_to_mip.ini").string(), pe_to_mip_);
           boost::property_tree::ini_parser::read_ini(boost::filesystem::path("./config/config_architecture.ini").string(), config_architecture_);
         };
 
@@ -164,6 +163,11 @@ namespace claws {
         void GlobalSettings::LoadCalibrationConfig(boost::filesystem::path p)
         {
             boost::property_tree::ini_parser::read_ini(p.string(), config_calibration_);
+        }
+
+        void GlobalSettings::LoadPeToMip(boost::filesystem::path p)
+        {
+            boost::property_tree::ini_parser::read_ini(p.string(), pe_to_mip_);
         }
 
         int GlobalSettings::GetNBits()

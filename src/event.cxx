@@ -10,7 +10,7 @@
 // boost
 #include <boost/algorithm/string/replace.hpp>
 // OpenMP
-//#include <omp.h>
+#include <omp.h>
 // root
 #include <TFile.h>
 
@@ -584,7 +584,6 @@ void PhysicsEvent::Decompose(std::map<std::string, std::vector<float>*> avg_wave
     /**
      * [for description]
      * @param  i [description]
-     * @return   [description]
      * \todo
      */
     // std::vector<std::string> keys;
@@ -608,12 +607,24 @@ void PhysicsEvent::Decompose(std::map<std::string, std::vector<float>*> avg_wave
     #pragma omp parallel for num_threads(6) firstprivate(avg_waveforms)
     for(unsigned i = 0; i < vch.size(); i++)
     {
+
         std::string ch_name = vch.at(i);
+
+//        #pragma omp critical
+//        std::cout << "Thread id: " << int(omp_get_thread_num()) << ", in channel: " << ch_name << std::endl;
+
         if(!ends_with(ch_name, "4"))
         {
-            PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(channels_[ch_name]);
-            double chi2 = tmp->DecomposeV2(avg_waveforms[ch_name + "-INT"]);
+            PhysicsChannel*     tmp     = dynamic_cast<PhysicsChannel*>(channels_[ch_name]);
+            double              chi2    = tmp->DecomposeV2(avg_waveforms[ch_name + "-INT"]);
+
+            #pragma omp critical
             pt_.put("DecompositionResults." + ch_name, chi2);
+
+            if( chi2 > GS->GetCaliPar<double>("PhysicsChannel.chi2_bound") )
+            {
+                std::cout << "\033[1;31mReconstruction failed! Name: "<< ch_name << " Nr: "<< nr_ <<" Chi2: "<< chi2 << "\033[0m"<< "\r" << std::endl;
+            }
         }
     }
 };
@@ -666,7 +677,6 @@ void PhysicsEvent::SaveEvent(boost::filesystem::path folder, std::string type)
 
     rfile->Close();
     delete rfile;
-
 
     boost::property_tree::write_ini(folder.string()+"/event_"+std::to_string(nr_)+".ini", pt_);
 

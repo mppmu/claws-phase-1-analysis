@@ -22,6 +22,7 @@ struct GainChannel
     {
         avg_hist = NULL;
         end = 0;
+        norm = 0;
     };
     ~GainChannel()
     {
@@ -35,6 +36,7 @@ struct GainChannel
     std::vector<float>* avg_wf;
     TH1F*       avg_hist;
     int         end;
+    int         norm;
 };
 
 class Gain

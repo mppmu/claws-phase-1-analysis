@@ -95,9 +95,10 @@ int main(int argc, char* argv[]) {
 	boost::program_options::options_description options("Generic options");
 	options.add_options()
 		("help", "Displays this help message.")
-		("config-file,c", boost::program_options::value<boost::filesystem::path>()->default_value("./config/config_calibration.ini"), "Config file to get parameters from.")
-		("data.input", boost::program_options::value<boost::filesystem::path>()->default_value("./"), "Data directory containing runs meant to be analysed.")
-		("write-ntp", boost::program_options::value<bool>()->default_value(false), "Data directory containing runs meant to be analysed.")
+		("config-file,c", 	boost::program_options::value<boost::filesystem::path>()->default_value("./config/config_calibration.ini"), "Config file to get parameters from.")
+		("pe-file", 		boost::program_options::value<boost::filesystem::path>()->default_value("./config/pe_to_mip.ini"), "Config file to get conversion from pe to MIP.")
+		("data.input", 		boost::program_options::value<boost::filesystem::path>()->default_value("./"), "Data directory containing runs meant to be analysed.")
+		("write-ntp", 		boost::program_options::value<bool>()->default_value(false), "Data directory containing runs meant to be analysed.")
 		;
 
 	boost::program_options::variables_map config_map;
@@ -120,6 +121,18 @@ int main(int argc, char* argv[]) {
 	{
 		std::cout << "Using config file: " << config_map["config-file"].as<boost::filesystem::path>() << ".\n";
 		GS->LoadCalibrationConfig(config_map["config-file"].as<boost::filesystem::path>());
+	}
+
+	std::ifstream ifs2(config_map["pe-file"].as<boost::filesystem::path>().c_str());
+	if (!ifs2)
+	{
+		cout << "Can not open pe file: " << config_map["pe-file"].as<boost::filesystem::path>() << "\n";
+		return 0;
+	}
+	else
+	{
+		std::cout << "Using pe file: " << config_map["pe-file"].as<boost::filesystem::path>() << ".\n";
+		GS->LoadPeToMip(config_map["pe-file"].as<boost::filesystem::path>());
 	}
 
 	std::cout << config_map["data.input"].as<boost::filesystem::path>() << "\n";

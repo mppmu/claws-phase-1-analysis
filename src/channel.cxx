@@ -555,6 +555,10 @@ void PhysicsChannel::BuildWorkhorseWF()
 
 double PhysicsChannel::DecomposeV2(std::vector<float>* avg_wf)
 {
+    /**
+     * [adsasd]
+     * @param avg_wf [Full average 1 pe waveform that will be subtracted.]
+     */
   this->Subtract1PE(avg_wf);
   this->ReconstructV2(avg_wf);
   this->CalculateChi2V2();
@@ -564,39 +568,61 @@ double PhysicsChannel::DecomposeV2(std::vector<float>* avg_wf)
 
 void PhysicsChannel::Subtract1PE(std::vector<float>* avg_wf)
 {
-    double avg_max  = *std::max_element(avg_wf->begin(),avg_wf->end());
-    int avg_peak = std::distance(avg_wf->begin(), std::max_element(avg_wf->begin(),avg_wf->end()));
+    /** [Test description of Subtract1PE]
+     *
+     *  @param avg_wf [Full average 1 pe waveform that will be subtracted.]
+     */
+    double avg_max        = *std::max_element(avg_wf->begin(),avg_wf->end());
+    int    avg_peak       =  std::distance(avg_wf->begin(), std::max_element(avg_wf->begin(),avg_wf->end()));
 
-    while((*std::max_element(wh_wf_->begin(), wh_wf_->end())) > 2*avg_max/20.)
+    double stop_decompose =  GS->GetCaliPar<double>("PhysicsChannel.stop_decompose");
+    double int_ratio      =  GS->GetCaliPar<double>("PhysicsChannel.int_ratio");
+
+    while((*std::max_element(wh_wf_->begin(), wh_wf_->end())) > stop_decompose*avg_max/int_ratio)
     {
         int max = std::distance(wh_wf_->begin(), std::max_element(wh_wf_->begin(), wh_wf_->end()));
 
         int sub_start = max - avg_peak;
         int sub_stop  = max + (avg_wf->size() - avg_peak);
 
-        if( sub_stop > wh_wf_->size() ) sub_stop = wh_wf_->size();
+        // If max is close to the begining, begining of avg_wf would be be-
+        // fore the start of wh_wf_.
+        if( sub_start < 0 )
+        {
+            sub_start = 0;
+        }
+
+        // If max is close to the end of wh_wf_, avg_wf would excide it.
+        if( sub_stop > wh_wf_->size() )
+        {
+            sub_stop = wh_wf_->size();
+        }
+
 
         for(int i = sub_start ; i < sub_stop ; i++)
         {
 //            std::cout << "Subtracting: " << avg_waveform->at(i - sub_start )/20. << " at: " << i << ",  in avg at: "<< (i - sub_start ) << std::endl;
             // if( (wh_wf_->at(i) - avg_wf->at(i - sub_start )/20.) >= 0 ) wh_wf_->at(i) -= avg_wf->at(i - sub_start )/20.;
             // else                                                        wh_wf_->at(i) = 0;
-            if( (wh_wf_->at(i) - avg_wf->at(i - sub_start )/20.) >= 0)
+            if( (wh_wf_->at(i)  - avg_wf->at(i - ( max - avg_peak ) )/int_ratio) >= 0)
             {
-                wh_wf_->at(i) -= avg_wf->at(i - sub_start )/20.;
+                 wh_wf_->at(i) -= avg_wf->at(i - ( max - avg_peak ) )/int_ratio;
             }
             else
             {
                 wh_wf_->at(i) = 0;
             }
         }
+
         mip_wf_->at(max) ++;
     }
 
+    // Get the total number of photons in the waveform for the rate.
     for(auto &ivec: (*mip_wf_))
     {
         nr_ph_ += ivec;
     }
+
 };
 
 void PhysicsChannel::ReconstructV2(std::vector<float>* avg_waveform)
@@ -613,19 +639,22 @@ void PhysicsChannel::ReconstructV2(std::vector<float>* avg_waveform)
 
     int avg_peak = std::distance(avg_waveform->begin(), std::max_element(avg_waveform->begin(),avg_waveform->end()));
 
-    for(unsigned i = 0; i < mip_wf_->size(); i++)
+    double int_ratio      =  GS->GetCaliPar<double>("PhysicsChannel.int_ratio");
+
+    for(unsigned ph_pos = 0; ph_pos < mip_wf_->size(); ph_pos++ )
     {
-        if( mip_wf_->at(i) != 0 )
+        if( mip_wf_->at( ph_pos ) != 0 )
         {
-            int add_start = i - avg_peak;
-            int add_stop  = i + (avg_waveform->size() - avg_peak);
+            // Add the photon:
+            int add_start = ph_pos - avg_peak;
+            if( add_start < 0 ) add_start = 0;
 
-            if( add_stop > wh_wf_->size() ) add_stop = wh_wf_->size();
+            int add_stop  = ph_pos + ( avg_waveform->size() - avg_peak );
+            if(add_stop > wh_wf_->size() ) add_stop = wh_wf_->size();
 
-            for(int j = add_start ; j < add_stop ; j++)
+            for(int i = add_start; i < add_stop; i++)
             {
-    //            std::cout << "Subtracting: " << avg_waveform->at(i - sub_start )/20. << " at: " << i << ",  in avg at: "<< (i - sub_start ) << std::endl;
-                wh_wf_->at(j) += avg_waveform->at(j - add_start ) * mip_wf_->at(i)/20.;
+                wh_wf_->at(i) += avg_waveform->at(i - (ph_pos - avg_peak) ) * mip_wf_->at(ph_pos)/int_ratio;
             }
 
         }
@@ -634,12 +663,14 @@ void PhysicsChannel::ReconstructV2(std::vector<float>* avg_waveform)
 
 void PhysicsChannel::CalculateChi2V2()
 {
-  /**
+  /** [The ensure, that the reconstructed waveform and the cleaned original one
+    *  agree, calculate a Chi2 test statistic. ]
    * \todo Validate
    * \todo implement useful definition of Chi2 and it's sigma. Maybe with Poisson/Binomial of number of detected photons.
    *
    */
-   double sigma = GS->GetCaliPar<double>("PhysicsChannel.Chi2Sigma");
+
+   double sigma = GS->GetCaliPar<double>("PhysicsChannel.chi2_sigma");
    int n = 0;
 
    chi2_ = 0;
@@ -651,8 +682,16 @@ void PhysicsChannel::CalculateChi2V2()
        chi2_ += ( clean_wf_->at(i) - wh_wf_->at(i) ) * ( clean_wf_->at(i) - wh_wf_->at(i) ) / ( sigma * sigma );
    }
 
-   chi2_ /= wh_wf_->size();
-//   std::cout << "Channel: " <<  name_<< " Chi2 " << chi2_ << std::endl;
+//   chi2_ /= wh_wf_->size();
+    if(nr_ph_ > 0)
+    {
+        chi2_ /= nr_ph_ * wh_wf_->size();
+    }
+    else
+    {
+        chi2_ /= -1 * wh_wf_->size();
+    }
+   // std::cout << "Channel: " <<  name_<< " Chi2 " << chi2_ << std::endl;
 };
 
 void PhysicsChannel::RunFFT()

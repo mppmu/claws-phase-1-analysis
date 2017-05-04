@@ -4,11 +4,13 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <math.h>
 
 //root
 #include <TFile.h>
 #include <TF1.h>
 #include <TGraph.h>
+#include <TGraphErrors.h>
 #include <TFitResultPtr.h>
 #include <TFitResult.h>
 
@@ -26,13 +28,15 @@ Gain::Gain(int int_nr) : int_nr_(int_nr)
         channels_.push_back(
             new GainChannel(
                 ivec,
+                // histogram for gain extraction
                 new TH1I(title.c_str(),
                          title.c_str(),
-                         GS->GetCaliPar<int>("Gain.hist_n_bins"),
-                         GS->GetCaliPar<int>("Gain.hist_lower_bound"),
-                         GS->GetCaliPar<int>("Gain.hist_upper_bound") ),
+                         GS->GetCaliPar<int>("Gain.nbinsx"),
+                         GS->GetCaliPar<int>("Gain.xlow"),
+                         GS->GetCaliPar<int>("Gain.xup") ),
                  0,
-                 new std::vector<float>(GS->GetCaliPar<int>("Gain.vector_size"),0)
+                 // Vector holding avg 1 pe waveform
+                 new std::vector<float>(GS->GetCaliPar<int>("Average1PE.vector_size"),0)
              )
          );
     }
@@ -88,15 +92,17 @@ void Gain::FitGain()
         //TODO make them dinamically loaded from config file.
         gaus->SetParameter(0, ivec->gain_hist->GetMaximum());
         gaus->SetParameter(1, ivec->gain_hist->GetBinCenter(ivec->gain_hist->GetMaximumBin()));
-        gaus->SetParameter(2, 31.);
+        gaus->SetParameter(2, GS->GetCaliPar<double>("Gain.sigma"));
         // gaus->SetParLimits(2, 0, 100000);
         //
-        TFitResultPtr result = ivec->gain_hist->Fit(gaus,"QS","",0,ivec->gain_hist->GetBinCenter(ivec->gain_hist->GetMaximumBin())*5);
+        TFitResultPtr result = ivec->gain_hist->Fit(gaus,"QS","",0,ivec->gain_hist->GetBinCenter(ivec->gain_hist->GetMaximumBin())*1.5);
 
         if( (result->Chi2()/result->Ndf() > GS->GetCaliPar<double>("Gain.chi2_bound")) || (int(result) != 0 ) )
         {
-            std::cout << "Fit failing in : "<< ivec->name <<"Gain::FitGain(): fit gaus. Chi2: " << result->Chi2()<< ", ndf: "<< result->Ndf()<< ", status: " << int(result) << std::endl;
-            exit(1);
+    //        std::cout << "Fit failing in Gain::FitGain() for ch "<< ivec->name <<": fit gaus. Chi2: " << result->Chi2()<< ", ndf: "<< result->Ndf()<< ", status: " << int(result) << std::endl;
+            std::cout << "\033[1;31mFit failing in Gain::FitGain() for ch "<< ivec->name << ": fit single gaus. Chi2: " << result->Chi2() << ", ndf: "<< result->Ndf()
+             << ", status: " << int(result) << "\033[0m"<< "\r" << std::endl;
+        //    exit(1);
         }
 
         TF1* d_gaus=new TF1( (ivec->name + "_d_gaus").c_str(),"gaus(220)+gaus(420)",0,3*gaus->GetParameter(1) );
@@ -113,16 +119,23 @@ void Gain::FitGain()
 
         d_gaus->SetParLimits(4,(gaus->GetParameter(1)- mean_bias)*1.75 + mean_bias, (gaus->GetParameter(1)-mean_bias)*2.25+mean_bias);
         d_gaus->SetParLimits(5,gaus->GetParameter(2)*0.75, gaus->GetParameter(2)*1.25);
-        //
+
         result = ivec->gain_hist->Fit(d_gaus,"SLQ","",(gaus->GetParameter(1)-3*gaus->GetParameter(2)),((gaus->GetParameter(1)-mean_bias)*2+3*gaus->GetParameter(2)+mean_bias));
         if( (result->Chi2()/result->Ndf() > GS->GetCaliPar<double>("Gain.chi2_bound") ) || (int(result) != 0 ) )
         {
-            std::cout << "Fit failing in Gain::FitGain(): fit double gaus. Chi2: " << result->Chi2() << ", ndf: "<< result->Ndf() << ", status: " << int(result) << std::endl;
-            exit(1);
+            // If fit fails tell the world and than use the result from the single gaussian fit.
+            std::cout << "\033[1;31mFit failing in Gain::FitGain() for ch "<< ivec->name << ": fit double gaus. Chi2: " << result->Chi2() << ", ndf: "<< result->Ndf()
+             << ", status: " << int(result) << "\033[0m"<< "\r" << std::endl;
+            ivec->gain = gaus->GetParameter(1);
+        //    exit(1);
         }
+        else
+        {
+            ivec->gain = d_gaus->GetParameter(4) - d_gaus->GetParameter(1);
+        }
+        //
+        // ivec->gain = d_gaus->GetParameter(4) - d_gaus->GetParameter(1);
 
-        ivec->gain = d_gaus->GetParameter(4) - d_gaus->GetParameter(1);
-        // hendrik_file<< " "<< ivec->name << " " << ivec->gain;
     }
     // hendrik_file << std::endl;
     // hendrik_file.close();
@@ -168,7 +181,9 @@ void Gain::AddIntWf(std::map<std::string, std::vector<float>*> wfs, std::map<std
     for(unsigned i=0; i < GS->GetChannels(2).size(); i++ )
     {
         std::string ch_name = GS->GetChannels(2).at(i);
-        if(integral[ch_name]>= channels_.at(i)->gain*0.75 && integral[ch_name] <= channels_.at(i)->gain*1.25)
+        if(    integral[ch_name] >= channels_.at(i)->gain*(1 - GS->GetCaliPar<double>("Average1PE.allowed_gain"))
+            && integral[ch_name] <= channels_.at(i)->gain*(1 + GS->GetCaliPar<double>("Average1PE.allowed_gain"))
+           )
         {
             std::transform(channels_.at(i)->avg_wf->begin(), channels_.at(i)->avg_wf->end(),wfs[ch_name]->begin(), channels_.at(i)->avg_wf->begin(), std::plus<float>());
         }
@@ -182,7 +197,9 @@ void  Gain::AddIntWfs(std::vector<std::vector<IntChannel*>> int_channels)
         int counter = 0;
         for(auto &ivec : int_channels.at(i))
         {
-            if(ivec->GetIntegral() >= channels_.at(i)->gain*(1-GS->GetAcceptedGain()) && ivec->GetIntegral() <= channels_.at(i)->gain*(1+GS->GetAcceptedGain()))
+            if(    ivec->GetIntegral() >= channels_.at(i)->gain*( 1 - GS->GetCaliPar<double>("Average1PE.allowed_gain") )
+                && ivec->GetIntegral() <= channels_.at(i)->gain*( 1 + GS->GetCaliPar<double>("Average1PE.allowed_gain") )
+              )
             {
                 std::vector<float>* wf= ivec->GetWaveform();
                 std::transform(channels_.at(i)->avg_wf->begin(), channels_.at(i)->avg_wf->end(),wf->begin(), channels_.at(i)->avg_wf->begin(), std::plus<float>());
@@ -190,8 +207,6 @@ void  Gain::AddIntWfs(std::vector<std::vector<IntChannel*>> int_channels)
             }
         }
         this->NormalizeWaveform(i, counter);
-    //channels_.at(i)->avg_hist->SetEntries(channels_.at(i)->avg_hist->GetEntries()*counter);
-
     }
 };
 
@@ -201,13 +216,14 @@ void Gain::NormalizeWaveform(int ch, double norm)
         {
             channels_.at(ch)->avg_wf->at(i) /= norm;
         }
+        channels_.at(ch)->norm = norm;
 };
 
 void Gain::FitAvg()
 {
     for(auto & ivec : channels_)
     {
-        if(ivec->avg_wf->size() <= 250)
+        if(ivec->avg_wf->size() < 400)
         {
             std::string name = ivec->name + "_exponential";
             std::replace(name.begin(), name.end(), '-','_');
@@ -217,12 +233,16 @@ void Gain::FitAvg()
             expo->SetParameter(2,75.5);
             // expo->SetParameter(3,-0.11);
             ivec->avg_hist->Fit(expo, "Q", "", ivec->avg_hist->GetMaximumBin()+10, ivec->avg_wf->size());
-            ivec->end = round(expo->GetX(0.005));
+            ivec->end = round( expo->GetX(0.005) );
             // std::cout<< "ivec->end: " << ivec->end << std::endl;
             for(signed i = ivec->avg_wf->size()+1; i < ivec->end + 1; i++)
             {
                 ivec->avg_hist->SetBinContent(i, expo->Eval(i));
             }
+        }
+        else
+        {
+            ivec->end = ivec->avg_wf->size();
         }
     }
 }
@@ -237,7 +257,7 @@ void Gain::SaveAvg(boost::filesystem::path path_run)
     std::string fname = path_run.string()+"/Calibration/run_"+std::to_string(int_nr_)+"_avg1pe" +"_v"+ std::to_string(GS->GetCaliPar<int>("General.CalibrationVersion"))+".root";
     TFile *rfile = new TFile(fname.c_str(), "RECREATE");
 
-    TGraph* total_avg1pe = new TGraph();
+    TGraphErrors* total_avg1pe = new TGraphErrors();
     total_avg1pe->SetName("total_avg1pe");
     total_avg1pe->SetTitle("Average 1 PE integral for all channles");
     total_avg1pe->SetMarkerColor(kRed);
@@ -247,6 +267,15 @@ void Gain::SaveAvg(boost::filesystem::path path_run)
     total_avg1pe->SetMaximum(1e-6);
     total_avg1pe->GetXaxis()->SetTitle("channel FWD1-3 BWD1-3");
     total_avg1pe->GetYaxis()->SetTitle("Integral of average 1 pe waveform [IntCountsX0.8e-9ns]");
+
+    TGraph* total_norm = new TGraph();
+    total_norm->SetName("norm");
+    total_norm->SetTitle("Number of intermediate waveforms used for avg.");
+    total_norm->SetMarkerColor(kRed);
+    total_norm->SetMarkerStyle(34);
+    total_norm->SetMarkerSize(1.8);
+    total_norm->SetMinimum(0);
+    total_norm->SetMaximum(2000);
 
     int i=0;
     for(auto & ivec : channels_)
@@ -260,12 +289,15 @@ void Gain::SaveAvg(boost::filesystem::path path_run)
         // }
         ivec->avg_hist->Write();
         total_avg1pe->SetPoint(i, i+1, ivec->avg_hist->Integral()*GS->GetCaliPar<double>("General.BinWidth"));
+        total_avg1pe->SetPointError(i, 0, ivec->avg_hist->Integral()*GS->GetCaliPar<double>("General.BinWidth")/sqrt(ivec->norm) );
+        total_norm->SetPoint(i, i+1, ivec->norm);
         i++;
         // delete tmp;
         // tmp = NULL;
     }
 
     total_avg1pe->Write();
+    total_norm->Write();
 
     rfile->Close();
     delete rfile;
@@ -279,28 +311,58 @@ void Gain::WfToHist()
 
         std::string title = "run_" + std::to_string(int_nr_) + "_" + ivec->name + "_avg1pe";
         std::replace(title.begin(), title.end(), '-','_');
-        ivec->avg_hist = new TH1F(title.c_str(), title.c_str(),ivec->avg_wf->size() + 150 , -0.5 , ivec->avg_wf->size()+0.5 + 150 );
+
+        // If avg 1 pe waveforms are smaller than 400 values they need to be fitted and extended!
+        if(ivec->avg_wf->size() < 400)
+        {
+            ivec->avg_hist = new TH1F(title.c_str(), title.c_str(), 400 , 0.5 , 400.5 );
+        }
+        else
+        {
+            ivec->avg_hist = new TH1F(title.c_str(), title.c_str(), ivec->avg_wf->size(), 0.5 , ivec->avg_wf->size() +0.5 );
+        }
+
         for(unsigned i=0; i < ivec->avg_wf->size(); i++)
         {
             ivec->avg_hist->SetBinContent(i+1, ivec->avg_wf->at(i));
         }
     }
-}
+};
 
 void Gain::HistToWf()
 {
     for(auto & ivec : channels_)
     {
+        /**
+         * [Gain::GetGain description]
+         * @param  channel [description]
+         * @return         [description]
+         * \ todo id would be faster to set the vector completely to zero and than only fill the entries bigger than 0
+         *  instead of pushbacking.
+         *  \ todo check if setting everything ecept the waveform to zero works
+         */
         ivec->avg_wf->clear();
         // std::cout<< "1 Size: " << ivec->avg_wf->size() << ", Capacity: " << ivec->avg_wf->capacity()<< std::endl;
         //if(ivec->end-129 > ivec->avg_wf->capacity()) ivec->avg_wf->reserve(ivec->end-129);
-        ivec->avg_wf->reserve(ivec->end - 129);
         // std::cout<< "2 Size: " << ivec->avg_wf->size() << ", Capacity: " << ivec->avg_wf->capacity()<< std::endl;
-        for( unsigned i = 129; i < ivec->end; i++)
+
+        // for( unsigned i = 0; i < ivec->avg_hist->GetBinCenter(ivec->gain_hist->GetMaximumBin()) - 10; i++)
+        // {
+        //     ivec->avg_wf->push_back(0);
+        // }
+
+//        for( unsigned i = ivec->avg_hist->GetBinCenter(ivec->gain_hist->GetMaximumBin()) - 10; i < ivec->avg_hist->GetNbinsX(); i++)
+        for( unsigned i = 0; i < ivec->avg_hist->GetNbinsX(); i++)
         {
-            ivec->avg_wf->push_back(ivec->avg_hist->GetBinContent(i));
+            // if(ivec->avg_hist->GetBinContent( i + 1 ) >= 0 )
+            // {
+                ivec->avg_wf->push_back(ivec->avg_hist->GetBinContent( i + 1 ));
+            // }
+            // else
+            // {
+            //     ivec->avg_wf->push_back(0);
+            // }
         }
-        // std::cout<< "3 Size: " << ivec->avg_wf->size() << ", Capacity: " << ivec->avg_wf->capacity()<< std::endl;
     }
 };
 

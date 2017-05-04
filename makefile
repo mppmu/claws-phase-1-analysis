@@ -30,8 +30,9 @@ INCLUDES  += -I"./include"
 CALI_OBJS += ./build/calibration.o
 ANA_OBJS += ./build/analysis.o
 
-all: monkey clean build/calibration build/analysis docs
-
+#all: monkey clean build/calibration build/analysis docs
+all: debug
+	
 debug: CFLAGS += -g -O0 -Wall
 debug: monkey clean build/calibration build/analysis
 
