@@ -82,63 +82,77 @@ void Gain::AddValue(std::map<std::string, double> values)
 
 void Gain::FitGain()
 {
-//    std::ofstream hendrik_file("/home/iwsatlas1/mgabriel/Plots/forHendyDany.txt", ios::app);
 
     for(auto & ivec : channels_)
     {
 
         TF1* gaus=new TF1( (ivec->name + "_gaus").c_str(),"gaus",-200, 2600);
 
-        //TODO make them dinamically loaded from config file.
         gaus->SetParameter(0, ivec->gain_hist->GetMaximum());
         gaus->SetParameter(1, ivec->gain_hist->GetBinCenter(ivec->gain_hist->GetMaximumBin()));
         gaus->SetParameter(2, GS->GetCaliPar<double>("Gain.sigma"));
-        // gaus->SetParLimits(2, 0, 100000);
-        //
+
         TFitResultPtr result = ivec->gain_hist->Fit(gaus,"QS","",0,ivec->gain_hist->GetBinCenter(ivec->gain_hist->GetMaximumBin())*1.5);
 
-        if( (result->Chi2()/result->Ndf() > GS->GetCaliPar<double>("Gain.chi2_bound")) || (int(result) != 0 ) )
+        if( int(result) == 0)
         {
-    //        std::cout << "Fit failing in Gain::FitGain() for ch "<< ivec->name <<": fit gaus. Chi2: " << result->Chi2()<< ", ndf: "<< result->Ndf()<< ", status: " << int(result) << std::endl;
-            std::cout << "\033[1;31mFit failing in Gain::FitGain() for ch "<< ivec->name << ": fit single gaus. Chi2: " << result->Chi2() << ", ndf: "<< result->Ndf()
-             << ", status: " << int(result) << "\033[0m"<< "\r" << std::endl;
+            if( (result->Chi2()/result->Ndf() > GS->GetCaliPar<double>("Gain.chi2_bound")) )
+            {
+                std::cout << "\033[1;31mFit failing in Gain::FitGain() for ch "<< ivec->name << ": \033[0m fit SINGLE GAUS due to Chi2: " << result->Chi2() << ", ndf: "<< result->Ndf()
+                << ", status: " << int(result) << "\033[0m"<< "\r" << std::endl;
         //    exit(1);
-        }
+                ivec->gain = ivec->gain_hist->GetMaximumBin();
+            }
+            else
+            {
 
-        TF1* d_gaus=new TF1( (ivec->name + "_d_gaus").c_str(),"gaus(220)+gaus(420)",0,3*gaus->GetParameter(1) );
+                TF1* d_gaus=new TF1( (ivec->name + "_d_gaus").c_str(),"gaus(220)+gaus(420)",0,3*gaus->GetParameter(1) );
 
-        double mean_bias = 25;
+                double mean_bias = 25;
 
-        d_gaus->SetParameter(0,gaus->GetParameter(0));
-        d_gaus->SetParameter(1,gaus->GetParameter(1));
-        d_gaus->SetParameter(2,gaus->GetParameter(2));
+                d_gaus->SetParameter(0,gaus->GetParameter(0));
+                d_gaus->SetParameter(1,gaus->GetParameter(1));
+                d_gaus->SetParameter(2,gaus->GetParameter(2));
 
-        d_gaus->SetParameter(3,gaus->GetParameter(0)*0.1);
-        d_gaus->SetParameter(4,(gaus->GetParameter(1)-mean_bias)*2 + mean_bias);
-        d_gaus->SetParameter(5,gaus->GetParameter(2));
+                d_gaus->SetParameter(3,gaus->GetParameter(0)*0.1);
+                d_gaus->SetParameter(4,(gaus->GetParameter(1)-mean_bias)*2 + mean_bias);
+                d_gaus->SetParameter(5,gaus->GetParameter(2));
 
-        d_gaus->SetParLimits(4,(gaus->GetParameter(1)- mean_bias)*1.75 + mean_bias, (gaus->GetParameter(1)-mean_bias)*2.25+mean_bias);
-        d_gaus->SetParLimits(5,gaus->GetParameter(2)*0.75, gaus->GetParameter(2)*1.25);
+                d_gaus->SetParLimits(4,(gaus->GetParameter(1)- mean_bias)*1.75 + mean_bias, (gaus->GetParameter(1)-mean_bias)*2.25+mean_bias);
+                d_gaus->SetParLimits(5,gaus->GetParameter(2)*0.75, gaus->GetParameter(2)*1.25);
 
-        result = ivec->gain_hist->Fit(d_gaus,"SLQ","",(gaus->GetParameter(1)-3*gaus->GetParameter(2)),((gaus->GetParameter(1)-mean_bias)*2+3*gaus->GetParameter(2)+mean_bias));
-        if( (result->Chi2()/result->Ndf() > GS->GetCaliPar<double>("Gain.chi2_bound") ) || (int(result) != 0 ) )
-        {
-            // If fit fails tell the world and than use the result from the single gaussian fit.
-            std::cout << "\033[1;31mFit failing in Gain::FitGain() for ch "<< ivec->name << ": fit double gaus. Chi2: " << result->Chi2() << ", ndf: "<< result->Ndf()
-             << ", status: " << int(result) << "\033[0m"<< "\r" << std::endl;
-            ivec->gain = gaus->GetParameter(1);
-        //    exit(1);
+                result = ivec->gain_hist->Fit(d_gaus,"SLQ","",(gaus->GetParameter(1)-3*gaus->GetParameter(2)),((gaus->GetParameter(1)-mean_bias)*2+3*gaus->GetParameter(2)+mean_bias));
+
+                if( int(result) == 0 )
+                {
+                    if( (result->Chi2()/result->Ndf() > GS->GetCaliPar<double>("Gain.chi2_bound") ) )
+                    {
+                        // If fit fails tell the world and than use the result from the single gaussian fit.
+                        std::cout << "\033[1;31mFit failing in Gain::FitGain() for ch "<< ivec->name << ": \033[0m fit DOUBLE GAUS due to Chi2: " << result->Chi2() << ", ndf: "<< result->Ndf()
+                        << ", status: " << int(result) << "\033[0m"<< "\r" << std::endl;
+                        ivec->gain = gaus->GetParameter(1);
+                        //    exit(1);
+                    }
+                    else
+                    {
+                        ivec->gain = d_gaus->GetParameter(4) - d_gaus->GetParameter(1);
+                    }
+                }
+                else
+                {
+                    std::cout << "\033[1;31mFit failing in Gain::FitGain() for ch "<< ivec->name << ": \033[0m fit DOUBLE GAUS due to status: " << int(result) << "\r" << std::endl;
+                    ivec->gain = gaus->GetParameter(1);
+                }
+            }
         }
         else
         {
-            ivec->gain = d_gaus->GetParameter(4) - d_gaus->GetParameter(1);
+            std::cout << "\033[1;31mFit failing in Gain::FitGain() for ch "<< ivec->name << ": \033[0m fit SINGLE GAUS due to status: " << int(result) << "\r" << std::endl;
+            ivec->gain =  ivec->gain_hist->GetMaximumBin();
         }
-        //
-        // ivec->gain = d_gaus->GetParameter(4) - d_gaus->GetParameter(1);
 
     }
-    // hendrik_file << std::endl;
-    // hendrik_file.close();
+
 };
 
 void Gain::SaveGain(boost::filesystem::path path_run)
