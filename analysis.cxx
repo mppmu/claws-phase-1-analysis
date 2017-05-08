@@ -28,6 +28,7 @@ int main(int argc, char* argv[]) {
     options.add_options()
     	("help", "Displays this help message.")
         ("config,c", boost::program_options::value<boost::filesystem::path>()->default_value("./config/analysis_parameters.ini"), "Config file to get parameters from.")
+		("out", boost::program_options::value<boost::filesystem::path>()->default_value("/remote/ceph/group/ilc/claws/data"), "Data directory containing results.")
         ;
 
 	boost::program_options::options_description data_options("Data");
@@ -89,14 +90,20 @@ int main(int argc, char* argv[]) {
 	 *
      */
 
-	// for(auto & itr_vec : GS->GetRuns(config_map["data.input"].as<boost::filesystem::path>()) )
-	// {
+	for(auto & itr_vec : GS->GetRuns(config_map["data.input"].as<boost::filesystem::path>()) )
+	{
 	// 	if()
 	// 	{
-	// 		runs.push_back(new AnalysisRun());
+			runs.push_back(new AnalysisRun(itr_vec));
 	// 	}
 	// 	//std::cout << itr_vec.string() << "\n";
-	// }
+	}
+
+	for(auto & itr_vec : runs)
+	{
+		itr_vec->LoadMetaData();
+	}
+
 	// app->Run();
 	return 0;
 }

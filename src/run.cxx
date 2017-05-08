@@ -78,8 +78,8 @@ Run::Run(boost::filesystem::path p)
 
     tsMin       = 1e10;
     tsMax       = 0;
-    cout << "---------------------------------------------------------" << endl;
-    std::cout << p.string() << std::endl;
+//    cout << "---------------------------------------------------------" << endl;
+//    std::cout << p.string() << std::endl;
     cout << "\033[1;31mRun::Created run: \033[0m" << run_nr_ << endl;
 };
 
@@ -92,6 +92,11 @@ void Run::LoadRunSettings()
         property_tree::ini_parser::read_ini(ini_file.string(), settings_);
     }
 };
+
+std::tuple<double, double> Run::GetTime()
+{
+    return std::make_tuple(tsMin, tsMax);
+}
 
 Run::~Run()
 {
@@ -1269,12 +1274,12 @@ void CalibrationRun::SaveRates()
     delete rfile;
 
 };
-double CalibrationRun::GetStartTime(){
-    return tsMin;
-};
-double CalibrationRun::GetStopTime(){
-    return tsMax;
-};
+// double CalibrationRun::GetStartTime(){
+//     return tsMin;
+// };
+// double CalibrationRun::GetStopTime(){
+//     return tsMax;
+// };
 
 int CalibrationRun::BuildOnlineTree(){
     // TODO Implentation
@@ -1583,10 +1588,94 @@ AnalysisRun::AnalysisRun(boost::filesystem::path p): Run(p)
     // std::ofstream hendrik_file("/home/iwsatlas1/mgabriel/Plots/forHendyDany.txt", ios::app);
     // hendrik_file << run_nr_str_;
     // hendrik_file.close();
-    claws::print_local_time();
+//    claws::print_local_time();
+    this->LoadRunSettings();
 };
 
 AnalysisRun::~AnalysisRun()
 {
 
+};
+
+void AnalysisRun::SynchronizeFiles()
+{
+    /*
+    This method uses the path to the run folder to determine the number of events.
+    Afterwards it checks if all the files for all the events do exist. Finally it
+    creates one EventClass object for each physics and each intermedieate event with
+    the paths to all the files as a parameter => SynchronizeFiles().
+    */
+
+    // cout << "-------------------------------------------------------"<< endl;
+    cout << "\033[33;1mRun::Synchronizing run:\033[0m running" << "\r" << std::flush;
+
+    // Check if the converted root, data & intermediate folders are available.
+    if( !boost::filesystem::is_directory(path_run_) )
+    {
+        cout << "Run folder does not exits!" << endl;
+        exit(-1);
+    }
+
+    if( !boost::filesystem::is_directory(path_run_/path("Results"))
+        || boost::filesystem::is_empty(path_run_/path("Results")) )
+    {
+        cout << "Results folder does not exits!" << endl;
+        exit(-1);
+    }
+
+    path path_data = path_run_ / path("Results");
+
+    vector<path> folder_content;
+    copy(directory_iterator(path_data), directory_iterator(), back_inserter(folder_content));
+    std::sort(folder_content.begin(),folder_content.end());
+
+//    #pragma omp parallel num_threads(7)
+//    {
+//       #pragma omp for ordered schedule(dynamic,1)
+        for ( unsigned int i=0; i < folder_content.size(); ++i)
+        {
+    //     //claws::ProgressBar((itr - folder_content.begin()+1.)/(folder_content.end()-folder_content.begin()));
+            if(    boost::filesystem::is_regular_file(folder_content.at(i))
+                && starts_with(folder_content.at(i).filename().string(), "event_")
+                && ends_with(folder_content.at(i).filename().string(), "_mip.root"))
+            {
+                // Get the paths to the .root file of the event.
+                path path_file_root = folder_content.at(i);
+                // cout << "Loading file: " << path_file_root.string() << endl;
+                // Get the path to the .ini file.
+                string tmp          = folder_content.at(i).filename().string();
+                replace_last( tmp, "_mip.root" , ".ini");
+                path path_file_ini  = path_data / path(tmp);
+
+                // Check if the .ini & exist for the event.
+                if( boost::filesystem::exists( path_file_ini) )
+                {
+                    events_.push_back(new AnalysisEvent(path_file_root, path_file_ini));
+                }
+                else{
+                    //TODO put in some mechanism in case the ini or the online rate files do not exist.
+                }
+            }
+        }
+
+        cout << "\033[32;1mRun::Synchronizing run:\033[0m done!   " << "\r" << std::endl;
+
+};
+
+
+
+void AnalysisRun::LoadMetaData()
+{
+        #pragma omp parrallel for num_threads(7)
+        for(unsigned int i=0; i< events_.size();i++)
+        {
+            events_.at(i)->LoadIniFile();
+            double ts = events_.at(i)->GetUnixtime();
+            #pragma omp critical
+            {
+                if(tsMin > ts ) tsMin = ts;
+                if(tsMax < ts ) tsMax = ts;
+            }
+        }
+    this->LoadRunSettings();
 };

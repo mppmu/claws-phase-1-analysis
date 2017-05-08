@@ -41,6 +41,7 @@ Event::Event(const path &file_root, const path &file_ini)
     path_file_root_      = file_root;
 
 };
+
 void Event::LoadRootFile()
 {
     // std::cout<< "Loading Event: " << nr_str_ << std::endl;
@@ -52,7 +53,7 @@ void Event::LoadRootFile()
     TFile *file=NULL;
     file = new TFile(path_file_root_.string().c_str(), "open");
 
-    if(file->IsZombie())
+    if( file->IsZombie() )
     {
         cout << "Error openning file" << endl;
         exit(-1);
@@ -66,7 +67,6 @@ void Event::LoadRootFile()
     file->Close("R");
     delete file;
     file = NULL;
-
 };
 
 void Event::LoadWaveform()
@@ -330,6 +330,11 @@ std::map<std::string, std::vector<float>*> Event::GetWaveforms()
     }
     return rtn;
 };
+
+double Event::GetUnixtime() const
+{
+    return unixtime_;
+}
 
 Event::~Event() {
 	// TODO Auto-generated destructor stub
@@ -596,10 +601,7 @@ void PhysicsEvent::Decompose(std::map<std::string, std::vector<float>*> avg_wave
     // for(auto& mvec : avg_waveforms)
     // {
     //     std::string tmp_name = mvec.first;
-    //     replace_last(tmp_name, "-INT", "");
-    //     PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(channels_[tmp_name]);
-    //     double chi2 = tmp->DecomposeV2(mvec.second);
-    //     pt_.put("DecompositionResults." + tmp_name, chi2);
+    //     replace_last(tmp_name,Results." + tmp_name, chi2);
     // }
 
     std::vector<std::string> vch = GS->GetChannels(1);
@@ -746,10 +748,7 @@ int PhysicsEvent::GetHerBg()       const
 {
     return herbg_;
 }
-double PhysicsEvent::GetUnixtime() const
-{
-    return unixtime_;
-}
+
 
 // template<typename T>;
 // T PhysicsEvent::GetPV(std::string pv)
@@ -839,4 +838,32 @@ void IntEvent::LoadIniFile()
 
 IntEvent::~IntEvent() {
 	// TODO Auto-generated destructor stub
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+AnalysisEvent::AnalysisEvent( const boost::filesystem::path &file_root, const boost::filesystem::path &file_ini) : Event(file_root ,file_ini)
+{
+    nr_str_ = file_root.filename().string().substr(14,3);
+    nr_     = atoi(nr_str_.c_str());
+};
+
+AnalysisEvent::~AnalysisEvent() {
+	// \todo Auto-generated destructor stub
+};
+
+void AnalysisEvent::LoadIniFile()
+{
+	property_tree::ini_parser::read_ini(path_file_ini_.string(), pt_);
+    unixtime_       = pt_.get<double>("Properties.UnixTime");
 };

@@ -26,6 +26,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <tuple>
 #include <map>
 #include <string>
 #include <cstdlib>
@@ -64,7 +65,6 @@
 // #include <gperftools/profiler.h>
 
 // Project includes
-#include "run.hh"
 #include "pedestal.hh"
 #include "gain.hh"
 #include "event.hh"
@@ -84,6 +84,13 @@ class Run
         virtual ~Run();
 
         virtual void LoadRunSettings();
+
+        virtual void SynchronizeFiles() = 0;
+
+        // double GetStartTime();
+        // double GetStopTime();
+
+        std::tuple<double, double> GetTime();
 
         boost::filesystem::path path_run_;
         double tsMin;
@@ -161,8 +168,7 @@ class CalibrationRun : public Run{
 
 
         int    GetRunNr();
-        double GetStartTime();
-        double GetStopTime();
+
         TTree *GetOnlineTree();
         TTree *GetOfflineTree();
 
@@ -202,6 +208,14 @@ class AnalysisRun : public Run
     public:
         AnalysisRun(boost::filesystem::path p);
         virtual ~AnalysisRun();
+
+        void SynchronizeFiles();
+        void LoadMetaData();
+            // void FilterRuns();
+            // void LoadEvents();
+
+        std::vector<AnalysisEvent*>   events_;
+
 };
 
 #endif /* CLAWS_RUN_H_ */

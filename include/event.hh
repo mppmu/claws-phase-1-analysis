@@ -107,6 +107,7 @@ class Event{
         virtual std::map<std::string, TH1*> GetHistograms();
     // protected:
 
+        double                 GetUnixtime()  const;
     //    static int id_;
 
         // An event relies on data/information in three different files. The .root, .ini & the online monitor.
@@ -117,6 +118,8 @@ class Event{
 
 	    int nr_        = -1;
         std::string nr_str_;
+
+        double unixtime_        = -1;
 
         std::map<std::string, Channel*> channels_;
 };
@@ -158,7 +161,7 @@ class PhysicsEvent : public Event{
         int                    GetHerBg()     const;
         bool                   GetInjection() const;
         int                    GetScrubbing() const;
-        double                 GetUnixtime()  const;
+
 
         virtual void CreateHistograms(std::string type = "raw");
         virtual std::map<std::string, TH1*> GetHistograms(std::string type = "raw");
@@ -174,7 +177,7 @@ class PhysicsEvent : public Event{
         boost::property_tree::ptree pt_;
         path path_online_rate_;
 
-        double unixtime_        = -1;
+
         int lerbg_              = -1;
         int herbg_              = -1;
         bool injection_         = false;
@@ -208,6 +211,20 @@ class IntEvent : public Event{
 //        std::map<std::string, IntChannel*> channels_;
 
 
+};
+
+class AnalysisEvent : public Event
+{
+    public:
+        AnalysisEvent(const path &file_root, const path &file_ini);
+        virtual ~AnalysisEvent();
+
+        virtual void LoadIniFile();
+
+
+        boost::property_tree::ptree pt_;
+
+        double unixtime_        = -1;
 };
 
 
