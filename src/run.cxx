@@ -1616,14 +1616,19 @@ void AnalysisRun::SynchronizeFiles()
     // Check if the converted root, data & intermediate folders are available.
     if( !boost::filesystem::is_directory(path_run_) )
     {
-        cout << "Run folder does not exits!" << endl;
+        cout << "Run folder does not exits: " <<  path_run_.string()<< std::endl;
         exit(-1);
     }
 
-    if( !boost::filesystem::is_directory(path_run_/path("Results"))
-        || boost::filesystem::is_empty(path_run_/path("Results")) )
+    if( !boost::filesystem::is_directory(path_run_/path("Results")) )
     {
-        cout << "Results folder does not exits!" << endl;
+        cout << "Results folder does not exits:" << path_run_/path("Results").string()<< endl;
+        exit(-1);
+    }
+
+    if( boost::filesystem::is_empty(path_run_/path("Results")) )
+    {
+        cout << "Results folder is empty:" << path_run_/path("Results").string()<< endl;
         exit(-1);
     }
 
@@ -1806,6 +1811,7 @@ void AnalysisRun::SetInjectionLimit(int type)
             }
         }
     }
+
 };
 
 bool AnalysisRun::IsEmpty()

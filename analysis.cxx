@@ -54,9 +54,9 @@ int main(int argc, char* argv[]) {
 		("parameters.ler_current_max", boost::program_options::value<double>(), "Maximum ler current.")
 		("parameters.her_current_min", boost::program_options::value<double>(), "Minimum her current.")
 		("parameters.her_current_max", boost::program_options::value<double>(), "Maximum her current.")
-		("parameters.inj", boost::program_options::value<bool>(), "Inter value for injection requirement:\n-1: doesn't matter\n0: no injection \n1: injection in one or both rings\n2: in LER only\n3: in HER only\n3: in both rings")
-		("parameters.inj_rate_min", boost::program_options::value<bool>(), "Min value for injection")
-		("parameters.inj_rate_max", boost::program_options::value<bool>(), "Max value for injection")
+		("parameters.inj", boost::program_options::value<int>(), "Inter value for injection requirement:\n-1: doesn't matter\n0: no injection \n1: injection in one or both rings\n2: in LER only\n3: in HER only\n3: in both rings")
+		("parameters.inj_rate_min", boost::program_options::value<double>(), " ")
+		("parameters.inj_rate_max", boost::program_options::value<double>(), " ")
 		;
 
 	options.add(parameter_options);
@@ -140,12 +140,16 @@ int main(int argc, char* argv[]) {
 
 
 
-	 for(auto & itr_vec : runs)
+	 for(auto & run : runs)
 	 {
-		 itr_vec->LoadMetaData();
+		 run->SynchronizeFiles();
+	     run->LoadMetaData();
 	 }
 
-
+	 for(auto & run : runs)
+	 {
+		 run->SetInjectionLimit(config_map["parameters.inj"].as<int>());
+	 }
 
 
 
