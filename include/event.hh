@@ -221,6 +221,8 @@ class AnalysisEvent : public Event
 
         virtual void LoadIniFile();
 
+        std::tuple<double, double>                GetCurrent();
+        std::tuple<bool, double, bool, double >   GetInjection();
 
         boost::property_tree::ptree pt_;
 

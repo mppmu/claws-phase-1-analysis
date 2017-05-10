@@ -54,6 +54,9 @@ int main(int argc, char* argv[]) {
 		("parameters.ler_current_max", boost::program_options::value<double>(), "Maximum ler current.")
 		("parameters.her_current_min", boost::program_options::value<double>(), "Minimum her current.")
 		("parameters.her_current_max", boost::program_options::value<double>(), "Maximum her current.")
+		("parameters.inj", boost::program_options::value<bool>(), "Inter value for injection requirement:\n-1: doesn't matter\n0: no injection \n1: injection in one or both rings\n2: in LER only\n3: in HER only\n3: in both rings")
+		("parameters.inj_rate_min", boost::program_options::value<bool>(), "Min value for injection")
+		("parameters.inj_rate_max", boost::program_options::value<bool>(), "Max value for injection")
 		;
 
 	options.add(parameter_options);
@@ -83,26 +86,80 @@ int main(int argc, char* argv[]) {
 	}
 
 	std::cout << config_map["data.input"].as<boost::filesystem::path>() << "\n";
-
+	std::cout << config_map["data.day_min"].as<std::string>() << "\n";
+	std::cout << config_map["data.day_max"].as<std::string>() << "\n";
 	std::vector <AnalysisRun*> runs;
 
 	/** Check which runs are supposed to go into
 	 *
      */
+	 for(auto & itr_vec : GS->GetRuns( config_map["data.input"].as<boost::filesystem::path>()) )
+	 {
+	     int run_nr = stoi(itr_vec.filename().string().substr(4));
 
-	for(auto & itr_vec : GS->GetRuns(config_map["data.input"].as<boost::filesystem::path>()) )
-	{
-	// 	if()
-	// 	{
-			runs.push_back(new AnalysisRun(itr_vec));
-	// 	}
-	// 	//std::cout << itr_vec.string() << "\n";
-	}
+	     if(	run_nr >= config_map["data.run_min"].as<int>()
+		 	 && run_nr <= config_map["data.run_max"].as<int>() )
+		 {
+			 std::string str = itr_vec.parent_path().filename().string();
+			 int day   = std::stoi(str.substr(str.length() - 2) );
+			 int month = std::stoi(str.substr(str.length() - 5 , 2) );
 
-	for(auto & itr_vec : runs)
-	{
-		itr_vec->LoadMetaData();
-	}
+			 if( 	 month > stoi( config_map["data.day_min"].as<std::string>().substr(0, 2))
+				 &&  month < stoi( config_map["data.day_max"].as<std::string>().substr(0, 2))    )
+			 {
+		         runs.push_back(new AnalysisRun(itr_vec));
+		     }
+
+			 else if(    month == stoi( config_map["data.day_min"].as<std::string>().substr(0, 2))
+		 			  && month == stoi( config_map["data.day_max"].as<std::string>().substr(0, 2))    )
+			 {
+				 if(    day >= stoi( config_map["data.day_min"].as<std::string>().substr(3, 2))
+			 		 && day <= stoi( config_map["data.day_max"].as<std::string>().substr(3, 2))    )
+				 {
+					 runs.push_back(new AnalysisRun(itr_vec));
+				 }
+			 }
+
+			 else if( month == stoi( config_map["data.day_min"].as<std::string>().substr(0, 2)) )
+			 {
+				 if( day >= stoi( config_map["data.day_min"].as<std::string>().substr(3, 2)) )
+				 {
+					 runs.push_back(new AnalysisRun(itr_vec));
+				 }
+			 }
+
+			 else if(  month == stoi( config_map["data.day_max"].as<std::string>().substr(0, 2)) )
+			 {
+				 if( day <= stoi( config_map["data.day_max"].as<std::string>().substr(3, 2)) )
+				 {
+					 runs.push_back(new AnalysisRun(itr_vec));
+				 }
+			 }
+		 }
+	 }
+
+
+
+	 for(auto & itr_vec : runs)
+	 {
+		 itr_vec->LoadMetaData();
+	 }
+
+
+
+
+
+
+
+
+
+	 	//if(itr_vec.parent_path().filename().string()[]
+	 	//{
+			//
+	 	//}
+
+
+
 
 	// app->Run();
 	return 0;

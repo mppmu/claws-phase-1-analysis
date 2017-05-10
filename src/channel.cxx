@@ -852,7 +852,7 @@ void PhysicsChannel::CalculateChi2()
     //     chi2 += ( waveform_->at(i) - waveform_photon_->at(i) ) * ( waveform_->at(i) - waveform_photon_->at(i) ) / ( sigma * sigma );
     // }
     chi2 /= waveform_->size();
-    std::cout << "Channel: " <<  name_<< " Chi2 " << chi2 << std::endl;
+//    std::cout << "Channel: " <<  name_<< " Chi2 " << chi2 << std::endl;
 }
 
 TH1F* PhysicsChannel::GetWaveformHist()

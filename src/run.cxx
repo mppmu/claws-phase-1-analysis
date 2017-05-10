@@ -80,7 +80,7 @@ Run::Run(boost::filesystem::path p)
     tsMax       = 0;
 //    cout << "---------------------------------------------------------" << endl;
 //    std::cout << p.string() << std::endl;
-    cout << "\033[1;31mRun::Created run: \033[0m" << run_nr_ << endl;
+    cout << "\033[1;31mRun::Created run: \033[0m" << run_nr_ << " - at: " << p.string() << endl;
 };
 
 void Run::LoadRunSettings()
@@ -202,6 +202,7 @@ void CalibrationRun::SynchronizeFiles()
         int_nr_ = new_run;
         path_int = path_run_.parent_path()/("Run-" + to_string(new_run) );
         path_int /= "int_root";
+        std::cout << "\033[1;31mIntermediate Data not valid!!! \n Switching to: "<< path_int << "\033[0m"<< "\r" << std::endl;
     }
 
     folder_content.clear();
@@ -1589,12 +1590,15 @@ AnalysisRun::AnalysisRun(boost::filesystem::path p): Run(p)
     // hendrik_file << run_nr_str_;
     // hendrik_file.close();
 //    claws::print_local_time();
-    this->LoadRunSettings();
 };
 
 AnalysisRun::~AnalysisRun()
 {
-
+    for(unsigned int i=0; i< events_.size();i++)
+    {
+        delete events_.at(i);
+        events_.at(i) = NULL;
+    }
 };
 
 void AnalysisRun::SynchronizeFiles()
@@ -1662,20 +1666,149 @@ void AnalysisRun::SynchronizeFiles()
 
 };
 
-
-
 void AnalysisRun::LoadMetaData()
 {
-        #pragma omp parrallel for num_threads(7)
-        for(unsigned int i=0; i< events_.size();i++)
+    #pragma omp parrallel for num_threads(7)
+    for(unsigned int i=0; i< events_.size();i++)
+    {
+        events_.at(i)->LoadIniFile();
+        double ts = events_.at(i)->GetUnixtime();
+        #pragma omp critical
         {
-            events_.at(i)->LoadIniFile();
-            double ts = events_.at(i)->GetUnixtime();
-            #pragma omp critical
+            if(tsMin > ts ) tsMin = ts;
+            if(tsMax < ts ) tsMax = ts;
+        }
+    }
+
+    this->LoadRunSettings();
+};
+
+void AnalysisRun::DeleteEvent(int nr)
+{
+    auto itr_vec = std::begin(events_);
+
+    while(itr_vec != std::end(events_))
+    {
+        if( (*itr_vec)->GetNr() == nr)
+        {
+            delete (*itr_vec);
+            (*itr_vec) = NULL;
+            events_.erase(itr_vec);
+        }
+        else
+        {
+            itr_vec ++;
+        }
+    }
+};
+
+void AnalysisRun::EraseElement(std::vector<AnalysisEvent*>::iterator itr_vec)
+{
+    delete (*itr_vec);
+    (*itr_vec) = NULL;
+    events_.erase(itr_vec);
+};
+
+void AnalysisRun::SetCurrentLimit(std::string ring , double low, double high)
+{
+    auto itr_vec = std::begin(events_);
+
+    while(itr_vec != std::end(events_))
+    {
+        auto current = (*itr_vec)->GetCurrent();
+
+        if( ring == "LER" )
+        {
+            if(    std::get<0>(current) < low
+                || std::get<0>(current) > high )
             {
-                if(tsMin > ts ) tsMin = ts;
-                if(tsMax < ts ) tsMax = ts;
+                delete (*itr_vec);
+                (*itr_vec) = NULL;
+                events_.erase(itr_vec);
             }
         }
-    this->LoadRunSettings();
+        else if( ring == "HER" )
+        {
+            if(    std::get<1>(current) < low
+                || std::get<1>(current) > high )
+            {
+                delete (*itr_vec);
+                (*itr_vec) = NULL;
+                events_.erase(itr_vec);
+            }
+        }
+
+        itr_vec ++;
+    }
+};
+
+void AnalysisRun::SetInjectionLimit(int type)
+{
+    if(type == -1 )
+    {
+        return;
+    }
+
+    auto itr_vec = std::begin(events_);
+
+    while(itr_vec != std::end(events_))
+    {
+        auto injection = (*itr_vec)->GetInjection();
+
+        if(type == 0)
+        {
+            if(    std::get<0>(injection) == true
+                || std::get<2>(injection) == true )
+            {
+                delete (*itr_vec);
+                (*itr_vec) = NULL;
+                events_.erase(itr_vec);
+            }
+        }
+        else if(type == 1)
+        {
+            if(    std::get<0>(injection) == false
+                && std::get<2>(injection) == false )
+            {
+                delete (*itr_vec);
+                (*itr_vec) = NULL;
+                events_.erase(itr_vec);
+            }
+        }
+        else if(type == 2)
+        {
+            if(    std::get<0>(injection) == false
+                || std::get<2>(injection) == true )
+            {
+                delete (*itr_vec);
+                (*itr_vec) = NULL;
+                events_.erase(itr_vec);
+            }
+        }
+        else if(type == 3)
+        {
+            if(    std::get<0>(injection) == true
+                || std::get<2>(injection) == false )
+            {
+                delete (*itr_vec);
+                (*itr_vec) = NULL;
+                events_.erase(itr_vec);
+            }
+        }
+        else if(type == 3)
+        {
+            if(    std::get<0>(injection) == false
+                || std::get<2>(injection) == false )
+            {
+                delete (*itr_vec);
+                (*itr_vec) = NULL;
+                events_.erase(itr_vec);
+            }
+        }
+    }
+};
+
+bool AnalysisRun::IsEmpty()
+{
+    return bool(events_.size());
 };

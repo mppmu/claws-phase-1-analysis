@@ -867,3 +867,17 @@ void AnalysisEvent::LoadIniFile()
 	property_tree::ini_parser::read_ini(path_file_ini_.string(), pt_);
     unixtime_       = pt_.get<double>("Properties.UnixTime");
 };
+
+std::tuple<double, double> AnalysisEvent::GetCurrent()
+{
+    return std::make_tuple( pt_.get<double>("SuperKEKBData.LERCurrent"),
+                            pt_.get<double>("SuperKEKBData.LERCurrent")   );
+};
+
+std::tuple<bool, double, bool, double> AnalysisEvent::GetInjection()
+{
+    return std::make_tuple( pt_.get<bool>("SuperKEKBData.LERBg"),
+                            pt_.get<double>("SuperKEKBData.LERInj"),
+                            pt_.get<bool>("SuperKEKBData.HERBg"),
+                            pt_.get<double>("SuperKEKBData.HERInj")  );
+}

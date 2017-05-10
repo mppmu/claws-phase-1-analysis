@@ -211,8 +211,16 @@ class AnalysisRun : public Run
 
         void SynchronizeFiles();
         void LoadMetaData();
+
+        void DeleteEvent(int nr = -1);
+        void EraseElement(std::vector<AnalysisEvent*>::iterator itr_vec);
+        void SetCurrentLimit(std::string ring = "none", double low = -1, double high = 10000);
+        void SetInjectionLimit( int type = -1);
+
             // void FilterRuns();
             // void LoadEvents();
+
+        bool IsEmpty();
 
         std::vector<AnalysisEvent*>   events_;
 
