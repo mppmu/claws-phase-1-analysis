@@ -255,6 +255,8 @@ void CalibrationRun::LoadData()
 
 //    std::cout << "Loading data:  " << run_nr_ << "\r" << std::flush;
 
+
+
     this->LoadIntermediate();
     this->LoadMetaData();
 //    this->LoadPhysicsData();
@@ -1731,6 +1733,10 @@ void AnalysisRun::SetCurrentLimit(std::string ring , double low, double high)
                 (*itr_vec) = NULL;
                 events_.erase(itr_vec);
             }
+            else
+            {
+                itr_vec++;
+            }
         }
         else if( ring == "HER" )
         {
@@ -1741,9 +1747,11 @@ void AnalysisRun::SetCurrentLimit(std::string ring , double low, double high)
                 (*itr_vec) = NULL;
                 events_.erase(itr_vec);
             }
+            else
+            {
+                itr_vec++;
+            }
         }
-
-        itr_vec ++;
     }
 };
 
@@ -1754,9 +1762,9 @@ void AnalysisRun::SetInjectionLimit(int type)
         return;
     }
 
-    auto itr_vec = std::begin(events_);
+    auto itr_vec = events_.begin();
 
-    while(itr_vec != std::end(events_))
+    while(itr_vec != events_.end())
     {
         auto injection = (*itr_vec)->GetInjection();
 
@@ -1769,6 +1777,10 @@ void AnalysisRun::SetInjectionLimit(int type)
                 (*itr_vec) = NULL;
                 events_.erase(itr_vec);
             }
+            else
+            {
+                itr_vec++;
+            }
         }
         else if(type == 1)
         {
@@ -1778,6 +1790,10 @@ void AnalysisRun::SetInjectionLimit(int type)
                 delete (*itr_vec);
                 (*itr_vec) = NULL;
                 events_.erase(itr_vec);
+            }
+            else
+            {
+                itr_vec++;
             }
         }
         else if(type == 2)
@@ -1789,6 +1805,10 @@ void AnalysisRun::SetInjectionLimit(int type)
                 (*itr_vec) = NULL;
                 events_.erase(itr_vec);
             }
+            else
+            {
+                itr_vec++;
+            }
         }
         else if(type == 3)
         {
@@ -1798,6 +1818,10 @@ void AnalysisRun::SetInjectionLimit(int type)
                 delete (*itr_vec);
                 (*itr_vec) = NULL;
                 events_.erase(itr_vec);
+            }
+            else
+            {
+                itr_vec++;
             }
         }
         else if(type == 3)
@@ -1809,12 +1833,49 @@ void AnalysisRun::SetInjectionLimit(int type)
                 (*itr_vec) = NULL;
                 events_.erase(itr_vec);
             }
+            else
+            {
+                itr_vec++;
+            }
+        }
+        else
+        {
+            itr_vec++;
         }
     }
 
 };
 
-bool AnalysisRun::IsEmpty()
+void AnalysisRun::LoadPhysicsData()
 {
-    return bool(events_.size());
+    // Method to load all the information that is located in the data_root folder with
+    // following steps:
+    //      1. Look into the data_root folder and create a PhysicalEvent object for
+    //         each event.root file & check if file for online particle rate and
+    //         do exist
+    //      2. Loop through all objects in events_ and load the raw data from the
+    //         corresponding root file
+    //      3. Loop through all objects in events_ and load the oneline monitor
+    //         pacout << "Loading Raw Data:  " << run_nr_ << endl;
+    // Look into the data folder of the run and get a list/vector of all the events inside
+
+    for(unsigned int i=0; i< events_.size();i++)
+    {
+        events_.at(i)->LoadRootFile();
+    }
+
+//    #pragma omp parallel num_threads(7)
+//    {
+//        #pragma omp for schedule(dynamic,1)
+        for(unsigned int i=0; i< events_.size();i++)
+        {
+            events_.at(i)->LoadWaveform();
+            events_.at(i)->DeleteHistograms();
+        }
+//    }
+};
+
+int AnalysisRun::NEvents()
+{
+    return events_.size();
 };

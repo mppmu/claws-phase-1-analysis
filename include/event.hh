@@ -61,7 +61,7 @@ class Event{
 
     public:
         //TODO -fix event name und numbger
-
+        Event();
         Event(const path &file_root, const path &file_ini);
 
         virtual ~Event();
@@ -216,6 +216,7 @@ class IntEvent : public Event{
 class AnalysisEvent : public Event
 {
     public:
+        AnalysisEvent();
         AnalysisEvent(const path &file_root, const path &file_ini);
         virtual ~AnalysisEvent();
 

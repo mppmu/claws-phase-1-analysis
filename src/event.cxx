@@ -32,11 +32,14 @@ using namespace boost;
 // {
 //     return id_;
 // }
+Event::Event()
+{
+
+};
 
 Event::Event(const path &file_root, const path &file_ini)
 {
 //    ++id_;
-
     path_file_ini_       = file_ini;
     path_file_root_      = file_root;
 
@@ -51,6 +54,7 @@ void Event::LoadRootFile()
     // }
 
     TFile *file=NULL;
+
     file = new TFile(path_file_root_.string().c_str(), "open");
 
     if( file->IsZombie() )
@@ -354,8 +358,8 @@ PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini): Event(f
     fill_n(fast_rate_, 3, -1);
     fill_n(rate_, 3, -1);
 
-    nr_     = atoi(file_root.filename().string().substr(6,15).c_str());
     nr_str_ = file_root.filename().string().substr(6,9);
+    nr_     = atoi(file_root.filename().string().substr(6,9).c_str());
 
     /*
         TODO Implement a dynamic creation of channels getting the list list and therefore number of channels from somewhere else.
@@ -848,14 +852,35 @@ IntEvent::~IntEvent() {
 
 
 
+AnalysisEvent::AnalysisEvent()
+{
+    channels_["FWD1"] = new AnalysisChannel("FWD1");
+    channels_["FWD2"] = new AnalysisChannel("FWD2");
+    channels_["FWD3"] = new AnalysisChannel("FWD3");
+    channels_["FWD4"] = new AnalysisChannel("FWD4");
 
-
+    channels_["BWD1"] = new AnalysisChannel("BWD1");
+    channels_["BWD2"] = new AnalysisChannel("BWD2");
+    channels_["BWD3"] = new AnalysisChannel("BWD3");
+    channels_["BWD4"] = new AnalysisChannel("BWD4");
+};
 
 
 AnalysisEvent::AnalysisEvent( const boost::filesystem::path &file_root, const boost::filesystem::path &file_ini) : Event(file_root ,file_ini)
 {
-    nr_str_ = file_root.filename().string().substr(14,3);
+    nr_str_ = file_root.filename().string().substr(6,9);
     nr_     = atoi(nr_str_.c_str());
+
+    channels_["FWD1"] = new AnalysisChannel("FWD1");
+    channels_["FWD2"] = new AnalysisChannel("FWD2");
+    channels_["FWD3"] = new AnalysisChannel("FWD3");
+    channels_["FWD4"] = new AnalysisChannel("FWD4");
+
+    channels_["BWD1"] = new AnalysisChannel("BWD1");
+    channels_["BWD2"] = new AnalysisChannel("BWD2");
+    channels_["BWD3"] = new AnalysisChannel("BWD3");
+    channels_["BWD4"] = new AnalysisChannel("BWD4");
+    
 };
 
 AnalysisEvent::~AnalysisEvent() {
@@ -871,7 +896,7 @@ void AnalysisEvent::LoadIniFile()
 std::tuple<double, double> AnalysisEvent::GetCurrent()
 {
     return std::make_tuple( pt_.get<double>("SuperKEKBData.LERCurrent"),
-                            pt_.get<double>("SuperKEKBData.LERCurrent")   );
+                            pt_.get<double>("SuperKEKBData.HERCurrent")   );
 };
 
 std::tuple<bool, double, bool, double> AnalysisEvent::GetInjection()

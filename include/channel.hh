@@ -55,7 +55,7 @@ class Channel
 //        virtual     void        Subtract2(double pedestal = 0, bool backup = false);
 
 
-        virtual     void        PrintType() = 0;
+        virtual     void        PrintType() ;
 
         void                    SetBaseline(float baseline);
         virtual void            CalculateIntegral() = 0;
@@ -174,6 +174,17 @@ class IntChannel : public Channel
         void    CalculateIntegral();
 
         void    PrintType();
+
+};
+
+class AnalysisChannel : public Channel
+{
+    public:
+        AnalysisChannel(std::string ch_name);
+        virtual ~AnalysisChannel();
+
+
+        virtual void            CalculateIntegral();
 
 };
 

@@ -1036,3 +1036,26 @@ void IntChannel::CalculateIntegral()
     }
     // integral_ *= -1;
 };
+
+
+
+//----------------------------------------------------------------------------------------------
+// Definition of the PhysicsChannel class derived from Event.
+// TODO prper description
+//----------------------------------------------------------------------------------------------
+
+AnalysisChannel::AnalysisChannel(std::string ch_name): Channel( ch_name )
+{
+    delete pedestal_hist_;
+};
+
+AnalysisChannel::~AnalysisChannel() {
+	// TODO Auto-generated destructor stub
+};
+
+void AnalysisChannel::CalculateIntegral()
+{
+    /**
+     * \todo implement
+     */
+}

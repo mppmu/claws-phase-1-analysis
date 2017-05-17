@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
 		("parameters.ler_current_max", boost::program_options::value<double>(), "Maximum ler current.")
 		("parameters.her_current_min", boost::program_options::value<double>(), "Minimum her current.")
 		("parameters.her_current_max", boost::program_options::value<double>(), "Maximum her current.")
-		("parameters.inj", boost::program_options::value<int>(), "Inter value for injection requirement:\n-1: doesn't matter\n0: no injection \n1: injection in one or both rings\n2: in LER only\n3: in HER only\n3: in both rings")
+		("parameters.inj", boost::program_options::value<int>(), "Injection requirement:\n-1: doesn't matter\n0: no injection \n1: injection in one or both rings\n2: in LER only\n3: in HER only\n3: in both rings")
 		("parameters.inj_rate_min", boost::program_options::value<double>(), " ")
 		("parameters.inj_rate_max", boost::program_options::value<double>(), " ")
 		;
@@ -146,10 +146,53 @@ int main(int argc, char* argv[]) {
 	     run->LoadMetaData();
 	 }
 
-	 for(auto & run : runs)
+
+
+	 auto itr = runs.begin();
+
+	 while( itr != runs.end() )
 	 {
-		 run->SetInjectionLimit(config_map["parameters.inj"].as<int>());
+         (*itr)->SetInjectionLimit(config_map["parameters.inj"].as<int>());
+
+		 (*itr)->SetCurrentLimit(   "LER",
+		 							config_map["parameters.ler_current_min"].as<double>(),
+									config_map["parameters.ler_current_max"].as<double>()	);
+		 (*itr)->SetCurrentLimit(   "HER",
+		 		 					config_map["parameters.her_current_min"].as<double>(),
+						   			config_map["parameters.her_current_max"].as<double>()	);
+
+		 if( (*itr)->NEvents() == 0 )
+		 {
+			 delete (*itr);
+			 (*itr) = NULL;
+			 runs.erase(itr);
+		 }
+		 else
+		 {
+			 itr++;
+		 }
 	 }
+
+	 int n_events = 0;
+	 for( auto & run : runs )
+	 {
+		 n_events += run->NEvents();
+	 }
+
+	 for( auto & run : runs )
+	 {
+		 run->LoadWaveforms();
+	 }
+	 
+	 AnalysisEvent* analysis_event = new AnalysisEvent();
+
+	//  for(auto & event : )
+	//  {
+	// 	event->LoadRootFile();
+	//  }
+
+	 std::cout << "Runs: "<< runs.size() << " with Total Events: " << n_events <<  " selected for analysis!" << std::endl;
+
 
 
 
