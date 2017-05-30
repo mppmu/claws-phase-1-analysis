@@ -41,8 +41,16 @@ Channel::Channel(string ch_name): name_(ch_name)
 Channel::~Channel(){
 	// TODO Auto-generated destructor stub
     delete waveform_;
-    if(hist_ != NULL) delete hist_;
-    delete pedestal_hist_;
+    if(hist_ != NULL)
+    {
+        delete hist_;
+        hist_ = NULL;
+    }
+    if(pedestal_hist_ != NULL)
+    {
+        delete pedestal_hist_;
+        pedestal_hist_ = NULL;
+    }
 };
 
 void Channel::LoadHistogram(TFile* file)
@@ -327,6 +335,10 @@ double Channel::GetIntegral()
     return integral_;
 }
 
+void Channel::PrintType()
+{
+    cout << "I'm a Channel " << endl;
+}
 
 
 //----------------------------------------------------------------------------------------------
@@ -933,7 +945,8 @@ void PhysicsChannel::CreateHistogram(std::string type)
         {
             this->DeleteHistogram();
 
-            std::string title = name_+"_clean_wf";
+            //std::string title = name_+"_clean_wf";
+            std::string title = name_;
             hist_ = new TH1F( title.c_str(), title.c_str(), clean_wf_->size(), 0.5 , clean_wf_->size()+0.5);
 
             for(unsigned int i = 0; i <clean_wf_->size(); i++)
@@ -948,7 +961,8 @@ void PhysicsChannel::CreateHistogram(std::string type)
       {
           this->DeleteHistogram();
 
-          std::string title = name_+"_wh_wf";
+          //std::string title = name_+"_wh_wf";
+          std::string title = name_;
           hist_ = new TH1F( title.c_str(), title.c_str(), wh_wf_->size(), 0.5 , wh_wf_->size()+0.5);
 
           for(unsigned int i = 0; i < wh_wf_->size(); i++)
@@ -963,7 +977,8 @@ void PhysicsChannel::CreateHistogram(std::string type)
         {
             this->DeleteHistogram();
 
-            std::string title = name_+"_mip_wf";
+            //std::string title = name_+"_mip_wf";
+            std::string title = name_;
             hist_ = new TH1F( title.c_str(), title.c_str(), mip_wf_->size(), 0.5 , mip_wf_->size()+0.5);
 
             for(unsigned int i = 0; i < mip_wf_->size(); i++)
@@ -1047,11 +1062,36 @@ void IntChannel::CalculateIntegral()
 AnalysisChannel::AnalysisChannel(std::string ch_name): Channel( ch_name )
 {
     delete pedestal_hist_;
+    pedestal_hist_ = NULL;
 };
 
 AnalysisChannel::~AnalysisChannel() {
 	// TODO Auto-generated destructor stub
 };
+
+void AnalysisChannel::LoadHistogram(TFile* file)
+{
+    if(hist_ != NULL)
+    {
+      delete hist_;
+      hist_ = NULL;
+    }
+
+    // TODO WARNING!!!! Root version 6.08.00 and 6.08.02 are failing here.
+    //      The number of bins in the histogram from file is put to 1!!!!
+
+    hist_= (TH1F*) file->Get(name_.c_str());
+    hist_->SetDirectory(0);
+
+    n_sample_ = hist_->GetNbinsX();
+    //Last bin in physics wavefroms is filled with 0, takes care of that bug.
+    //    if( hist_->GetBinContent(hist_->GetNbinsX()) == 0 && !boost::algorithm::ends_with(name_,"-INT") ) n_sample_--;
+};
+
+void AnalysisChannel::Normalize(double n)
+{
+    hist_->Scale(n);
+}
 
 void AnalysisChannel::CalculateIntegral()
 {
@@ -1059,3 +1099,9 @@ void AnalysisChannel::CalculateIntegral()
      * \todo implement
      */
 }
+
+
+void AnalysisChannel::PrintType()
+{
+    cout << "I'm an Analysis Channel!" << endl;
+};

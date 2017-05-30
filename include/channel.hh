@@ -183,8 +183,12 @@ class AnalysisChannel : public Channel
         AnalysisChannel(std::string ch_name);
         virtual ~AnalysisChannel();
 
+        virtual     void        LoadHistogram(TFile* file);
+        void                    Normalize(double n);
 
         virtual void            CalculateIntegral();
+
+        void    PrintType();
 
 };
 

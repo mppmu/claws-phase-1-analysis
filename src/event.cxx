@@ -80,9 +80,19 @@ void Event::LoadWaveform()
   //     std::cout<< mmap.first << std::endl;
   // }
 
-  for (const auto &mvec : channels_)
+ // std::vector<std::string> vch = GS->GetChannels(1);
+  std::vector<std::string> chs;
+  std::pair<std::string, Channel*> pair;
+
+  BOOST_FOREACH(pair, channels_)
   {
-        mvec.second->LoadWaveform();
+      chs.push_back(pair.first);
+  }
+
+  #pragma omp parallel for num_threads(8)
+  for(unsigned i = 0; i < chs.size(); i++)
+  {
+      channels_[chs.at(i)]->LoadWaveform();
   }
 
 };
@@ -880,7 +890,7 @@ AnalysisEvent::AnalysisEvent( const boost::filesystem::path &file_root, const bo
     channels_["BWD2"] = new AnalysisChannel("BWD2");
     channels_["BWD3"] = new AnalysisChannel("BWD3");
     channels_["BWD4"] = new AnalysisChannel("BWD4");
-    
+
 };
 
 AnalysisEvent::~AnalysisEvent() {
@@ -899,6 +909,27 @@ std::tuple<double, double> AnalysisEvent::GetCurrent()
                             pt_.get<double>("SuperKEKBData.HERCurrent")   );
 };
 
+void AnalysisEvent::AddEvent(AnalysisEvent* evt)
+{
+    std::vector<std::string> vch = GS->GetChannels(1);
+
+    #pragma omp parallel for num_threads(8)
+    for(unsigned i = 0; i < vch.size(); i++)
+    {
+        channels_[vch.at(i)]->GetHistogram()->Add(evt->GetChannel(vch.at(i))->GetHistogram());
+    }
+    n_evts_++;
+};
+
+void AnalysisEvent::Normalize()
+{
+    for(auto & imap : channels_)
+    {
+        AnalysisChannel* tmp = dynamic_cast<AnalysisChannel*>(imap.second);
+        tmp->Normalize(1/n_evts_);
+    }
+};
+
 std::tuple<bool, double, bool, double> AnalysisEvent::GetInjection()
 {
     return std::make_tuple( pt_.get<bool>("SuperKEKBData.LERBg"),
@@ -906,3 +937,22 @@ std::tuple<bool, double, bool, double> AnalysisEvent::GetInjection()
                             pt_.get<bool>("SuperKEKBData.HERBg"),
                             pt_.get<double>("SuperKEKBData.HERInj")  );
 }
+
+void AnalysisEvent::SaveEvent(boost::filesystem::path folder)
+{
+    if(!boost::filesystem::is_directory( folder.parent_path() ))
+    {
+        boost::filesystem::create_directory( folder.parent_path() );
+    }
+
+//    std::string fname = folder.string()+"/event_"+std::to_string(nr_)+"_" + type +"_v"+ std::to_string(GS->GetCaliPar<int>("General.CalibrationVersion")) + ".root";
+    TFile *rfile = new TFile((folder.string()+".root").c_str(), "RECREATE");
+
+    for(auto imap : this->GetHistograms())
+    {
+        imap.second->Write();
+    }
+
+    rfile->Close();
+    delete rfile;
+};

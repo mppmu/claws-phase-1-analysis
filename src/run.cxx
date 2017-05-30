@@ -103,6 +103,11 @@ Run::~Run()
 
 };
 
+int Run::GetRunNr()
+{
+    return run_nr_;
+}
+
 
 //----------------------------------------------------------------------------------------------
 // Definition of the CalibrationRun class.
@@ -1864,16 +1869,18 @@ void AnalysisRun::LoadPhysicsData()
         events_.at(i)->LoadRootFile();
     }
 
-//    #pragma omp parallel num_threads(7)
-//    {
-//        #pragma omp for schedule(dynamic,1)
-        for(unsigned int i=0; i< events_.size();i++)
-        {
-            events_.at(i)->LoadWaveform();
-            events_.at(i)->DeleteHistograms();
-        }
-//    }
+    for(unsigned int i=0; i< events_.size();i++)
+    {
+        events_.at(i)->LoadWaveform();
+        events_.at(i)->DeleteHistograms();
+    }
+
 };
+
+std::vector<AnalysisEvent*> AnalysisRun::GetEvents()
+{
+    return events_;
+}
 
 int AnalysisRun::NEvents()
 {

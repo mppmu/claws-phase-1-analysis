@@ -221,13 +221,19 @@ class AnalysisEvent : public Event
         virtual ~AnalysisEvent();
 
         virtual void LoadIniFile();
+        void AddEvent(AnalysisEvent* evt);
+        void Normalize();
 
         std::tuple<double, double>                GetCurrent();
         std::tuple<bool, double, bool, double >   GetInjection();
 
+        void                   SaveEvent(boost::filesystem::path result_folder);
+
+        int n_evts_                         = 0;
+        double unixtime_                    = -1;
         boost::property_tree::ptree pt_;
 
-        double unixtime_        = -1;
+
 };
 
 

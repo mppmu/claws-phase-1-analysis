@@ -93,6 +93,7 @@ class Run
         // double GetStopTime();
 
         std::tuple<double, double> GetTime();
+        int    GetRunNr();
 
         boost::filesystem::path path_run_;
         double tsMin;
@@ -169,7 +170,7 @@ class CalibrationRun : public Run{
             void LoadWaveforms();
 
 
-        int    GetRunNr();
+
 
         TTree *GetOnlineTree();
         TTree *GetOfflineTree();
@@ -220,6 +221,7 @@ class AnalysisRun : public Run
         void SetCurrentLimit(std::string ring = "none", double low = -1, double high = 10000);
         void SetInjectionLimit( int type = -1);
 
+        std::vector<AnalysisEvent*> GetEvents();
 
             // void FilterRuns();
             // void LoadEvents();
