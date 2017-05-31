@@ -184,9 +184,12 @@ class AnalysisChannel : public Channel
         virtual ~AnalysisChannel();
 
         virtual     void        LoadHistogram(TFile* file);
+        void CreateHistogram();
         void                    Normalize(double n);
+        void SetErrors(double err = 0);
 
         virtual void            CalculateIntegral();
+        TH1*                   GetHistogram();
 
         void    PrintType();
 

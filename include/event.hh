@@ -223,6 +223,7 @@ class AnalysisEvent : public Event
         virtual void LoadIniFile();
         void AddEvent(AnalysisEvent* evt);
         void Normalize();
+        void SetErrors(double err = 0);
 
         std::tuple<double, double>                GetCurrent();
         std::tuple<bool, double, bool, double >   GetInjection();

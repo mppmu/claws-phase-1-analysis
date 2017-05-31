@@ -28,21 +28,21 @@ int main(int argc, char* argv[]) {
     options.add_options()
     	("help", "Displays this help message.")
         ("config,c", boost::program_options::value<boost::filesystem::path>()->default_value("./config/analysis_parameters.ini"), "Config file to get parameters from.")
-		("output", boost::program_options::value<boost::filesystem::path>()->default_value("/remote/ceph/group/ilc/claws/data/Analysis"), "Data directory containing results.")
         ;
 
 	boost::program_options::options_description data_options("Data");
 	data_options.add_options()
-		("data.test", boost::program_options::value<std::string>()->default_value("default_value"), "test value")
-		("data.input", boost::program_options::value<boost::filesystem::path>(), "Data directory containing runs meant to be analysed.")
-		("data.ts_min", boost::program_options::value<double>(), "If selected, smallest timestamp of events used.")
-		("data.ts_max", boost::program_options::value<double>(), "If selected, largest timestamp of events used.")
-		("data.event_min", boost::program_options::value<int>(), "If selected, smallest event number of events used.")
-		("data.event_max", boost::program_options::value<int>(), "If selected, largest event number of events used.")
-		("data.run_min", boost::program_options::value<int>(), "If selected, smallest run number of events used.")
-		("data.run_max", boost::program_options::value<int>(), "If selected, largest run number of events used.")
-		("data.day_min", boost::program_options::value<std::string>(), "If selected, earliest day used.")
-		("data.day_max", boost::program_options::value<std::string>(), "If selected, latest used.")
+		("data.test", 		boost::program_options::value<std::string>()->default_value("default_value"), 	"test value")
+		("data.input", 		boost::program_options::value<boost::filesystem::path>(),	 					"Data directory containing runs meant to be analysed.")
+		("data.output", 	boost::program_options::value<boost::filesystem::path>(), 						"Data directory containing results.")
+		("data.ts_min", 	boost::program_options::value<double>(), 										"If selected, smallest timestamp of events used.")
+		("data.ts_max", 	boost::program_options::value<double>(), 										"If selected, largest timestamp of events used.")
+		("data.event_min",  boost::program_options::value<int>(), 											"If selected, smallest event number of events used.")
+		("data.event_max",  boost::program_options::value<int>(), 											"If selected, largest event number of events used.")
+		("data.run_min", 	boost::program_options::value<int>(), 											"If selected, smallest run number of events used.")
+		("data.run_max", 	boost::program_options::value<int>(), 											"If selected, largest run number of events used.")
+		("data.day_min", 	boost::program_options::value<std::string>(), 									"If selected, earliest day used.")
+		("data.day_max", 	boost::program_options::value<std::string>(), 									"If selected, latest used.")
 		;
 	options.add(data_options);
 
@@ -177,28 +177,39 @@ int main(int argc, char* argv[]) {
 		 }
 	 }
 
+	 int n_events = 0;
+	 for( auto & run : runs )
+	 {
+		 n_events += run->NEvents();
+	 }
+
 	  boost::property_tree::ptree out_selection;
 
-	  out_selection.put("AnalysisOptions.config",config_map["config"].as<std::string>() );
-	  out_selection.put("AnalysisOptions.output",config_map["ouput"].as<std::string>() );
+	  out_selection.put("General.config", 			config_map["config"].as<boost::filesystem::path>() );
+	  out_selection.put("Data.output", 			config_map["data.output"].as<boost::filesystem::path>() );
+	  out_selection.put("Data.input",		config_map["data.input"].as<boost::filesystem::path>() );
+	  out_selection.put("Data.ts_min",		config_map["data.ts_min"].as<double>() );
+	  out_selection.put("Data.ts_max",		config_map["data.ts_max"].as<double>() );
+	  out_selection.put("Data.event_min",	config_map["data.event_min"].as<int>() );
+	  out_selection.put("Data.event_max",	config_map["data.event_max"].as<int>() );
+	  out_selection.put("Data.run_min",		config_map["data.run_min"].as<int>() );
+	  out_selection.put("Data.run_max",		config_map["data.run_max"].as<int>() );
+	  out_selection.put("Data.day_min",		config_map["data.day_min"].as<std::string>() );
+	  out_selection.put("Data.day_max",		config_map["data.day_max"].as<std::string>() );
 
-	  out_selection.put("AnalysisOptions.data.input",config_map["data.input"].as<std::string>() );
-	  out_selection.put("AnalysisOptions.data.ts_min",config_map["data.ts_min"].as<std::string>() );
-	  out_selection.put("AnalysisOptions.data.ts_max",config_map["data.ts_max"].as<std::string>() );
-	  out_selection.put("AnalysisOptions.data.event_min",config_map["data.event_min"].as<std::string>() );
-	  out_selection.put("AnalysisOptions.data.event_max",config_map["data.event_max"].as<std::string>() );
-	  out_selection.put("AnalysisOptions.data.run_min",config_map["data.run_min"].as<std::string>() );
-	  out_selection.put("AnalysisOptions.data.run_max",config_map["data.run_max"].as<std::string>() );
-	  out_selection.put("AnalysisOptions.data.day_min",config_map["data.day_min"].as<std::string>() );
-	  out_selection.put("AnalysisOptions.data.day_max",config_map["data.day_max"].as<std::string>() );
+	  out_selection.put("Parameters.ler_current_min",config_map["parameters.ler_current_min"].as<double>() );
+	  out_selection.put("Parameters.ler_current_max",config_map["parameters.ler_current_max"].as<double>() );
+	  out_selection.put("Parameters.her_current_min",config_map["parameters.her_current_min"].as<double>() );
+	  out_selection.put("Parameters.her_current_max",config_map["parameters.her_current_max"].as<double>() );
+	  out_selection.put("Parameters.inj",config_map["parameters.inj"].as<int>() );
+	  out_selection.put("Parameters.inj_rate_min",config_map["parameters.inj_rate_min"].as<double>() );
+	  out_selection.put("Parameters.inj_rate_max",config_map["parameters.inj_rate_max"].as<double>() );
 
-	  out_selection.put("AnalysisOptions.parameters.ler_current_min",config_map["parameters.ler_current_min"].as<std::string>() );
-	  out_selection.put("AnalysisOptions.parameters.ler_current_max",config_map["parameters.ler_current_max"].as<std::string>() );
-	  out_selection.put("AnalysisOptions.parameters.her_current_min",config_map["parameters.her_current_min"].as<std::string>() );
-	  out_selection.put("AnalysisOptions.parameters.her_current_max",config_map["parameters.her_current_max"].as<std::string>() );
-	  out_selection.put("AnalysisOptions.parameters.inj",config_map["parameters.inj"].as<std::string>() );
-	  out_selection.put("AnalysisOptions.parameters.inj_rate_min",config_map["parameters.inj_rate_min"].as<std::string>() );
-	  out_selection.put("AnalysisOptions.parameters.inj_rate_max",config_map["parameters.inj_rate_max"].as<std::string>() );
+	  out_selection.put("General.TotalRuns", runs.size() );
+	  out_selection.put("General.TotalEvents", n_events );
+
+	  out_selection.put("SelectedRuns.TotalRuns", runs.size() );
+	  out_selection.put("SelectedEvents.TotalEvents", n_events );
 
 	  for(auto & run : runs)
 	  {
@@ -209,36 +220,40 @@ int main(int argc, char* argv[]) {
 	 //| Let's come to the fun stuff |
 	 //-------------------------------
 
-	 int n_events = 0;
-	 for( auto & run : runs )
-	 {
-		 n_events += run->NEvents();
-	 }
 
-	 for( auto & run : runs )
-	 {
-		 run->LoadPhysicsData();
-	 }
+
+	//  for( auto & run : runs )
+	//  {
+	// 	 run->LoadPhysicsData();
+	//  }
 
 	 AnalysisEvent* analysis_event = new AnalysisEvent();
-
+	 analysis_event->CreateHistograms();
+	 
 	 for( auto & run : runs )
 	 {
 	 	 for(auto & evt : run->GetEvents())
 		 {
+			 evt->LoadRootFile();
+
 			 out_selection.put("SelectedEvents."+std::to_string( evt->GetNr() ), true );
 			 analysis_event->AddEvent(evt);
-		 }
-	 }
 
-	 analysis_event->Normalize();
+			 evt->DeleteHistograms();
+		 }
+		 delete run;
+		 run = NULL;
+	 }
+	 analysis_event->SetErrors();
+//	 analysis_event->Normalize();
 
 	 std::string fname = "output_" +
-	 					 config_map["data.run_min"].as<std::string>() + "-" +
-	 				 	 config_map["data.run_max"].as<std::string>();
+	 					 std::to_string( config_map["data.run_min"].as<int>() ) + "-" +
+	 				 	 std::to_string( config_map["data.run_max"].as<int>() );
 
-	 analysis_event->SaveEvent( config_map["data.output"].as<boost::filesystem::path>());
-	 boost::property_tree::write_ini(config_map["data.output"].as<boost::filesystem::path>().string()+"_selection.ini", out_selection);
+	 analysis_event->SaveEvent( config_map["data.output"].as<boost::filesystem::path>().string()+"/"+fname);
+	 std::string fini = config_map["data.output"].as<boost::filesystem::path>().string()+"/"+fname+"_selection.ini";
+	 boost::property_tree::write_ini( fini, out_selection);
 // .parent_path()
 
 //	 boost::property_tree::write_ini(folder.string()+"/event_"+std::to_string(nr_)+".ini", pt_);

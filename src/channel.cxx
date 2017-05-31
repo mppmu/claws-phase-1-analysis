@@ -1063,9 +1063,12 @@ AnalysisChannel::AnalysisChannel(std::string ch_name): Channel( ch_name )
 {
     delete pedestal_hist_;
     pedestal_hist_ = NULL;
+
+
 };
 
-AnalysisChannel::~AnalysisChannel() {
+AnalysisChannel::~AnalysisChannel()
+{
 	// TODO Auto-generated destructor stub
 };
 
@@ -1079,8 +1082,15 @@ void AnalysisChannel::LoadHistogram(TFile* file)
 
     // TODO WARNING!!!! Root version 6.08.00 and 6.08.02 are failing here.
     //      The number of bins in the histogram from file is put to 1!!!!
+    if( boost::algorithm::ends_with(name_,"4") )
+    {
+        hist_= (TH1F*) file->Get( (name_+"_wf").c_str());
+    }
+    else
+    {
+            hist_= (TH1F*) file->Get(name_.c_str());
+    }
 
-    hist_= (TH1F*) file->Get(name_.c_str());
     hist_->SetDirectory(0);
 
     n_sample_ = hist_->GetNbinsX();
@@ -1088,10 +1098,31 @@ void AnalysisChannel::LoadHistogram(TFile* file)
     //    if( hist_->GetBinContent(hist_->GetNbinsX()) == 0 && !boost::algorithm::ends_with(name_,"-INT") ) n_sample_--;
 };
 
+void AnalysisChannel::CreateHistogram()
+{
+    if(hist_ != NULL)
+    {
+      delete hist_;
+      hist_ = NULL;
+    }
+
+    std::string title = name_;
+    hist_ = new TH1F( title.c_str(), title.c_str(), 1 , 0.5 , 1+0.5);
+}
+
 void AnalysisChannel::Normalize(double n)
 {
     hist_->Scale(n);
 }
+
+void AnalysisChannel::SetErrors(double err)
+{
+    for(int i = 1; i<hist_->GetNbinsX()+1; i++)
+    {
+        hist_->SetBinError(i, err);
+    }
+}
+
 
 void AnalysisChannel::CalculateIntegral()
 {
@@ -1100,6 +1131,10 @@ void AnalysisChannel::CalculateIntegral()
      */
 }
 
+TH1* AnalysisChannel::GetHistogram()
+{
+        return hist_;
+};
 
 void AnalysisChannel::PrintType()
 {

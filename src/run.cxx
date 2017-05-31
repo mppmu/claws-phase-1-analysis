@@ -20,6 +20,7 @@
  #include <stdlib.h>
  #include <fstream>
  #include <memory>
+ #include <cassert>
 
 
 
@@ -1693,6 +1694,11 @@ void AnalysisRun::LoadMetaData()
     }
 
     this->LoadRunSettings();
+    if(settings_.get<int>("Scope-1-Acquisition-Settings.preTriggerSamples") != 0 || settings_.get<int>("Scope-2-Acquisition-Settings.preTriggerSamples") != 0 )
+    {
+        std::cout << "Warning preTriggerSamples!!!" << std::endl;
+        assert(1);
+    }
 };
 
 void AnalysisRun::DeleteEvent(int nr)

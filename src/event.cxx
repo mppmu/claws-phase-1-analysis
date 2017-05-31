@@ -620,7 +620,7 @@ void PhysicsEvent::Decompose(std::map<std::string, std::vector<float>*> avg_wave
 
     std::vector<std::string> vch = GS->GetChannels(1);
 
-    #pragma omp parallel for num_threads(6) firstprivate(avg_waveforms)
+    #pragma omp parallel for num_threads(8) firstprivate(avg_waveforms)
     for(unsigned i = 0; i < vch.size(); i++)
     {
 
@@ -913,11 +913,21 @@ void AnalysisEvent::AddEvent(AnalysisEvent* evt)
 {
     std::vector<std::string> vch = GS->GetChannels(1);
 
-    #pragma omp parallel for num_threads(8)
+
+
+//    #pragma omp parallel for num_threads(8)
     for(unsigned i = 0; i < vch.size(); i++)
     {
-        channels_[vch.at(i)]->GetHistogram()->Add(evt->GetChannel(vch.at(i))->GetHistogram());
+        TH1* hist_local = evt->GetChannel(vch.at(i))->GetHistogram();
+        TH1* hist_global = channels_[vch.at(i)]->GetHistogram();
+
+        if( hist_global->GetNbinsX() < hist_local->GetNbinsX() )
+        {
+            hist_global->SetBins(hist_local->GetNbinsX(), hist_local->GetBinLowEdge(1), hist_local->GetBinLowEdge(hist_local->GetNbinsX())+1.);
+        }
+        hist_global->Add(hist_local);
     }
+
     n_evts_++;
 };
 
@@ -926,9 +936,18 @@ void AnalysisEvent::Normalize()
     for(auto & imap : channels_)
     {
         AnalysisChannel* tmp = dynamic_cast<AnalysisChannel*>(imap.second);
-        tmp->Normalize(1/n_evts_);
+        tmp->Normalize(1./n_evts_);
     }
 };
+
+void AnalysisEvent::SetErrors(double err)
+{
+    for(auto & imap : channels_)
+    {
+        AnalysisChannel* tmp = dynamic_cast<AnalysisChannel*>(imap.second);
+        tmp->SetErrors(err);
+    }
+}
 
 std::tuple<bool, double, bool, double> AnalysisEvent::GetInjection()
 {
