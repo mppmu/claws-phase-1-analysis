@@ -353,7 +353,7 @@ PhysicsChannel::PhysicsChannel(std::string ch_name): Channel(ch_name)
 
     clean_wf_           =   new std::vector<float>();
     wh_wf_              =   new std::vector<float>();
-    mip_wf_             =   new std::vector<std::uint8_t>();
+    mip_wf_             =   new std::vector<float>();
 };
 
 PhysicsChannel::~PhysicsChannel() {
@@ -752,6 +752,12 @@ void PhysicsChannel::Rate(double pe_to_mip)
     *    \todo Adapt to new naming in v2: clean_wf_, mip_wf_
     */
 
+    // Get the total number of photons in the waveform for the rate.
+    for(auto &ivec: (*mip_wf_))
+    {
+         ivec /= pe_to_mip;
+    }
+
     rate_ = nr_ph_/pe_to_mip;
     rate_ /= ( n_sample_ * GS->GetCaliPar<double>("PhysicsChannel.BinWidth") );
 }
@@ -983,7 +989,7 @@ void PhysicsChannel::CreateHistogram(std::string type)
 
             for(unsigned int i = 0; i < mip_wf_->size(); i++)
             {
-                hist_->SetBinContent(i+1, mip_wf_->at(i));
+                hist_->SetBinContent( i+1, mip_wf_->at(i));
             }
         }
     }
@@ -1020,7 +1026,7 @@ void PhysicsChannel::DeleteWaveform()
 
     std::vector<float>().swap(*clean_wf_);
     std::vector<float>().swap(*wh_wf_);
-    std::vector<std::uint8_t>().swap(*mip_wf_);
+    std::vector<float>().swap(*mip_wf_);
 };
 //----------------------------------------------------------------------------------------------
 // Definition of the PhysicsChannel class derived from Event.

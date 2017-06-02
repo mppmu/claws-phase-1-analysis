@@ -229,7 +229,7 @@ int main(int argc, char* argv[]) {
 
 	 AnalysisEvent* analysis_event = new AnalysisEvent();
 	 analysis_event->CreateHistograms();
-	 
+
 	 for( auto & run : runs )
 	 {
 	 	 for(auto & evt : run->GetEvents())
@@ -245,7 +245,7 @@ int main(int argc, char* argv[]) {
 		 run = NULL;
 	 }
 	 analysis_event->SetErrors();
-//	 analysis_event->Normalize();
+	 analysis_event->Normalize();
 
 	 std::string fname = "output_" +
 	 					 std::to_string( config_map["data.run_min"].as<int>() ) + "-" +
