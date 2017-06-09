@@ -17,6 +17,7 @@
 // project includes
 #include "run.hh"
 #include "globalsettings.hh"
+#include "scripts.hh"
 
 
 int main(int argc, char* argv[]) {
@@ -247,13 +248,38 @@ int main(int argc, char* argv[]) {
 	 analysis_event->SetErrors();
 	 analysis_event->Normalize();
 
-	 std::string fname = "output_" +
-	 					 std::to_string( config_map["data.run_min"].as<int>() ) + "-" +
-	 				 	 std::to_string( config_map["data.run_max"].as<int>() );
+	 boost::filesystem::path folder;
+	 std::string fname;
 
-	 analysis_event->SaveEvent( config_map["data.output"].as<boost::filesystem::path>().string()+"/"+fname);
-	 std::string fini = config_map["data.output"].as<boost::filesystem::path>().string()+"/"+fname+"_selection.ini";
-	 boost::property_tree::write_ini( fini, out_selection);
+	 if( std::to_string( config_map["data.run_min"].as<int>() ) == std::to_string( config_map["data.run_max"].as<int>() ) )
+	 {
+		 folder = config_map["data.output"].as<boost::filesystem::path>()/path("Run_" + std::to_string( config_map["data.run_min"].as<int>() ) );
+
+		 fname  = "run_" + std::to_string( config_map["data.run_min"].as<int>() );
+	 }
+	 else
+	 {
+		 folder = config_map["data.output"].as<boost::filesystem::path>()/path("Run_"
+		 				 + std::to_string( config_map["data.run_min"].as<int>() ) + "-" +
+						   std::to_string( config_map["data.run_max"].as<int>() ) );
+
+		 fname  = "run_" + std::to_string( config_map["data.run_min"].as<int>() ) + "-" +
+					       std::to_string( config_map["data.run_max"].as<int>() );
+	 }
+
+	 if(!boost::filesystem::is_directory( folder ) )
+	 {
+	 	boost::filesystem::create_directory( folder );
+	 }
+
+
+	 boost::property_tree::write_ini( (folder/path( fname +"_selection.ini" )).string() , out_selection);
+	 analysis_event->SaveEvent( folder/path( fname) );
+
+	 int count = 2;
+	 const char* values[3] = {"", folder.string().c_str(), fname.c_str() };
+	 plot_waveform(count, values);
+
 // .parent_path()
 
 //	 boost::property_tree::write_ini(folder.string()+"/event_"+std::to_string(nr_)+".ini", pt_);

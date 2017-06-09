@@ -1,3 +1,4 @@
+-include Scripts/scripts.mk
 -include src/subdir.mk
 
 
@@ -27,12 +28,13 @@ ifeq ($(shell uname -s),Darwin)
 endif
 
 INCLUDES  += -I"./include"
+INCLUDES  += -I"./Scripts"
 CALI_OBJS += ./build/calibration.o
 ANA_OBJS += ./build/analysis.o
 
 #all: monkey clean build/calibration build/analysis docs
 all: debug
-	
+
 debug: CFLAGS += -g -O0 -Wall
 debug: monkey clean build/calibration build/analysis
 
