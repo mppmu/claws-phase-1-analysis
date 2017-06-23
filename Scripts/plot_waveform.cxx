@@ -188,8 +188,6 @@ void plot_waveform(){
         // fwd1->GetYaxis()->SetLabelSize(textsize);
         // fwd1->GetYaxis()->SetTitleOffset(0.7);
 
-
-
         // -------------------------------
         // Make the axis from file
         // -------------------------------
@@ -227,6 +225,7 @@ void plot_waveform(){
 
     // ---------------------------------------
     // Legend
+
     // ---------------------------------------
 
     // TLegend * ltop = new TLegend(0.7, 0.23, 0.9, 0.37);
@@ -238,10 +237,10 @@ void plot_waveform(){
 
 
     double boxsize = 0.04;
-    double height = 0.9;
-     myBoxText(    0.45, height, boxsize, red->GetNumber(), "FWD1");
-     myBoxText(    0.64, height, boxsize, gray->GetNumber(), "FWD2");
-     myBoxText(    0.83, height, boxsize, antra->GetNumber(), "FWD3");
+    double height = 0.885;
+     myBoxText(    0.465, height, boxsize, red->GetNumber(), "FWD1");
+     myBoxText(    0.635, height, boxsize, gray->GetNumber(), "FWD2");
+     myBoxText(    0.805, height, boxsize, antra->GetNumber(), "FWD3");
 
     //  myBoxText(    0.78, 0.34, boxsize, green->GetNumber(), "FWD1");
     //  myBoxText(    0.78, 0.29, boxsize, red->GetNumber(), "FWD2");
@@ -257,7 +256,7 @@ void plot_waveform(){
     //
     double scalingfactor = 1/(0.94-0.4)*0.75;
 
-    TPad * pad2 = new TPad("pad2", "The pad 20% of the height", 0.4, 0.4, 0.94, 0.85, kWhite);
+    TPad * pad2 = new TPad("pad2", "The pad 20% of the height", 0.4, 0.3, 0.94, 0.84, kWhite);
 
     pad2->Draw();
     pad2->cd();
@@ -295,7 +294,7 @@ void plot_waveform(){
     stack_2->GetYaxis()->SetTitleSize(stack_2->GetYaxis()->GetTitleSize()*scalingfactor);
 
     stack_2->GetXaxis()->SetTitleOffset(stack_2->GetXaxis()->GetTitleOffset()/scalingfactor);
-    stack_2->GetYaxis()->SetTitleOffset(stack_2->GetYaxis()->GetTitleOffset()/scalingfactor);
+    stack_2->GetYaxis()->SetTitleOffset(stack_2->GetYaxis()->GetTitleOffset()*1.12/scalingfactor);
 
     stack_2->GetXaxis()->SetLabelSize(stack_2->GetXaxis()->GetLabelSize()*scalingfactor);
     stack_2->GetYaxis()->SetLabelSize(stack_2->GetYaxis()->GetLabelSize()*scalingfactor);
