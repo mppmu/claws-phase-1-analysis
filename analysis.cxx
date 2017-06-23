@@ -278,7 +278,7 @@ int main(int argc, char* argv[]) {
 
 	 int count = 2;
 	 const char* values[3] = {"", folder.string().c_str(), fname.c_str() };
-	 plot_waveform(count, values);
+//	 plot_waveform(count, values);
 
 // .parent_path()
 
