@@ -1106,6 +1106,7 @@ void AnalysisChannel::LoadHistogram(TFile* file)
 
 void AnalysisChannel::CreateHistogram()
 {
+    // Create the histogram holding the waveform
     if(hist_ != NULL)
     {
       delete hist_;
@@ -1114,6 +1115,31 @@ void AnalysisChannel::CreateHistogram()
 
     std::string title = name_;
     hist_ = new TH1F( title.c_str(), title.c_str(), 1 , 0.5 , 1+0.5);
+    hist_->SetXTitle("Time [#mus]");
+    hist_->SetYTitle("Particle rate [MIP/0.8 ns]");
+
+
+    // Create the histogram the peak spectrum from Frank
+    if(peak_h_ != NULL)
+    {
+      delete peak_h_;
+      peak_h_ = NULL;
+    }
+
+    title = name_ + "_peak";
+    peak_h_ = new TH1D( title.c_str(), title.c_str(), 1 , 0.5 , 1+0.5);
+    peak_h_->SetXTitle("Peak to Peak Distance [#mus]");
+    peak_h_->SetYTitle("amp_{1} #times amp_{2} [MIP^{2} / #mus]");
+
+    // Create the histogram holding the fft spectrum
+    if(fft_h_ != NULL)
+    {
+      delete fft_h_;
+      fft_h_ = NULL;
+    }
+
+    title = name_ + "_fft";
+    fft_h_ = new TH1D( title.c_str(), title.c_str(), 1 , 0.5 , 1+0.5);
 }
 
 void AnalysisChannel::Normalize(double n)
@@ -1129,6 +1155,31 @@ void AnalysisChannel::SetErrors(double err)
     }
 }
 
+void AnalysisChannel::RunPeak()
+{
+
+  if( peak_h_->GetNbinsX() < hist_->GetNbinsX() )
+  {
+      peak_h_->SetBins(hist_->GetNbinsX(), hist_->GetBinLowEdge(1), hist_->GetBinLowEdge(hist_->GetNbinsX())+1.);
+  }
+
+  double amp = 0;
+  for (int i = 1; i < hist_->GetNbinsX()+1; i++)
+        if ( hist_->GetBinContent(i) > 0) {
+            for (int j = 1; j < hist_->GetNbinsX()+1; j++) {
+                if (i == j) continue;
+                amp = hist_->GetBinContent(i) * hist_->GetBinContent(j);
+                if (amp > 0)
+                    peak_h_->Fill(hist_->GetBinCenter(i) - hist_->GetBinCenter(j), amp);
+            }
+        }
+
+}
+
+void AnalysisChannel::RunFFT()
+{
+
+}
 
 void AnalysisChannel::CalculateIntegral()
 {
@@ -1137,9 +1188,24 @@ void AnalysisChannel::CalculateIntegral()
      */
 }
 
-TH1* AnalysisChannel::GetHistogram()
+TH1* AnalysisChannel::GetHistogram(std::string type)
 {
-        return hist_;
+  if(type == "waveform")
+  {
+    return hist_;
+  }
+  else if(type == "peak")
+  {
+    return peak_h_;
+  }
+  else if(type == "fft")
+  {
+    return fft_h_;
+  }
+  else
+  {
+    return NULL;
+  }
 };
 
 void AnalysisChannel::PrintType()

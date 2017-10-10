@@ -204,7 +204,7 @@ class IntEvent : public Event{
 
         void                   LoadIniFile();
 //        IntChannel*                                GetChannel(std::string name);
-//        std::map<std::string, double> GetIntegral();
+//        std::map<std::string, double> GetIntegral();/remote/ceph/group/ilc/claws/data/RAW/connecticut/2016-05-23/Run-401141
 
         double mean_online_[8];
         double accepted_online_[8];
@@ -224,9 +224,12 @@ class AnalysisEvent : public Event
         void AddEvent(AnalysisEvent* evt);
         void Normalize();
         void SetErrors(double err = 0);
+        void RunPeak();
+        void RunFFT();
 
         std::tuple<double, double>                GetCurrent();
         std::tuple<bool, double, bool, double >   GetInjection();
+        std::map<std::string, TH1*> GetHistograms();
 
         void                   SaveEvent(boost::filesystem::path result_folder);
 

@@ -17,34 +17,72 @@
 // project includes
 #include "run.hh"
 #include "globalsettings.hh"
-#include "scripts.hh"
+
 
 
 int main(int argc, char* argv[]) {
 
-	// TApplication *app=new TApplication("app",0,0);
-//	boost::property_tree::ptree config_file;
-
+	// Define all
 	boost::program_options::options_description options("Generic options");
-    options.add_options()
-    	("help", "Displays this help message.")
-        ("config,c", boost::program_options::value<boost::filesystem::path>()->default_value("./config/analysis_parameters.ini"), "Config file to get parameters from.")
+  options.add_options()
+  	("help", "Displays this help message.")
+
+		("config,c",
+			boost::program_options::value<boost::filesystem::path>()->default_value(
+			"/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/config/analysis_parameters.ini"),
+		 "Config file to get parameters from.")
         ;
 
+	// Define all options that are related to which files & runs are read in and
+	// and where the output goes to.
 	boost::program_options::options_description data_options("Data");
 	data_options.add_options()
-		("data.test", 		boost::program_options::value<std::string>()->default_value("default_value"), 	"test value")
-		("data.input", 		boost::program_options::value<boost::filesystem::path>(),	 					"Data directory containing runs meant to be analysed.")
-		("data.output", 	boost::program_options::value<boost::filesystem::path>(), 						"Data directory containing results.")
-		("data.ts_min", 	boost::program_options::value<double>(), 										"If selected, smallest timestamp of events used.")
-		("data.ts_max", 	boost::program_options::value<double>(), 										"If selected, largest timestamp of events used.")
-		("data.event_min",  boost::program_options::value<int>(), 											"If selected, smallest event number of events used.")
-		("data.event_max",  boost::program_options::value<int>(), 											"If selected, largest event number of events used.")
-		("data.run_min", 	boost::program_options::value<int>(), 											"If selected, smallest run number of events used.")
-		("data.run_max", 	boost::program_options::value<int>(), 											"If selected, largest run number of events used.")
-		("data.day_min", 	boost::program_options::value<std::string>(), 									"If selected, earliest day used.")
-		("data.day_max", 	boost::program_options::value<std::string>(), 									"If selected, latest used.")
+		("data.test",
+		  boost::program_options::value<std::string>()->default_value("default_value"),
+		 "test value")
+
+		("data.input",
+		  boost::program_options::value<boost::filesystem::path>(),
+		 "Data directory containing runs meant to be analysed.")
+
+		("data.output",
+		  boost::program_options::value<boost::filesystem::path>(),
+		 "Data directory containing results.")
+
+		("data.ts_min",
+		  boost::program_options::value<double>(),
+		 "If selected, smallest timestamp of events used.")
+
+		("data.ts_max",
+		  boost::program_options::value<double>(),
+		 "If selected, largest timestamp of events used.")
+
+		("data.event_min",
+		  boost::program_options::value<int>(),
+		 "If selected, smallest event number of events used.")
+
+		("data.event_max",
+		  boost::program_options::value<int>(),
+		 "If selected, largest event number of events used.")
+
+		("data.run_min",
+		  boost::program_options::value<int>(),
+		 "If selected, smallest run number of events used.")
+
+		("data.run_max",
+			boost::program_options::value<int>(),
+		 "If selected, largest run number of events used.")
+
+		("data.day_min",
+			boost::program_options::value<std::string>(),
+		 "If selected, earliest day used.")
+
+		("data.day_max",
+			boost::program_options::value<std::string>(),
+		 "If selected, latest used.")
+
 		;
+
 	options.add(data_options);
 
 
@@ -88,15 +126,17 @@ int main(int argc, char* argv[]) {
 
 	std::cout << "Input:  " << config_map["data.input"].as<boost::filesystem::path>() << "\n";
 	std::cout << "Output: " << config_map["data.output"].as<boost::filesystem::path>() << "\n";
-	std::cout << config_map["data.day_min"].as<std::string>() << "\n";
-	std::cout << config_map["data.day_max"].as<std::string>() << "\n";
+
+	std::cout << "Day_min:" << config_map["data.day_min"].as<std::string>() << "\n";
+	std::cout << "Dat_max:" << config_map["data.day_max"].as<std::string>() << "\n";
+
+
 	std::vector <AnalysisRun*> runs;
-
-
 
 	/** Check which runs are supposed to go into
 	 *
-     */
+   */
+
 	 for(auto & itr_vec : GS->GetRuns( config_map["data.input"].as<boost::filesystem::path>()) )
 	 {
 	     int run_nr = stoi(itr_vec.filename().string().substr(4));
@@ -148,7 +188,7 @@ int main(int argc, char* argv[]) {
 	 for(auto & run : runs)
 	 {
 		 run->SynchronizeFiles();
-	     run->LoadMetaData();
+	   run->LoadMetaData();
 	 }
 
 
@@ -157,7 +197,7 @@ int main(int argc, char* argv[]) {
 
 	 while( itr != runs.end() )
 	 {
-         (*itr)->SetInjectionLimit(config_map["parameters.inj"].as<int>());
+     (*itr)->SetInjectionLimit(config_map["parameters.inj"].as<int>());
 
 		 (*itr)->SetCurrentLimit(   "LER",
 		 							config_map["parameters.ler_current_min"].as<double>(),
@@ -179,6 +219,7 @@ int main(int argc, char* argv[]) {
 	 }
 
 	 int n_events = 0;
+
 	 for( auto & run : runs )
 	 {
 		 n_events += run->NEvents();
@@ -186,9 +227,9 @@ int main(int argc, char* argv[]) {
 
 	  boost::property_tree::ptree out_selection;
 
-	  out_selection.put("General.config", 			config_map["config"].as<boost::filesystem::path>() );
-	  out_selection.put("Data.output", 			config_map["data.output"].as<boost::filesystem::path>() );
-	  out_selection.put("Data.input",		config_map["data.input"].as<boost::filesystem::path>() );
+	  out_selection.put("General.config", config_map["config"].as<boost::filesystem::path>() );
+	  out_selection.put("Data.output", 		config_map["data.output"].as<boost::filesystem::path>() );
+	  out_selection.put("Data.input",		  config_map["data.input"].as<boost::filesystem::path>() );
 	  out_selection.put("Data.ts_min",		config_map["data.ts_min"].as<double>() );
 	  out_selection.put("Data.ts_max",		config_map["data.ts_max"].as<double>() );
 	  out_selection.put("Data.event_min",	config_map["data.event_min"].as<int>() );
@@ -229,6 +270,7 @@ int main(int argc, char* argv[]) {
 	//  }
 
 	 AnalysisEvent* analysis_event = new AnalysisEvent();
+
 	 analysis_event->CreateHistograms();
 
 	 for( auto & run : runs )
@@ -247,38 +289,42 @@ int main(int argc, char* argv[]) {
 	 }
 	 analysis_event->SetErrors();
 	 analysis_event->Normalize();
+	 analysis_event->RunPeak();
 
-	 boost::filesystem::path folder;
+
+
 	 std::string fname;
+	 std::string folder_name;
 
-	 if( std::to_string( config_map["data.run_min"].as<int>() ) == std::to_string( config_map["data.run_max"].as<int>() ) )
+	 if(std::to_string( config_map["data.run_min"].as<int>() == std::to_string( config_map["data.run_max"].as<int>() )
 	 {
-		 folder = config_map["data.output"].as<boost::filesystem::path>()/path("Run_" + std::to_string( config_map["data.run_min"].as<int>() ) );
-
-		 fname  = "run_" + std::to_string( config_map["data.run_min"].as<int>() );
+		 fname = "output_" + std::to_string( config_map["data.run_min"].as<int>() );
+		 folder_name = "Run_" + std::to_string( config_map["data.run_min"].as<int>() );
 	 }
 	 else
 	 {
-		 folder = config_map["data.output"].as<boost::filesystem::path>()/path("Run_"
-		 				 + std::to_string( config_map["data.run_min"].as<int>() ) + "-" +
-						   std::to_string( config_map["data.run_max"].as<int>() ) );
+		 fname = "output_" +
+		 					 std::to_string( config_map["data.run_min"].as<int>() ) + "_" +
+		 				 	 std::to_string( config_map["data.run_max"].as<int>() );
 
-		 fname  = "run_" + std::to_string( config_map["data.run_min"].as<int>() ) + "-" +
-					       std::to_string( config_map["data.run_max"].as<int>() );
+		 folder_name = "Run_" +
+		 					 std::to_string( config_map["data.run_min"].as<int>() ) + "_" +
+		 				 	 std::to_string( config_map["data.run_max"].as<int>() );
 	 }
 
-	 if(!boost::filesystem::is_directory( folder ) )
+	 std::string fini = config_map["data.output"].as<boost::filesystem::path>().string()+"/"+fname+"_selection.ini";
+
+	 if(boost::filesystem::is_directory(config_map["data.output"].as<boost::filesystem::path>() && starts_with(config_map["data.output"].as<boost::filesystem::path>().filename().string(), "Run_"))
 	 {
-	 	boost::filesystem::create_directory( folder );
+		 analysis_event->SaveEvent( config_map["data.output"].as<boost::filesystem::path>().string()+"/"+fname);
+		 boost::property_tree::write_ini( fini, out_selection);
+	 }
+	 else
+	 {
+		 boost::filesystem::create_directory(
 	 }
 
 
-	 boost::property_tree::write_ini( (folder/path( fname +"_selection.ini" )).string() , out_selection);
-	 analysis_event->SaveEvent( folder/path( fname) );
-
-	 int count = 2;
-	 const char* values[3] = {"", folder.string().c_str(), fname.c_str() };
-//	 plot_waveform(count, values);
 
 // .parent_path()
 

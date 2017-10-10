@@ -77,7 +77,7 @@ class Channel
 
         std::vector<float>*     waveform_      = NULL;
 
-        TH1*                   hist_          = NULL;
+        TH1*                    hist_          = NULL;
         TH1I*                   pedestal_hist_      = NULL;
 
         float                   pedestal_   = 0;
@@ -187,11 +187,17 @@ class AnalysisChannel : public Channel
         void CreateHistogram();
         void                    Normalize(double n);
         void SetErrors(double err = 0);
+        void RunPeak();
+        void RunFFT();
 
         virtual void            CalculateIntegral();
-        TH1*                   GetHistogram();
+        TH1*                    GetHistogram(std::string type="waveform");
 
         void    PrintType();
+
+
+        TH1D*                   peak_h_      = NULL;
+        TH1D*                   fft_h_      = NULL;
 
 };
 

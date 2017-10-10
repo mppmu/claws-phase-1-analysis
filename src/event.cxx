@@ -949,12 +949,49 @@ void AnalysisEvent::SetErrors(double err)
     }
 }
 
+void AnalysisEvent::RunPeak()
+{
+    for(auto & imap : channels_)
+    {
+        AnalysisChannel* tmp = dynamic_cast<AnalysisChannel*>(imap.second);
+        tmp->RunPeak();
+    }
+};
+
+void AnalysisEvent::RunFFT()
+{
+    for(auto & imap : channels_)
+    {
+        AnalysisChannel* tmp = dynamic_cast<AnalysisChannel*>(imap.second);
+        tmp->RunPeak();
+    }
+};
+
 std::tuple<bool, double, bool, double> AnalysisEvent::GetInjection()
 {
     return std::make_tuple( pt_.get<bool>("SuperKEKBData.LERBg"),
                             pt_.get<double>("SuperKEKBData.LERInj"),
                             pt_.get<bool>("SuperKEKBData.HERBg"),
                             pt_.get<double>("SuperKEKBData.HERInj")  );
+}
+
+
+std::map<std::string, TH1*> AnalysisEvent::GetHistograms()
+{
+    std::map<std::string, TH1*>    rtn;
+
+    for(auto & itr : channels_)
+    {
+        rtn[itr.first]  =  itr.second->GetHistogram();
+    }
+
+    for(auto & itr : channels_)
+    {
+        AnalysisChannel* tmp = dynamic_cast<AnalysisChannel*>(itr.second);
+        rtn[itr.first + "_peak"]  =  tmp->GetHistogram("peak");
+    }
+
+    return rtn;
 }
 
 void AnalysisEvent::SaveEvent(boost::filesystem::path folder)
