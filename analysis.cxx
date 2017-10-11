@@ -12,7 +12,7 @@
 #include <iterator>
 // boost
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
+#include <boost/filesystem.hpp>F
 
 // project includes
 #include "run.hh"
@@ -191,8 +191,6 @@ int main(int argc, char* argv[]) {
 	   run->LoadMetaData();
 	 }
 
-
-
 	 auto itr = runs.begin();
 
 	 while( itr != runs.end() )
@@ -204,7 +202,7 @@ int main(int argc, char* argv[]) {
 									config_map["parameters.ler_current_max"].as<double>()	);
 		 (*itr)->SetCurrentLimit(   "HER",
 		 		 					config_map["parameters.her_current_min"].as<double>(),
-						   			config_map["parameters.her_current_max"].as<double>()	);
+						   		config_map["parameters.her_current_max"].as<double>()	);
 
 		 if( (*itr)->NEvents() == 0 )
 		 {
@@ -289,52 +287,59 @@ int main(int argc, char* argv[]) {
 	 }
 	 analysis_event->SetErrors();
 	 analysis_event->Normalize();
-	 analysis_event->RunPeak();
+	//  analysis_event->RunPeak();
 
 
+	 /**
+	 *	Saving of results:
+	 *  \todo write some text regarding the saving structure
+	 */
 
-	 std::string fname;
-	 std::string folder_name;
+	 std::string f_name;
+	 std::string fld_name;
 
-	 if(std::to_string( config_map["data.run_min"].as<int>() == std::to_string( config_map["data.run_max"].as<int>() )
+	 if( config_map["data.run_min"].as<int>() == config_map["data.run_max"].as<int>() )
 	 {
-		 fname = "output_" + std::to_string( config_map["data.run_min"].as<int>() );
-		 folder_name = "Run_" + std::to_string( config_map["data.run_min"].as<int>() );
+		 /**
+		 	* If run_min and run_max are the same we do not need to put both in the file and folder name.
+			*/
+		 f_name = "run_out_" + std::to_string( config_map["data.run_min"].as<int>() );
+		 fld_name = "Run_" + std::to_string( config_map["data.run_min"].as<int>() );
 	 }
 	 else
 	 {
-		 fname = "output_" +
+		 f_name = "run_out_" +
 		 					 std::to_string( config_map["data.run_min"].as<int>() ) + "_" +
 		 				 	 std::to_string( config_map["data.run_max"].as<int>() );
 
-		 folder_name = "Run_" +
+		 fld_name = "Run_" +
 		 					 std::to_string( config_map["data.run_min"].as<int>() ) + "_" +
 		 				 	 std::to_string( config_map["data.run_max"].as<int>() );
 	 }
 
-	 std::string fini = config_map["data.output"].as<boost::filesystem::path>().string()+"/"+fname+"_selection.ini";
 
-	 if(boost::filesystem::is_directory(config_map["data.output"].as<boost::filesystem::path>() && starts_with(config_map["data.output"].as<boost::filesystem::path>().filename().string(), "Run_"))
+	 if(	 boost::filesystem::is_directory(config_map["data.output"].as<boost::filesystem::path>() )
+	 		&& (config_map["data.output"].as<boost::filesystem::path>().filename().string() == fld_name ) )
 	 {
-		 analysis_event->SaveEvent( config_map["data.output"].as<boost::filesystem::path>().string()+"/"+fname);
-		 boost::property_tree::write_ini( fini, out_selection);
+		 analysis_event->SaveEvent( config_map["data.output"].as<boost::filesystem::path>()/f_name );
+		 std::string ini_name = 		( config_map["data.output"].as<boost::filesystem::path>()/(f_name + "_selection.ini") ).string();
+		 boost::property_tree::write_ini( ini_name, out_selection);
+		// boost::property_tree::write_ini( config_map["data.output"].as<boost::filesystem::path>()/(f_name + "_selection.ini"),
+		// 																 out_selection );
 	 }
 	 else
 	 {
-		 boost::filesystem::create_directory(
+		 boost::filesystem::create_directory( config_map["data.output"].as<boost::filesystem::path>()/fld_name );
+		 analysis_event->SaveEvent( config_map["data.output"].as<boost::filesystem::path>()/fld_name/f_name );
+		 std::string ini_name = 		( config_map["data.output"].as<boost::filesystem::path>()/fld_name/(f_name + "_selection.ini") ).string();
+		 boost::property_tree::write_ini( ini_name, out_selection);
+		//  boost::property_tree::write_ini( config_map["data.output"].as<boost::filesystem::path>()/fld_name/(f_name + "_selection.ini"),
+		// 																 out_selection );
 	 }
 
-
-
-// .parent_path()
 
 //	 boost::property_tree::write_ini(folder.string()+"/event_"+std::to_string(nr_)+".ini", pt_);
 	 std::cout << "Runs: "<< runs.size() << " with Total Events: " << n_events <<  " selected for analysis!" << std::endl;
-
-
-
-
-
 
 
 

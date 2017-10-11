@@ -894,7 +894,6 @@ AnalysisEvent::AnalysisEvent( const boost::filesystem::path &file_root, const bo
 };
 
 AnalysisEvent::~AnalysisEvent() {
-	// \todo Auto-generated destructor stub
 };
 
 void AnalysisEvent::LoadIniFile()
@@ -918,8 +917,8 @@ void AnalysisEvent::AddEvent(AnalysisEvent* evt)
 //    #pragma omp parallel for num_threads(8)
     for(unsigned i = 0; i < vch.size(); i++)
     {
-        TH1* hist_local = evt->GetChannel(vch.at(i))->GetHistogram();
-        TH1* hist_global = channels_[vch.at(i)]->GetHistogram();
+        TH1* hist_local = dynamic_cast<AnalysisChannel*>(evt->GetChannel(vch.at(i)))->GetHistogram();
+        TH1* hist_global = dynamic_cast<AnalysisChannel*>(channels_[vch.at(i)])->GetHistogram();
 
         if( hist_global->GetNbinsX() < hist_local->GetNbinsX() )
         {
@@ -951,11 +950,24 @@ void AnalysisEvent::SetErrors(double err)
 
 void AnalysisEvent::RunPeak()
 {
-    for(auto & imap : channels_)
-    {
-        AnalysisChannel* tmp = dynamic_cast<AnalysisChannel*>(imap.second);
-        tmp->RunPeak();
-    }
+  std::vector<std::string> ch_names;
+
+  for(auto & imap : channels_)
+  {
+      ch_names.push_back(imap.first);
+  }
+
+//  #pragma omp parallel for num_threads(8)
+  for(int i = 0; i< ch_names.size(); i++)
+  {
+      AnalysisChannel* tmp = dynamic_cast<AnalysisChannel*>(channels_[ch_names.at(i)]);
+      tmp->RunPeak();
+  }
+    // for(auto & imap : channels_)
+    // {
+    //     AnalysisChannel* tmp = dynamic_cast<AnalysisChannel*>(imap.second);
+    //     tmp->RunPeak();
+    // }
 };
 
 void AnalysisEvent::RunFFT()
@@ -982,7 +994,8 @@ std::map<std::string, TH1*> AnalysisEvent::GetHistograms()
 
     for(auto & itr : channels_)
     {
-        rtn[itr.first]  =  itr.second->GetHistogram();
+        AnalysisChannel* tmp = dynamic_cast<AnalysisChannel*>(itr.second);
+        rtn[itr.first]  =  tmp->GetHistogram("waveform");
     }
 
     for(auto & itr : channels_)

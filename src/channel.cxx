@@ -1075,7 +1075,17 @@ AnalysisChannel::AnalysisChannel(std::string ch_name): Channel( ch_name )
 
 AnalysisChannel::~AnalysisChannel()
 {
-	// TODO Auto-generated destructor stub
+  // TODO Write a proper destructor...
+  if(peak_h_ == NULL)
+  {
+    delete peak_h_;
+    peak_h_ = NULL;
+  }
+  if(fft_h_ == NULL)
+  {
+    delete fft_h_;
+    fft_h_ = NULL;
+  }
 };
 
 void AnalysisChannel::LoadHistogram(TFile* file)
@@ -1178,8 +1188,11 @@ void AnalysisChannel::RunPeak()
 
 void AnalysisChannel::RunFFT()
 {
-
+  /**
+   * \todo implement
+   */
 }
+
 
 void AnalysisChannel::CalculateIntegral()
 {
@@ -1189,7 +1202,7 @@ void AnalysisChannel::CalculateIntegral()
 }
 
 TH1* AnalysisChannel::GetHistogram(std::string type)
-{
+{ 
   if(type == "waveform")
   {
     return hist_;

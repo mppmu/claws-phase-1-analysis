@@ -191,7 +191,7 @@ class AnalysisChannel : public Channel
         void RunFFT();
 
         virtual void            CalculateIntegral();
-        TH1*                    GetHistogram(std::string type="waveform");
+        TH1*                    GetHistogram(std::string type ="waveform");
 
         void    PrintType();
 
