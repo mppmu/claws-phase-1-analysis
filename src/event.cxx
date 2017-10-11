@@ -995,6 +995,9 @@ std::map<std::string, TH1*> AnalysisEvent::GetHistograms()
     for(auto & itr : channels_)
     {
         AnalysisChannel* tmp = dynamic_cast<AnalysisChannel*>(itr.second);
+        /**
+        *  \todo When here not parameter is givin, somehow the type parameter does not go to default waveform but peak...
+        */
         rtn[itr.first]  =  tmp->GetHistogram("waveform");
     }
 

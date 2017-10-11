@@ -287,7 +287,7 @@ int main(int argc, char* argv[]) {
 	 }
 	 analysis_event->SetErrors();
 	 analysis_event->Normalize();
-	//  analysis_event->RunPeak();
+	 analysis_event->RunPeak();
 
 
 	 /**
@@ -312,7 +312,8 @@ int main(int argc, char* argv[]) {
 		 					 std::to_string( config_map["data.run_min"].as<int>() ) + "_" +
 		 				 	 std::to_string( config_map["data.run_max"].as<int>() );
 
-		 fld_name = "Run_" +
+		 fld_name = "Run_"
+		  +
 		 					 std::to_string( config_map["data.run_min"].as<int>() ) + "_" +
 		 				 	 std::to_string( config_map["data.run_max"].as<int>() );
 	 }
