@@ -16,6 +16,9 @@
 #include <gsl/gsl_fft_real.h>
 #include <gsl/gsl_fft_halfcomplex.h>
 
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
+
 #include "channel.hh"
 #include "globalsettings.hh"
 
@@ -1110,6 +1113,13 @@ void AnalysisChannel::LoadHistogram(TFile* file)
     hist_->SetDirectory(0);
 
     n_sample_ = hist_->GetNbinsX();
+
+    /**
+    * Shift the bins and the x axis to resamble ns
+    * \todo load binsize dynamically
+    */
+    hist_->SetBins(hist_->GetNbinsX(),0.5*0.8 , (hist_->GetNbinsX()+0.5) *0.8);
+
     //Last bin in physics wavefroms is filled with 0, takes care of that bug.
     //    if( hist_->GetBinContent(hist_->GetNbinsX()) == 0 && !boost::algorithm::ends_with(name_,"-INT") ) n_sample_--;
 };
@@ -1125,21 +1135,24 @@ void AnalysisChannel::CreateHistogram()
 
     std::string title = name_;
     hist_ = new TH1F( title.c_str(), title.c_str(), 1 , 0.5 , 1+0.5);
-    hist_->SetXTitle("Time [#mus]");
-    hist_->SetYTitle("Particle rate [MIP/0.8 ns]");
+    hist_->SetXTitle("Time [ns]");
+    hist_->SetYTitle("Particle rate [MIPs/0.8 ns]");
 
 
     // Create the histogram the peak spectrum from Frank
-    if(peak_h_ != NULL)
+    if(!boost::algorithm::ends_with(name_, "4") )
     {
-      delete peak_h_;
-      peak_h_ = NULL;
-    }
+      if(peak_h_ != NULL)
+      {
+        delete peak_h_;
+        peak_h_ = NULL;
+      }
 
-    title = name_ + "_peak";
-    peak_h_ = new TH1D( title.c_str(), title.c_str(), 1 , 0.5 , 1+0.5);
-    peak_h_->SetXTitle("Peak to Peak Distance [#mus]");
-    peak_h_->SetYTitle("amp_{1} #times amp_{2} [MIP^{2} / #mus]");
+      title = name_ + "_peak";
+      peak_h_ = new TH1D( title.c_str(), title.c_str(), 1 , 0.5 , 1+0.5);
+      peak_h_->SetXTitle("Peak to Peak Distance [ns]");
+      peak_h_->SetYTitle("amp_{1} #times amp_{2} [MIPs^{2} / 0.8 ns]");
+    }
 
     // Create the histogram holding the fft spectrum
     if(fft_h_ != NULL)
@@ -1167,6 +1180,7 @@ void AnalysisChannel::SetErrors(double err)
 
 void AnalysisChannel::RunPeak()
 {
+  if(boost::algorithm::ends_with(name_, "4") ) return;
 
   if( peak_h_->GetNbinsX() < hist_->GetNbinsX() )
   {
@@ -1176,11 +1190,13 @@ void AnalysisChannel::RunPeak()
   double amp = 0;
   for (int i = 1; i < hist_->GetNbinsX()+1; i++)
         if ( hist_->GetBinContent(i) > 0) {
-            for (int j = 1; j < hist_->GetNbinsX()+1; j++) {
-                if (i == j) continue;
-                amp = hist_->GetBinContent(i) * hist_->GetBinContent(j);
-                if (amp > 0)
-                    peak_h_->Fill(hist_->GetBinCenter(i) - hist_->GetBinCenter(j), amp);
+
+            for (int j = i+1; j < hist_->GetNbinsX()+1; j++) {
+                if (hist_->GetBinContent(j) > 0)
+                {
+                  peak_h_->Fill( hist_->GetBinCenter(j) - hist_->GetBinCenter(i), ( hist_->GetBinContent(i) * hist_->GetBinContent(j) ) );
+                }
+
             }
         }
 
@@ -1191,6 +1207,22 @@ void AnalysisChannel::RunFFT()
   /**
    * \todo implement
    */
+  // 
+  //  gsl_fft_real_wavetable *        real;
+  //  gsl_fft_halfcomplex_wavetable * hc;
+  //  gsl_fft_real_workspace *        work;
+  //
+  //  double * data = new double[n];
+  //
+  // for (i = 0; i < hist_->GetNbinsX(); i++)
+  // {
+  //   data[i] = hist_->GetBinContent(i+1);
+  // }
+  //
+  //  work = gsl_fft_real_workspace_alloc ( hist_->GetNbinsX() );
+  //  real = gsl_fft_real_wavetable_alloc ( hist_->GetNbinsX() );
+  //
+  //  gsl_fft_real_transform (data, 1, n, real, work);
 }
 
 
@@ -1202,7 +1234,7 @@ void AnalysisChannel::CalculateIntegral()
 }
 
 TH1* AnalysisChannel::GetHistogram(std::string type)
-{ 
+{
   if(type == "waveform")
   {
     return hist_;

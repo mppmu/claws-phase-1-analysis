@@ -922,7 +922,7 @@ void AnalysisEvent::AddEvent(AnalysisEvent* evt)
 
         if( hist_global->GetNbinsX() < hist_local->GetNbinsX() )
         {
-            hist_global->SetBins(hist_local->GetNbinsX(), hist_local->GetBinLowEdge(1), hist_local->GetBinLowEdge(hist_local->GetNbinsX())+1.);
+            hist_global->SetBins(hist_local->GetNbinsX(), hist_local->GetBinLowEdge(1), hist_local->GetBinLowEdge(hist_local->GetNbinsX())+hist_local->GetBinWidth(hist_local->GetNbinsX()));
         }
         hist_global->Add(hist_local);
     }
@@ -954,10 +954,10 @@ void AnalysisEvent::RunPeak()
 
   for(auto & imap : channels_)
   {
-      ch_names.push_back(imap.first);
+      if(!ends_with(imap.first, "4") ) ch_names.push_back(imap.first);
   }
 
-//  #pragma omp parallel for num_threads(8)
+  #pragma omp parallel for
   for(int i = 0; i< ch_names.size(); i++)
   {
       AnalysisChannel* tmp = dynamic_cast<AnalysisChannel*>(channels_[ch_names.at(i)]);
@@ -1003,6 +1003,8 @@ std::map<std::string, TH1*> AnalysisEvent::GetHistograms()
 
     for(auto & itr : channels_)
     {
+        if(boost::algorithm::ends_with(itr.first,"4")) continue;
+
         AnalysisChannel* tmp = dynamic_cast<AnalysisChannel*>(itr.second);
         rtn[itr.first + "_peak"]  =  tmp->GetHistogram("peak");
     }
