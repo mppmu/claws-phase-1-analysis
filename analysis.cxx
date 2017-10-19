@@ -260,13 +260,6 @@ int main(int argc, char* argv[]) {
 	 //| Let's come to the fun stuff |
 	 //-------------------------------
 
-
-
-	//  for( auto & run : runs )
-	//  {
-	// 	 run->LoadPhysicsData();
-	//  }
-
 	 AnalysisEvent* analysis_event = new AnalysisEvent();
 
 	 analysis_event->CreateHistograms();
@@ -288,6 +281,7 @@ int main(int argc, char* argv[]) {
 	 analysis_event->SetErrors();
 	 analysis_event->Normalize();
 	 analysis_event->RunPeak();
+	 analysis_event->RunFFT();
 
 
 	 /**
@@ -344,14 +338,5 @@ int main(int argc, char* argv[]) {
 
 
 
-	 	//if(itr_vec.parent_path().filename().string()[]
-	 	//{
-			//
-	 	//}
-
-
-
-
-	// app->Run();
 	return 0;
 }

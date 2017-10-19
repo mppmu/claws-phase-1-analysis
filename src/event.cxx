@@ -950,6 +950,10 @@ void AnalysisEvent::SetErrors(double err)
 
 void AnalysisEvent::RunPeak()
 {
+  std::cout << "\033[33;1mAnalysisEvent::RunPeak:\033[0m running" << "\r" << std::flush;
+  double wall0 = claws::get_wall_time();
+  double cpu0  = claws::get_cpu_time();
+
   std::vector<std::string> ch_names;
 
   for(auto & imap : channels_)
@@ -968,15 +972,45 @@ void AnalysisEvent::RunPeak()
     //     AnalysisChannel* tmp = dynamic_cast<AnalysisChannel*>(imap.second);
     //     tmp->RunPeak();
     // }
+
+    std::cout << "\033[32;1mAnalysisEvent::RunPeak:\033[0m done!   " << "\r" << std::endl;
+
+    double wall1 = claws::get_wall_time();
+    double cpu1  = claws::get_cpu_time();
+
+    cout << "Wall Time = " << wall1 - wall0 << endl;
+    cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 };
 
 void AnalysisEvent::RunFFT()
 {
+    std::cout << "\033[33;1mAnalysisEvent::RunFFT:\033[0m running" << "\r" << std::flush;
+    double wall0 = claws::get_wall_time();
+    double cpu0  = claws::get_cpu_time();
+
+
+    std::vector<std::string> ch_names;
+
     for(auto & imap : channels_)
     {
-        AnalysisChannel* tmp = dynamic_cast<AnalysisChannel*>(imap.second);
-        tmp->RunPeak();
+        if(!ends_with(imap.first, "4") ) ch_names.push_back(imap.first);
     }
+
+//    #pragma omp parallel for
+    for(int i = 0; i< ch_names.size(); i++)
+    {
+        AnalysisChannel* tmp = dynamic_cast<AnalysisChannel*>(channels_[ch_names.at(i)]);
+        tmp->RunFFT();
+    }
+
+    std::cout << "\033[32;1mAnalysisEvent::RunFFT:\033[0m done!   " << "\r" << std::endl;
+
+    double wall1 = claws::get_wall_time();
+    double cpu1  = claws::get_cpu_time();
+
+    cout << "Wall Time = " << wall1 - wall0 << endl;
+    cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+
 };
 
 std::tuple<bool, double, bool, double> AnalysisEvent::GetInjection()
@@ -1007,7 +1041,17 @@ std::map<std::string, TH1*> AnalysisEvent::GetHistograms()
 
         AnalysisChannel* tmp = dynamic_cast<AnalysisChannel*>(itr.second);
         rtn[itr.first + "_peak"]  =  tmp->GetHistogram("peak");
+        rtn[itr.first + "_fft_real"]  =  tmp->GetHistogram("fft_real");
+        rtn[itr.first + "_fft_img"]  =  tmp->GetHistogram("fft_img");
     }
+
+    // for(auto & itr : channels_)
+    // {
+    //     if(boost::algorithm::ends_with(itr.first,"4")) continue;
+    //
+    //     AnalysisChannel* tmp = dynamic_cast<AnalysisChannel*>(itr.second);
+    //     rtn[itr.first + "_fft_real"]  =  tmp->GetHistogram("fft_real");
+    // }
 
     return rtn;
 }

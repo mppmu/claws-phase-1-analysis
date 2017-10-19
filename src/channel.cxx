@@ -1084,10 +1084,15 @@ AnalysisChannel::~AnalysisChannel()
     delete peak_h_;
     peak_h_ = NULL;
   }
-  if(fft_h_ == NULL)
+  if(fft_real_h_ == NULL)
   {
-    delete fft_h_;
-    fft_h_ = NULL;
+    delete fft_real_h_;
+    fft_real_h_ = NULL;
+  }
+  if(fft_img_h_ == NULL)
+  {
+    delete fft_img_h_;
+    fft_img_h_ = NULL;
   }
 };
 
@@ -1154,15 +1159,30 @@ void AnalysisChannel::CreateHistogram()
       peak_h_->SetYTitle("amp_{1} #times amp_{2} [MIPs^{2} / 0.8 ns]");
     }
 
-    // Create the histogram holding the fft spectrum
-    if(fft_h_ != NULL)
+    double timestep = 0.8e-9;
+
+    // Create the histogram holding the real fft spectrum
+    if(fft_real_h_ != NULL)
     {
-      delete fft_h_;
-      fft_h_ = NULL;
+      delete fft_real_h_;
+      fft_real_h_ = NULL;
     }
 
-    title = name_ + "_fft";
-    fft_h_ = new TH1D( title.c_str(), title.c_str(), 1 , 0.5 , 1+0.5);
+    title = name_ + "_fft_real";
+    fft_real_h_ = new TH1D( title.c_str(), title.c_str(), 2 , -1/(2*timestep)/2 , 1/(2*timestep)+ 1/(2*timestep)/2 );
+    fft_real_h_->SetXTitle("Frequency [Hz]");
+    fft_real_h_->SetYTitle("Gute Frage...");
+    // Create the histogram holding the imaginary fft spectrum
+    if(fft_img_h_ != NULL)
+    {
+      delete fft_img_h_;
+      fft_img_h_ = NULL;
+    }
+
+    title = name_ + "_fft_img";
+    fft_img_h_ = new TH1D( title.c_str(), title.c_str(), 2 , -1/(2*timestep)/2 , 1/(2*timestep)+ 1/(2*timestep)/2 );
+    fft_img_h_->SetXTitle("Frequency [Hz]");
+    fft_img_h_->SetYTitle("Gute Frage...");
 }
 
 void AnalysisChannel::Normalize(double n)
@@ -1204,25 +1224,74 @@ void AnalysisChannel::RunPeak()
 
 void AnalysisChannel::RunFFT()
 {
-  /**
-   * \todo implement
-   */
-  // 
-  //  gsl_fft_real_wavetable *        real;
-  //  gsl_fft_halfcomplex_wavetable * hc;
-  //  gsl_fft_real_workspace *        work;
-  //
-  //  double * data = new double[n];
-  //
-  // for (i = 0; i < hist_->GetNbinsX(); i++)
-  // {
-  //   data[i] = hist_->GetBinContent(i+1);
-  // }
-  //
-  //  work = gsl_fft_real_workspace_alloc ( hist_->GetNbinsX() );
-  //  real = gsl_fft_real_wavetable_alloc ( hist_->GetNbinsX() );
-  //
-  //  gsl_fft_real_transform (data, 1, n, real, work);
+    /**
+    * \todo implement
+    */
+
+
+
+    if(boost::algorithm::ends_with(name_, "4") ) return;
+
+    long n = 0;
+
+    if( hist_->GetNbinsX() % 2 == 0 ) n = (int)(hist_->GetNbinsX()/10);
+    else                              n = (int)(hist_->GetNbinsX()/10) - 1;
+    n++;
+
+    if( fft_real_h_->GetNbinsX() < n/2+1 )
+    {
+        double xmin = fft_real_h_->GetBinCenter(1);
+        double xmax = fft_real_h_->GetBinCenter(fft_real_h_->GetNbinsX());
+        double range = xmax-xmin;
+        fft_real_h_->SetBins( n/2+1 , xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
+    }
+
+    if( fft_img_h_->GetNbinsX() < n/2+1 )
+    {
+        double xmin = fft_img_h_->GetBinCenter(1);
+        double xmax = fft_img_h_->GetBinCenter(fft_img_h_->GetNbinsX());
+        double range = xmax-xmin;
+        fft_img_h_->SetBins( n/2+1 , xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
+    }
+
+    gsl_fft_real_wavetable *        real;
+    gsl_fft_real_workspace *        work;
+
+    double * data = new double[n];
+    double * cpacked = new double[2*n];
+
+    for (int i = 0; i < n; i++)
+    {
+        data[i] = hist_->GetBinContent(i+1);
+    }
+
+    work = gsl_fft_real_workspace_alloc ( n );
+    real = gsl_fft_real_wavetable_alloc ( n );
+
+    gsl_fft_real_transform(data, 1, n, real, work);
+
+    gsl_fft_real_wavetable_free(real);
+
+    gsl_fft_halfcomplex_unpack( data, cpacked, 1 ,n );
+
+
+    for (int i = 0; i < n/2+1; i++)
+    {
+        fft_real_h_->SetBinContent(i+1,cpacked[2*i]);
+    }
+
+    for (int i = 0; i < n/2+1; i++)
+    {
+        fft_img_h_->SetBinContent(i+1,cpacked[2*i+1]);
+    }
+
+    delete work;
+    delete data;
+    delete cpacked;
+
+    double wall1 = claws::get_wall_time();
+    double cpu1  = claws::get_cpu_time();
+
 }
 
 
@@ -1243,9 +1312,13 @@ TH1* AnalysisChannel::GetHistogram(std::string type)
   {
     return peak_h_;
   }
-  else if(type == "fft")
+  else if(type == "fft_real")
   {
-    return fft_h_;
+    return fft_real_h_;
+  }
+  else if(type == "fft_img")
+  {
+    return fft_img_h_;
   }
   else
   {
