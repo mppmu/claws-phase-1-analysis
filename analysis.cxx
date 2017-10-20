@@ -12,7 +12,7 @@
 #include <iterator>
 // boost
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>F
+#include <boost/filesystem.hpp>
 
 // project includes
 #include "run.hh"
@@ -36,6 +36,7 @@ int main(int argc, char* argv[]) {
 	// Define all options that are related to which files & runs are read in and
 	// and where the output goes to.
 	boost::program_options::options_description data_options("Data");
+
 	data_options.add_options()
 		("data.test",
 		  boost::program_options::value<std::string>()->default_value("default_value"),
@@ -48,6 +49,10 @@ int main(int argc, char* argv[]) {
 		("data.output",
 		  boost::program_options::value<boost::filesystem::path>(),
 		 "Data directory containing results.")
+
+		 ("data.output_prefix",
+		   boost::program_options::value<std::string>()->default_value(""),
+		  "Data directory containing results.")
 
 		("data.ts_min",
 		  boost::program_options::value<double>(),
@@ -99,6 +104,16 @@ int main(int argc, char* argv[]) {
 		;
 
 	options.add(parameter_options);
+
+
+	boost::program_options::options_description task_options("Tasks");
+
+	task_options.add_options()
+		("task.peak", boost::program_options::value<bool>(), "Run peak algorithm?")
+		("taks.fft",  boost::program_options::value<bool>(), "Run FFT?")
+		;
+
+	options.add(task_options);
 
 
 	boost::program_options::variables_map config_map;
@@ -187,7 +202,7 @@ int main(int argc, char* argv[]) {
 
 	 for(auto & run : runs)
 	 {
-		 run->SynchronizeFiles();
+	   run->SynchronizeFiles();
 	   run->LoadMetaData();
 	 }
 
@@ -202,7 +217,7 @@ int main(int argc, char* argv[]) {
 									config_map["parameters.ler_current_max"].as<double>()	);
 		 (*itr)->SetCurrentLimit(   "HER",
 		 		 					config_map["parameters.her_current_min"].as<double>(),
-						   		config_map["parameters.her_current_max"].as<double>()	);
+						   		    config_map["parameters.her_current_max"].as<double>()	);
 
 		 if( (*itr)->NEvents() == 0 )
 		 {
@@ -223,12 +238,14 @@ int main(int argc, char* argv[]) {
 		 n_events += run->NEvents();
 	 }
 
-	  boost::property_tree::ptree out_selection;
+	 if( !runs.empty() )
+	 {
+	 	boost::property_tree::ptree out_selection;
 
-	  out_selection.put("General.config", config_map["config"].as<boost::filesystem::path>() );
-	  out_selection.put("Data.output", 		config_map["data.output"].as<boost::filesystem::path>() );
-	  out_selection.put("Data.input",		  config_map["data.input"].as<boost::filesystem::path>() );
-	  out_selection.put("Data.ts_min",		config_map["data.ts_min"].as<double>() );
+	  	out_selection.put("General.config", config_map["config"].as<boost::filesystem::path>() );
+	  	out_selection.put("Data.output", 		config_map["data.output"].as<boost::filesystem::path>() );
+	  	out_selection.put("Data.input",		  config_map["data.input"].as<boost::filesystem::path>() );
+	  	out_selection.put("Data.ts_min",		config_map["data.ts_min"].as<double>() );
 	  out_selection.put("Data.ts_max",		config_map["data.ts_max"].as<double>() );
 	  out_selection.put("Data.event_min",	config_map["data.event_min"].as<int>() );
 	  out_selection.put("Data.event_max",	config_map["data.event_max"].as<int>() );
@@ -256,14 +273,13 @@ int main(int argc, char* argv[]) {
 		  out_selection.put("SelectedRuns."+std::to_string( run->GetRunNr() ), true );
 	  }
 
-	 //-------------------------------
-	 //| Let's come to the fun stuff |
-	 //-------------------------------
 
 	 AnalysisEvent* analysis_event = new AnalysisEvent();
 
 	 analysis_event->CreateHistograms();
 
+	 Rate rates();
+	 
 	 for( auto & run : runs )
 	 {
 	 	 for(auto & evt : run->GetEvents())
@@ -278,10 +294,34 @@ int main(int argc, char* argv[]) {
 		 delete run;
 		 run = NULL;
 	 }
+
+	 out_selection.put("OnlineRate.FWD1", );
+	 out_selection.put("OnlineRate.FWD1", );
+	 out_selection.put("OnlineRate.FWD1", );
+	 out_selection.put("OnlineRate.FWD1", );
+	 out_selection.put("OnlineRate.FWD1", );
+	 out_selection.put("OnlineRate.FWD1", );
+	 out_selection.put("OnlineRate.FWD1", );
+	 out_selection.put("OnlineRate.FWD1", );
+
+
 	 analysis_event->SetErrors();
 	 analysis_event->Normalize();
-	 analysis_event->RunPeak();
-	 analysis_event->RunFFT();
+
+	 //-------------------------------
+	 //| Let's come to the fun stuff |
+	 //-------------------------------
+
+	 if( config_map["task.peak"].as<bool>() )
+	 {
+		 analysis_event->RunPeak();
+	 }
+
+	 if( config_map["task.fft"].as<bool>() )
+	 {
+		 analysis_event->RunFFT();
+	 }
+
 
 
 	 /**
@@ -289,54 +329,77 @@ int main(int argc, char* argv[]) {
 	 *  \todo write some text regarding the saving structure
 	 */
 
-	 std::string f_name;
-	 std::string fld_name;
+	 std::string file;
+	//  _name;
+
+	 std::string name = "";
+	 std::string folder = "";
 
 	 if( config_map["data.run_min"].as<int>() == config_map["data.run_max"].as<int>() )
 	 {
 		 /**
-		 	* If run_min and run_max are the same we do not need to put both in the file and folder name.
-			*/
-		 f_name = "run_out_" + std::to_string( config_map["data.run_min"].as<int>() );
-		 fld_name = "Run_" + std::to_string( config_map["data.run_min"].as<int>() );
+		 *  If run_min and run_max are the same we do not need to put both in the file and folder name.
+		 */
+		 name = std::to_string( config_map["data.run_min"].as<int>() );
+		//  file   = "run_out_" + std::to_string( config_map["data.run_min"].as<int>() );
+		//  folder = "Run_" + std::to_string( config_map["data.run_min"].as<int>() );
 	 }
 	 else
 	 {
-		 f_name = "run_out_" +
-		 					 std::to_string( config_map["data.run_min"].as<int>() ) + "_" +
-		 				 	 std::to_string( config_map["data.run_max"].as<int>() );
-
-		 fld_name = "Run_"
-		  +
-		 					 std::to_string( config_map["data.run_min"].as<int>() ) + "_" +
-		 				 	 std::to_string( config_map["data.run_max"].as<int>() );
+		 name = std::to_string( config_map["data.run_min"].as<int>() ) + "_" +
+		        std::to_string( config_map["data.run_max"].as<int>() );
+		//  file   = "run_out_" +
+		//  					 std::to_string( config_map["data.run_min"].as<int>() ) + "_" +
+		//  				 	 std::to_string( config_map["data.run_max"].as<int>() );
+		 //
+		//  folder = "Run_"
+		//   +
+		//  					 std::to_string( config_map["data.run_min"].as<int>() ) + "_" +
+		//  				 	 std::to_string( config_map["data.run_max"].as<int>() );
+	 }
+	 if(config_map["parameters.ler_current_min"].as<double>() >= -50 || config_map["parameters.ler_current_max"].as<double>() <= 2000 )
+	 {
+		 name += "_ler" + std::to_string(config_map["parameters.ler_current_min"].as<double>()) +
+		 		 "_"   + std::to_string(config_map["parameters.ler_current_max"].as<double>());
 	 }
 
-
-	 if(	 boost::filesystem::is_directory(config_map["data.output"].as<boost::filesystem::path>() )
-	 		&& (config_map["data.output"].as<boost::filesystem::path>().filename().string() == fld_name ) )
+	 if(config_map["parameters.her_current_min"].as<double>() >= -50 || config_map["parameters.her_current_max"].as<double>() <= 2000 )
 	 {
-		 analysis_event->SaveEvent( config_map["data.output"].as<boost::filesystem::path>()/f_name );
-		 std::string ini_name = 		( config_map["data.output"].as<boost::filesystem::path>()/(f_name + "_selection.ini") ).string();
-		 boost::property_tree::write_ini( ini_name, out_selection);
-		// boost::property_tree::write_ini( config_map["data.output"].as<boost::filesystem::path>()/(f_name + "_selection.ini"),
-		// 																 out_selection );
+		 name += "_ler" + std::to_string(config_map["parameters.her_current_min"].as<double>()) +
+				 "_"   + std::to_string(config_map["parameters.her_current_max"].as<double>());
+	 }
+
+	 if(config_map["parameters.inj"].as<int>() != -1)
+	 {
+		 name += "_inj" + std::to_string(config_map["parameters.inj"].as<int>());
+	 }
+
+	 folder = name;
+	 name   = "analysis_run_" + name;
+
+	 if( config_map["data.output_prefix"].as<std::string>() != "")
+	 {
+		 folder = config_map["data.output_prefix"].as<std::string>() + folder;
 	 }
 	 else
 	 {
-		 boost::filesystem::create_directory( config_map["data.output"].as<boost::filesystem::path>()/fld_name );
-		 analysis_event->SaveEvent( config_map["data.output"].as<boost::filesystem::path>()/fld_name/f_name );
-		 std::string ini_name = 		( config_map["data.output"].as<boost::filesystem::path>()/fld_name/(f_name + "_selection.ini") ).string();
-		 boost::property_tree::write_ini( ini_name, out_selection);
-		//  boost::property_tree::write_ini( config_map["data.output"].as<boost::filesystem::path>()/fld_name/(f_name + "_selection.ini"),
-		// 																 out_selection );
+		 folder = "Run_" + folder;
 	 }
 
+	 if( !boost::filesystem::is_directory(config_map["data.output"].as<boost::filesystem::path>()/folder ) )
+	 {
+		  boost::filesystem::create_directory( config_map["data.output"].as<boost::filesystem::path>()/folder );
+	 }
 
-//	 boost::property_tree::write_ini(folder.string()+"/event_"+std::to_string(nr_)+".ini", pt_);
+	 analysis_event->SaveEvent( config_map["data.output"].as<boost::filesystem::path>()/(folder + "/" + name +".root" ));
+	 boost::property_tree::write_ini( path(config_map["data.output"].as<boost::filesystem::path>()/(folder + "/" + name +".ini" )).string(), out_selection);
+
 	 std::cout << "Runs: "<< runs.size() << " with Total Events: " << n_events <<  " selected for analysis!" << std::endl;
-
-
+	}
+	else
+	{
+		std::cout << "\033[33;1mNo Runs and Events suvived the selction criterions!\033[0m running" << "\r" << std::cout;
+	}
 
 	return 0;
 }

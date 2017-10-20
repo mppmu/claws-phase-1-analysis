@@ -240,5 +240,20 @@ class AnalysisEvent : public Event
 
 };
 
+struct Rate
+{
+    double rate_online[8] = {};
+    double rate_fast[3] = {};
+    double decomposition[3] = {};
+    double rate[3] = {};
+
+    Rate& operator+(const Rate& rhs){
+        for(int i =0; i < 8; i++) rate_online[i] += rhs.rate_online[i];
+        for(int i =0; i < 3; i++) rate_fast[i] += rhs.rate_fast[i];
+        for(int i =0; i < 3; i++) decomposition[i] += rhs.decomposition[i];
+        for(int i =0; i < 3; i++) rate[i] += rhs.rate[i];
+        return *this;
+    }
+}
 
 #endif /* CLAWS_EVENT_H_ */

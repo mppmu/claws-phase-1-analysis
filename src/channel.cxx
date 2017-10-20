@@ -18,6 +18,8 @@
 
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
+#include <gsl/gsl_complex.h>
+#include <gsl/gsl_complex_math.h>
 
 #include "channel.hh"
 #include "globalsettings.hh"
@@ -1094,6 +1096,17 @@ AnalysisChannel::~AnalysisChannel()
     delete fft_img_h_;
     fft_img_h_ = NULL;
   }
+  if(fft_mag_h_ == NULL)
+  {
+    delete fft_mag_h_;
+    fft_mag_h_ = NULL;
+  }
+  if(fft_phase_h_ == NULL)
+  {
+    delete fft_phase_h_;
+    fft_phase_h_ = NULL;
+  }
+
 };
 
 void AnalysisChannel::LoadHistogram(TFile* file)
@@ -1183,6 +1196,29 @@ void AnalysisChannel::CreateHistogram()
     fft_img_h_ = new TH1D( title.c_str(), title.c_str(), 2 , -1/(2*timestep)/2 , 1/(2*timestep)+ 1/(2*timestep)/2 );
     fft_img_h_->SetXTitle("Frequency [Hz]");
     fft_img_h_->SetYTitle("Gute Frage...");
+
+    if(fft_mag_h_ != NULL)
+    {
+      delete fft_mag_h_;
+      fft_mag_h_ = NULL;
+    }
+
+    title = name_ + "_fft_mag";
+    fft_mag_h_ = new TH1D( title.c_str(), title.c_str(), 2 , -1/(2*timestep)/2 , 1/(2*timestep)+ 1/(2*timestep)/2 );
+    fft_mag_h_->SetXTitle("Magnitude [Hz]");
+    fft_mag_h_->SetYTitle("Gute Frage...");
+
+    // Create the histogram holding the phaseshift fft spectrum
+    if(fft_phase_h_ != NULL)
+    {
+      delete fft_phase_h_;
+      fft_phase_h_ = NULL;
+    }
+
+    title = name_ + "_fft_phase";
+    fft_phase_h_ = new TH1D( title.c_str(), title.c_str(), 2 , -1/(2*timestep)/2 , 1/(2*timestep)+ 1/(2*timestep)/2 );
+    fft_phase_h_->SetXTitle("Phaseshift [probably degree]");
+    fft_phase_h_->SetYTitle("Gute Frage...");
 }
 
 void AnalysisChannel::Normalize(double n)
@@ -1228,8 +1264,6 @@ void AnalysisChannel::RunFFT()
     * \todo implement
     */
 
-
-
     if(boost::algorithm::ends_with(name_, "4") ) return;
 
     long n = 0;
@@ -1252,6 +1286,22 @@ void AnalysisChannel::RunFFT()
         double xmax = fft_img_h_->GetBinCenter(fft_img_h_->GetNbinsX());
         double range = xmax-xmin;
         fft_img_h_->SetBins( n/2+1 , xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
+    }
+
+    if( fft_mag_h_->GetNbinsX() < n/2+1 )
+    {
+        double xmin = fft_mag_h_->GetBinCenter(1);
+        double xmax = fft_mag_h_->GetBinCenter(fft_mag_h_->GetNbinsX());
+        double range = xmax-xmin;
+        fft_mag_h_->SetBins( n/2+1 , xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
+    }
+
+    if( fft_phase_h_->GetNbinsX() < n/2+1 )
+    {
+        double xmin = fft_phase_h_->GetBinCenter(1);
+        double xmax = fft_phase_h_->GetBinCenter(fft_phase_h_->GetNbinsX());
+        double range = xmax-xmin;
+        fft_phase_h_->SetBins( n/2+1 , xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
     }
 
     gsl_fft_real_wavetable *        real;
@@ -1292,6 +1342,13 @@ void AnalysisChannel::RunFFT()
     double wall1 = claws::get_wall_time();
     double cpu1  = claws::get_cpu_time();
 
+    for (int i = 1; i < fft_real_h_->GetNbinsX() + 1; i++)
+    {
+        gsl_complex z = gsl_complex_rect(fft_real_h_->GetBinContent(i),fft_img_h_->GetBinContent(i));
+        fft_mag_h_->SetBinContent(i,gsl_complex_abs(z));
+        fft_phase_h_->SetBinContent(i,gsl_complex_arg(z));
+    }
+
 }
 
 
@@ -1319,6 +1376,14 @@ TH1* AnalysisChannel::GetHistogram(std::string type)
   else if(type == "fft_img")
   {
     return fft_img_h_;
+  }
+  else if(type == "fft_mag")
+  {
+    return fft_mag_h_;
+  }
+  else if(type == "fft_phase")
+  {
+    return fft_phase_h_;
   }
   else
   {

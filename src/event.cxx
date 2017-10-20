@@ -1040,9 +1040,11 @@ std::map<std::string, TH1*> AnalysisEvent::GetHistograms()
         if(boost::algorithm::ends_with(itr.first,"4")) continue;
 
         AnalysisChannel* tmp = dynamic_cast<AnalysisChannel*>(itr.second);
-        rtn[itr.first + "_peak"]  =  tmp->GetHistogram("peak");
-        rtn[itr.first + "_fft_real"]  =  tmp->GetHistogram("fft_real");
-        rtn[itr.first + "_fft_img"]  =  tmp->GetHistogram("fft_img");
+        rtn[itr.first + "_peak"]        =  tmp->GetHistogram("peak");
+        rtn[itr.first + "_fft_real"]    =  tmp->GetHistogram("fft_real");
+        rtn[itr.first + "_fft_img"]     =  tmp->GetHistogram("fft_img");
+        rtn[itr.first + "_fft_mag"]     =  tmp->GetHistogram("fft_mag");
+        rtn[itr.first + "_fft_phase"]   =  tmp->GetHistogram("fft_phase");
     }
 
     // for(auto & itr : channels_)

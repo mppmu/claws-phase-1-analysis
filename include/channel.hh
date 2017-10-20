@@ -198,7 +198,9 @@ class AnalysisChannel : public Channel
 
         TH1D*                   peak_h_         = NULL;
         TH1D*                   fft_real_h_     = NULL;
-        TH1D*                   fft_img_h_     = NULL;
+        TH1D*                   fft_img_h_      = NULL;
+        TH1D*                   fft_mag_h_      = NULL;
+        TH1D*                   fft_phase_h_    = NULL;
 
 };
 
