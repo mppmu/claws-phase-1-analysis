@@ -645,6 +645,7 @@ void PhysicsEvent::Decompose(std::map<std::string, std::vector<float>*> avg_wave
     }
 };
 
+
 void PhysicsEvent::Reconstruct(std::map<std::string, std::vector<float>*> avg_waveforms)
 {
     //TODO Implentation    // channels_["BWD1-INT"] = new IntChannel("BWD1");
@@ -855,13 +856,6 @@ IntEvent::~IntEvent() {
 };
 
 
-
-
-
-
-
-
-
 AnalysisEvent::AnalysisEvent()
 {
     channels_["FWD1"] = new AnalysisChannel("FWD1");
@@ -900,6 +894,26 @@ void AnalysisEvent::LoadIniFile()
 {
 	property_tree::ini_parser::read_ini(path_file_ini_.string(), pt_);
     unixtime_       = pt_.get<double>("Properties.UnixTime");
+
+    rates.rate_online[0] = pt_.get<double>("OnlineRate.FWD1");
+    rates.rate_online[1] = pt_.get<double>("OnlineRate.FWD2");
+    rates.rate_online[2] = pt_.get<double>("OnlineRate.FWD3");
+    rates.rate_online[3] = pt_.get<double>("OnlineRate.BWD1");
+    rates.rate_online[4] = pt_.get<double>("OnlineRate.BWD2");
+    rates.rate_online[5] = pt_.get<double>("OnlineRate.BWD3");
+
+    rates.rate_fast[0] = pt_.get<double>("FastRate.FWD1");
+    rates.rate_fast[1] = pt_.get<double>("FastRate.FWD2");
+    rates.rate_fast[2] = pt_.get<double>("FastRate.FWD3");
+
+    rates.decomposition[0] = pt_.get<double>("DecompositionResults.FWD1");
+    rates.decomposition[1] = pt_.get<double>("DecompositionResults.FWD2");
+    rates.decomposition[2] = pt_.get<double>("DecompositionResults.FWD3");
+
+    rates.rate[0] = pt_.get<double>("Rate.FWD1");
+    rates.rate[1] = pt_.get<double>("Rate.FWD2");
+    rates.rate[2] = pt_.get<double>("Rate.FWD3");
+
 };
 
 std::tuple<double, double> AnalysisEvent::GetCurrent()
@@ -911,8 +925,6 @@ std::tuple<double, double> AnalysisEvent::GetCurrent()
 void AnalysisEvent::AddEvent(AnalysisEvent* evt)
 {
     std::vector<std::string> vch = GS->GetChannels(1);
-
-
 
 //    #pragma omp parallel for num_threads(8)
     for(unsigned i = 0; i < vch.size(); i++)
@@ -1056,6 +1068,11 @@ std::map<std::string, TH1*> AnalysisEvent::GetHistograms()
     // }
 
     return rtn;
+}
+
+Rate& AnalysisEvent::GetRates()
+{
+    return rates;
 }
 
 void AnalysisEvent::SaveEvent(boost::filesystem::path folder)

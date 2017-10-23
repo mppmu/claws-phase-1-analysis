@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
 
 	task_options.add_options()
 		("task.peak", boost::program_options::value<bool>(), "Run peak algorithm?")
-		("taks.fft",  boost::program_options::value<bool>(), "Run FFT?")
+		("task.fft",  boost::program_options::value<bool>(), "Run FFT?")
 		;
 
 	options.add(task_options);
@@ -242,10 +242,10 @@ int main(int argc, char* argv[]) {
 	 {
 	 	boost::property_tree::ptree out_selection;
 
-	  	out_selection.put("General.config", config_map["config"].as<boost::filesystem::path>() );
-	  	out_selection.put("Data.output", 		config_map["data.output"].as<boost::filesystem::path>() );
-	  	out_selection.put("Data.input",		  config_map["data.input"].as<boost::filesystem::path>() );
-	  	out_selection.put("Data.ts_min",		config_map["data.ts_min"].as<double>() );
+	  out_selection.put("General.config", config_map["config"].as<boost::filesystem::path>() );
+	  out_selection.put("Data.output", 		config_map["data.output"].as<boost::filesystem::path>() );
+	  out_selection.put("Data.input",		  config_map["data.input"].as<boost::filesystem::path>() );
+	  out_selection.put("Data.ts_min",		config_map["data.ts_min"].as<double>() );
 	  out_selection.put("Data.ts_max",		config_map["data.ts_max"].as<double>() );
 	  out_selection.put("Data.event_min",	config_map["data.event_min"].as<int>() );
 	  out_selection.put("Data.event_max",	config_map["data.event_max"].as<int>() );
@@ -273,13 +273,9 @@ int main(int argc, char* argv[]) {
 		  out_selection.put("SelectedRuns."+std::to_string( run->GetRunNr() ), true );
 	  }
 
-
 	 AnalysisEvent* analysis_event = new AnalysisEvent();
-
 	 analysis_event->CreateHistograms();
 
-	 Rate rates();
-	 
 	 for( auto & run : runs )
 	 {
 	 	 for(auto & evt : run->GetEvents())
@@ -290,19 +286,31 @@ int main(int argc, char* argv[]) {
 			 analysis_event->AddEvent(evt);
 
 			 evt->DeleteHistograms();
+
+			 analysis_event->GetRates() + evt->GetRates();
 		 }
 		 delete run;
 		 run = NULL;
 	 }
 
-	 out_selection.put("OnlineRate.FWD1", );
-	 out_selection.put("OnlineRate.FWD1", );
-	 out_selection.put("OnlineRate.FWD1", );
-	 out_selection.put("OnlineRate.FWD1", );
-	 out_selection.put("OnlineRate.FWD1", );
-	 out_selection.put("OnlineRate.FWD1", );
-	 out_selection.put("OnlineRate.FWD1", );
-	 out_selection.put("OnlineRate.FWD1", );
+	 out_selection.put("OnlineRate.FWD1", analysis_event->GetRates().rate_online[0] );
+	 out_selection.put("OnlineRate.FWD2", analysis_event->GetRates().rate_online[1] );
+	 out_selection.put("OnlineRate.FWD3", analysis_event->GetRates().rate_online[2] );
+	 out_selection.put("OnlineRate.BWD1", analysis_event->GetRates().rate_online[3] );
+	 out_selection.put("OnlineRate.BWD2", analysis_event->GetRates().rate_online[4] );
+	 out_selection.put("OnlineRate.BWD3", analysis_event->GetRates().rate_online[5] );
+
+	 out_selection.put("FastRate.FWD1", analysis_event->GetRates().rate_fast[0] );
+	 out_selection.put("FastRate.FWD2", analysis_event->GetRates().rate_fast[1] );
+	 out_selection.put("FastRate.FWD3", analysis_event->GetRates().rate_fast[2] );
+
+	 out_selection.put("DecompositionResults.FWD1", analysis_event->GetRates().decomposition[0] );
+	 out_selection.put("DecompositionResults.FWD2", analysis_event->GetRates().decomposition[1] );
+	 out_selection.put("DecompositionResults.FWD3", analysis_event->GetRates().decomposition[2] );
+
+	 out_selection.put("Rate.FWD1", analysis_event->GetRates().rate[0] );
+	 out_selection.put("Rate.FWD2", analysis_event->GetRates().rate[1] );
+	 out_selection.put("Rate.FWD3", analysis_event->GetRates().rate[2] );
 
 
 	 analysis_event->SetErrors();

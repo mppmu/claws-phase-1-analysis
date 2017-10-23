@@ -213,6 +213,25 @@ class IntEvent : public Event{
 
 };
 
+struct Rate
+{
+    double rate_online[6] = {};
+    double rate_fast[3] = {};
+    double decomposition[3] = {};
+    double rate[3] = {};
+    int count = 0;
+
+    Rate& operator+(const Rate& rhs){
+        for(int i =0; i < 6; i++) rate_online[i] += rhs.rate_online[i];
+        for(int i =0; i < 3; i++) rate_fast[i] += rhs.rate_fast[i];
+        for(int i =0; i < 3; i++) decomposition[i] += rhs.decomposition[i];
+        for(int i =0; i < 3; i++) rate[i] += rhs.rate[i];
+        count ++;
+        return *this;
+    }
+};
+
+
 class AnalysisEvent : public Event
 {
     public:
@@ -230,6 +249,7 @@ class AnalysisEvent : public Event
         std::tuple<double, double>                GetCurrent();
         std::tuple<bool, double, bool, double >   GetInjection();
         std::map<std::string, TH1*> GetHistograms();
+        Rate& GetRates();
 
         void                   SaveEvent(boost::filesystem::path result_folder);
 
@@ -237,23 +257,9 @@ class AnalysisEvent : public Event
         double unixtime_                    = -1;
         boost::property_tree::ptree pt_;
 
+        Rate rates;
 
 };
 
-struct Rate
-{
-    double rate_online[8] = {};
-    double rate_fast[3] = {};
-    double decomposition[3] = {};
-    double rate[3] = {};
-
-    Rate& operator+(const Rate& rhs){
-        for(int i =0; i < 8; i++) rate_online[i] += rhs.rate_online[i];
-        for(int i =0; i < 3; i++) rate_fast[i] += rhs.rate_fast[i];
-        for(int i =0; i < 3; i++) decomposition[i] += rhs.decomposition[i];
-        for(int i =0; i < 3; i++) rate[i] += rhs.rate[i];
-        return *this;
-    }
-}
 
 #endif /* CLAWS_EVENT_H_ */
