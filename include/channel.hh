@@ -141,8 +141,8 @@ class PhysicsChannel : public Channel
        std::vector<float>*           waveform_workon_   = NULL;
        std::vector<std::uint8_t>*    waveform_photon_   = NULL;
 
-       std::vector<float>*                clean_wf_     = NULL;
-       std::vector<float>*                wh_wf_     = NULL;
+       std::vector<float>*         clean_wf_     = NULL;
+       std::vector<float>*         wh_wf_     = NULL;
        std::vector<float>*         mip_wf_       = NULL;
 
        double                               chi2_ = 0;

@@ -6,7 +6,7 @@ ifeq ($(shell uname -s),Linux)
 	#CFLAGS += -fopenmp `root-config --cflags` -I/remote/pcilc3/software/gperftools/include -g -rdynamic
 	CFLAGS += -fopenmp `root-config --cflags` -c -fmessage-length=0
 	# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
-	LFLAGS += -fopenmp `root-config --libs --glibs` -lboost_system -lboost_filesystem -lgsl -lboost_program_options
+	LFLAGS += -fopenmp `root-config --libs --glibs` -lboost_system -lboost_filesystem -lboost_program_options -lgsl -lgslcblas
 	# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
 	CC = g++
 endif
@@ -38,7 +38,7 @@ all: debug
 debug: CFLAGS += -g -O0 -Wall
 debug: monkey clean build/calibration build/analysis
 
-release: CFLAGS += -O3
+release: CFLAGS += -O3 -g
 release: monkey clean build/calibration build/analysis
 
 # Link Calibration
