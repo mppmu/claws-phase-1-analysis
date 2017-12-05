@@ -350,11 +350,37 @@ Event::~Event() {
 // 		return rtn;
 // };
 //
-// double Event::GetUnixtime() const
-// {
-// 		return unixtime_;
-// }
-//
+double Event::GetTime() const
+{
+		return unixtime_;
+}
+
+//----------------------------------------------------------------------------------------------
+// Definition of the CalibrationEvent class derived from Event.
+//----------------------------------------------------------------------------------------------
+
+CalibrationEvent::CalibrationEvent(boost::filesystem::path file, boost::filesystem::path ini_file ) : Event(file, ini_file)
+{
+
+		nr_ = file.filename().string().substr(14,3);
+		
+		// nr_     = atoi(nr_str_.c_str());
+		// /*
+		//     TODO Implement a dynamic creation of channels getting the list list and therefore number of channels from somewhere else.
+		//  */
+		// channels_["FWD1-INT"] = new IntChannel("FWD1");
+		// channels_["FWD2-INT"] = new IntChannel("FWD2");
+		// channels_["FWD3-INT"] = new IntChannel("FWD3");
+		//
+		// channels_["BWD1-INT"] = new IntChannel("BWD1");
+		// channels_["BWD2-INT"] = new IntChannel("BWD2");
+		// channels_["BWD3-INT"] = new IntChannel("BWD3");
+
+};
+
+CalibrationEvent::~CalibrationEvent() {
+		// TODO Auto-generated destructor stub
+};
 
 //
 // //----------------------------------------------------------------------------------------------
@@ -783,22 +809,7 @@ Event::~Event() {
 // //----------------------------------------------------------------------------------------------
 // // Definition of the IntEvent class derived from Event.
 // //----------------------------------------------------------------------------------------------
-// IntEvent::IntEvent(const path &file_root, const path &file_ini) : Event(file_root,file_ini)
-// {
-// 		nr_str_ = file_root.filename().string().substr(14,3);
-// 		nr_     = atoi(nr_str_.c_str());
-// 		/*
-// 		    TODO Implement a dynamic creation of channels getting the list list and therefore number of channels from somewhere else.
-// 		 */
-// 		channels_["FWD1-INT"] = new IntChannel("FWD1");
-// 		channels_["FWD2-INT"] = new IntChannel("FWD2");
-// 		channels_["FWD3-INT"] = new IntChannel("FWD3");
-//
-// 		channels_["BWD1-INT"] = new IntChannel("BWD1");
-// 		channels_["BWD2-INT"] = new IntChannel("BWD2");
-// 		channels_["BWD3-INT"] = new IntChannel("BWD3");
-//
-// };
+
 //
 // void IntEvent::LoadIniFile()
 // {
@@ -850,9 +861,7 @@ Event::~Event() {
 // //     return channels_[name];
 // // }
 //
-// IntEvent::~IntEvent() {
-// 		// TODO Auto-generated destructor stub
-// };
+
 //
 //
 // AnalysisEvent::AnalysisEvent()

@@ -62,16 +62,19 @@ class Event{
 
     public:
         Event();
-        Event(boost::filesystem::path file, boost::filesystem::path file );
+        Event(boost::filesystem::path file, boost::filesystem::path ini_file );
 
         virtual ~Event();
 
+        double GetTime();
+
     protected:
+      int nr_;
        double unixtime_        = -1;
        boost::filesystem::path path_;
        boost::filesystem::path file_:
        boost::filesystem::path ini_file_;
-       
+
        //         path path_file_ini_;
 // //        void SubtractPedestal();
 //
@@ -114,7 +117,7 @@ class Event{
 //         virtual std::map<std::string, TH1*> GetHistograms();
 //     // protected:
 //
-//         double                 GetUnixtime()  const;
+
 //     //    static int id_;
 //
 //         // An event relies on data/information in three different files. The .root, .ini & the online monitor.
@@ -131,14 +134,14 @@ class Event{
 //         std::map<std::string, Channel*> channels_;
 };
 
-class IntEvent : public Event{
+class CalibrationEvent : public Event{
 
     public:
 
         // PhysicsEvent();
-        IntEvent(const path &file_root, const path &file_ini);
+        CalibrationEvent(boost::filesystem::path file, boost::filesystem::path ini_file );
 
-        virtual ~IntEvent();
+        virtual ~CalibrationEvent();
 //
 //         void                   LoadIniFile();
 // //        IntChannel*                                GetChannel(std::string name);

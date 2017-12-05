@@ -91,6 +91,7 @@ namespace claws {
             GlobalSettings();
             virtual ~GlobalSettings();
 
+            std::vector<std::string> GetChannelList(std::string type = "Physics");
             void LoadCalibrationConfig(boost::filesystem::path p);
             void LoadPeToMip(boost::filesystem::path p);
             int GetNBits();
