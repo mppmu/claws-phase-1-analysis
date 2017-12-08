@@ -28,8 +28,8 @@
 // // boost
 //  #include <boost/filesystem.hpp>
 //  #include <boost/lexical_cast.hpp>
-//  #include <boost/algorithm/string/predicate.hpp>
-//  #include <boost/algorithm/string/replace.hpp>
+ #include <boost/algorithm/string/predicate.hpp>
+ #include <boost/algorithm/string/replace.hpp>
 //  #include <boost/property_tree/ptree.hpp>
 //  #include <boost/property_tree/ini_parser.hpp>
 // // #include <boost/program_options.hpp>
@@ -111,14 +111,18 @@ void Run::LoadRunSettings()
 //----------------------------------------------------------------------------------------------
 CalibrationRun::CalibrationRun(boost::filesystem::path p) : Run(p)
 {
-		// std::ofstream hendrik_file("/home/iwsatlas1/mgabriel/Plots/forHendyDany.txt", ios::app);
-		// hendrik_file << run_nr_str_;
-		// hendrik_file.close();
-		//claws::print_local_time();
 		cal_nr_     = nr_;
+
+    if(!boost::filesystem::is_directory(path_/boost::filesystem::path("Calibration")) )
+    {
+            boost::filesystem::create_directory(path_/boost::filesystem::path("Calibration"));
+    }
+
+    GS->SaveConfigFiles(path_/boost::filesystem::path("Calibration"));
 };
 
 CalibrationRun::~CalibrationRun() {
+
 //      // TODO Auto-generated destructor stub
 //      std::cout << "Deleteing Run object!" << std::endl;
 //      //  #pragma omp parallel num_threads(7)
@@ -138,16 +142,78 @@ CalibrationRun::~CalibrationRun() {
 //      }
 //
 //      //  }
-//
-//      if(!boost::filesystem::is_directory(path_run_/path("Calibration")) )
-//      {
-//              boost::filesystem::create_directory(path_run_/path("Calibration"));
-//      }
-//      GS->SaveConfigFiles(path_run_/path("Calibration"));
-//
+
 //      delete pedestal_;
 //      delete gain_;
 //
+};
+
+
+
+void CalibrationRun::SynchronizeCalibrationEvents()
+{
+	cout << "\033[33;1mRun::Synchronizing physics run:\033[0m running" << "\r" << std::flush;
+
+		 // Create the calibration events based on the existing root files in the Run/int_root folde
+
+		 /** The calibration waveforms where only taken if a run Finished completely, not is it was manually stopped!
+		 *  Die Scheiße hier sauber machen!!!!
+		 */
+		 boost::filesystem::path path_int = path_/ boost::filesystem::path("int_root");
+		 while( !claws::CheckIntFolder(path_int) )
+ 		 {
+ 		 			int new_run = atoi( path_int.parent_path().filename().string().substr(4,6).c_str())-1;
+ 		 			cal_nr_ = new_run;
+ 		      path_int = path_.parent_path()/("Run-" + to_string(new_run) );
+ 		      path_int /= "int_root";
+ 		      std::cout << "\033[1;31mIntermediate Data not valid!!! \n Switching to: "<< path_int << "\033[0m"<< "\r" << std::endl;
+ 		  }
+
+
+		std::vector<boost::filesystem::path> cal_files;
+    copy( boost::filesystem::directory_iterator(path_int), boost::filesystem::directory_iterator(), back_inserter(cal_files));
+
+		std::sort( cal_files.begin(), cal_files.end());
+
+		for(auto file : cal_files)
+		{
+				std::string file_name = file.filename().string();
+				if(    boost::filesystem::is_regular_file(file)
+			      && boost::starts_with(file_name, ("Run-"+ to_string(cal_nr_) +"-Int") )
+			      && boost::ends_with(file_name, ".root"))
+			  {
+
+		                  // Get the path to the .ini file
+		        std::string tmp = file_name;
+		        boost::replace_last( tmp, ".root", ".ini");
+		        boost::filesystem::path ini_file  = path_int / boost::filesystem::path(tmp);
+
+		    		cal_evts_.emplace_back( new CalibrationEvent(file, ini_file) );
+				}
+		}
+
+//      pedestal_   = new Pedestal(run_nr_, int_nr_);
+//      gain_       = new Gain(int_nr_);
+    cout << "\033[32;1mRun::Synchronizing calibration files:\033[0m done!   " << "\r" << std::endl;
+};
+
+void CalibrationRun::PDS_Calibration()
+{
+		for(auto evt: cal_evts_ )
+		{
+		    evt->LoadHistograms();
+		}
+
+
+    if(!boost::filesystem::is_directory(path_/boost::filesystem::path("Calibration")/boost::filesystem::path("Waveforms")) )
+    {
+            boost::filesystem::create_directory(path_/boost::filesystem::path("Calibration")/boost::filesystem::path("Waveforms"));
+    }
+
+    for(auto evt: cal_evts_ )
+    {
+        evt->SaveEvent(path_/boost::filesystem::path("Calibration")/boost::filesystem::path("Waveforms"));
+    }
 };
 
 void CalibrationRun::SynchronizePhysicsEvents()
@@ -162,20 +228,20 @@ void CalibrationRun::SynchronizePhysicsEvents()
      cout << "\033[33;1mRun::Synchronizing physics run:\033[0m running" << "\r" << std::flush;
 
      // Check if the converted root, data & folder for calibration events are available.
-     if( !boost::filesystem::is_directory(path_/path("data_root"))  )
+     if( !boost::filesystem::is_directory(path_/boost::filesystem::path("data_root"))  )
      {
              cout << "Run folder does not exits!" << endl;
              exit(-1);
      }
 
-     if( !boost::filesystem::is_directory(path_/path("data_root"))
-         || boost::filesystem::is_empty(path_/path("data_root"))    )
+     if( !boost::filesystem::is_directory(path_/boost::filesystem::path("data_root"))
+         || boost::filesystem::is_empty(path_/boost::filesystem::path("data_root"))    )
      {
              cout << "data_root folder does not exits!" << endl;
              exit(-1);
      }
 
-     if( !boost::filesystem::is_directory(path_/path("int_root")))
+     if( !boost::filesystem::is_directory(path_/boost::filesystem::path("int_root")))
      {
              cout << "int_root folder does not exits!" << endl;
              exit(-1);
@@ -184,7 +250,7 @@ void CalibrationRun::SynchronizePhysicsEvents()
 		 // Create the physics events based on the existing root files in the Run/data_root folder
 
     std::vector<boost::filesystem::path> physics_files;
-    copy( directory_iterator(path_/ path("data_root")), directory_iterator(), back_inserter(physics_files));
+    copy( boost::filesystem::directory_iterator(path_/ boost::filesystem::path("data_root")), boost::filesystem::directory_iterator(), back_inserter(physics_files));
 
     std::sort( physics_files.begin(), physics_files.end());
 
@@ -193,23 +259,23 @@ void CalibrationRun::SynchronizePhysicsEvents()
 				std::string file_name = file.filename().string();
 
 		    if(    boost::filesystem::is_regular_file(file)
-			      && starts_with( file_name, "Event-")
-			      && ends_with( file_name, ".root"))
+			      && boost::starts_with( file_name, "Event-")
+			      && boost::ends_with( file_name, ".root"))
 			  {
 				   // Get path to ini file
 				   std::string tmp = file_name;
-				   replace_last( tmp, ".root", ".ini");
-				   boost::filesystem::path ini_file  = path_/ path("data_root") / path(tmp);
+				   boost::replace_last( tmp, ".root", ".ini");
+				   boost::filesystem::path ini_file  = path_/ boost::filesystem::path("data_root") / boost::filesystem::path(tmp);
 
 					 // Get the path to the file from the online monitor
-				   replace_first(tmp, "Event-","");
-				   replace_last(tmp, ".ini", "");
+				   boost::replace_first(tmp, "Event-","");
+				   boost::replace_last(tmp, ".ini", "");
 
 				   std::stringstream ss;
 					 ss << std::setw(4) << std::setfill('0') << atoi(tmp.substr(2,4).c_str());
 				   tmp = "Rate-Run--" + ss.str() + to_string( atoi(tmp.substr(6,10).c_str())-1 );
 				                     // string ratefile = "Rate-Run--" + to_string( atoi(tmp.substr(2,4).c_str())) + to_string( atoi(tmp.substr(6,10).c_str())-1 );
-				   boost::filesystem::path onrate_file = path_ / path(tmp);
+				   boost::filesystem::path onrate_file = path_ / boost::filesystem::path(tmp);
 
 					 evts_.emplace_back( new PhysicsEvent(file, ini_file, onrate_file) );
 
@@ -218,52 +284,10 @@ void CalibrationRun::SynchronizePhysicsEvents()
 		cout << "\033[32;1mRun::Synchronizing physics files:\033[0m done!   " << "\r" << std::endl;
 };
 
-void CalibrationRun::SynchronizeCalibrationEvents()
+void CalibrationRun::PDS_Physics()
 {
-	cout << "\033[33;1mRun::Synchronizing physics run:\033[0m running" << "\r" << std::flush;
 
-		 // Create the calibration events based on the existing root files in the Run/int_root folde
-
-		 /** The calibration waveforms where only taken if a run Finished completely, not is it was manually stopped!
-		 *  Die Scheiße hier sauber machen!!!!
-		 */
-		 boost::filesystem::path path_int = path_/ path("int_root");
-		 while( !claws::CheckIntFolder(path_int) )
- 		 {
- 		 			int new_run = atoi( path_int.parent_path().filename().string().substr(4,6).c_str())-1;
- 		 			cal_nr_ = new_run;
- 		      path_int = path_.parent_path()/("Run-" + to_string(new_run) );
- 		      path_int /= "int_root";
- 		      std::cout << "\033[1;31mIntermediate Data not valid!!! \n Switching to: "<< path_int << "\033[0m"<< "\r" << std::endl;
- 		  }
-
-
-		std::vector<boost::filesystem::path> cal_files;
-    copy( directory_iterator(path_int), directory_iterator(), back_inserter(cal_files));
-
-		for(auto file : cal_files)
-		{
-				std::string file_name = file.filename().string();
-				if(    boost::filesystem::is_regular_file(file)
-			      && starts_with(file_name, ("Run-"+ to_string(cal_nr_) +"-Int") )
-			      && ends_with(file_name, ".root"))
-			  {
-
-		                  // Get the path to the .ini file
-		        std::string tmp = file_name;
-		        replace_last( tmp, ".root", ".ini");
-		        boost::filesystem::path ini_file  = path_int / path(tmp);
-
-		    		cal_evts_.emplace_back( new IntEvent(file, ini_file));
-				}
-		}
-
-//      pedestal_   = new Pedestal(run_nr_, int_nr_);
-//      gain_       = new Gain(int_nr_);
-    cout << "\033[32;1mRun::Synchronizing calibration files:\033[0m done!   " << "\r" << std::endl;
 };
-
-
 // void CalibrationRun::LoadData()
 // {
 //      double wall0 = claws::get_wall_time();

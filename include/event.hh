@@ -58,23 +58,86 @@
 // TODO(mgabriel@mpp.mpg.de): Add some description
 //----------------------------------------------------------------------------------------------
 
+enum EventState
+{
+    EVENTSTATE_INIT,
+    EVENTSTATE_RAW,
+    EVENTSTATE_SUBTRACTED,
+    // COLOR_GREEN, // assigned 3
+    // COLOR_WHITE, // assigned 4
+    // COLOR_CYAN, // assigned 5
+    // COLOR_YELLOW, // assigned 6
+    // COLOR_MAGENTA // assigned 7
+};
+
+inline std::string printEventState(EventState state)
+{
+  switch(state)
+  {
+    case EVENTSTATE_INIT:
+      return "init";
+    case EVENTSTATE_RAW:
+      return "raw";
+    case EVENTSTATE_SUBTRACTED:
+      return "pd_subtracted";
+    default:
+      return "Invalid Selection";
+  }
+}
+
+// enum EventType
+// {
+//     EVENTTYPE_EVENT
+//     EVENTTYPE_CALIBRATION,
+//     EVENTTYPE_PHYSICS,
+//     EVENTTYPE_ANALYSIS,
+//     // COLOR_GREEN, // assigned 3
+//     // COLOR_WHITE, // assigned 4
+//     // COLOR_CYAN, // assigned 5
+//     // COLOR_YELLOW, // assigned 6
+//     // COLOR_MAGENTA // assigned 7
+// };
+//
+// inline std::string printEventType(EventType type)
+// {
+//   switch(type)
+//   {
+//     case EVENTTYPE_EVENT:
+//       return "event";
+//     case EVENTTYPE_CALIBRATION:
+//       return "calibration";
+//     case EVENTTYPE_PHYSICS:
+//       return "physics";
+//     case EVENTTYPE_ANALYSIS:
+//       return "analysis";
+//     default:
+//       return "Invalid Selection";
+//   }
+// }
+
 class Event{
 
     public:
         Event();
-        Event(boost::filesystem::path file, boost::filesystem::path ini_file );
+        Event( boost::filesystem::path file, boost::filesystem::path ini_file );
 
         virtual ~Event();
+
+        virtual void LoadHistograms(std::string type = "raw");
+        virtual void SaveEvent(boost::filesystem::path dst);
 
         double GetTime();
 
     protected:
-      int nr_;
+       int nr_;
+       EventState state_;
+    //   EventType type_;
        double unixtime_        = -1;
        boost::filesystem::path path_;
-       boost::filesystem::path file_:
+       boost::filesystem::path file_;
        boost::filesystem::path ini_file_;
 
+       std::vector<Channel*> channels_;
        //         path path_file_ini_;
 // //        void SubtractPedestal();
 //
@@ -142,6 +205,12 @@ class CalibrationEvent : public Event{
         CalibrationEvent(boost::filesystem::path file, boost::filesystem::path ini_file );
 
         virtual ~CalibrationEvent();
+
+
+
+    protected:
+
+    //    std::vector<CalibrationChannel*> channels_;
 //
 //         void                   LoadIniFile();
 // //        IntChannel*                                GetChannel(std::string name);
@@ -158,14 +227,17 @@ class CalibrationEvent : public Event{
 /**
 *   Description of the PhysicsEvent class.
 */
-// class PhysicsEvent : public Event{
-//
-//     public:
-//
-//         // PhysicsEvent();
-//         PhysicsEvent(const path &file_root, const path &file_ini);
-//         PhysicsEvent(const path &file_root, const path &file_ini, const path &file_online_rate);
-//         virtual ~PhysicsEvent();
+class PhysicsEvent : public Event{
+
+    public:
+
+        // PhysicsEvent();
+        PhysicsEvent(boost::filesystem::path file, boost::filesystem::path ini_file);
+        PhysicsEvent(boost::filesystem::path file, boost::filesystem::path ini_file, boost::filesystem::path rate_file);
+        virtual ~PhysicsEvent();
+    private:
+        boost::filesystem::path rate_file_;
+};
 //
 // //        void                   LoadRootFile();
 //         void                   LoadIniFile();

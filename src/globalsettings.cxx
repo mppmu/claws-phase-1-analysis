@@ -153,7 +153,8 @@ namespace claws {
         {
         //   boost::property_tree::ini_parser::read_ini(boost::filesystem::path("./config/pe_to_mip.ini").string(), pe_to_mip_);
           boost::property_tree::ini_parser::read_ini(boost::filesystem::path("./config/config_architecture.ini").string(), config_architecture_);
-        };
+
+        }
 
         GlobalSettings::~GlobalSettings()
         {
@@ -190,15 +191,24 @@ namespace claws {
             return x_up_;
         }
 
-        std::vector <std::string> GlobalSettings::GetChannels(int type)
+      //  std::vector <std::string> GlobalSettings::GetChannels(int type)
+        boost::property_tree::ptree GlobalSettings::GetChannels(std::string type)
         {
-            if(type == 0){
-                std::vector<std::string> tmp = channels_;
-                tmp.insert(std::end(tmp),std::begin(int_channels_),std::end(int_channels_));
-                return tmp;
-            }
-            else if (type == 1) return channels_;
-            else if (type == 2) return int_channels_;
+            // if(type == 0){
+            //     std::vector<std::string> tmp = channels_;
+            //     tmp.insert(std::end(tmp),std::begin(int_channels_),std::end(int_channels_));
+            //     return tmp;
+            // }
+            // else if (type == 1) return channels_;
+            // else if (type == 2) return int_channels_;
+            // else
+            // {
+            //   std::cout << "Wrong value for type given in GlobalSettings::GetChannels(int type)~!" << std::endl;
+            // }
+            //ptree &cal = pt.get_child("CalibrationChannels");
+
+            if (type == "Physics")            return config_calibration_.get_child("PhysicsChannels");
+            else if (type == "Calibration")   return config_calibration_.get_child("CalibrationChannels");
             else
             {
               std::cout << "Wrong value for type given in GlobalSettings::GetChannels(int type)~!" << std::endl;

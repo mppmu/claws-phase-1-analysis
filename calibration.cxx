@@ -41,7 +41,7 @@
 #include <TStyle.h>
 
 // project includes
-#include "event.hh"
+//#include "event.hh"
 #include "run.hh"
 #include "globalsettings.hh"
 
@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
 		boost::program_options::options_description options("Generic options");
 		options.add_options()
 		        ("help", "Displays this help message.")
-		        ("config-file,c",   boost::program_options::value<boost::filesystem::path>()->default_value("./config/config_calibration.ini"), "Config file to get parameters from.")
+		        ("config-file,c",   boost::program_options::value<boost::filesystem::path>()->default_value("./config/calibration_phase1.ini"), "Config file to get parameters from.")
 		        ("pe-file",         boost::program_options::value<boost::filesystem::path>()->default_value("./config/pe_to_mip.ini"), "Config file to get conversion from pe to MIP.")
 		        ("data.input",      boost::program_options::value<boost::filesystem::path>()->default_value("./"), "Data directory containing runs meant to be analysed.")
 		        ("write-ntp",       boost::program_options::value<bool>()->default_value(false), "Data directory containing runs meant to be analysed.")
@@ -169,9 +169,10 @@ int main(int argc, char* argv[]) {
 
 		if(tasks[0])
 		{
-
-
-
+		    for(auto run: runs)
+				{
+					run->PDS_Calibration();
+				}
 		}
 
 		for(auto run : runs)

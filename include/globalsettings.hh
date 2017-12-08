@@ -98,7 +98,8 @@ namespace claws {
             int GetNBitsScope();
             float GetXLow();
             float GetXUp();
-            std::vector <std::string> GetChannels(int type=0);
+            // std::vector <std::string> GetChannels(int type=0);
+            boost::property_tree::ptree GetChannels(std::string type);
             double GetAcceptedGain();
             std::pair<double, double> GetPEtoMIP(std::string detector, unsigned int time = 0);
             std::map<std::string, double> GetPEtoMIPs( unsigned int time = 0);
@@ -121,10 +122,11 @@ namespace claws {
             std::vector <boost::filesystem::path> GetRuns(boost::filesystem::path p);
 
             template<typename T>
-            T GetCaliPar(std::string par_name)
+            T GetParameter(std::string par_name)
             {
                 return config_calibration_.get<T>( par_name );
             };
+
 
             void SaveConfigFiles(boost::filesystem::path folder);
 

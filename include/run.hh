@@ -123,14 +123,16 @@ class CalibrationRun : public Run
     CalibrationRun(boost::filesystem::path p);
     virtual ~CalibrationRun();
 
-    void SynchronizePhysicsEvents();
     void SynchronizeCalibrationEvents();
+    void PDS_Calibration();
 
+    void SynchronizePhysicsEvents();
+    void PDS_Physics();
   private:
     int cal_nr_;
 
     std::vector<PhysicsEvent*>   evts_;
-    std::vector<IntEvent*>       cal_evts_;
+    std::vector<CalibrationEvent*>       cal_evts_;
 //         int BuildOnlineTree();
 //         int BuildOfflineTree();
 //

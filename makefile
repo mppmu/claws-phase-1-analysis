@@ -35,7 +35,7 @@ ANA_OBJS += ./build/analysis.o
 #all: monkey clean build/calibration build/analysis docs
 all: debug
 
-debug: CFLAGS += -g -O0 -Wall
+debug: CFLAGS += -g -O0 -Wall -fno-inline-functions
 #debug: monkey clean build/calibration build/analysis
 debug: monkey clean build/calibration
 

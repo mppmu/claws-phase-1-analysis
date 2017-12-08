@@ -16,7 +16,7 @@
 
 
 #include "event.hh"
-// #include "globalsettings.hh"
+#include "globalsettings.hh"
 
 
 // using namespace std;
@@ -26,18 +26,13 @@
 // Definition of the Event base class.
 //----------------------------------------------------------------------------------------------
 
-//int Event::id_ = 0;
 
-// int Event::GetId()
-// {
-//     return id_;
-// }
 Event::Event()
 {
 
 };
 
-Event::Event(boost::filesystem::path file, boost::filesystem::path ini_file ): path_(file.parent_path()), file_(file), ini_file_(ini_file)
+Event::Event(boost::filesystem::path file, boost::filesystem::path ini_file ): path_(file.parent_path()), file_(file), ini_file_(ini_file), state_(EVENTSTATE_INIT)
 {
 
 };
@@ -50,33 +45,128 @@ Event::~Event() {
 		// }
 }
 
-// void Event::LoadRootFile()
-// {
-// 		// std::cout<< "Loading Event: " << nr_str_ << std::endl;
-// 		// if(nr_ == 0)
-// 		// {
-// 		//     std::cout<< path_file_root_ << std:: endl;
-// 		// }
-//
-// 		TFile *file=NULL;
-//
-// 		file = new TFile(path_file_root_.string().c_str(), "open");
-//
-// 		if( file->IsZombie() )
-// 		{
-// 				cout << "Error openning file" << endl;
-// 				exit(-1);
-// 		}
-//
-// 		for (const auto &itr : channels_)
-// 		{
-// 				itr.second->LoadHistogram(file);
-// 		}
-//
-// 		file->Close("R");
-// 		delete file;
-// 		file = NULL;
-// };
+void Event::LoadHistograms(std::string type)
+{
+		// 	// std::cout<< "Loading Event: " << nr_str_ << std::endl;
+		// if(nr_ == 0)
+		// 	// {
+		// 	//     std::cout<< path_file_root_ << std:: endl;
+		// }
+		if( type == "raw")
+		{
+		    TFile *rfile=NULL;
+				rfile = new TFile(file_.string().c_str(), "open");
+
+				if( rfile->IsZombie() )
+				{
+				    std::cout << "Error openning file" << std::endl;
+						exit(-1);
+				}
+
+				for (const auto &ch : channels_)
+				{
+						ch->LoadHistogram(rfile);
+				}
+
+				rfile->Close("R");
+				delete rfile;
+				rfile = NULL;
+
+				state_ = EVENTSTATE_RAW;
+		}
+}
+
+void Event::SaveEvent(boost::filesystem::path dst)
+{
+		std::string fname = dst.string() + "/";
+		fname += std::string(typeid(*this).name());
+		fname += "_" +std::to_string(nr_);
+		fname += printEventState(state_);
+	//	fname = (dst/boost::filesystem::path( std::string(typeid(*this).name()) + "_" +std::to_string(nr_) + printEventState(state_) + ".root")).string();
+		TFile *rfile = new TFile((fname+".root").c_str(), "RECREATE");
+		//
+		// for(auto imap : this->GetHistograms(type))
+		// {
+		// 		imap.second->Write();
+		// }
+		//
+		rfile->Close();
+		delete rfile;
+
+		//fname = (dst/boost::filesystem::path( std::string(typeid(*this).name()) + "_" +std::to_string(nr_) + printEventState(state_) + ".ini")).string();
+		//boost::property_tree::write_ini(fname.c_str(), pt_);
+
+		// boost::filesystem::path dest = folder/path_file_ini_.filename();
+		// boost::filesystem::copy_file(path_file_ini_, dest, copy_option::overwrite_if_exists );
+};
+
+double Event::GetTime()
+{
+		return unixtime_;
+}
+
+//----------------------------------------------------------------------------------------------
+// Definition of the CalibrationEvent class derived from Event.
+//----------------------------------------------------------------------------------------------
+
+CalibrationEvent::CalibrationEvent(boost::filesystem::path file, boost::filesystem::path ini_file ) : Event(file, ini_file)
+{
+		nr_ = std::atoi(file.filename().string().substr(14,3).c_str());
+		nr_ += std::atoi(file.filename().string().substr(4,6).c_str()) * 1000;
+		// nr_     = atoi(nr_str_.c_str());
+		// GS->GetChannels("Calibration");
+		for (auto name : GS->GetChannels("Calibration"))
+		{
+			 if( name.second.get_value<std::string>() == "true") channels_.emplace_back( new CalibrationChannel(name.first) );
+		}
+
+};
+
+CalibrationEvent::~CalibrationEvent() {
+		// TODO Auto-generated destructor stub
+};
+
+
+//----------------------------------------------------------------------------------------------
+// Definition of the PhysicsEvent class derived from Event.
+//----------------------------------------------------------------------------------------------
+
+PhysicsEvent::PhysicsEvent(boost::filesystem::path file, boost::filesystem::path ini_file) : Event(file, ini_file)
+{
+		// fill_n(online_rate_, 6, -1);
+		// fill_n(fast_rate_, 3, -1);
+		// fill_n(rate_, 3, -1);
+
+		// nr_str_ = file_root.filename().string().substr(6,9);
+		nr_     = atoi(file.filename().string().substr(6,9).c_str());
+
+		/*
+		    TODO Implement a dynamic creation of channels getting the list list and therefore number of channels from somewhere else.
+		 */
+		// channels_["FWD1"] = new PhysicsChannel("FWD1");
+		// channels_["FWD2"] = new PhysicsChannel("FWD2");
+		// channels_["FWD3"] = new PhysicsChannel("FWD3");
+		// channels_["FWD4"] = new PhysicsChannel("FWD4");
+		//
+		// channels_["BWD1"] = new PhysicsChannel("BWD1");
+		// channels_["BWD2"] = new PhysicsChannel("BWD2");
+		// channels_["BWD3"] = new PhysicsChannel("BWD3");
+		// channels_["BWD4"] = new PhysicsChannel("BWD4");
+};
+
+PhysicsEvent::PhysicsEvent(boost::filesystem::path file, boost::filesystem::path ini_file, boost::filesystem::path rate_file) : PhysicsEvent(file, ini_file)
+{
+		rate_file_ = rate_file;
+};
+
+
+PhysicsEvent::~PhysicsEvent() {
+		// TODO Auto-generated destructor stub
+
+};
+
+
+
 //
 // void Event::LoadWaveform()
 // {
@@ -350,76 +440,9 @@ Event::~Event() {
 // 		return rtn;
 // };
 //
-double Event::GetTime() const
-{
-		return unixtime_;
-}
 
-//----------------------------------------------------------------------------------------------
-// Definition of the CalibrationEvent class derived from Event.
-//----------------------------------------------------------------------------------------------
 
-CalibrationEvent::CalibrationEvent(boost::filesystem::path file, boost::filesystem::path ini_file ) : Event(file, ini_file)
-{
 
-		nr_ = file.filename().string().substr(14,3);
-		
-		// nr_     = atoi(nr_str_.c_str());
-		// /*
-		//     TODO Implement a dynamic creation of channels getting the list list and therefore number of channels from somewhere else.
-		//  */
-		// channels_["FWD1-INT"] = new IntChannel("FWD1");
-		// channels_["FWD2-INT"] = new IntChannel("FWD2");
-		// channels_["FWD3-INT"] = new IntChannel("FWD3");
-		//
-		// channels_["BWD1-INT"] = new IntChannel("BWD1");
-		// channels_["BWD2-INT"] = new IntChannel("BWD2");
-		// channels_["BWD3-INT"] = new IntChannel("BWD3");
-
-};
-
-CalibrationEvent::~CalibrationEvent() {
-		// TODO Auto-generated destructor stub
-};
-
-//
-// //----------------------------------------------------------------------------------------------
-// // Definition of the PhysicsEvent class derived from Event.
-// //----------------------------------------------------------------------------------------------
-//
-// PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini) : Event(file_root,file_ini)
-// {
-// 		fill_n(online_rate_, 6, -1);
-// 		fill_n(fast_rate_, 3, -1);
-// 		fill_n(rate_, 3, -1);
-//
-// 		nr_str_ = file_root.filename().string().substr(6,9);
-// 		nr_     = atoi(file_root.filename().string().substr(6,9).c_str());
-//
-// 		/*
-// 		    TODO Implement a dynamic creation of channels getting the list list and therefore number of channels from somewhere else.
-// 		 */
-// 		channels_["FWD1"] = new PhysicsChannel("FWD1");
-// 		channels_["FWD2"] = new PhysicsChannel("FWD2");
-// 		channels_["FWD3"] = new PhysicsChannel("FWD3");
-// 		channels_["FWD4"] = new PhysicsChannel("FWD4");
-//
-// 		channels_["BWD1"] = new PhysicsChannel("BWD1");
-// 		channels_["BWD2"] = new PhysicsChannel("BWD2");
-// 		channels_["BWD3"] = new PhysicsChannel("BWD3");
-// 		channels_["BWD4"] = new PhysicsChannel("BWD4");
-// };
-//
-// PhysicsEvent::PhysicsEvent(const path &file_root, const path &file_ini, const path &file_online_rate) : PhysicsEvent(file_root, file_ini)
-// {
-// 		path_online_rate_ = file_online_rate;
-// };
-//
-//
-// PhysicsEvent::~PhysicsEvent() {
-// 		// TODO Auto-generated destructor stub
-//
-// };
 //
 // // void PhysicsEvent::LoadRootFile()
 // // {
@@ -701,30 +724,7 @@ CalibrationEvent::~CalibrationEvent() {
 // 		}
 // };
 //
-// void PhysicsEvent::SaveEvent(boost::filesystem::path folder, std::string type)
-// {
-// 		if(!boost::filesystem::is_directory( folder ))
-// 		{
-// 				boost::filesystem::create_directory( folder );
-// 		}
-//
-// //    std::string fname = folder.string()+"/event_"+std::to_string(nr_)+"_" + type +"_v"+ std::to_string(GS->GetCaliPar<int>("General.CalibrationVersion")) + ".root";
-// 		std::string fname = folder.string()+"/event_"+std::to_string(nr_)+"_" + type + ".root";
-// 		TFile *rfile = new TFile(fname.c_str(), "RECREATE");
-//
-// 		for(auto imap : this->GetHistograms(type))
-// 		{
-// 				imap.second->Write();
-// 		}
-//
-// 		rfile->Close();
-// 		delete rfile;
-//
-// 		boost::property_tree::write_ini(folder.string()+"/event_"+std::to_string(nr_)+".ini", pt_);
-//
-// 		// boost::filesystem::path dest = folder/path_file_ini_.filename();
-// 		// boost::filesystem::copy_file(path_file_ini_, dest, copy_option::overwrite_if_exists );
-// };
+
 //
 //
 //
