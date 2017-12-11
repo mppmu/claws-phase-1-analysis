@@ -7,14 +7,18 @@
 // Description :
 //============================================================================
 
-// boost
+// --- C++ includes ---
+#include <iostream>
+#include <cxxabi.h>
+
+// --- BOOST includes ---
 // #include <boost/algorithm/string/replace.hpp>
-// // OpenMP
+// --- OpenMP includes ---
 // #include <omp.h>
-// // root
+// --- ROOT includes ---
 // #include <TFile.h>
 
-
+// --- Project includes ---
 #include "event.hh"
 #include "globalsettings.hh"
 
@@ -79,9 +83,17 @@ void Event::LoadHistograms(std::string type)
 void Event::SaveEvent(boost::filesystem::path dst)
 {
 		std::string fname = dst.string() + "/";
-		fname += std::string(typeid(*this).name());
-		fname += "_" +std::to_string(nr_);
-		fname += printEventState(state_);
+	//	fname += std::string(typeid(*this).name());
+
+    int     status;
+		char   *realname;
+		const std::type_info  &ti = typeid(*this);
+		realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
+		fname += std::string(realname);
+		free(realname);
+
+		fname += "_" + std::to_string(nr_);
+		fname += "_" + printEventState(state_);
 	//	fname = (dst/boost::filesystem::path( std::string(typeid(*this).name()) + "_" +std::to_string(nr_) + printEventState(state_) + ".root")).string();
 		TFile *rfile = new TFile((fname+".root").c_str(), "RECREATE");
 		//
