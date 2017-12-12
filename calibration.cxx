@@ -162,17 +162,45 @@ int main(int argc, char* argv[]) {
 				runs.emplace_back( run );
 		}
 
-		/**	Pedestal subtraction on the intermediate waveforms
+		/**	Pedestal subtraction on the calibration waveforms
 		 *
 		 */
-
-
 		if(tasks[0])
 		{
 		    for(auto run: runs)
 				{
 					run->PDS_Calibration();
 				}
+		}
+
+		/**	Gain determination on the calibration waveforms
+		 *
+		 */
+		if(tasks[1])
+		{
+			for(auto run: runs)
+			{
+				run->GainDetermination();
+			}
+		}
+
+		/**	Calculation of average 1 pe calibration waveform
+		 *
+		 */
+		if(tasks[2])
+		{
+			for(auto run: runs)
+			{
+				run->Average1PE_Creation();
+			}
+		}
+
+		/**	Pedestal subtraction on the physics waveforms
+		 *
+		 */
+		if(tasks[3])
+		{
+
 		}
 
 		for(auto run : runs)

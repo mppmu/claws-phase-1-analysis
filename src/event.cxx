@@ -16,7 +16,6 @@
 // --- OpenMP includes ---
 // #include <omp.h>
 // --- ROOT includes ---
-// #include <TFile.h>
 
 // --- Project includes ---
 #include "event.hh"
@@ -49,39 +48,93 @@ Event::~Event() {
 		// }
 }
 
-void Event::LoadHistograms(std::string type)
+void Event::LoadHistograms(EventState state)
 {
 		// 	// std::cout<< "Loading Event: " << nr_str_ << std::endl;
 		// if(nr_ == 0)
 		// 	// {
 		// 	//     std::cout<< path_file_root_ << std:: endl;
 		// }
-		if( type == "raw")
-		{
-		    TFile *rfile=NULL;
-				rfile = new TFile(file_.string().c_str(), "open");
+    switch (state) {
+		    case EVENTSTATE_RAW:
+				    TFile *rfile=NULL;
+						rfile = new TFile(file_.string().c_str(), "open");
 
-				if( rfile->IsZombie() )
-				{
-				    std::cout << "Error openning file" << std::endl;
+						if( rfile->IsZombie() )
+						{
+							  std::cout << "Error openning file" << std::endl;
+								exit(-1);
+						}
+
+						for (const auto &ch : channels_)
+						{
+					      ch->LoadHistogram(rfile);
+						}
+
+						rfile->Close("R");
+						delete rfile;
+						rfile = NULL;
+
+						state_ = EVENTSTATE_RAW;
+
+
+		    case EVENTSTATE_PDSUBTRACTED:
+
+						std::string fname = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("GainDetermination").string() + "/";
+
+						int     status;
+						char   *realname;
+						const std::type_info  &ti = typeid(*this);
+						realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
+						fname += std::string(realname);
+						free(realname);
+
+						std::stringstream ss;
+						ss << std::setw(3) << std::setfill('0') << nr_;
+						fname += "_" + ss.str();
+						fname += "_" + printEventState(state);
+						fname += ".root";
+
+
+						TFile *rfile = rfile = new TFile(fname.string().c_str(), "open");
+
+						if( rfile->IsZombie() )
+						{
+						std::cout << "Error openning file" << std::endl;
 						exit(-1);
-				}
+						}
 
-				for (const auto &ch : channels_)
-				{
-						ch->LoadHistogram(rfile);
-				}
+						for (const auto &ch : channels_)
+						{
+					      ch->LoadHistogram(rfile);
+						}
 
-				rfile->Close("R");
-				delete rfile;
-				rfile = NULL;
+						rfile->Close("R");
+						delete rfile;
+						rfile = NULL;
 
-				state_ = EVENTSTATE_RAW;
+						state_ = EVENTSTATE_PDSUBTRACTED;
+
 		}
 }
 
-void Event::SaveEvent(boost::filesystem::path dst)
+void Event::PrepHistograms()
 {
+		for (auto channel : channels_)
+		{
+		    channel->PrepHistogram();
+		}
+
+    state_ = EVENTSTATE_PREP;
+
+}
+
+void Event::SaveEvent(boost::filesystem::path dst, bool save_pd)
+{
+		/**
+		*  \todo Kill the path paramter and make it state dependet!
+		*/
+
 		std::string fname = dst.string() + "/";
 	//	fname += std::string(typeid(*this).name());
 
@@ -92,17 +145,22 @@ void Event::SaveEvent(boost::filesystem::path dst)
 		fname += std::string(realname);
 		free(realname);
 
-		fname += "_" + std::to_string(nr_);
+		// /fname += "_" + std::to_string(nr_);
+		std::stringstream ss;
+		ss << std::setw(3) << std::setfill('0') << nr_;
+		fname += "_" + ss.str();
 		fname += "_" + printEventState(state_);
-	//	fname = (dst/boost::filesystem::path( std::string(typeid(*this).name()) + "_" +std::to_string(nr_) + printEventState(state_) + ".root")).string();
-		TFile *rfile = new TFile((fname+".root").c_str(), "RECREATE");
-		//
-		// for(auto imap : this->GetHistograms(type))
-		// {
-		// 		imap.second->Write();
-		// }
-		//
-		rfile->Close();
+		fname += ".root";
+
+		TFile *rfile = new TFile(fname.c_str(), "RECREATE");
+
+		for(auto channel : channels_)
+		{
+				channel->GetHistogram()->Write();
+				if(save_pd) channel->GetHistogram("pedestal")->Write();
+		}
+
+		rfile->Close("R");
 		delete rfile;
 
 		//fname = (dst/boost::filesystem::path( std::string(typeid(*this).name()) + "_" +std::to_string(nr_) + printEventState(state_) + ".ini")).string();
@@ -112,10 +170,51 @@ void Event::SaveEvent(boost::filesystem::path dst)
 		// boost::filesystem::copy_file(path_file_ini_, dest, copy_option::overwrite_if_exists );
 };
 
+void Event::DeleteHistograms()
+{
+		for (auto channel : channels_)
+		{
+				channel->DeleteHistogram();
+		}
+		state_ = EVENTSTATE_INIT;
+};
+
+void Event::FillPedestals()
+{
+		for (auto channel : channels_)
+		{
+				channel->FillPedestal();
+		}
+};
+
+void Event::SubtractPedestals(std::vector<double> pd)
+{
+		if(pd.size() == channels_.size())
+		{
+		    for(int i = 0 ; i < pd.size(); i++ ) channels_.at(i)->SubtractPedestal(pd.at(i));
+		}
+		else
+		{
+			for(auto channel : channels_) channel->SubtractPedestal();
+		}
+
+		state_ = EVENTSTATE_PDSUBTRACTED;
+}
+
 double Event::GetTime()
 {
 		return unixtime_;
 }
+
+int Event::GetNumber()
+{
+		return nr_;
+}
+
+std::vector<Channel*> Event::GetChannels()
+{
+ 		return channels_;
+};
 
 //----------------------------------------------------------------------------------------------
 // Definition of the CalibrationEvent class derived from Event.
@@ -124,7 +223,8 @@ double Event::GetTime()
 CalibrationEvent::CalibrationEvent(boost::filesystem::path file, boost::filesystem::path ini_file ) : Event(file, ini_file)
 {
 		nr_ = std::atoi(file.filename().string().substr(14,3).c_str());
-		nr_ += std::atoi(file.filename().string().substr(4,6).c_str()) * 1000;
+		//nr_ += std::atoi(file.filename().string().substr(4,6).c_str()) * 1000;
+
 		// nr_     = atoi(nr_str_.c_str());
 		// GS->GetChannels("Calibration");
 		for (auto name : GS->GetChannels("Calibration"))
@@ -204,13 +304,7 @@ PhysicsEvent::~PhysicsEvent() {
 //
 // };
 //
-// void Event::DeleteHistograms()
-// {
-// 		for (const auto &mvec : channels_)
-// 		{
-// 				mvec.second->DeleteHistogram();
-// 		}
-// };
+
 //
 // void Event::DeleteWaveforms()
 // {
@@ -222,17 +316,7 @@ PhysicsEvent::~PhysicsEvent() {
 //
 // };
 //
-// void Event::LoadPedestal()
-// {
-// 		for (auto &itr : channels_)
-// 		{
-// 				itr.second->LoadPedestal();
-// 				// catch(std::string exception)
-// 				// {
-// 				//     std::cout<< "In event nr: " << nr_ << "\n" << exception << std::endl;
-// 				// }
-// 		}
-// };
+
 //
 // // void Event::SubtractPedestal()
 // // {
@@ -394,10 +478,7 @@ PhysicsEvent::~PhysicsEvent() {
 // 		return channels_[name];
 // }
 //
-// std::map<std::string, Channel*> Event::GetChannels()
-// {
-// 		return channels_;
-// };
+
 //
 // void Event::CalculateIntegral()
 // {

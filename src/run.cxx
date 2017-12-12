@@ -8,7 +8,7 @@
 //============================================================================
 
 
-//std includes
+// --- C++ includes ---
 #include <string>
 //  #include <iostream>
 //  #include <fstream>
@@ -36,9 +36,10 @@
 // // #include <boost/filesystem/fstream.hpp>
 // // #include <boost/algorithm/string/predicate.hpp>
 // // #include <boost/foreach.hpp>
-//
-// // root includes
-// #include <TFile.h>
+
+// --- ROOT includes ---
+#include <TGraphErrors.h>
+#include <TFile.h>
 // #include <TH1D.h>
 // #include <TH1I.h>
 // #include <TLegend.h>
@@ -199,22 +200,114 @@ void CalibrationRun::SynchronizeCalibrationEvents()
 
 void CalibrationRun::PDS_Calibration()
 {
+    boost::filesystem::path pds_calibration = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("PDS_Calibration");
+    if(!boost::filesystem::is_directory(pds_calibration) )
+    {
+        boost::filesystem::create_directory(pds_calibration);
+    }
+
+    if(!boost::filesystem::is_directory(pds_calibration/boost::filesystem::path("Waveforms")) )
+    {
+        boost::filesystem::create_directory(pds_calibration/boost::filesystem::path("Waveforms"));
+    }
+
+    // Get the histograms and prepare them
 		for(auto evt: cal_evts_ )
 		{
 		    evt->LoadHistograms();
+        evt->PrepHistograms();
 		}
 
-
-    if(!boost::filesystem::is_directory(path_/boost::filesystem::path("Calibration")/boost::filesystem::path("Waveforms")) )
+    // Just to be sure and because they take no space, save them to disk
+    for(auto evt: cal_evts_ )
     {
-            boost::filesystem::create_directory(path_/boost::filesystem::path("Calibration")/boost::filesystem::path("Waveforms"));
+        evt->SaveEvent(pds_calibration/boost::filesystem::path("Waveforms"));
+    }
+
+    // No do the pedestal subtraction
+
+    for(auto evt: cal_evts_ )
+    {
+        evt->FillPedestals();
+    }
+
+    // Use the first event to get a dynamic number and name of channels.
+    std::vector<TGraphErrors *> pds_over_time;
+    for(auto channel: cal_evts_.at(0)->GetChannels() )
+    {
+      TGraphErrors * tmp = new TGraphErrors();
+      tmp->SetName( (channel->GetName() + "_pd_graph").c_str() );
+      tmp->SetMarkerStyle(23);
+      tmp->SetMarkerColor(kRed);
+      tmp->SetMarkerSize(1);
+      tmp->GetXaxis()->SetTitle("Time [s]");
+      tmp->GetYaxis()->SetTitle("Pedestal [1/256 * 50 mV]");
+      tmp->GetYaxis()->SetRangeUser(-128,127);
+      pds_over_time.push_back(tmp);
+    }
+
+    // Iterate over all evts and fill the pedestal for each channel in the
+    // corresponding TGraphErrors.
+    // Pedestals are plotted over the unixtime of the event.
+    int evt_counter = 0;
+    for(auto evt: cal_evts_ )
+    {
+      auto channels = evt->GetChannels();
+      for(unsigned int i = 0; i <channels.size(); i++)
+      {
+          double event_time = evt->GetTime()+0.1*evt_counter;
+          double pd = std::get<0>(channels.at(i)->GetPedestal());
+          double pderr = std::get<1>(channels.at(i)->GetPedestal());
+
+          pds_over_time.at(i)->SetPoint(evt_counter, event_time, pd);
+          pds_over_time.at(i)->SetPointError(evt_counter, 0.05, pderr);
+      }
+
+      evt_counter ++;
+    }
+
+    std::string fname = pds_calibration.string() + "/run_"+std::to_string(nr_)+"_pedestal"+"_v"+ std::to_string(GS->GetParameter<int>("General.CalibrationVersion"))+".root";
+    TFile *rfile = new TFile(fname.c_str(), "RECREATE");
+    for(auto graph : pds_over_time)
+    {
+      graph->Write();
+      delete graph;
+    }
+
+    rfile->Close("R");
+
+    for(auto evt: cal_evts_ )
+    {
+        evt->SubtractPedestals();
     }
 
     for(auto evt: cal_evts_ )
     {
-        evt->SaveEvent(path_/boost::filesystem::path("Calibration")/boost::filesystem::path("Waveforms"));
+        evt->SaveEvent(pds_calibration/boost::filesystem::path("Waveforms"), true);
+        evt->DeleteHistograms();
     }
 };
+
+void CalibrationRun::PDS_Calibration()
+{
+    boost::filesystem::path gain_determination = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("GainDetermination");
+    if(!boost::filesystem::is_directory(gain_determination) )
+    {
+        boost::filesystem::create_directory(gain_determination);
+    }
+
+
+    // Load the events into the state of pd subtracted waveforms
+		for(auto evt: cal_evts_ )
+		{
+		    evt->LoadHistograms(EVENTSTATE_PDSUBTRACTED);
+		}
+
+    for(auto evt: cal_evts_ )
+    {
+        evt->DeleteHistograms();
+    }
+}
 
 void CalibrationRun::SynchronizePhysicsEvents()
 {

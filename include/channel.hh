@@ -8,16 +8,16 @@
 #ifndef CLAWS_CHANNEL_H_
 #define CLAWS_CHANNEL_H_
 
-// Std includes
- #include <iostream>
+// --- C++ includes ---
+#include <tuple>
+//#include <iostream>
 // #include <cstdint>
 // #include <cstdio>
 // #include <cinttypes>
 
-// Root includes
+// --- ROOT includes ---
+#include <TH1.h>
 #include <TH1I.h>
-#include "TApplication.h"
-#include <TCanvas.h>
 #include <TFile.h>
 
 // Project includes
@@ -35,6 +35,26 @@
  * @param  file [description]
  * @return      [description]
  */
+
+ enum ChannelState
+ {
+     CHANNELSTATE_VALID,
+     CHANNELSTATE_PDFAILED,
+ };
+
+ inline std::string printChannelState(ChannelState state)
+ {
+   switch(state)
+   {
+     case CHANNELSTATE_VALID:
+       return "valid";
+     case CHANNELSTATE_PDFAILED:
+       return "valid";
+     default:
+       return "Invalid Selection";
+   }
+ }
+
 class Channel
 {
     public:
@@ -43,20 +63,34 @@ class Channel
         virtual ~Channel();
 
         virtual     void        LoadHistogram(TFile* file);
+        virtual     void        PrepHistogram();
         virtual     void        DeleteHistogram();
 
+        virtual     void        FillPedestal();
+        virtual     void        SubtractPedestal( double pd = -1000 );
+
         std::string GetName();
+        virtual TH1*                         GetHistogram(std::string type = "waveform");
+        virtual std::tuple<double,double>    GetPedestal();
+        virtual ChannelState GetState();
+
+        // virtual TH1D*           Get();
+
 
         void SetName(std::string name);
 
     protected:
-        std::string             name_;
+        std::string            name_;
+        ChannelState           state_;
         TH1*                   hist_;
+        TH1I*                  pdhist_;
+        double                 pd_;
+        double                 pderr_;
 //
 //         virtual     void        LoadWaveform();
 //         virtual     void        DeleteWaveform();
 //
-//         virtual     void        LoadPedestal();
+
 // //        virtual     void    Subtract();
 //         virtual     void        SubtractPedestal(double pedestal = 0, bool backup = false);
 //         virtual     void        SetPedestal(double pedestal = 0, bool backup = false);
@@ -71,28 +105,24 @@ class Channel
 //         std::string             GetName();
 //         std::vector<float>*     GetWaveform();
 //         virtual TH1F*           GetWaveformHist();
-//         TH1I*                   GetPedestal();
+
 //         float                   GetPDMean();
 //         float                   GetPDError();
 //         double                  GetIntegral();
 //
-//         virtual TH1*            GetHistogram();
+
 //         virtual void            CreateHistogram();
 //
 //     protected:
-//
-//         std::string             name_;
+
 //
 //         std::vector<float>*     waveform_      = NULL;
 //
-//         TH1*                    hist_          = NULL;
-//         TH1I*                   pedestal_hist_      = NULL;
 //
 //         float                   pedestal_   = 0;
 //         float                   baseline_   = 0;
 //
-//         float                   pd_mean_;
-//         float                   pd_error_;
+
 //
 //         double                  integral_     = 0 ;
 //         unsigned int            n_sample_   = 0;

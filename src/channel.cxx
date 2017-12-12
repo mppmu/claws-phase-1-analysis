@@ -5,9 +5,10 @@
  *      Author: mgabriel
  */
 
-// OpenMP
+// --- C++ includes ---
+// --- OpenMP includes ---
 // #include <omp.h>
-
+// --- BOOST includes ---
 // #include <utility>
 // #include <assert.h>
 // #include <stdio.h>
@@ -20,8 +21,9 @@
 // #include <gsl/gsl_randist.h>
 // #include <gsl/gsl_complex.h>
 // #include <gsl/gsl_complex_math.h>
-//
-// #include <TF1.h>
+// --- ROOT includes ---
+#include <TF1.h>
+// --- Project includes ---
 #include "channel.hh"
 #include "globalsettings.hh"
 
@@ -30,7 +32,7 @@
 // TODO proper description
 //----------------------------------------------------------------------------------------------
 
-Channel::Channel(std::string name) : name_(name), hist_(NULL)
+Channel::Channel(std::string name) : name_(name), state_(CHANNELSTATE_VALID), hist_(NULL), pdhist_(NULL), pd_(0), pderr_(0)
 {
 		//waveform_       = new vector<int8_t>();
 		// waveform_           = new std::vector<float>();
@@ -77,6 +79,15 @@ void Channel::LoadHistogram(TFile* file)
 		// if( hist_->GetBinContent(hist_->GetNbinsX()) == 0 && !boost::algorithm::ends_with(name_,"-INT") ) n_sample_--;
 };
 
+void Channel::PrepHistogram()
+{
+		/* Make the signals go in the positiv direction
+		 * and convert from [-32768, +32512] to
+		 * [-128, +127]
+		 */
+    hist_->Scale(-1./256.);
+};
+
 void Channel::DeleteHistogram()
 {
 		if(hist_ != NULL)
@@ -85,6 +96,159 @@ void Channel::DeleteHistogram()
 				hist_ = NULL;
 		}
 };
+
+void Channel::FillPedestal()
+{
+    if( pdhist_ != NULL )
+    {
+	      delete pdhist_;
+	      pdhist_ = NULL;
+    }
+
+		std::string title = name_ + "_pd";
+		pdhist_ = new TH1I(title.c_str(), title.c_str(), 256, -128.5, 127.5);
+		pdhist_->SetDirectory(0);
+
+		//for(int i =1; i<115; i++)
+		// for(int i =1; (i<hist_->GetNbinsX()+1)/2. ;i++)
+		// {
+		// 	pdhist_->Fill( hist_->GetBinContent(i) );
+		// }
+
+
+		//bool fillflag   = true;
+
+				// //float threshold = baseline_ + pd_delta_;
+				// float threshold = 3;
+				// float pd_gap = 20;
+				// unsigned i = pd_gap_;
+		int bins_over_threshold = GS->GetParameter<int>("PDS_Calibration.bins_over_threshold");
+		double threshold = GS->GetParameter<double>("PDS_Calibration.threshold");
+		int signal_length = GS->GetParameter<int>("PDS_Calibration.signal_length");
+
+    unsigned i=1;
+
+		// while( i < hist_->GetNbinsX() - 2 * pd_gap_ +1 )
+		// {
+		while( i <= hist_->GetNbinsX() )
+		{
+		    double bin_contend  = hist_->GetBinContent(i);
+
+				if( i <= hist_->GetNbinsX() - bins_over_threshold)
+				{
+				    if( bin_contend < threshold)
+					  {
+					      pdhist_->Fill( bin_contend );
+					  }
+						else
+						{
+								bool above_threshold = true;
+								for (int j = 0; j < bins_over_threshold; j++)
+								{
+						 				if(hist_->GetBinContent(i+j) < threshold ) above_threshold = false;
+								}
+
+								if( above_threshold )
+								{
+									  i += signal_length;
+								}
+								else
+								{
+						    		pdhist_->Fill( bin_contend );
+								}
+
+						}
+				}
+				else
+				{
+						if( bin_contend < threshold)
+						{
+								pdhist_->Fill( bin_contend );
+						}
+				}
+				i++;
+    }
+
+
+
+				// if( waveform_->at( i + 1 ) >= threshold &&
+				//     waveform_->at( i + 2 ) >= threshold &&
+				//     waveform_->at( i + 3 ) >= threshold )
+				// {
+
+				// if(  < threshold && fillflag == true)
+				// {
+				// 		pdhist_->Fill(waveform_->at(i - pd_gap_) );
+				// }
+				//
+				// 		else if( waveform_->at( i ) >= threshold && fillflag == true)
+				// 		{
+				// 				if( waveform_->at( i + 1 ) >= threshold &&
+				// 				    waveform_->at( i + 2 ) >= threshold &&
+				// 				    waveform_->at( i + 3 ) >= threshold )
+				// 				{
+				// 						fillflag = false;
+				// 				}
+				// 				else
+				// 				{
+				// 						pedestal_hist_->Fill(waveform_->at(i - pd_gap_) );
+				// 				}
+				// 		}
+				//
+				// 		else if( waveform_->at( i ) < threshold &&
+				// 		         fillflag == false &&
+				// 		         // When jumping the tail of the signal (2*gap) needed to make
+				// 		         // sure we are not jumping into a signal again.
+				// 		         waveform_->at( i + 2 * pd_gap_ ) < threshold )
+				// 		{
+				// 				fillflag = true;
+				// 				if( i < waveform_->size() - 2 * pd_gap_ )
+				// 				{
+				// 						i += 2 * pd_gap_;
+				// 				}
+				// 		}
+				//
+				//
+
+				// if((pedestal_hist_->GetEntries()<waveform_->size()*0.01))
+				// {
+				//     std::string error = name_ + ":  (pedestal_hist_->GetEntries(): " + to_string(pedestal_hist_->GetEntries()) + ", waveform_->size(): "
+				//                         + to_string(waveform_->size())+ ", i: " + to_string(i) + ", pd_gap_: " + to_string(pd_gap_)+ ", threshold: " + to_string(threshold);
+				//     std::cout << error << std::endl;
+				// }
+				// std::cout << name_ << ": " << pedestal_hist_->GetEntries() << std::endl;
+
+		TF1* fit=new TF1("gaus","gaus",1,3, TF1::EAddToList::kNo);
+
+		fit->SetParameter(0,50);
+		fit->SetParameter(1,0);
+		fit->SetParameter(2,1);
+
+		TFitResultPtr result = pdhist_->Fit(fit, "QS","", -5, 5);
+		if( int(result) != 0)
+		{
+			state_ = CHANNELSTATE_PDFAILED;
+		}
+
+		pd_    = fit->GetParameter(1);
+		pderr_ = fit->GetParameter(2);
+
+		delete fit;
+};
+
+void Channel::SubtractPedestal( double pd)
+{
+    if(pd != -1000)
+		{
+				pd_ = pd;
+		}
+
+		for( int bin = 1; bin <= hist_->GetNbinsX(); bin ++)
+		{
+				hist_->SetBinContent(bin, hist_->GetBinContent(bin) - pd_);
+		}
+
+}
 
 
 std::string Channel::GetName()
@@ -97,6 +261,24 @@ void Channel::SetName(std::string name)
 		name_ = name;
 };
 
+
+TH1* Channel::GetHistogram(std::string type)
+{
+	if      (type == "waveform") return hist_;
+	else if (type == "pedestal") return pdhist_;
+	else												 exit(1);
+};
+
+std::tuple<double,double> Channel::GetPedestal()
+{
+	return std::make_tuple(pd_,pderr_);
+};
+
+ChannelState Channel::GetState()
+{
+	return state_;
+}
+
 //----------------------------------------------------------------------------------------------
 // Definition of the CalibrationChannel class derived from Channel.
 // TODO proper description
@@ -105,7 +287,7 @@ void Channel::SetName(std::string name)
 CalibrationChannel::CalibrationChannel(std::string name) : Channel()
 {
     if(boost::ends_with(name, "CAL")) this->SetName( name );
-    else                      this->SetName( name+"_CAL" );
+    else                      this->SetName( name+"-INT" );
 };
 
 CalibrationChannel::~CalibrationChannel() {
@@ -121,8 +303,13 @@ void CalibrationChannel::LoadHistogram(TFile* file)
 				hist_ = NULL;
 		}
 
-    //TH1I* tmp = (TH1I*)file->Get((name.substr(0,4)+"-INT").c_str());
-    hist_ = (TH1D*)file->Get((name_.substr(0,4)+"-INT").c_str());
+  //  hist_ = (TH1D*)file->Get((name_.substr(0,4)+"-INT").c_str());
+		//hist_ = (TH1D*)file->Get((name_.substr(0,4)+"-INT").c_str())->Clone();
+		TH1D *tmp = (TH1D*)file->Get((name_.substr(0,4)+"-INT").c_str());
+
+		hist_ = new TH1D( *tmp);
+
+		delete tmp;
 		//tmp->Copy(hist_);
     hist_->SetName(name_.c_str());
 		hist_->SetTitle(name_.c_str());
@@ -134,6 +321,9 @@ void CalibrationChannel::LoadHistogram(TFile* file)
 		// //Last bin in physics wavefroms is filled with 0, takes care of that bug.
 		// if( hist_->GetBinContent(hist_->GetNbinsX()) == 0 && !boost::algorithm::ends_with(name_,"-INT") ) n_sample_--;
 };
+
+
+
 //
 // // void Channel::LoadPedestaet(name_.c_str());
 // //     hist_->SetDirectory(0);
@@ -164,75 +354,7 @@ void CalibrationChannel::LoadHistogram(TFile* file)
 // 		std::cout << "" << std::endl;
 // };
 //
-// void Channel::LoadPedestal()
-// {
-//
-// 		if( waveform_->size() > pd_gap_ )
-// 		{
-//
-// 				bool fillflag   = true;
-//
-// 				float threshold = baseline_ + pd_delta_;
-//
-// 				unsigned i = pd_gap_;
-//
-// 				while( i < waveform_->size() - 2 * pd_gap_ )
-// 				{
-//
-//
-// 						if( waveform_->at( i ) < threshold && fillflag == true)
-// 						{
-// 								pedestal_hist_->Fill(waveform_->at(i - pd_gap_) );
-// 						}
-//
-// 						else if( waveform_->at( i ) >= threshold && fillflag == true)
-// 						{
-// 								if( waveform_->at( i + 1 ) >= threshold &&
-// 								    waveform_->at( i + 2 ) >= threshold &&
-// 								    waveform_->at( i + 3 ) >= threshold )
-// 								{
-// 										fillflag = false;
-// 								}
-// 								else
-// 								{
-// 										pedestal_hist_->Fill(waveform_->at(i - pd_gap_) );
-// 								}
-// 						}
-//
-// 						else if( waveform_->at( i ) < threshold &&
-// 						         fillflag == false &&
-// 						         // When jumping the tail of the signal (2*gap) needed to make
-// 						         // sure we are not jumping into a signal again.
-// 						         waveform_->at( i + 2 * pd_gap_ ) < threshold )
-// 						{
-// 								fillflag = true;
-// 								if( i < waveform_->size() - 2 * pd_gap_ )
-// 								{
-// 										i += 2 * pd_gap_;
-// 								}
-// 						}
-//
-//
-// 						i++;
-// 				}
-//
-// 				// if((pedestal_hist_->GetEntries()<waveform_->size()*0.01))
-// 				// {
-// 				//     std::string error = name_ + ":  (pedestal_hist_->GetEntries(): " + to_string(pedestal_hist_->GetEntries()) + ", waveform_->size(): "
-// 				//                         + to_string(waveform_->size())+ ", i: " + to_string(i) + ", pd_gap_: " + to_string(pd_gap_)+ ", threshold: " + to_string(threshold);
-// 				//     std::cout << error << std::endl;
-// 				// }
-// 				// std::cout << name_ << ": " << pedestal_hist_->GetEntries() << std::endl;
-// 		}
-//
-// 		else
-// 		{
-// 				exit(1);
-// 		}
-//
-// 		pd_mean_    =   pedestal_hist_->GetMean();
-// 		pd_error_   =   pedestal_hist_->GetMeanError();
-// };
+
 //
 // // void Channel::Subtract(double pedestal)
 // //             }GetChannelsform_->at( i )
@@ -324,7 +446,10 @@ void CalibrationChannel::LoadHistogram(TFile* file)
 // {
 // 		return waveform_;
 // };
-//
+//// TH1I* Channel::GetPedestal()
+// {
+// 		return pedestal_hist_;
+// };
 // TH1F* Channel::GetWaveformHist()
 // {
 // //    std::cout<< "Channel::GetWaveformHist(), name: "<< name_ << std::endl;
@@ -363,17 +488,9 @@ void CalibrationChannel::LoadHistogram(TFile* file)
 // 				}
 // 		}
 // }
+
 //
-// TH1* Channel::GetHistogram()
-// {
-// 		this->CreateHistogram();
-// 		return hist_;
-// };
-//
-// TH1I* Channel::GetPedestal()
-// {
-// 		return pedestal_hist_;
-// };
+
 //
 // double Channel::GetIntegral()
 // {

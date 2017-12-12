@@ -62,7 +62,9 @@ enum EventState
 {
     EVENTSTATE_INIT,
     EVENTSTATE_RAW,
-    EVENTSTATE_SUBTRACTED,
+    EVENTSTATE_PREP,
+    EVENTSTATE_PDFILLED,
+    EVENTSTATE_PDSUBTRACTED,
     // COLOR_GREEN, // assigned 3
     // COLOR_WHITE, // assigned 4
     // COLOR_CYAN, // assigned 5
@@ -78,7 +80,11 @@ inline std::string printEventState(EventState state)
       return "init";
     case EVENTSTATE_RAW:
       return "raw";
-    case EVENTSTATE_SUBTRACTED:
+    case EVENTSTATE_PREP:
+        return "prepared";
+    case EVENTSTATE_PDFILLED:
+      return "pd_filled";
+    case EVENTSTATE_PDSUBTRACTED:
       return "pd_subtracted";
     default:
       return "Invalid Selection";
@@ -123,10 +129,17 @@ class Event{
 
         virtual ~Event();
 
-        virtual void LoadHistograms(std::string type = "raw");
-        virtual void SaveEvent(boost::filesystem::path dst);
+        virtual void LoadHistograms(EventState state = EVENTSTATE_RAW);
+        virtual void PrepHistograms();
+        virtual void SaveEvent(boost::filesystem::path dst, bool save_pd = false);
+        virtual void DeleteHistograms();
+
+        virtual void FillPedestals();
+        virtual void SubtractPedestals(std::vector<double> pd = {});
 
         double GetTime();
+        int GetNumber();
+        virtual std::vector<Channel*> GetChannels();
 
     protected:
        int nr_;
@@ -235,6 +248,8 @@ class PhysicsEvent : public Event{
         PhysicsEvent(boost::filesystem::path file, boost::filesystem::path ini_file);
         PhysicsEvent(boost::filesystem::path file, boost::filesystem::path ini_file, boost::filesystem::path rate_file);
         virtual ~PhysicsEvent();
+
+    //    virtual void PrepHistograms();
     private:
         boost::filesystem::path rate_file_;
 };
