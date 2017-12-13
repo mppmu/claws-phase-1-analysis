@@ -215,7 +215,7 @@ void CalibrationRun::PDS_Calibration()
 		for(auto evt: cal_evts_ )
 		{
 		    evt->LoadHistograms();
-        evt->PrepHistograms();
+            evt->PrepHistograms();
 		}
 
     // Just to be sure and because they take no space, save them to disk
@@ -288,7 +288,7 @@ void CalibrationRun::PDS_Calibration()
     }
 };
 
-void CalibrationRun::PDS_Calibration()
+void CalibrationRun::GainDetermination()
 {
     boost::filesystem::path gain_determination = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("GainDetermination");
     if(!boost::filesystem::is_directory(gain_determination) )
@@ -298,10 +298,10 @@ void CalibrationRun::PDS_Calibration()
 
 
     // Load the events into the state of pd subtracted waveforms
-		for(auto evt: cal_evts_ )
-		{
-		    evt->LoadHistograms(EVENTSTATE_PDSUBTRACTED);
-		}
+	for(auto evt: cal_evts_ )
+	{
+	    evt->LoadHistograms(EVENTSTATE_PDSUBTRACTED);
+	}
 
     for(auto evt: cal_evts_ )
     {

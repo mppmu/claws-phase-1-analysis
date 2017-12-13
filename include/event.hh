@@ -130,6 +130,9 @@ class Event{
         virtual ~Event();
 
         virtual void LoadHistograms(EventState state = EVENTSTATE_RAW);
+            virtual void LoadRaw();
+            virtual void LoadSubtracted();
+
         virtual void PrepHistograms();
         virtual void SaveEvent(boost::filesystem::path dst, bool save_pd = false);
         virtual void DeleteHistograms();

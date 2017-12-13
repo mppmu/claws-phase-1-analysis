@@ -126,7 +126,7 @@ class CalibrationRun : public Run
     void SynchronizeCalibrationEvents();
     void PDS_Calibration();
     void GainDetermination();
-    void Average1PE_Creation();
+    //void Average1PE_Creation();
 
     void SynchronizePhysicsEvents();
     void PDS_Physics();

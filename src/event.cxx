@@ -35,7 +35,7 @@ Event::Event()
 
 };
 
-Event::Event(boost::filesystem::path file, boost::filesystem::path ini_file ): path_(file.parent_path()), file_(file), ini_file_(ini_file), state_(EVENTSTATE_INIT)
+Event::Event(boost::filesystem::path file, boost::filesystem::path ini_file ): path_(file.parent_path().parent_path()), file_(file), ini_file_(ini_file), state_(EVENTSTATE_INIT)
 {
 
 };
@@ -50,72 +50,76 @@ Event::~Event() {
 
 void Event::LoadHistograms(EventState state)
 {
-		// 	// std::cout<< "Loading Event: " << nr_str_ << std::endl;
-		// if(nr_ == 0)
-		// 	// {
-		// 	//     std::cout<< path_file_root_ << std:: endl;
-		// }
-    switch (state) {
-		    case EVENTSTATE_RAW:
-				    TFile *rfile=NULL;
-						rfile = new TFile(file_.string().c_str(), "open");
-
-						if( rfile->IsZombie() )
-						{
-							  std::cout << "Error openning file" << std::endl;
-								exit(-1);
-						}
-
-						for (const auto &ch : channels_)
-						{
-					      ch->LoadHistogram(rfile);
-						}
-
-						rfile->Close("R");
-						delete rfile;
-						rfile = NULL;
-
-						state_ = EVENTSTATE_RAW;
-
-
+		switch (state) {
+			case EVENTSTATE_RAW:
+			{
+				this->LoadRaw();
+				state_ = EVENTSTATE_RAW;
+				break;
+			}
 		    case EVENTSTATE_PDSUBTRACTED:
-
-						std::string fname = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("GainDetermination").string() + "/";
-
-						int     status;
-						char   *realname;
-						const std::type_info  &ti = typeid(*this);
-						realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
-						fname += std::string(realname);
-						free(realname);
-
-						std::stringstream ss;
-						ss << std::setw(3) << std::setfill('0') << nr_;
-						fname += "_" + ss.str();
-						fname += "_" + printEventState(state);
-						fname += ".root";
-
-
-						TFile *rfile = rfile = new TFile(fname.string().c_str(), "open");
-
-						if( rfile->IsZombie() )
-						{
-						std::cout << "Error openning file" << std::endl;
-						exit(-1);
-						}
-
-						for (const auto &ch : channels_)
-						{
-					      ch->LoadHistogram(rfile);
-						}
-
-						rfile->Close("R");
-						delete rfile;
-						rfile = NULL;
-
-						state_ = EVENTSTATE_PDSUBTRACTED;
-
+			{
+				this->LoadSubtracted();
+				state_ = EVENTSTATE_PDSUBTRACTED;
+				break;
+			}
 		}
+}
+
+void Event::LoadRaw()
+{
+    TFile *rfile=NULL;
+	rfile = new TFile(file_.string().c_str(), "open");
+
+	if( rfile->IsZombie() )
+	{
+		std::cout << "Error openning file" << std::endl;
+		exit(-1);
+	}
+
+	for (const auto &ch : channels_)
+	{
+		ch->LoadHistogram(rfile);
+	}
+
+	rfile->Close("R");
+	delete rfile;
+	rfile = NULL;
+}
+
+void Event::LoadSubtracted()
+{
+	std::string fname = (path_/boost::filesystem::path("Calibration")/boost::filesystem::path("PDS_Calibration")/boost::filesystem::path("Waveforms")).string() + "/";
+
+	int     status;
+	char   *realname;
+	const std::type_info  &ti = typeid(*this);
+	realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
+	fname += std::string(realname);
+	free(realname);
+
+	std::stringstream ss;
+	ss << std::setw(3) << std::setfill('0') << nr_;
+	fname += "_" + ss.str();
+	fname += "_" + printEventState(EVENTSTATE_PDSUBTRACTED);
+	fname += ".root";
+
+	TFile *rfile = rfile = new TFile(fname.c_str(), "open");
+
+	if( rfile->IsZombie() )
+	{
+	std::cout << "Error openning file" << std::endl;
+	exit(-1);
+	}
+
+	for (const auto &ch : channels_)
+	{
+	  ch->LoadHistogram(rfile);
+	}
+
+	rfile->Close("R");
+	delete rfile;
+	rfile = NULL;
 }
 
 void Event::PrepHistograms()
@@ -138,7 +142,7 @@ void Event::SaveEvent(boost::filesystem::path dst, bool save_pd)
 		std::string fname = dst.string() + "/";
 	//	fname += std::string(typeid(*this).name());
 
-    int     status;
+    	int     status;
 		char   *realname;
 		const std::type_info  &ti = typeid(*this);
 		realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
