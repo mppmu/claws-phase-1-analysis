@@ -1,22 +1,49 @@
 
 
-#include <algorithm>
-#include <string>
-#include <iostream>
-#include <fstream>
-#include <math.h>
-
-//root
-#include <TFile.h>
-#include <TF1.h>
-#include <TGraph.h>
-#include <TGraphErrors.h>
-#include <TFitResultPtr.h>
-#include <TFitResult.h>
+// #include <algorithm>
+// #include <string>
+// #include <iostream>
+// #include <fstream>
+// #include <math.h>
+//
+// //root
+// #include <TFile.h>
+// #include <TF1.h>
+// #include <TGraph.h>
+// #include <TGraphErrors.h>
+// #include <TFitResultPtr.h>
+// #include <TFitResult.h>
 
 
 #include "gain.hh"
 #include "globalsettings.hh"
+
+//----------------------------------------------------------------------------------------------
+// Definition of the Gain class used to determin the gain of the Calibration waveforms
+//----------------------------------------------------------------------------------------------
+
+
+// Gain::Gain(boost::filesystem::path path, int nr) : path_(path), nr_(nr)
+// {
+//
+// }
+//
+// Gain::~Gain() {
+// 		// TODO Auto-generated destructor stub
+// 		// for(auto & ivec : channels_)
+// 		// {
+// 		// 		delete ivec;
+// 		// }
+// };
+
+
+
+
+
+
+
+
+
 
 
 // Gain::Gain(int int_nr) : int_nr_(int_nr)
@@ -426,11 +453,4 @@
 // };
 //
 //
-// 
-// Gain::~Gain() {
-// 		// TODO Auto-generated destructor stub
-// 		for(auto & ivec : channels_)
-// 		{
-// 				delete ivec;
-// 		}
-// };
+//

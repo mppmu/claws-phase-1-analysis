@@ -12,7 +12,9 @@
 #include <cxxabi.h>
 
 // --- BOOST includes ---
-// #include <boost/algorithm/string/replace.hpp>
+#include <boost/property_tree/ini_parser.hpp>
+#include <boost/algorithm/string/replace.hpp>
+
 // --- OpenMP includes ---
 // #include <omp.h>
 // --- ROOT includes ---
@@ -37,7 +39,7 @@ Event::Event()
 
 Event::Event(boost::filesystem::path file, boost::filesystem::path ini_file ): path_(file.parent_path().parent_path()), file_(file), ini_file_(ini_file), state_(EVENTSTATE_INIT)
 {
-
+	this->LoadIniFile();
 };
 
 Event::~Event() {
@@ -46,6 +48,11 @@ Event::~Event() {
 		// {
 		// 		delete m.second;
 		// }
+}
+
+void Event::LoadIniFile()
+{
+ 		boost::property_tree::ini_parser::read_ini(ini_file_.string(), pt_);
 }
 
 void Event::LoadHistograms(EventState state)
@@ -167,8 +174,8 @@ void Event::SaveEvent(boost::filesystem::path dst, bool save_pd)
 		rfile->Close("R");
 		delete rfile;
 
-		//fname = (dst/boost::filesystem::path( std::string(typeid(*this).name()) + "_" +std::to_string(nr_) + printEventState(state_) + ".ini")).string();
-		//boost::property_tree::write_ini(fname.c_str(), pt_);
+		boost::replace_last(fname, "root", "ini");
+		boost::property_tree::write_ini(fname.c_str(), pt_);
 
 		// boost::filesystem::path dest = folder/path_file_ini_.filename();
 		// boost::filesystem::copy_file(path_file_ini_, dest, copy_option::overwrite_if_exists );
@@ -205,6 +212,12 @@ void Event::SubtractPedestals(std::vector<double> pd)
 		state_ = EVENTSTATE_PDSUBTRACTED;
 }
 
+void Event::SetTime(double unixtime)
+{
+    unixtime_ = unixtime;
+}
+
+
 double Event::GetTime()
 {
 		return unixtime_;
@@ -224,10 +237,12 @@ std::vector<Channel*> Event::GetChannels()
 // Definition of the CalibrationEvent class derived from Event.
 //----------------------------------------------------------------------------------------------
 
-CalibrationEvent::CalibrationEvent(boost::filesystem::path file, boost::filesystem::path ini_file ) : Event(file, ini_file)
+CalibrationEvent::CalibrationEvent(boost::filesystem::path file, boost::filesystem::path ini_file, double unixtime ) : Event(file, ini_file)
 {
 		nr_ = std::atoi(file.filename().string().substr(14,3).c_str());
-		//nr_ += std::atoi(file.filename().string().substr(4,6).c_str()) * 1000;
+        unixtime_ = unixtime;
+		pt_.put("Properties.UnixTime", unixtime);
+        //nr_ += std::atoi(file.filename().string().substr(4,6).c_str()) * 1000;
 
 		// nr_     = atoi(nr_str_.c_str());
 		// GS->GetChannels("Calibration");
@@ -281,6 +296,29 @@ PhysicsEvent::~PhysicsEvent() {
 
 };
 
+// void PhysicsEvent::LoadIniFile(){
+//
+//
+// 		property_tree::ini_parser::read_ini(path_file_ini_.string(), pt_);
+//
+// 		unixtime_       = pt_.get<double>("Properties.UnixTime");
+// 		lerbg_          = pt_.get<int>("SuperKEKBData.LERBg");
+// 		herbg_          = pt_.get<int>("SuperKEKBData.HERBg");
+// 		kekb_status_    = pt_.get<string>("SuperKEKBData.SuperKEKBStatus");
+// 		ler_status_     = pt_.get<string>("SuperKEKBData.LERSTatus");
+// 		her_status_     = pt_.get<string>("SuperKEKBData.HERStatus");
+//
+// 		if (lerbg_ || herbg_ ) injection_ = true;
+// 		else injection_ = false;
+// 		if(kekb_status_ == "Vacuum Scrubbing"
+// 		   && ler_status_ == "Vacuum Scrubbing"
+// 		   && her_status_ == "Vacuum Scrubbing") scrubbing_ = 3;
+// 		else if(ler_status_ == "Vacuum Scrubbing") scrubbing_ = 1;
+// 		else if(her_status_ == "Vacuum Scrubbing") scrubbing_ = 2;
+// 		else scrubbing_ = 0;
+//
+// 		//TODO load the rest that is written in the .ini file.
+// };
 
 
 //
@@ -570,29 +608,7 @@ PhysicsEvent::~PhysicsEvent() {
 // // }
 //
 //
-// void PhysicsEvent::LoadIniFile(){
-//
-//
-// 		property_tree::ini_parser::read_ini(path_file_ini_.string(), pt_);
-//
-// 		unixtime_       = pt_.get<double>("Properties.UnixTime");
-// 		lerbg_          = pt_.get<int>("SuperKEKBData.LERBg");
-// 		herbg_          = pt_.get<int>("SuperKEKBData.HERBg");
-// 		kekb_status_    = pt_.get<string>("SuperKEKBData.SuperKEKBStatus");
-// 		ler_status_     = pt_.get<string>("SuperKEKBData.LERSTatus");
-// 		her_status_     = pt_.get<string>("SuperKEKBData.HERStatus");
-//
-// 		if (lerbg_ || herbg_ ) injection_ = true;
-// 		else injection_ = false;
-// 		if(kekb_status_ == "Vacuum Scrubbing"
-// 		   && ler_status_ == "Vacuum Scrubbing"
-// 		   && her_status_ == "Vacuum Scrubbing") scrubbing_ = 3;
-// 		else if(ler_status_ == "Vacuum Scrubbing") scrubbing_ = 1;
-// 		else if(her_status_ == "Vacuum Scrubbing") scrubbing_ = 2;
-// 		else scrubbing_ = 0;
-//
-// 		//TODO load the rest that is written in the .ini file.
-// };
+
 //
 // void PhysicsEvent::LoadOnlineRate(){
 //

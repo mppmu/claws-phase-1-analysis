@@ -57,6 +57,21 @@
 
 class Channel
 {
+    /**
+    * [for description]
+    * @param  pd_ [ 0: Fit status
+    *               1: Fit par constant
+    *               2: Fit par mean
+    *               3: Fit par sigma
+    *               4: Fit chi2
+    *               5: Fit NDF
+    *               6: Fit p-value
+    *               7: Hist mean
+    *               8: Hist mean error
+    *               9: Hist entries ]
+    *
+    */
+
     public:
 
         Channel(std::string name = "");
@@ -69,9 +84,9 @@ class Channel
         virtual     void        FillPedestal();
         virtual     void        SubtractPedestal( double pd = -1000 );
 
-        std::string GetName();
-        virtual TH1*                         GetHistogram(std::string type = "waveform");
-        virtual std::tuple<double,double>    GetPedestal();
+        virtual std::string  GetName();
+        virtual TH1*         GetHistogram(std::string type = "waveform");
+        virtual double*      GetPedestal();
         virtual ChannelState GetState();
 
         // virtual TH1D*           Get();
@@ -84,8 +99,8 @@ class Channel
         ChannelState           state_;
         TH1*                   hist_;
         TH1I*                  pdhist_;
-        double                 pd_;
-        double                 pderr_;
+        double                 pd_[10];
+
 //
 //         virtual     void        LoadWaveform();
 //         virtual     void        DeleteWaveform();

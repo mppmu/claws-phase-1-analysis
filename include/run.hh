@@ -126,6 +126,8 @@ class CalibrationRun : public Run
     void SynchronizeCalibrationEvents();
     void PDS_Calibration();
     void GainDetermination();
+        void LoadGain();
+        void FitGain();
     //void Average1PE_Creation();
 
     void SynchronizePhysicsEvents();
@@ -135,6 +137,11 @@ class CalibrationRun : public Run
 
     std::vector<PhysicsEvent*>   evts_;
     std::vector<CalibrationEvent*>       cal_evts_;
+
+    // std::vector<TH1I*> gainhist_;
+    // std::vector<double> gain_;
+    // std::vector<TH1D*> 1pe_;
+    
 //         int BuildOnlineTree();
 //         int BuildOfflineTree();
 //

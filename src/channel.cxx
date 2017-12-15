@@ -23,6 +23,8 @@
 // #include <gsl/gsl_complex_math.h>
 // --- ROOT includes ---
 #include <TF1.h>
+#include <TFitResult.h>
+#include <TFitResultPtr.h>
 // --- Project includes ---
 #include "channel.hh"
 #include "globalsettings.hh"
@@ -32,7 +34,7 @@
 // TODO proper description
 //----------------------------------------------------------------------------------------------
 
-Channel::Channel(std::string name) : name_(name), state_(CHANNELSTATE_VALID), hist_(NULL), pdhist_(NULL), pd_(0), pderr_(0)
+Channel::Channel(std::string name) : name_(name), state_(CHANNELSTATE_VALID), hist_(NULL), pdhist_(NULL), pd_({0})
 {
 		//waveform_       = new vector<int8_t>();
 		// waveform_           = new std::vector<float>();
@@ -48,6 +50,9 @@ Channel::Channel(std::string name) : name_(name), state_(CHANNELSTATE_VALID), hi
 
 Channel::~Channel(){
 		// // TODO Auto-generated destructor stub
+		if(hist_ != NULL) delete hist_;
+		if(pdhist_ != NULL) delete pdhist_;
+		delete pd_;
 		// delete waveform_;
 		// if(hist_ != NULL)
 		// {
@@ -59,6 +64,7 @@ Channel::~Channel(){
 		// 		delete pedestal_hist_;
 		// 		pedestal_hist_ = NULL;
 		// }
+
 };
 
 
@@ -225,13 +231,28 @@ void Channel::FillPedestal()
 		fit->SetParameter(2,1);
 
 		TFitResultPtr result = pdhist_->Fit(fit, "QS","", -5, 5);
-		if( int(result) != 0)
+
+		pd_[0]    = int(result);
+		if( int(result) == 0)
+		{
+			pd_[1]    = fit->GetParameter(0);
+			pd_[2]    = fit->GetParameter(1);
+			pd_[3]    = fit->GetParameter(2);
+			pd_[4]    = fit->GetChisquare();
+			pd_[5]    = fit->GetNDF();
+			pd_[6]    = result->Prob();
+		}
+		else
 		{
 			state_ = CHANNELSTATE_PDFAILED;
+		//	pd_[0]    = int(result);
+			for(int i = 1; i<7;i++ ) pd_[i] = -1;
 		}
 
-		pd_    = fit->GetParameter(1);
-		pderr_ = fit->GetParameter(2);
+		pd_[7]    = pdhist_->GetMean();
+		pd_[8]    = pdhist_->GetMeanError();
+		pd_[9]    = pdhist_->GetEntries();
+
 
 		delete fit;
 };
@@ -240,12 +261,12 @@ void Channel::SubtractPedestal( double pd)
 {
     if(pd != -1000)
 		{
-				pd_ = pd;
+				pd_[1] = pd;
 		}
 
 		for( int bin = 1; bin <= hist_->GetNbinsX(); bin ++)
 		{
-				hist_->SetBinContent(bin, hist_->GetBinContent(bin) - pd_);
+				hist_->SetBinContent(bin, hist_->GetBinContent(bin) - pd_[1]);
 		}
 
 }
@@ -269,9 +290,9 @@ TH1* Channel::GetHistogram(std::string type)
 	else												 exit(1);
 };
 
-std::tuple<double,double> Channel::GetPedestal()
+double* Channel::GetPedestal()
 {
-	return std::make_tuple(pd_,pderr_);
+	return pd_;
 };
 
 ChannelState Channel::GetState()

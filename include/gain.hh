@@ -18,6 +18,34 @@
 
 // struct GainChannel
 // {
+//
+//         ~GainChannel()
+//         {
+//             delete hist;
+//         };
+//         std::string name;
+//         TH1I*       hist;
+//         double      gain;
+//         int         n;
+//         //int         end;
+// }
+//
+// class Gain
+// {
+//     public:
+//                                             Gain(boost::filesystem::path path, int nr);
+//         virtual                             ~Gain();
+//
+//         void        SaveGain();
+//     protected:
+//         boost::filesystem::path path_;
+//         int nr_;
+//         std::vector<TH1I*> channels_;
+//
+// }
+
+// struct GainChannel
+// {
 //     GainChannel(std::string n, TH1I* h, double g, std::vector<float>* v):name(n),gain_hist(h), gain(g), avg_wf(v)
 //     {
 //         avg_hist = NULL;

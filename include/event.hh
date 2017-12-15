@@ -17,7 +17,8 @@
 // #include <cstdlib>
 // #include <typeinfo>
 
-// boost
+// --- BOOST includes ---
+#include <boost/property_tree/ptree.hpp>
 // #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
 // #undef BOOST_NO_CXX11_SCOPED_ENUMS
@@ -25,8 +26,7 @@
 // #include <boost/lexical_cast.hpp>
 // #include <boost/algorithm/string/predicate.hpp>
 // #include <boost/algorithm/string/replace.hpp>
-// #include <boost/property_tree/ptree.hpp>
-// #include <boost/property_tree/ini_parser.hpp>
+
 // // #include <boost/program_options.hpp>
 // // #include <boost/filesystem/fstream.hpp>
 // // #include <boost/algorithm/string/predicate.hpp>
@@ -129,6 +129,7 @@ class Event{
 
         virtual ~Event();
 
+        virtual void LoadIniFile();
         virtual void LoadHistograms(EventState state = EVENTSTATE_RAW);
             virtual void LoadRaw();
             virtual void LoadSubtracted();
@@ -140,9 +141,15 @@ class Event{
         virtual void FillPedestals();
         virtual void SubtractPedestals(std::vector<double> pd = {});
 
-        double GetTime();
-        int GetNumber();
+        virtual void   SetTime(double unixtime);
+        virtual double GetTime();
+        virtual int    GetNumber();
         virtual std::vector<Channel*> GetChannels();
+        template<typename T>
+        T GetParameter(std::string pv)
+        {
+            return pt_.get<T>( pv );
+        };
 
     protected:
        int nr_;
@@ -152,6 +159,7 @@ class Event{
        boost::filesystem::path path_;
        boost::filesystem::path file_;
        boost::filesystem::path ini_file_;
+       boost::property_tree::ptree pt_;
 
        std::vector<Channel*> channels_;
        //         path path_file_ini_;
@@ -218,7 +226,7 @@ class CalibrationEvent : public Event{
     public:
 
         // PhysicsEvent();
-        CalibrationEvent(boost::filesystem::path file, boost::filesystem::path ini_file );
+        CalibrationEvent(boost::filesystem::path file, boost::filesystem::path ini_file, double unixtime = -1);
 
         virtual ~CalibrationEvent();
 
@@ -287,11 +295,7 @@ class PhysicsEvent : public Event{
 //         virtual void CreateHistograms(std::string type = "raw");
 //         virtual std::map<std::string, TH1*> GetHistograms(std::string type = "raw");
 //
-//         template<typename T>
-//         T GetPV(std::string pv)
-//         {
-//             return pt_.get<T>( "SuperKEKBData." + pv );
-//         };
+
 //
 // //        std::map<std::string, double> GetIntegral(); // Pure Placeholder fo far
 //

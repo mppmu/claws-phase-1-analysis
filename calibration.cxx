@@ -155,8 +155,10 @@ int main(int argc, char* argv[]) {
 		for(auto run_name : GS->GetRuns( config_map["data.input"].as<boost::filesystem::path>()) )
 		{
 				CalibrationRun* run = new CalibrationRun(run_name);
+
+				run->SynchronizePhysicsEvents();
 				run->SynchronizeCalibrationEvents();
-			//	run->SynchronizePhysicsEvents();
+
 				run->LoadRunSettings();
 
 				runs.emplace_back( run );
