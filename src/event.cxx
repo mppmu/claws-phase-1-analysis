@@ -39,7 +39,8 @@ Event::Event()
 
 Event::Event(boost::filesystem::path file, boost::filesystem::path ini_file ): path_(file.parent_path().parent_path()), file_(file), ini_file_(ini_file), state_(EVENTSTATE_INIT)
 {
-	this->LoadIniFile();
+	boost::property_tree::ini_parser::read_ini(ini_file_.string(), pt_);
+	pt_.put("General.State", state_);
 };
 
 Event::~Event() {
@@ -50,48 +51,30 @@ Event::~Event() {
 		// }
 }
 
-void Event::LoadIniFile()
+void Event::LoadFiles(EventState state)
 {
- 		boost::property_tree::ini_parser::read_ini(ini_file_.string(), pt_);
-}
-
-void Event::LoadHistograms(EventState state)
-{
-		switch (state) {
-			case EVENTSTATE_RAW:
-			{
-				this->LoadRaw();
-				state_ = EVENTSTATE_RAW;
-				break;
-			}
-		    case EVENTSTATE_PDSUBTRACTED:
-			{
-				this->LoadSubtracted();
-				state_ = EVENTSTATE_PDSUBTRACTED;
-				break;
-			}
-		}
+        switch (state) {
+            case EVENTSTATE_RAW:
+            {
+                this->LoadRaw();
+                state_ = EVENTSTATE_RAW;
+                break;
+            }
+            case EVENTSTATE_PDSUBTRACTED:
+            {
+                this->LoadSubtracted();
+                state_ = EVENTSTATE_PDSUBTRACTED;
+                break;
+            }
+        }
+		pt_.put("General.State", state_);
 }
 
 void Event::LoadRaw()
 {
-    TFile *rfile=NULL;
-	rfile = new TFile(file_.string().c_str(), "open");
-
-	if( rfile->IsZombie() )
-	{
-		std::cout << "Error openning file" << std::endl;
-		exit(-1);
-	}
-
-	for (const auto &ch : channels_)
-	{
-		ch->LoadHistogram(rfile);
-	}
-
-	rfile->Close("R");
-	delete rfile;
-	rfile = NULL;
+    this->LoadHistograms(file_);
+	// Only load the property tree from the ini file when it was not loaded yet
+    if(pt_.empty()) boost::property_tree::ini_parser::read_ini(ini_file_.string(), pt_);
 }
 
 void Event::LoadSubtracted()
@@ -111,23 +94,33 @@ void Event::LoadSubtracted()
 	fname += "_" + printEventState(EVENTSTATE_PDSUBTRACTED);
 	fname += ".root";
 
-	TFile *rfile = rfile = new TFile(fname.c_str(), "open");
+    this->LoadHistograms(boost::filesystem::path(fname));
+
+    boost::replace_last(fname, "root","ini");
+    boost::property_tree::ini_parser::read_ini(fname, pt_);
+}
+
+void Event::LoadHistograms(boost::filesystem::path file)
+{
+    TFile *rfile = new TFile( file.string().c_str(), "open");
 
 	if( rfile->IsZombie() )
 	{
-	std::cout << "Error openning file" << std::endl;
-	exit(-1);
+		std::cout << "Error openning file" << std::endl;
+		exit(-1);
 	}
 
 	for (const auto &ch : channels_)
 	{
-	  ch->LoadHistogram(rfile);
+		ch->LoadHistogram(rfile);
 	}
 
 	rfile->Close("R");
 	delete rfile;
 	rfile = NULL;
 }
+
+
 
 void Event::PrepHistograms()
 {
@@ -137,6 +130,7 @@ void Event::PrepHistograms()
 		}
 
     state_ = EVENTSTATE_PREP;
+	pt_.put("General.State", state_);
 
 }
 
@@ -147,7 +141,6 @@ void Event::SaveEvent(boost::filesystem::path dst, bool save_pd)
 		*/
 
 		std::string fname = dst.string() + "/";
-	//	fname += std::string(typeid(*this).name());
 
     	int     status;
 		char   *realname;
@@ -156,7 +149,6 @@ void Event::SaveEvent(boost::filesystem::path dst, bool save_pd)
 		fname += std::string(realname);
 		free(realname);
 
-		// /fname += "_" + std::to_string(nr_);
 		std::stringstream ss;
 		ss << std::setw(3) << std::setfill('0') << nr_;
 		fname += "_" + ss.str();
@@ -183,19 +175,40 @@ void Event::SaveEvent(boost::filesystem::path dst, bool save_pd)
 
 void Event::DeleteHistograms()
 {
-		for (auto channel : channels_)
-		{
-				channel->DeleteHistogram();
-		}
-		state_ = EVENTSTATE_INIT;
+    for (auto channel : channels_)
+	{
+		channel->DeleteHistogram();
+	}
+
+	state_ = EVENTSTATE_INIT;
+	pt_.put("General.State", state_);
 };
+
+// void Event::DeletePropertyTree()
+// {
+// 		delete pt_;
+// };
 
 void Event::FillPedestals()
 {
-		for (auto channel : channels_)
+	std::string pdnames[10] = {"Status","FitConstant","FitMean","FitSigma","FitChi2","FitNDF","FitPVal","HistMean","HistError","HistEntries"};
+
+	for(auto channel: channels_ )
+	{
+		// First fill and fit the pedestal
+		channel->FillPedestal();
+
+		// Than add all the pd info from the
+		// pd hist and the fit to the property
+		// tree/ini file.
+		std::string name = channel->GetName();
+		double * pd = channel->GetPedestal();
+
+		for(int i = 0; i< 10; i++)
 		{
-				channel->FillPedestal();
+			pt_.put(pdnames[i] + "." + name, pd[i]);
 		}
+	}
 };
 
 void Event::SubtractPedestals(std::vector<double> pd)
@@ -210,6 +223,7 @@ void Event::SubtractPedestals(std::vector<double> pd)
 		}
 
 		state_ = EVENTSTATE_PDSUBTRACTED;
+		pt_.put("General.State", state_);
 }
 
 void Event::SetTime(double unixtime)
@@ -242,10 +256,8 @@ CalibrationEvent::CalibrationEvent(boost::filesystem::path file, boost::filesyst
 		nr_ = std::atoi(file.filename().string().substr(14,3).c_str());
         unixtime_ = unixtime;
 		pt_.put("Properties.UnixTime", unixtime);
-        //nr_ += std::atoi(file.filename().string().substr(4,6).c_str()) * 1000;
+		pt_.put("General.UnixTime", unixtime);
 
-		// nr_     = atoi(nr_str_.c_str());
-		// GS->GetChannels("Calibration");
 		for (auto name : GS->GetChannels("Calibration"))
 		{
 			 if( name.second.get_value<std::string>() == "true") channels_.emplace_back( new CalibrationChannel(name.first) );

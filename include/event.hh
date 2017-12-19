@@ -129,14 +129,18 @@ class Event{
 
         virtual ~Event();
 
-        virtual void LoadIniFile();
-        virtual void LoadHistograms(EventState state = EVENTSTATE_RAW);
+        virtual void LoadFiles(EventState state = EVENTSTATE_RAW);
             virtual void LoadRaw();
             virtual void LoadSubtracted();
+    //    virtual void LoadIniFiles();
+        virtual void LoadHistograms(boost::filesystem::path file);
+
 
         virtual void PrepHistograms();
         virtual void SaveEvent(boost::filesystem::path dst, bool save_pd = false);
+
         virtual void DeleteHistograms();
+//        virtual void DeletePropertyTree();
 
         virtual void FillPedestals();
         virtual void SubtractPedestals(std::vector<double> pd = {});

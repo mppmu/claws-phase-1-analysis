@@ -128,6 +128,8 @@ class CalibrationRun : public Run
     void GainDetermination();
         void LoadGain();
         void FitGain();
+
+//    void DeleteHistograms()
     //void Average1PE_Creation();
 
     void SynchronizePhysicsEvents();
@@ -141,7 +143,7 @@ class CalibrationRun : public Run
     // std::vector<TH1I*> gainhist_;
     // std::vector<double> gain_;
     // std::vector<TH1D*> 1pe_;
-    
+
 //         int BuildOnlineTree();
 //         int BuildOfflineTree();
 //

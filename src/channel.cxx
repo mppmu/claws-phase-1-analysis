@@ -132,7 +132,7 @@ void Channel::FillPedestal()
 		double threshold = GS->GetParameter<double>("PDS_Calibration.threshold");
 		int signal_length = GS->GetParameter<int>("PDS_Calibration.signal_length");
 
-    unsigned i=1;
+    	unsigned i=1;
 
 		// while( i < hist_->GetNbinsX() - 2 * pd_gap_ +1 )
 		// {
@@ -233,6 +233,7 @@ void Channel::FillPedestal()
 		TFitResultPtr result = pdhist_->Fit(fit, "QS","", -5, 5);
 
 		pd_[0]    = int(result);
+
 		if( int(result) == 0)
 		{
 			pd_[1]    = fit->GetParameter(0);
@@ -253,22 +254,20 @@ void Channel::FillPedestal()
 		pd_[8]    = pdhist_->GetMeanError();
 		pd_[9]    = pdhist_->GetEntries();
 
-
 		delete fit;
 };
 
 void Channel::SubtractPedestal( double pd)
 {
     if(pd != -1000)
-		{
-				pd_[1] = pd;
-		}
+	{
+			pd_[2] = pd;
+	}
 
-		for( int bin = 1; bin <= hist_->GetNbinsX(); bin ++)
-		{
-				hist_->SetBinContent(bin, hist_->GetBinContent(bin) - pd_[1]);
-		}
-
+	for( int bin = 1; bin <= hist_->GetNbinsX(); bin ++)
+	{
+			hist_->SetBinContent(bin, hist_->GetBinContent(bin) - pd_[2]);
+	}
 }
 
 

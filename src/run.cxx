@@ -310,11 +310,11 @@ void CalibrationRun::PDS_Calibration()
     }
 
     // Get the histograms and prepare them
-		for(auto evt: cal_evts_ )
-		{
-		    evt->LoadHistograms();
-            evt->PrepHistograms();
-		}
+	for(auto evt: cal_evts_ )
+	{
+	    evt->LoadFiles();
+        evt->PrepHistograms();
+	}
 
     // Just to be sure and because they take no space, save them to disk
     for(auto evt: cal_evts_ )
@@ -336,7 +336,7 @@ void CalibrationRun::PDS_Calibration()
     std::vector<TGraph *> fit_chi2;
     std::vector<TGraph *> fit_ndf;
     std::vector<TGraph *> fit_chi2ndf;
-    std::vector<TH1D *> fit_pval;
+    std::vector<TGraph *> fit_pval;
     std::vector<TGraphErrors *> hist_mean;
     std::vector<TGraph *> hist_entries;
 
@@ -402,10 +402,15 @@ void CalibrationRun::PDS_Calibration()
       chi2ndg->GetYaxis()->SetTitle("Chi2/NDF");
       fit_chi2ndf.push_back(chi2ndg);
 
-      TH1D * pval = new TH1D((name+"_fit_pval").c_str(),(name+"_fit_pval").c_str(),100,0,1);
+    //   TH1D * pval = new TH1D((name+"_fit_pval").c_str(),(name+"_fit_pval").c_str(),100,0,1);
+      TGraph * pval = new TGraph();
+      pval->SetName((name+"_fit_pval").c_str());
+      chi2ndg->SetMarkerStyle(23);
+      chi2ndg->SetMarkerColor(kRed);
+      chi2ndg->SetMarkerSize(1);
       pval->GetXaxis()->SetTitle("Time [s]");
-      pval->GetYaxis()->SetTitle("Fit status");
-      pval->GetYaxis()->SetRangeUser(-0.1,2.0);
+      pval->GetYaxis()->SetTitle("Fit p-value");
+      pval->GetYaxis()->SetRangeUser(-0.05,1.05);
       fit_pval.push_back(pval);
 
       TGraphErrors * mng = new TGraphErrors();
@@ -454,7 +459,7 @@ void CalibrationRun::PDS_Calibration()
           if( pd[5] !=0 ) fit_chi2ndf.at(i)->SetPoint(evt_counter, evt_time, pd[4]/pd[5]);
           else fit_chi2ndf.at(i)->SetPoint(evt_counter, evt_time, -1.);
 
-          fit_pval.at(i)->Fill(pd[6]);
+          fit_pval.at(i)->SetPoint(evt_counter, evt_time,pd[6]);
 
           hist_mean.at(i)->SetPoint(evt_counter, evt_time, pd[7]);
           hist_mean.at(i)->SetPointError(evt_counter, 0.05, pd[8]);
@@ -527,7 +532,7 @@ void CalibrationRun::LoadGain()
     // Load the events into the state of pd subtracted waveforms
 	for(auto evt: cal_evts_ )
 	{
-	    evt->LoadHistograms(EVENTSTATE_PDSUBTRACTED);
+	    evt->LoadFiles(EVENTSTATE_PDSUBTRACTED);
 	}
 }
 
