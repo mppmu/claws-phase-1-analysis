@@ -132,15 +132,13 @@ class Event{
         virtual void LoadFiles(EventState state = EVENTSTATE_RAW);
             virtual void LoadRaw();
             virtual void LoadSubtracted();
-    //    virtual void LoadIniFiles();
-        virtual void LoadHistograms(boost::filesystem::path file);
+                virtual void LoadHistograms(boost::filesystem::path file);
 
 
         virtual void PrepHistograms();
         virtual void SaveEvent(boost::filesystem::path dst, bool save_pd = false);
 
         virtual void DeleteHistograms();
-//        virtual void DeletePropertyTree();
 
         virtual void FillPedestals();
         virtual void SubtractPedestals(std::vector<double> pd = {});
@@ -166,27 +164,7 @@ class Event{
        boost::property_tree::ptree pt_;
 
        std::vector<Channel*> channels_;
-       //         path path_file_ini_;
-// //        void SubtractPedestal();
-//
-//
-//         void SubtractPedestal(std::map<std::string, float> ped = std::map<std::string, float>(), bool backup = false);
-//         void SetPedestal(std::map<std::string, float> ped = std::map<std::string, float>(), bool backup = false);
-//
-//
-//         void             LoadPedestal();
-//
-//         static int GetId();
-//
-//         int getCh(std::string ch);
-//   //      virtual void Draw();
-//
-//
-//         // Methods for loading data from disk
-//         virtual void LoadRootFile();
-//         virtual void LoadWaveform();
-//         virtual void DeleteHistograms();
-//         virtual void DeleteWaveforms();
+
 //         virtual void LoadIniFile() = 0;
 //
 //         void                                CalculateIntegral();
@@ -198,31 +176,15 @@ class Event{
 //         void                                SetBaseline(std::map<std::string, float> baseline);
 //
 //         int                                 GetNr()   const;
-//         std::string                                     GetNrStr() const;
+
 //         std::map<std::string, TH1I*>                    GetPedestal();
 //         virtual Channel*                                GetChannel(std::string name);
 //         std::map<std::string, Channel*>                 GetChannels();
 //         std::map<std::string, std::vector<float>*>      GetWaveforms();
 //
-//         virtual void CreateHistograms();
-//         virtual std::map<std::string, TH1*> GetHistograms();
-//     // protected:
-//
 
-//     //    static int id_;
-//
-//         // An event relies on data/information in three different files. The .root, .ini & the online monitor.
-//         path path_file_root_;
-//         path path_file_ini_;
-//
-//
-//
-// 	    int nr_        = -1;
-//         std::string nr_str_;
-//
-//
-//
-//         std::map<std::string, Channel*> channels_;
+//         virtual std::map<std::string, TH1*> GetHistograms();
+
 };
 
 class CalibrationEvent : public Event{

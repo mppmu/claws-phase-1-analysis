@@ -517,28 +517,36 @@ void CalibrationRun::GainDetermination()
         boost::filesystem::create_directory(gain_determination);
     }
 
+    Gain* gain = this->LoadGain();
 
-    this->LoadGain();
-    this->FitGain();
 
     for(auto evt: cal_evts_ )
     {
-        evt->DeleteHistograms();
+        gain->AddEvent(evt->GetChannels());
     }
+
+    gain->FitGain();
+    // gain->SaveGain();
+
+    this->DeleteCalibrationHistograms();
 }
 
-void CalibrationRun::LoadGain()
+Gain* CalibrationRun::LoadGain()
 {
+
     // Load the events into the state of pd subtracted waveforms
 	for(auto evt: cal_evts_ )
 	{
 	    evt->LoadFiles(EVENTSTATE_PDSUBTRACTED);
 	}
+
+    Gain* gain = new Gain();
+    return gain;
 }
 
 void CalibrationRun::FitGain()
 {
-    // // Load the events into the state of pd subtracted waveforms
+
 	// for(auto evt: cal_evts_ )
 	// {
 	//     evt->LoadHistograms(EVENTSTATE_PDSUBTRACTED);
@@ -549,6 +557,16 @@ void CalibrationRun::PDS_Physics()
 {
 
 };
+
+void CalibrationRun::DeleteCalibrationHistograms()
+{
+    for(auto evt: cal_evts_ )
+    {
+        evt->DeleteHistograms();
+    }
+};
+
+
 // void CalibrationRun::LoadData()
 // {
 //      double wall0 = claws::get_wall_time();

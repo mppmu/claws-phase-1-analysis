@@ -27,17 +27,25 @@
 // {
 //
 // }
-//
-// Gain::~Gain() {
-// 		// TODO Auto-generated destructor stub
-// 		// for(auto & ivec : channels_)
-// 		// {
-// 		// 		delete ivec;
-// 		// }
-// };
+
+Gain::Gain()
+{
+
+};
 
 
+Gain::~Gain() {
+		// TODO Auto-generated destructor stub
+		// for(auto & ivec : channels_)
+		// {
+		// 		delete ivec;
+		// }
+};
 
+Gain::AddEvent(std::vector<CalibrationChannel*> channels)
+{
+
+};
 
 
 

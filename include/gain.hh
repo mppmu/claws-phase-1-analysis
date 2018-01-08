@@ -30,19 +30,23 @@
 //         //int         end;
 // }
 //
-// class Gain
-// {
-//     public:
-//                                             Gain(boost::filesystem::path path, int nr);
-//         virtual                             ~Gain();
-//
-//         void        SaveGain();
-//     protected:
-//         boost::filesystem::path path_;
-//         int nr_;
-//         std::vector<TH1I*> channels_;
-//
-// }
+class Gain
+{
+    public:
+                                            // Gain(boost::filesystem::path path, int nr);
+                                            Gain();
+        virtual                             ~Gain();
+
+        virtual bool AddEvent(std::vector<CalibrationChannel*> channels);
+        virtual bool FitGain();
+        //
+        // void        SaveGain();
+//    protected:
+        // boost::filesystem::path path_;
+        // int nr_;
+        // std::vector<TH1I*> channels_;
+
+};
 
 // struct GainChannel
 // {

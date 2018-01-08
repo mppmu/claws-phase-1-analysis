@@ -66,9 +66,9 @@
 
 // Project includes
 // #include "pedestal.hh"
-// #include "gain.hh"
+#include "gain.hh"
 #include "event.hh"
-//
+
 // #include "globalsettings.hh"
 
 
@@ -84,6 +84,7 @@ class Run
     virtual ~Run();
 
     virtual void LoadRunSettings();
+
 
     //virtual void SynchronizeFiles() = 0;
 
@@ -126,7 +127,7 @@ class CalibrationRun : public Run
     void SynchronizeCalibrationEvents();
     void PDS_Calibration();
     void GainDetermination();
-        void LoadGain();
+        Gain* LoadGain();
         void FitGain();
 
 //    void DeleteHistograms()
@@ -134,6 +135,9 @@ class CalibrationRun : public Run
 
     void SynchronizePhysicsEvents();
     void PDS_Physics();
+
+    //void DeleteHistograms();
+        void DeleteCalibrationHistograms();
   private:
     int cal_nr_;
 
