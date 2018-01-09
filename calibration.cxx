@@ -7,7 +7,7 @@
 //============================================================================
 
 
-// std includes
+// --- C++ includes ---
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -17,7 +17,7 @@
 #include <typeinfo>
 #include <fstream>
 #include <iomanip>
-// boost
+// --- boost includes ---
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -28,7 +28,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>
 
-// root include
+// --- root includes ---
 #include "TFile.h"
 #include "TSystem.h"
 #include "TKey.h"
@@ -40,7 +40,7 @@
 #include "TCanvas.h"
 #include <TStyle.h>
 
-// project includes
+// --- project includes ---
 //#include "event.hh"
 #include "run.hh"
 #include "globalsettings.hh"

@@ -191,7 +191,7 @@ void Event::DeleteHistograms()
 
 void Event::FillPedestals()
 {
-	std::string pdnames[10] = {"Status","FitConstant","FitMean","FitSigma","FitChi2","FitNDF","FitPVal","HistMean","HistError","HistEntries"};
+	std::string pdnames[10] = {"PS_Status","PS_FitConstant","PS_FitMean","PS_FitSigma","PS_FitChi2","PS_FitNDF","PS_FitPVal","PS_HistMean","PS_HistError","PS_HistEntries"};
 
 	for(auto channel: channels_ )
 	{

@@ -522,11 +522,12 @@ void CalibrationRun::GainDetermination()
 
     for(auto evt: cal_evts_ )
     {
-        gain->AddEvent(evt->GetChannels());
+        gain->AddEvent(evt);
     }
 
     gain->FitGain();
-    // gain->SaveGain();
+
+    gain->SaveGain( gain_determination );
 
     this->DeleteCalibrationHistograms();
 }
@@ -540,7 +541,7 @@ Gain* CalibrationRun::LoadGain()
 	    evt->LoadFiles(EVENTSTATE_PDSUBTRACTED);
 	}
 
-    Gain* gain = new Gain();
+    Gain* gain = new Gain(nr_);
     return gain;
 }
 

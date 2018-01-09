@@ -1,54 +1,179 @@
 
 
-// #include <algorithm>
-// #include <string>
-// #include <iostream>
-// #include <fstream>
-// #include <math.h>
-//
-// //root
-// #include <TFile.h>
-// #include <TF1.h>
-// #include <TGraph.h>
-// #include <TGraphErrors.h>
-// #include <TFitResultPtr.h>
-// #include <TFitResult.h>
+//============================================================================
+// Name        : gain.cpp
+// Author      : Miroslav Gabriel
+// Version     :
+// Created on  : Jan 7, 2018
+// Copyright   : GNU General Public License
+// Description :
+//============================================================================
 
-
+// --- C++ includes ---
+// --- BOOST includes ---
+// --- ROOT includes ---
+// --- PROJECT includes ---
+#include "channel.hh"
 #include "gain.hh"
 #include "globalsettings.hh"
+
+//----------------------------------------------------------------------------------------------
+// Definition of the GainChannel class
+//----------------------------------------------------------------------------------------------
+
+GainChannel::GainChannel(std::string name): name_(name), n_(0)
+{
+    hist_ = new TH1I(    name.c_str(),
+                                        name.c_str(),
+                                        GS->GetParameter<int>("Gain.nbinsx"),
+                                        GS->GetParameter<double>("Gain.xlow"),
+                                        GS->GetParameter<double>("Gain.xup")
+                    );
+    gain_otime_ = new TGraph();
+    gain_otime_->SetName( (name +"_gain_over_time").c_str() );
+    gain_otime_->SetMarkerStyle(23);
+    gain_otime_->SetMarkerColor(kRed);
+    gain_otime_->SetMarkerSize(1);
+    gain_otime_->GetXaxis()->SetTitle("Time [s]");
+    gain_otime_->GetYaxis()->SetTitle("Gain [au]");
+
+};
+
+GainChannel::~GainChannel()
+{
+    delete hist_;
+    delete gain_otime_;
+    delete avg_;
+};
+
+void GainChannel::AddChannel(CalibrationChannel * channel, double t)
+{
+    double integral = channel->GetHistogram()->Integral("width");
+    hist_->Fill( integral);
+    gain_otime_->SetPoint(gain_otime_->GetN(), t, integral);
+}
+
+TH1I* GainChannel::GetHistogram()
+{
+    return hist_;
+}
+
+TGraph* GainChannel::GetGraph()
+{
+    return gain_otime_;
+}
+
+TH1D* GainChannel::GetAvg()
+{
+    return avg_;
+}
+// Gain::Gain(boost::filesystem::path path, int nr) : path_(path), nr_(nr)
+// {
+//
+// }
+
 
 //----------------------------------------------------------------------------------------------
 // Definition of the Gain class used to determin the gain of the Calibration waveforms
 //----------------------------------------------------------------------------------------------
 
 
-// Gain::Gain(boost::filesystem::path path, int nr) : path_(path), nr_(nr)
+Gain::Gain(int nr): nr_(nr)
+{
+
+    for (auto name : GS->GetChannels("Calibration"))
+    {
+        if( name.second.get_value<std::string>() == "true")
+        {
+            channels_.emplace_back(new GainChannel(name.first) );
+            // channels_.emplace_back(new TH1I(    name.first.c_str(),
+            //                                     name.first.c_str(),
+ 		// 						                GS->GetParameter<int>("Gain.nbinsx"),
+ 		// 						                GS->GetParameter<double>("Gain.xlow"),
+ 		// 						                GS->GetParameter<double>("Gain.xup") )
+            //                         );
+            //
+            // TGraph * g = new TGraph();
+            // g->SetName( (name.first +"_gain_over_time").c_str() );
+            // g->SetMarkerStyle(23);
+            // g->SetMarkerColor(kRed);
+            // g->SetMarkerSize(1);
+            // g->GetXaxis()->SetTitle("Time [s]");
+            // g->GetYaxis()->SetTitle("Gain [au]");
+            //
+            // gain_otime_.emplace_back(g);
+        }
+    }
+};
+
+
+Gain::~Gain()
+{
+		for(auto & channel : channels_)
+		{
+				delete channel;
+		}
+};
+
+// void Gain::AddEvent(std::vector<Channel*> channels, double unixtime)
 // {
-//
-// }
+//     for(unsigned i =0; i < channels_.size() ; i++)
+//     {
+//         if(channels.at(i)->Get)
+//         {
+//             double integral = channels.at(i)->GetHistogram()->Integral("width");
+//             channels_.at(i)->Fill( integral);
+//             gain_otime_.at(i)->SetPoint(gain_otime_.at(i)->GetN(), unixtime, integral);
+//         }
+//     }
+// };
 
-Gain::Gain()
+void Gain::AddEvent(CalibrationEvent* evt)
+{
+    std::vector<Channel*> channels = evt->GetChannels();
+    double t = evt->GetTime();
+
+    for(unsigned i =0; i < channels_.size() ; i++)
+    {
+        CalibrationChannel* channel = dynamic_cast<CalibrationChannel*>(channels.at(i));
+        if( evt->GetParameter<int>("PS_Status." + channel->GetName()) == 0 )
+        {
+            channels_.at(i)->AddChannel(channel, t);
+            // double integral = channels.at(i)->GetHistogram()->Integral("width");
+            // channels_.at(i)->Fill( integral);
+            // gain_otime_.at(i)->SetPoint(gain_otime_.at(i)->GetN(), t, integral);
+        }
+    }
+};
+
+void Gain::FitGain()
 {
 
 };
 
 
-Gain::~Gain() {
-		// TODO Auto-generated destructor stub
-		// for(auto & ivec : channels_)
-		// {
-		// 		delete ivec;
-		// }
-};
-
-Gain::AddEvent(std::vector<CalibrationChannel*> channels)
+void Gain::SaveGain(boost::filesystem::path dst)
 {
+// 		if(!boost::filesystem::is_directory(path_run/boost::filesystem::path("Calibration")) )
+// 		{
+// 				boost::filesystem::create_directory(path_run/boost::filesystem::path("Calibration"));
+// 		}
 
+    //run_"+std::to_string(nr_)+"_pedestal"+"_"+ GS->GetParameter<std::string>("General.CalibrationVersion")+".root";
+
+ 		std::string fname = (dst/("run_"+std::to_string(nr_)+"_pedestal"+"_"+ GS->GetParameter<std::string>("General.CalibrationVersion")+".root")).string();
+ 		TFile *rfile = new TFile(fname.c_str(), "RECREATE");
+
+        for(auto channel : channels_)
+        {
+            channel->GetHistogram()->Write();
+            channel->GetGraph()->Write();
+        //    channel->GetAvg()->Write();
+        }
+
+		rfile->Close();
+		delete rfile;
 };
-
-
-
 
 
 
@@ -194,40 +319,7 @@ Gain::AddEvent(std::vector<CalibrationChannel*> channels)
 //
 // };
 //
-// void Gain::SaveGain(boost::filesystem::path path_run)
-// {
-// 		if(!boost::filesystem::is_directory(path_run/boost::filesystem::path("Calibration")) )
-// 		{
-// 				boost::filesystem::create_directory(path_run/boost::filesystem::path("Calibration"));
-// 		}
-//
-// 		std::string fname = path_run.string()+"/Calibration/run_"+std::to_string(int_nr_)+"_gain" +"_v"+ std::to_string(GS->GetParameter<int>("General.CalibrationVersion"))+".root";
-// 		TFile *rfile = new TFile(fname.c_str(), "RECREATE");
-//
-// 		TGraph* total_gain = new TGraph();
-// 		total_gain->SetName("total_gain");
-// 		total_gain->SetTitle("Extracted gain for all channels");
-// 		total_gain->SetMarkerColor(kRed);
-// 		total_gain->SetMarkerStyle(34);
-// 		total_gain->SetMarkerSize(1.8);
-// 		total_gain->SetMinimum(0);
-// 		total_gain->SetMaximum(1000);
-// 		total_gain->GetXaxis()->SetTitle("channel FWD1-3 BWD1-3");
-// 		total_gain->GetYaxis()->SetTitle("gain");
-//
-// 		int i =0;
-// 		for(auto & ivec : channels_)
-// 		{
-// 				ivec->gain_hist->Write();
-// 				total_gain->SetPoint(i, i+1, ivec->gain);
-// 				i++;
-// 		}
-//
-// 		total_gain->Write();
-//
-// 		rfile->Close();
-// 		delete rfile;
-// };
+
 //
 // void Gain::AddIntWf(std::map<std::string, std::vector<float>*> wfs, std::map<std::string, double>integral)
 // {

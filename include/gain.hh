@@ -8,43 +8,57 @@
  #define CLAWS_GAIN_H_
 
 #include <vector>
-#include <map>
+//#include <map>
 // boost
 #include <boost/filesystem.hpp>
 // root
 #include <TH1I.h>
+#include <TGraph.h>
 // Project
+#include "event.hh"
 #include "channel.hh"
 
-// struct GainChannel
-// {
-//
-//         ~GainChannel()
-//         {
-//             delete hist;
-//         };
-//         std::string name;
-//         TH1I*       hist;
-//         double      gain;
-//         int         n;
-//         //int         end;
-// }
-//
+class GainChannel
+{
+    public:
+        GainChannel(std::string name);
+        ~GainChannel();
+
+        void AddChannel(CalibrationChannel * channel, double t = -1);
+
+        TH1I* GetHistogram();
+        TGraph* GetGraph();
+        TH1D* GetAvg();
+
+        std::string name_;
+        TH1I*       hist_;
+        TGraph*     gain_otime_;
+        TH1D*       avg_;
+        double      gain_;
+        int         n_;
+
+        //int         end;
+};
+
 class Gain
 {
     public:
                                             // Gain(boost::filesystem::path path, int nr);
-                                            Gain();
+                                            Gain(int nr);
         virtual                             ~Gain();
 
-        virtual bool AddEvent(std::vector<CalibrationChannel*> channels);
-        virtual bool FitGain();
+        virtual void AddEvent( CalibrationEvent* evt );
+        virtual void FitGain();
         //
-        // void        SaveGain();
+        virtual void SaveGain(boost::filesystem::path dst);
 //    protected:
         // boost::filesystem::path path_;
         // int nr_;
+    protected:
+        std::vector<GainChannel*> channels_;
+        int nr_;
         // std::vector<TH1I*> channels_;
+        // std::vector<TGraph*> gain_otime_;
 
 };
 
