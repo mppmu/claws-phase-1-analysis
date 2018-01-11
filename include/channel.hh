@@ -42,7 +42,11 @@
      CHANNELSTATE_PDFAILED,
  };
 
- inline std::string printChannelState(ChannelState state)
+ /** Usually definitions should go into the .cxx file because otherwise
+ *  the complier complains about multiple definitions. To avoid this
+ *  the definition is inlined.
+ */
+inline std::string printChannelState(ChannelState state)
  {
    switch(state)
    {

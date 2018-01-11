@@ -72,6 +72,10 @@ enum EventState
     // COLOR_MAGENTA // assigned 7
 };
 
+/** Usually definitions should go into the .cxx file because otherwise
+*  the complier complains about multiple definitions. To avoid this
+*  the definition is inlined.
+*/
 inline std::string printEventState(EventState state)
 {
   switch(state)

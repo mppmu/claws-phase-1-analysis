@@ -25,7 +25,8 @@ class GainChannel
         ~GainChannel();
 
         void AddChannel(CalibrationChannel * channel, double t = -1);
-
+        void FitGain();
+        void Normalize();
         TH1I* GetHistogram();
         TGraph* GetGraph();
         TH1D* GetAvg();
@@ -40,6 +41,35 @@ class GainChannel
         //int         end;
 };
 
+enum GainState
+{
+    GAINSTATE_INIT,
+    GAINSTATE_LOADED,
+    GAINSTATE_NORMALIZED,
+    GAINSTATE_FITTED,
+};
+
+/** Usually definitions should go into the .cxx file because otherwise
+*  the complier complains about multiple definitions. To avoid this
+*  the definition is inlined.
+*/
+inline std::string printGainState(GainState state)
+{
+  switch(state)
+  {
+    case GAINSTATE_INIT:
+      return "init";
+    case GAINSTATE_LOADED:
+      return "loaded";
+    case GAINSTATE_NORMALIZED:
+      return "normalized";
+    case GAINSTATE_FITTED:
+      return "fitted";
+    default:
+      return "Invalid Selection";
+  }
+};
+
 class Gain
 {
     public:
@@ -49,12 +79,14 @@ class Gain
 
         virtual void AddEvent( CalibrationEvent* evt );
         virtual void FitGain();
-        //
+
+        virtual void Normalize();
         virtual void SaveGain(boost::filesystem::path dst);
 //    protected:
         // boost::filesystem::path path_;
         // int nr_;
     protected:
+        GainState state_;
         std::vector<GainChannel*> channels_;
         int nr_;
         // std::vector<TH1I*> channels_;
