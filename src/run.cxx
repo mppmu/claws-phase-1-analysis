@@ -322,8 +322,7 @@ void CalibrationRun::PDS_Calibration()
         evt->SaveEvent(pds_calibration/boost::filesystem::path("Waveforms"));
     }
 
-    // No do the pedestal subtraction
-
+    // Now do the pedestal subtraction
     for(auto evt: cal_evts_ )
     {
         evt->FillPedestals();
@@ -517,42 +516,108 @@ void CalibrationRun::GainDetermination()
         boost::filesystem::create_directory(gain_determination);
     }
 
-    Gain* gain = this->LoadGain();
+    // Gain* gain = this->LoadGain();
+    //
+    for(auto evt: cal_evts_ )
+    {
+        evt->LoadFiles(EVENTSTATE_PDSUBTRACTED);
+    }
 
+    Gain* gain = new Gain(path_);
 
     for(auto evt: cal_evts_ )
     {
         gain->AddEvent(evt);
     }
 
+    this->DeleteCalibrationHistograms();
+
     gain->FitGain();
 
     gain->SaveGain( gain_determination );
 
+    delete gain;
+};
+
+void CalibrationRun::Average1PE()
+{
+     /*
+         TODO description
+      */
+
+     std::cout << "\033[33;1mRun::Extracting average 1 pe:\033[0m running" << "\r" << std::flush;
+
+     double wall0 = claws::get_wall_time();
+     double cpu0  = claws::get_cpu_time();
+
+     boost::filesystem::path average_1pe = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("Average1PE");
+     if(!boost::filesystem::is_directory( average_1pe ) )
+     {
+         boost::filesystem::create_directory( average_1pe );
+     }
+
+     Gain* gain = new Gain(path_, GAINSTATE_FITTED);
+
+     for(auto evt: cal_evts_ )
+     {
+         evt->LoadFiles(EVENTSTATE_PDSUBTRACTED);
+     }
+
+
+//      // for(unsigned int i=0; i< int_events_.size();i++)
+//      // {
+//      //     gain_->AddIntWf(int_events_.at(i)->GetWaveforms(), int_events_.at(i)->GetIntegral());
+//      // }
+//      std::vector<std::vector<IntChannel*> > vec;
+//      for(auto ivec : GS->GetChannels(2))
+//      {
+//              vec.push_back(this->GetIntChannel(ivec));
+//      }
+//
+//      gain_->AddIntWfs(vec);
+// //    gain_->NormalizeWaveforms(int_events_.size());
+//      gain_->WfToHist();
+//      gain_->FitAvg();
+//      gain_->SaveAvg(path_run_);
+//      gain_->HistToWf();
+//      // gain_->WfToHist();
+
     this->DeleteCalibrationHistograms();
-}
 
-Gain* CalibrationRun::LoadGain()
-{
+    gain->SaveGain( average_1pe );
 
-    // Load the events into the state of pd subtracted waveforms
-	for(auto evt: cal_evts_ )
-	{
-	    evt->LoadFiles(EVENTSTATE_PDSUBTRACTED);
-	}
+    delete gain;
 
-    Gain* gain = new Gain(nr_);
-    return gain;
-}
+    std::cout << "\033[32;1mRun::Extracting average 1 pe:\033[0m done!     " << std::endl;
 
-void CalibrationRun::FitGain()
-{
+    double wall1 = claws::get_wall_time();
+    double cpu1  = claws::get_cpu_time();
 
-	// for(auto evt: cal_evts_ )
-	// {
-	//     evt->LoadHistograms(EVENTSTATE_PDSUBTRACTED);
-	// }
-}
+    cout << "Wall Time = " << wall1 - wall0 << endl;
+    cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+};
+
+// Gain* CalibrationRun::LoadGain()
+// {
+//
+//     // Load the events into the state of pd subtracted waveforms
+// 	for(auto evt: cal_evts_ )
+// 	{
+// 	    evt->LoadFiles(EVENTSTATE_PDSUBTRACTED);
+// 	}
+//
+//     Gain* gain = new Gain(nr_);
+//     return gain;
+// }
+//
+// void CalibrationRun::FitGain()
+// {
+//
+// 	// for(auto evt: cal_evts_ )
+// 	// {
+// 	//     evt->LoadHistograms(EVENTSTATE_PDSUBTRACTED);
+// 	// }
+// }
 
 void CalibrationRun::PDS_Physics()
 {
@@ -1043,44 +1108,7 @@ void CalibrationRun::DeleteCalibrationHistograms()
 //      cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 // }
 //
-// void CalibrationRun::Average1PE()
-// {
-//      /*
-//          TODO description
-//       */
-//
-//      std::cout << "\033[33;1mRun::Extracting average 1 pe:\033[0m running" << "\r" << std::flush;
-//
-//      double wall0 = claws::get_wall_time();
-//      double cpu0  = claws::get_cpu_time();
-//
-//      // for(unsigned int i=0; i< int_events_.size();i++)
-//      // {
-//      //     gain_->AddIntWf(int_events_.at(i)->GetWaveforms(), int_events_.at(i)->GetIntegral());
-//      // }
-//      std::vector<std::vector<IntChannel*> > vec;
-//      for(auto ivec : GS->GetChannels(2))
-//      {
-//              vec.push_back(this->GetIntChannel(ivec));
-//      }
-//
-//      gain_->AddIntWfs(vec);
-// //    gain_->NormalizeWaveforms(int_events_.size());
-//      gain_->WfToHist();
-//      gain_->FitAvg();
-//      gain_->SaveAvg(path_run_);
-//      gain_->HistToWf();
-//      // gain_->WfToHist();
-//
-//
-//      std::cout << "\033[32;1mRun::Extracting average 1 pe:\033[0m done!     " << std::endl;
-//
-//      double wall1 = claws::get_wall_time();
-//      double cpu1  = claws::get_cpu_time();
-//
-//      cout << "Wall Time = " << wall1 - wall0 << endl;
-//      cout << "CPU Time  = " << cpu1  - cpu0  << endl;
-// };
+
 //
 // void CalibrationRun::WaveformDecomposition()
 // {

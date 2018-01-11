@@ -14,6 +14,7 @@
 // root
 #include <TH1I.h>
 #include <TGraph.h>
+#include <TFile.h>
 // Project
 #include "event.hh"
 #include "channel.hh"
@@ -22,6 +23,7 @@ class GainChannel
 {
     public:
         GainChannel(std::string name);
+        GainChannel(std::string name, TFile* rfile);
         ~GainChannel();
 
         void AddChannel(CalibrationChannel * channel, double t = -1);
@@ -45,8 +47,8 @@ enum GainState
 {
     GAINSTATE_INIT,
     GAINSTATE_LOADED,
-    GAINSTATE_NORMALIZED,
     GAINSTATE_FITTED,
+    GAINSTATE_NORMALIZED,
 };
 
 /** Usually definitions should go into the .cxx file because otherwise
@@ -58,13 +60,13 @@ inline std::string printGainState(GainState state)
   switch(state)
   {
     case GAINSTATE_INIT:
-      return "init";
+      return "gainstate_init";
     case GAINSTATE_LOADED:
-      return "loaded";
-    case GAINSTATE_NORMALIZED:
-      return "normalized";
+      return "gainstate_loaded";
     case GAINSTATE_FITTED:
-      return "fitted";
+      return "gainstate_fitted";
+     case GAINSTATE_NORMALIZED:
+      return "gainstate_normalized";
     default:
       return "Invalid Selection";
   }
@@ -74,9 +76,10 @@ class Gain
 {
     public:
                                             // Gain(boost::filesystem::path path, int nr);
-                                            Gain(int nr);
+                                            Gain(boost::filesystem::path path, GainState state = GAINSTATE_INIT);
         virtual                             ~Gain();
-
+        virtual void CreateChannels();
+        virtual void LoadChannels(GainState state);
         virtual void AddEvent( CalibrationEvent* evt );
         virtual void FitGain();
 
@@ -89,6 +92,7 @@ class Gain
         GainState state_;
         std::vector<GainChannel*> channels_;
         int nr_;
+        boost::filesystem::path path_;
         // std::vector<TH1I*> channels_;
         // std::vector<TGraph*> gain_otime_;
 

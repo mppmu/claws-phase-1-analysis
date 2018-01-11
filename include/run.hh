@@ -127,8 +127,9 @@ class CalibrationRun : public Run
     void SynchronizeCalibrationEvents();
     void PDS_Calibration();
     void GainDetermination();
-        Gain* LoadGain();
-        void FitGain();
+    void Average1PE();
+    //    Gain* LoadGain();
+    //    void FitGain();
 
 //    void DeleteHistograms()
     //void Average1PE_Creation();
@@ -136,8 +137,9 @@ class CalibrationRun : public Run
     void SynchronizePhysicsEvents();
     void PDS_Physics();
 
+    //void LoadH
     //void DeleteHistograms();
-        void DeleteCalibrationHistograms();
+    void DeleteCalibrationHistograms();
   private:
     int cal_nr_;
 
