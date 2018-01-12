@@ -563,7 +563,14 @@ void CalibrationRun::Average1PE()
          evt->LoadFiles(EVENTSTATE_PDSUBTRACTED);
      }
 
+     for(auto evt: cal_evts_ )
+     {
+         gain->AddEvent(evt);
+     }
 
+     gain->Normalize();
+
+     gain->FitAvg();
 //      // for(unsigned int i=0; i< int_events_.size();i++)
 //      // {
 //      //     gain_->AddIntWf(int_events_.at(i)->GetWaveforms(), int_events_.at(i)->GetIntegral());

@@ -21,24 +21,59 @@
 
 class GainChannel
 {
+    /**
+    * [for description]
+    * @param  gain_     [ 0: Fit status
+    *                     1: Fit par const1
+    *                     2: Fit par mean1
+    *                     3: Fit par sigma1
+    *                     4: Fit par const2
+    *                     5: Fit par mean2
+    *                     6: Fit par sigma2
+    *                     7: Fit Chi2
+    *                     8: Fit NDF
+    *                     9: Fit p-value
+    *                     10: Hist entries
+    *                     11: Stage
+    *                     12: Gain ]
+    *
+    * @param  avg_res_ [ 0: Fit status
+    *                    1: Fit par const1
+    *                    2: Fit par mean1
+    *                    3: Fit par sigma1
+    *                    4: Fit par const2
+    *                    5: Fit par mean2
+    *                    6: Fit par sigma2
+    *                    7: Fit Chi2 ]
+    */
     public:
         GainChannel(std::string name);
         GainChannel(std::string name, TFile* rfile);
         ~GainChannel();
 
-        void AddChannel(CalibrationChannel * channel, double t = -1);
-        void FitGain();
-        void Normalize();
-        TH1I* GetHistogram();
-        TGraph* GetGraph();
-        TH1D* GetAvg();
+        void AddGain(CalibrationChannel * channel, double t = -1);
+        double* FitGain();
 
+        void AddWaveform(CalibrationChannel * channel);
+
+        void Normalize();
+        double* FitAvg();
+
+        std::string GetName();
+        TH1I*   GetHistogram();
+        TGraph* GetGraph();
+        TH1D*   GetAvg();
+        virtual double*      GetGain();
+        virtual void         SetGain(double* gain);
+        virtual double*      GetAvgResults();
         std::string name_;
         TH1I*       hist_;
         TGraph*     gain_otime_;
         TH1D*       avg_;
-        double      gain_;
+        // double      gain_;
         int         n_;
+        double      gain_[13];
+        double      avg_res_[1];
 
         //int         end;
 };
@@ -48,6 +83,7 @@ enum GainState
     GAINSTATE_INIT,
     GAINSTATE_LOADED,
     GAINSTATE_FITTED,
+    GAINSTATE_AVGED,
     GAINSTATE_NORMALIZED,
 };
 
@@ -65,6 +101,8 @@ inline std::string printGainState(GainState state)
       return "gainstate_loaded";
     case GAINSTATE_FITTED:
       return "gainstate_fitted";
+      case GAINSTATE_AVGED:
+        return "gainstate_averaged";
      case GAINSTATE_NORMALIZED:
       return "gainstate_normalized";
     default:
@@ -85,16 +123,14 @@ class Gain
 
         virtual void Normalize();
         virtual void SaveGain(boost::filesystem::path dst);
-//    protected:
-        // boost::filesystem::path path_;
-        // int nr_;
+
     protected:
         GainState state_;
         std::vector<GainChannel*> channels_;
         int nr_;
         boost::filesystem::path path_;
-        // std::vector<TH1I*> channels_;
-        // std::vector<TGraph*> gain_otime_;
+        boost::property_tree::ptree pt_;
+
 
 };
 

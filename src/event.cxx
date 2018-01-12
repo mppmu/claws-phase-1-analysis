@@ -130,7 +130,7 @@ void Event::PrepHistograms()
 		}
 
     state_ = EVENTSTATE_PREP;
-	pt_.put("General.State", state_);
+	pt_.put("General.State", printEventState(state_));
 
 }
 
@@ -267,6 +267,7 @@ CalibrationEvent::CalibrationEvent(boost::filesystem::path file, boost::filesyst
 
 CalibrationEvent::~CalibrationEvent() {
 		// TODO Auto-generated destructor stub
+
 };
 
 

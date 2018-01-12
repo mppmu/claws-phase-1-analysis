@@ -40,7 +40,8 @@ debug: CFLAGS += -g -O0 -Wall -fno-inline-functions
 debug: monkey clean build/calibration
 
 release: CFLAGS += -O3 -g
-release: monkey clean build/calibration build/analysis
+# release: monkey clean build/calibration build/analysis
+release: monkey clean build/calibration
 
 # Link Calibration
 build/calibration: $(CALI_OBJS)

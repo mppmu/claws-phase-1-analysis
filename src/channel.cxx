@@ -34,7 +34,7 @@
 // TODO proper description
 //----------------------------------------------------------------------------------------------
 
-Channel::Channel(std::string name) : name_(name), state_(CHANNELSTATE_VALID), hist_(NULL), pdhist_(NULL), pd_({0})
+Channel::Channel(std::string name) : name_(name), state_(CHANNELSTATE_VALID), hist_(NULL), pdhist_(NULL), pd_({-1})
 {
 		//waveform_       = new vector<int8_t>();
 		// waveform_           = new std::vector<float>();
@@ -52,7 +52,7 @@ Channel::~Channel(){
 		// // TODO Auto-generated destructor stub
 		if(hist_ != NULL) delete hist_;
 		if(pdhist_ != NULL) delete pdhist_;
-		delete pd_;
+		// delete[] pd_;
 		// delete waveform_;
 		// if(hist_ != NULL)
 		// {
@@ -78,8 +78,10 @@ void Channel::LoadHistogram(TFile* file)
 		}
 
 		hist_= (TH1*)file->Get(name_.c_str());
-
 		hist_->SetDirectory(0);
+
+
+
 	//	n_sample_ = hist_->GetNbinsX();
 		// //Last bin in physics wavefroms is filled with 0, takes care of that bug.
 		// if( hist_->GetBinContent(hist_->GetNbinsX()) == 0 && !boost::algorithm::ends_with(name_,"-INT") ) n_sample_--;
@@ -92,6 +94,19 @@ void Channel::PrepHistogram()
 		 * [-128, +127]
 		 */
     hist_->Scale(-1./256.);
+
+	/**
+	* Shift the bins and the x axis to resamble ns
+	* \todo load binsize dynamically
+	*/
+	double dt = GS->GetParameter<double>("Scope.delta_t");
+
+	if( abs(hist_->GetXaxis()->GetBinWidth(1) - dt) > 1e-10)
+	{
+		int nbins = hist_->GetNbinsX();
+		hist_->SetBins(nbins,-dt/2, (nbins-1) *dt + dt/2);
+	}
+
 };
 
 void Channel::DeleteHistogram()
@@ -224,6 +239,22 @@ void Channel::FillPedestal()
 				// }
 				// std::cout << name_ << ": " << pedestal_hist_->GetEntries() << std::endl;
 
+		/** In some cases two 1 pe waveforms are within a calibration waveform,
+		*   leading to no value be able to pass the conditions to be filled into
+		*   the pedestal histogram. So don't bother fitting an empty histogram!
+		*/
+		if( pdhist_->GetEntries() == 0 ) return;
+		// if( pdhist_->GetEntries() == 0 )
+		// {
+		// 	for(int i = 1; i<7;i++ ) pd_[i] = -1;
+		//
+		// 	pd_[7]    = pdhist_->GetMean();
+		// 	pd_[8]    = pdhist_->GetMeanError();
+		// 	pd_[9]    = pdhist_->GetEntries();
+		//
+		// 	return;
+		// }
+
 		TF1* fit=new TF1("gaus","gaus",1,3, TF1::EAddToList::kNo);
 
 		fit->SetParameter(0,50);
@@ -247,7 +278,7 @@ void Channel::FillPedestal()
 		{
 			state_ = CHANNELSTATE_PDFAILED;
 		//	pd_[0]    = int(result);
-			for(int i = 1; i<7;i++ ) pd_[i] = -1;
+		//	for(int i = 1; i<7;i++ ) pd_[i] = -1;
 		}
 
 		pd_[7]    = pdhist_->GetMean();
@@ -312,6 +343,7 @@ CalibrationChannel::CalibrationChannel(std::string name) : Channel()
 
 CalibrationChannel::~CalibrationChannel() {
 		// TODO Auto-generated destructor stub
+
 };
 
 void CalibrationChannel::LoadHistogram(TFile* file)

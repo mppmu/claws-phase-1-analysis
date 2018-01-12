@@ -1,5 +1,3 @@
-
-
 //============================================================================
 // Name        : gain.cpp
 // Author      : Miroslav Gabriel
@@ -23,7 +21,7 @@
 // Definition of the GainChannel class
 //----------------------------------------------------------------------------------------------
 
-GainChannel::GainChannel(std::string name): name_(name), n_(0)
+GainChannel::GainChannel(std::string name): name_(name), n_(0), gain_({-1}), avg_res_({-1})
 {
     hist_ = new TH1I(    name.c_str(),
                                         name.c_str(),
@@ -39,44 +37,62 @@ GainChannel::GainChannel(std::string name): name_(name), n_(0)
     gain_otime_->GetXaxis()->SetTitle("Time [s]");
     gain_otime_->GetYaxis()->SetTitle("Gain [au]");
 
+    avg_ = NULL;
 };
 
-GainChannel::GainChannel(std::string name, TFile* rfile): name_(name), n_(0)
+GainChannel::GainChannel(std::string name, TFile* rfile): name_(name), n_(0), gain_({-1}), avg_res_({-1})
 {
     if(rfile->GetListOfKeys()->Contains(name.c_str()) )
     {
         hist_ = (TH1I*) rfile->Get(name_.c_str());
         hist_->SetDirectory(0);
     }
+    else
+    {
+        hist_ = NULL;
+    }
+
     if(rfile->GetListOfKeys()->Contains((name+"_gain_over_time").c_str()) )
     {
         gain_otime_ = (TGraph*) rfile->Get((name+"_gain_over_time").c_str());
-    //    gain_otime_->SetDirectory(0);
     }
-    if(rfile->GetListOfKeys()->Contains((name+"_avg").c_str()) )
+    else
     {
-        avg_ = (TH1D*) rfile->Get((name+"_avg").c_str());
-        avg_->SetDirectory(0);
+        gain_otime_ = NULL;
     }
+
+    // if(rfile->GetListOfKeys()->Contains((name+"_avg").c_str()) )
+    // {
+    //     avg_ = (TH1D*) rfile->Get((name+"_avg").c_str());
+    //     avg_->SetDirectory(0);
+    // }
+
+    int nbins = GS->GetParameter<int>("Average1PE.waveform_size");
+    double dt = GS->GetParameter<double>("Scope.delta_t");
+    avg_ = new TH1D((name+"_avg").c_str(), (name+"_avg").c_str(), nbins, - dt/2, dt*(nbins-1)+dt/2);
+    avg_->SetDirectory(0);
 }
 
 GainChannel::~GainChannel()
 {
-    delete hist_;
-    delete gain_otime_;
-    //delete avg_;
+    if(hist_ != NULL)       delete hist_;
+    if(gain_otime_ != NULL) delete gain_otime_;
+
+    if(avg_ != NULL)        delete avg_;
 };
 
-void GainChannel::AddChannel(CalibrationChannel * channel, double t)
+void GainChannel::AddGain(CalibrationChannel * channel, double t)
 {
     double integral = channel->GetHistogram()->Integral("width");
     hist_->Fill( integral);
     gain_otime_->SetPoint(gain_otime_->GetN(), t, integral);
-    n_++;
 }
 
-void GainChannel::FitGain()
+double* GainChannel::FitGain()
 {
+    gain_[10]    = hist_->GetEntries();
+    gain_[11]    = 0;
+
     TF1* gaus=new TF1( (name_ + "_gaus").c_str(),"gaus", GS->GetParameter<double>("Gain.xlow"), GS->GetParameter<double>("Gain.xup"));
     gaus->SetParameter(0, hist_->GetMaximum());
     gaus->SetParameter(1, hist_->GetBinCenter( hist_->GetMaximumBin()));
@@ -89,10 +105,21 @@ void GainChannel::FitGain()
         result = hist_->Fit(gaus,"QS","", hist_->GetBinCenter( hist_->GetMaximumBin())*0.75 , hist_->GetBinCenter( hist_->GetMaximumBin())*1.25 );
     }
 
+    gain_[0]    = int(result);
+
+    for(int i = 1; i<4; i++ ) gain_[i]    = gaus->GetParameter( i-1 );
+
+    gain_[7]    = gaus->GetChisquare();
+    gain_[8]    = gaus->GetNDF();
+    gain_[9]    = result->Prob();
+
+    gain_[11]    = 1;
+    gain_[12]    = gaus->GetParameter(1);
+
    assert( int(result) == 0 );
 
-   assert( result->Chi2()/result->Ndf() < GS->GetParameter<double>("Gain.chi2_bound") );
-
+   if(result->Ndf() != 0 ) assert( result->Chi2()/result->Ndf() < GS->GetParameter<double>("Gain.chi2_bound") );
+   else                    assert( result->Chi2()/0.001         < GS->GetParameter<double>("Gain.chi2_bound") );
     // if( int(result) != 0)
     // {
     //     assert(true)
@@ -122,21 +149,79 @@ void GainChannel::FitGain()
 
     result = hist_->Fit(d_gaus,"SLQ","",(gaus->GetParameter(1)-3*gaus->GetParameter(2)),((gaus->GetParameter(1)-mean_bias)*2+3*gaus->GetParameter(2)+mean_bias));
 
+    gain_[0]    = int(result);
+    for(int i = 1; i<7; i++ ) gain_[i]    = d_gaus->GetParameter( i-1 );
+
+    gain_[7]    = d_gaus->GetChisquare();
+    gain_[8]    = d_gaus->GetNDF();
+    gain_[9]    = result->Prob();
+
+    gain_[11]   = 2;
+//    gain_[12]   = d_gaus->GetParameter(4) - d_gaus->GetParameter(1);
+
     if( int(result) == 0 && (result->Chi2()/result->Ndf() <= GS->GetParameter<double>("Gain.chi2_bound") ) )
 	{
-        gain_ = d_gaus->GetParameter(4) - d_gaus->GetParameter(1);
+        gain_[12]   = d_gaus->GetParameter(4) - d_gaus->GetParameter(1);
     }
     else
     {
         std::cout << "\033[1;31mFit failing in Gain::FitGain() for ch "<< name_ << ": \033[0m fit DOUBLE GAUS due to status: " << int(result) << "\r" << std::endl;
-    	gain_ = gaus->GetParameter(1);
+    	gain_[12] = gaus->GetParameter(1);
+    }
+
+    return gain_;
+}
+
+void GainChannel::AddWaveform( CalibrationChannel * channel)
+{
+    double integral = channel->GetHistogram()->Integral("width");
+    double low      = GS->GetParameter<double>("Average1PE.gain_low");
+    double up       = GS->GetParameter<double>("Average1PE.gain_high");
+
+    if( integral >= low*gain_[12] && integral <= up*gain_[12])
+    {
+        TH1D * hist_2add = dynamic_cast<TH1D*>(channel->GetHistogram());
+        for(int i = 1 ;i< hist_2add->GetNbinsX()+1; ++i) avg_->SetBinContent(i, avg_->GetBinContent(i) + hist_2add->GetBinContent(i) );
+        //avg_->Sumw2();
+        n_++;
     }
 
 }
 
+double* FitAvg();
+{
+    
+}
+//GS->GetParameter<int>("Average1PE.vector_size")
+// void Gain::AddIntWfs(std::vector<std::vector<IntChannel*> > int_channels)
+// {
+// 		for(unsigned i = 0; i < channels_.size(); i++)
+// 		{
+// 				int counter = 0;
+// 				for(auto &ivec : int_channels.at(i))
+// 				{
+// 						if(    ivec->GetIntegral() >= channels_.at(i)->gain*( 1 - GS->GetParameter<double>("Average1PE.allowed_gain") )
+// 						       && ivec->GetIntegral() <= channels_.at(i)->gain*( 1 + GS->GetParameter<double>("Average1PE.allowed_gain") )
+// 						       )
+// 						{
+// 								std::vector<float>* wf= ivec->GetWaveform();
+// 								std::transform(channels_.at(i)->avg_wf->begin(), channels_.at(i)->avg_wf->end(),wf->begin(), channels_.at(i)->avg_wf->begin(), std::plus<float>());
+// 								counter++;
+// 						}
+// 				}
+// 				this->NormalizeWaveform(i, counter);
+// 		}
+// };
+
+
 void GainChannel::Normalize()
 {
+    if(n_ != 0 ) avg_->Scale(double(1)/n_);
+}
 
+std::string GainChannel::GetName()
+{
+    return name_;
 }
 
 TH1I* GainChannel::GetHistogram()
@@ -154,6 +239,19 @@ TH1D* GainChannel::GetAvg()
     return avg_;
 }
 
+double* GainChannel::GetGain()
+{
+    return gain_;
+}
+void GainChannel::SetGain(double *gain)
+{
+    for( int i = 0; i<13; ++i) gain_[i] = gain[i];
+}
+
+double* GainChannel::GetAvgResults()
+{
+    return avg_res_;
+}
 //----------------------------------------------------------------------------------------------
 // Definition of the Gain class used to determin the gain of the Calibration waveforms
 //----------------------------------------------------------------------------------------------
@@ -210,6 +308,24 @@ void Gain::LoadChannels(GainState state)
     }
 
     rfile->Close();
+
+    boost::replace_last(fname, "root", "ini");
+    if(pt_.empty()) boost::property_tree::ini_parser::read_ini(fname, pt_);
+
+
+    std::string gain_names[13] = {"Gain_Status","Gain_FitConstant1","Gain_FitMean1","Gain_FitSigma1","Gain_FitConstant2","Gain_FitMean2","Gain_FitSigma2","Gain_FitChi2","Gain_FitNDF","Gain_FitPVal","Gain_Entries","Gain_FitStage","Gain_Gain"};
+
+    for(const auto& channel : channels_)
+    {
+        double gain[13];
+
+        for(int i = 0; i < 13; i++)
+        {
+            gain[i] = pt_.get<double>( gain_names[i] + "." + channel->GetName() );
+        }
+
+        channel->SetGain(gain);
+    }
 }
 
 void Gain::AddEvent(CalibrationEvent* evt)
@@ -222,13 +338,39 @@ void Gain::AddEvent(CalibrationEvent* evt)
         CalibrationChannel* channel = dynamic_cast<CalibrationChannel*>(channels.at(i));
         if( evt->GetParameter<int>("PS_Status." + channel->GetName()) == 0 )
         {
-            channels_.at(i)->AddChannel(channel, t);
-            // double integral = channels.at(i)->GetHistogram()->Integral("width");
-            // channels_.at(i)->Fill( integral);
-            // gain_otime_.at(i)->SetPoint(gain_otime_.at(i)->GetN(), t, integral);
+            if(state_ == GAINSTATE_INIT || state_ == GAINSTATE_LOADED )
+            {
+                channels_.at(i)->AddGain(channel, t);
+                state_ = GAINSTATE_LOADED;
+            }
+            else if(state_ == GAINSTATE_FITTED || state_ == GAINSTATE_AVGED)
+            {
+                channels_.at(i)->AddWaveform(channel);
+                state_ == GAINSTATE_AVGED;
+            }
+
         }
     }
-    state_ = GAINSTATE_LOADED;
+
+};
+
+void Gain::FitGain()
+{
+    std::string gain_names[13] = {"Gain_Status","Gain_FitConstant1","Gain_FitMean1","Gain_FitSigma1","Gain_FitConstant2","Gain_FitMean2","Gain_FitSigma2","Gain_FitChi2","Gain_FitNDF","Gain_FitPVal","Gain_Entries","Gain_FitStage","Gain_Gain"};
+
+    //property tree create
+
+    for(const auto& channel : channels_)
+    {
+        double *gain = channel->FitGain();
+
+        for(int i = 0; i < 13; i++)
+        {
+            pt_.put( gain_names[i] + "." + channel->GetName(), gain[i] );
+        }
+    }
+
+    state_ = GAINSTATE_FITTED;
 };
 
 void Gain::Normalize()
@@ -240,11 +382,20 @@ void Gain::Normalize()
     state_ = GAINSTATE_NORMALIZED;
 };
 
-void Gain::FitGain()
+void Gain::FitAvg()
 {
+//    std::string gain_names[13] = {"Gain_Status","Gain_FitConstant1","Gain_FitMean1","Gain_FitSigma1","Gain_FitConstant2","Gain_FitMean2","Gain_FitSigma2","Gain_FitChi2","Gain_FitNDF","Gain_FitPVal","Gain_Entries","Gain_FitStage","Gain_Gain"};
+
+    //property tree create
+
     for(const auto& channel : channels_)
     {
-        channel->FitGain();
+        double *avg_res = channel->FitAvg();
+
+        for(int i = 0; i < 13; i++)
+        {
+            pt_.put( avg_res_names[i] + "." + channel->GetName(), avg_res[i] );
+        }
     }
 
     state_ = GAINSTATE_FITTED;
@@ -259,11 +410,15 @@ void Gain::SaveGain(boost::filesystem::path dst)
     {
         channel->GetHistogram()->Write();
         channel->GetGraph()->Write();
-    //    channel->GetAvg()->Write();
+        if( channel->GetAvg() != NULL ) channel->GetAvg()->Write();
     }
 
 	rfile->Close();
 	delete rfile;
+
+    pt_.put("General.State", state_);
+    boost::replace_last(fname, "root", "ini");
+    boost::property_tree::write_ini(fname.c_str(), pt_);
 };
 
 
@@ -348,25 +503,7 @@ void Gain::SaveGain(boost::filesystem::path dst)
 // 		}
 // };
 //
-// void Gain::AddIntWfs(std::vector<std::vector<IntChannel*> > int_channels)
-// {
-// 		for(unsigned i = 0; i < channels_.size(); i++)
-// 		{
-// 				int counter = 0;
-// 				for(auto &ivec : int_channels.at(i))
-// 				{
-// 						if(    ivec->GetIntegral() >= channels_.at(i)->gain*( 1 - GS->GetParameter<double>("Average1PE.allowed_gain") )
-// 						       && ivec->GetIntegral() <= channels_.at(i)->gain*( 1 + GS->GetParameter<double>("Average1PE.allowed_gain") )
-// 						       )
-// 						{
-// 								std::vector<float>* wf= ivec->GetWaveform();
-// 								std::transform(channels_.at(i)->avg_wf->begin(), channels_.at(i)->avg_wf->end(),wf->begin(), channels_.at(i)->avg_wf->begin(), std::plus<float>());
-// 								counter++;
-// 						}
-// 				}
-// 				this->NormalizeWaveform(i, counter);
-// 		}
-// };
+
 //// void Gain::FitGain()
 // {
 //
