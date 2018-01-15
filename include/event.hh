@@ -65,6 +65,7 @@ enum EventState
     EVENTSTATE_PREP,
     EVENTSTATE_PDFILLED,
     EVENTSTATE_PDSUBTRACTED,
+    EVENTSTATE_PDFAILED,
     // COLOR_GREEN, // assigned 3
     // COLOR_WHITE, // assigned 4
     // COLOR_CYAN, // assigned 5
@@ -89,6 +90,8 @@ inline std::string printEventState(EventState state)
     case EVENTSTATE_PDFILLED:
       return "pd_filled";
     case EVENTSTATE_PDSUBTRACTED:
+      return "pd_subtracted";
+    case EVENTSTATE_PDFAILED:
       return "pd_subtracted";
     default:
       return "Invalid Selection";
@@ -151,6 +154,7 @@ class Event{
         virtual double GetTime();
         virtual int    GetNumber();
         virtual std::vector<Channel*> GetChannels();
+        virtual EventState GetState();
         template<typename T>
         T GetParameter(std::string pv)
         {

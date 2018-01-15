@@ -101,7 +101,7 @@ void Channel::PrepHistogram()
 	*/
 	double dt = GS->GetParameter<double>("Scope.delta_t");
 
-	if( abs(hist_->GetXaxis()->GetBinWidth(1) - dt) > 1e-10)
+	if( fabs(hist_->GetXaxis()->GetBinWidth(1) - dt) > 1e-10)
 	{
 		int nbins = hist_->GetNbinsX();
 		hist_->SetBins(nbins,-dt/2, (nbins-1) *dt + dt/2);
@@ -243,7 +243,11 @@ void Channel::FillPedestal()
 		*   leading to no value be able to pass the conditions to be filled into
 		*   the pedestal histogram. So don't bother fitting an empty histogram!
 		*/
-		if( pdhist_->GetEntries() == 0 ) return;
+		if( pdhist_->GetEntries() == 0 )
+		{
+			state_ = CHANNELSTATE_PDFAILED;
+			return;
+		}
 		// if( pdhist_->GetEntries() == 0 )
 		// {
 		// 	for(int i = 1; i<7;i++ ) pd_[i] = -1;
@@ -286,6 +290,7 @@ void Channel::FillPedestal()
 		pd_[9]    = pdhist_->GetEntries();
 
 		delete fit;
+
 };
 
 void Channel::SubtractPedestal( double pd)

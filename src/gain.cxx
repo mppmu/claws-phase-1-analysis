@@ -134,10 +134,12 @@ double* GainChannel::FitGain()
     // A lot of magic number shit to get the double fit working;
 	d_gaus->SetParameter(0,gaus->GetParameter(0));
 	d_gaus->SetParameter(1,gaus->GetParameter(1));
+    d_gaus->SetParLimits(1,gaus->GetParameter(1)*0.5, gaus->GetParameter(1)*1.5);
 	d_gaus->SetParameter(2,gaus->GetParameter(2));
 
 	d_gaus->SetParameter(3,gaus->GetParameter(0)*0.1);
 	d_gaus->SetParameter(4,(gaus->GetParameter(1)-mean_bias)*2 + mean_bias);
+    d_gaus->SetParLimits(1,gaus->GetParameter(1), gaus->GetParameter(1)*3);
 	d_gaus->SetParameter(5,gaus->GetParameter(2));
 
 	d_gaus->SetParLimits(0,gaus->GetParameter(0)*0.75, gaus->GetParameter(0)*1.25);
@@ -185,13 +187,97 @@ void GainChannel::AddWaveform( CalibrationChannel * channel)
         //avg_->Sumw2();
         n_++;
     }
-
 }
 
-double* FitAvg();
+double* GainChannel::FitAvg()
 {
-    
+    avg_res_[0] = n_;
+
+
+    int waveform_size     = GS->GetParameter<int>("Average1PE.waveform_size");
+    int waveform_recorded = GS->GetParameter<int>("Average1PE.waveform_recorded");
+
+    // Extending the calibration waveform is only neccessary if the recording window was to small.
+    if( avg_->GetNbinsX() >  waveform_size )
+    {
+        return avg_res_;
+    }
+
+    TF1* expo=new TF1( ( name_ + "_exp" ).c_str(),"[0]*exp(-[1]*(x-[2]))+[3]", 0, avg_->GetNbinsX());
+
+    expo->SetParameter(0, GS->GetParameter<double>("Average1PE.par_0") );
+    expo->SetParameter(1, GS->GetParameter<double>("Average1PE.par_1") );
+    expo->SetParameter(2, GS->GetParameter<double>("Average1PE.par_2") );
+    expo->FixParameter(3, GS->GetParameter<double>("Average1PE.par_3") );
+
+    double dt = GS->GetParameter<double>("Scope.delta_t");
+
+    double start_fit = ( avg_->GetMaximumBin() + GS->GetParameter<int>("Average1PE.start_shift") )*dt;
+    double stop_fit  = waveform_recorded * dt;
+
+    avg_res_[1] = start_fit;
+    avg_res_[2] = stop_fit;
+
+    TFitResultPtr result = avg_->Fit(expo, "SQ", "", start_fit, stop_fit );
+
+    avg_res_[3] = int(result);
+
+    for(int i = 4; i < 8 ; i++ ) avg_res_[i] = expo->GetParameter( i-4 );
+
+    avg_res_[8]    = result->Chi2();
+    avg_res_[9]    = result->Ndf();
+    avg_res_[10]   = result->Prob();
+    avg_res_[11]   = expo->GetX(0.005);
+
+    int stop_extend = avg_->FindBin( avg_res_[11] );
+
+    if( stop_extend > avg_->GetNbinsX() ) stop_extend = avg_->GetNbinsX();
+
+    for(int i =  waveform_recorded +1; i <= waveform_size; i++)
+    {
+        double val = expo->Eval( avg_->GetBinCenter(i) );
+    	avg_->SetBinContent(i, val);
+    }
+
+    avg_res_[12]   = avg_->Integral("width");
+
+    return avg_res_;
 }
+
+
+// void Gain::FitAvg()
+// {
+// 		for(auto & ivec : channels_)
+// 		{
+// 				if(ivec->avg_wf->size() < 400)
+// 				{
+// 						std::string name = ivec->name + "_exponential";
+// 						std::replace(name.begin(), name.end(), '-','_');
+// 						TF1* expo=new TF1( name.c_str(),"[0]*exp([1]*(x-[2]))+[3]", 1, ivec->avg_hist->GetNbinsX());
+// 						expo->SetParameter(0, 37.9);
+// 						expo->SetParameter(1,-0.033);
+// 						expo->SetParameter(2,75.5);
+// 						expo->SetParameter(3,0);
+// 						// expo->SetParameter(3,-0.11);
+// 						ivec->avg_hist->Fit(expo, "Q", "", ivec->avg_hist->GetMaximumBin()+10, ivec->avg_wf->size());
+// 						ivec->end = round( expo->GetX(0.005) );
+// 						// std::cout<< "ivec->end: " << ivec->end << std::endl;
+// 						for(signed i = ivec->avg_wf->size()+1; i < ivec->end + 1; i++)
+// 						{
+// 								ivec->avg_hist->SetBinContent(i, expo->Eval(i));
+// 						}
+// 				}
+// 				else
+// 				{
+// 						ivec->end = ivec->avg_wf->size();
+// 				}
+// 		}
+// }
+
+
+
+
+
 //GS->GetParameter<int>("Average1PE.vector_size")
 // void Gain::AddIntWfs(std::vector<std::vector<IntChannel*> > int_channels)
 // {
@@ -313,7 +399,7 @@ void Gain::LoadChannels(GainState state)
     if(pt_.empty()) boost::property_tree::ini_parser::read_ini(fname, pt_);
 
 
-    std::string gain_names[13] = {"Gain_Status","Gain_FitConstant1","Gain_FitMean1","Gain_FitSigma1","Gain_FitConstant2","Gain_FitMean2","Gain_FitSigma2","Gain_FitChi2","Gain_FitNDF","Gain_FitPVal","Gain_Entries","Gain_FitStage","Gain_Gain"};
+    std::string gain_names[13] = {"Gain_FitStatus","Gain_FitConstant1","Gain_FitMean1","Gain_FitSigma1","Gain_FitConstant2","Gain_FitMean2","Gain_FitSigma2","Gain_FitChi2","Gain_FitNDF","Gain_FitPVal","Gain_Entries","Gain_FitStage","Gain_Gain"};
 
     for(const auto& channel : channels_)
     {
@@ -356,7 +442,7 @@ void Gain::AddEvent(CalibrationEvent* evt)
 
 void Gain::FitGain()
 {
-    std::string gain_names[13] = {"Gain_Status","Gain_FitConstant1","Gain_FitMean1","Gain_FitSigma1","Gain_FitConstant2","Gain_FitMean2","Gain_FitSigma2","Gain_FitChi2","Gain_FitNDF","Gain_FitPVal","Gain_Entries","Gain_FitStage","Gain_Gain"};
+    std::string gain_names[13] = {"Gain_FitStatus","Gain_FitConstant1","Gain_FitMean1","Gain_FitSigma1","Gain_FitConstant2","Gain_FitMean2","Gain_FitSigma2","Gain_FitChi2","Gain_FitNDF","Gain_FitPVal","Gain_Entries","Gain_FitStage","Gain_Gain"};
 
     //property tree create
 
@@ -385,7 +471,7 @@ void Gain::Normalize()
 void Gain::FitAvg()
 {
 //    std::string gain_names[13] = {"Gain_Status","Gain_FitConstant1","Gain_FitMean1","Gain_FitSigma1","Gain_FitConstant2","Gain_FitMean2","Gain_FitSigma2","Gain_FitChi2","Gain_FitNDF","Gain_FitPVal","Gain_Entries","Gain_FitStage","Gain_Gain"};
-
+    std::string avg_res_names[13] = {"Avg_N", "Avg_FitStart", "Avg_FitStop", "Avg_FitStatus", "Avg_FitPar0", "Avg_FitPar1", "Avg_FitPar2", "Avg_FitPar3", "Avg_FitChi2", "Avg_FitNDF", "Avg_PVal", "Avg_XDecay", "Avg_Integral"};
     //property tree create
 
     for(const auto& channel : channels_)
@@ -398,7 +484,7 @@ void Gain::FitAvg()
         }
     }
 
-    state_ = GAINSTATE_FITTED;
+    state_ = GAINSTATE_EXTENDED;
 };
 
 void Gain::SaveGain(boost::filesystem::path dst)
@@ -592,34 +678,7 @@ void Gain::SaveGain(boost::filesystem::path dst)
 // 		channels_.at(ch)->norm = norm;
 // };
 //
-// void Gain::FitAvg()
-// {
-// 		for(auto & ivec : channels_)
-// 		{
-// 				if(ivec->avg_wf->size() < 400)
-// 				{
-// 						std::string name = ivec->name + "_exponential";
-// 						std::replace(name.begin(), name.end(), '-','_');
-// 						TF1* expo=new TF1( name.c_str(),"[0]*exp([1]*(x-[2]))+[3]", 1, ivec->avg_hist->GetNbinsX());
-// 						expo->SetParameter(0, 37.9);
-// 						expo->SetParameter(1,-0.033);
-// 						expo->SetParameter(2,75.5);
-// 						expo->SetParameter(3,0);
-// 						// expo->SetParameter(3,-0.11);
-// 						ivec->avg_hist->Fit(expo, "Q", "", ivec->avg_hist->GetMaximumBin()+10, ivec->avg_wf->size());
-// 						ivec->end = round( expo->GetX(0.005) );
-// 						// std::cout<< "ivec->end: " << ivec->end << std::endl;
-// 						for(signed i = ivec->avg_wf->size()+1; i < ivec->end + 1; i++)
-// 						{
-// 								ivec->avg_hist->SetBinContent(i, expo->Eval(i));
-// 						}
-// 				}
-// 				else
-// 				{
-// 						ivec->end = ivec->avg_wf->size();
-// 				}
-// 		}
-// }
+
 //
 // void Gain::SaveAvg(boost::filesystem::path path_run)
 // {

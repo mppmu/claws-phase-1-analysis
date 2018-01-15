@@ -518,10 +518,36 @@ void CalibrationRun::GainDetermination()
 
     // Gain* gain = this->LoadGain();
     //
-    for(auto evt: cal_evts_ )
+    // for(auto evt: cal_evts_ )
+    // {
+    //     EventState state = evt->LoadFiles(EVENTSTATE_PDSUBTRACTED);
+    //     if( state == EVENTSTATE_PDFAILED)
+    //     {
+    //
+    //     }
+    // }
+
+    /** Load all the events in a pd subtracted state.
+    *   If the pd subtraction failed for any of them. Erase it.
+    */
+    auto evt_itr = cal_evts_.begin();
+
+    while( evt_itr != cal_evts_.end() )
     {
-        evt->LoadFiles(EVENTSTATE_PDSUBTRACTED);
+        (*evt_itr)->LoadFiles(EVENTSTATE_PDSUBTRACTED);
+
+        if( (*evt_itr)->GetState() == EVENTSTATE_PDFAILED )
+        {
+                delete (*evt_itr);
+                (*evt_itr) = NULL;
+                cal_evts_.erase(evt_itr);
+        }
+        else
+        {
+                evt_itr++;
+        }
     }
+
 
     Gain* gain = new Gain(path_);
 

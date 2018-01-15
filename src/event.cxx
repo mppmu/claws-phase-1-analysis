@@ -57,17 +57,15 @@ void Event::LoadFiles(EventState state)
             case EVENTSTATE_RAW:
             {
                 this->LoadRaw();
-                state_ = EVENTSTATE_RAW;
                 break;
             }
             case EVENTSTATE_PDSUBTRACTED:
             {
                 this->LoadSubtracted();
-                state_ = EVENTSTATE_PDSUBTRACTED;
                 break;
             }
         }
-		pt_.put("General.State", state_);
+
 }
 
 void Event::LoadRaw()
@@ -75,6 +73,10 @@ void Event::LoadRaw()
     this->LoadHistograms(file_);
 	// Only load the property tree from the ini file when it was not loaded yet
     if(pt_.empty()) boost::property_tree::ini_parser::read_ini(ini_file_.string(), pt_);
+
+	//state_ = static_cast<EventState>( pt_.get<int>("General.State") );
+	state_ = EVENTSTATE_RAW;
+	pt_.put("General.State", state_);
 }
 
 void Event::LoadSubtracted()
@@ -98,6 +100,9 @@ void Event::LoadSubtracted()
 
     boost::replace_last(fname, "root","ini");
     boost::property_tree::ini_parser::read_ini(fname, pt_);
+
+	state_ = static_cast<EventState>( pt_.get<int>("General.State") );
+
 }
 
 void Event::LoadHistograms(boost::filesystem::path file)
@@ -208,22 +213,31 @@ void Event::FillPedestals()
 		{
 			pt_.put(pdnames[i] + "." + name, pd[i]);
 		}
+
+		if( channel->GetState() == CHANNELSTATE_PDFAILED  )
+		{
+			state_ = EVENTSTATE_PDFAILED;
+			pt_.put("General.State", state_);
+		}
 	}
 };
 
 void Event::SubtractPedestals(std::vector<double> pd)
 {
-		if(pd.size() == channels_.size())
-		{
-		    for(int i = 0 ; i < pd.size(); i++ ) channels_.at(i)->SubtractPedestal(pd.at(i));
-		}
-		else
-		{
-			for(auto channel : channels_) channel->SubtractPedestal();
-		}
 
-		state_ = EVENTSTATE_PDSUBTRACTED;
-		pt_.put("General.State", state_);
+	if( state_ == EVENTSTATE_PDFAILED ) return;
+
+	if(pd.size() == channels_.size())
+	{
+	    for(int i = 0 ; i < pd.size(); i++ ) channels_.at(i)->SubtractPedestal(pd.at(i));
+	}
+	else
+	{
+		for(auto channel : channels_) channel->SubtractPedestal();
+	}
+
+	state_ = EVENTSTATE_PDSUBTRACTED;
+	pt_.put("General.State", state_);
 }
 
 void Event::SetTime(double unixtime)
@@ -245,7 +259,12 @@ int Event::GetNumber()
 std::vector<Channel*> Event::GetChannels()
 {
  		return channels_;
-};
+}
+
+EventState Event::GetState()
+{
+		return state_;
+}
 
 //----------------------------------------------------------------------------------------------
 // Definition of the CalibrationEvent class derived from Event.
