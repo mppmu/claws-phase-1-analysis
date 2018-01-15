@@ -10,7 +10,8 @@
 
 // --- C++ includes ---
 #include <string>
-//  #include <iostream>
+#include <iostream>
+#include <ctime>
 //  #include <fstream>
 //  #include <vector>
 //  #include <map>
@@ -76,6 +77,14 @@ Run::Run(boost::filesystem::path p)
 		nr_     = atoi(path_.filename().string().substr(4,20).c_str());
 		// run_nr_str_ = path_run_.filename().string().substr(4,20);
 		cout << "\033[1;31mRun::Created run: \033[0m" << nr_ << " - at: " << p.string() << endl;
+
+        // current date/time based on current system
+        time_t now = time(0);
+
+        // convert now to string form
+        char* dt = ctime(&now);
+
+        std::cout << "The local date and time is: " << dt << std::endl;
 };
 
 Run::~Run()
@@ -239,14 +248,14 @@ void CalibrationRun::SynchronizePhysicsEvents()
 
 			}
 		}
-		cout << "\033[32;1mRun::Synchronizing physics files:\033[0m done!   " << "\r" << std::endl;
+		std::cout << "\033[32;1mRun::Synchronizing physics files:\033[0m done!   " << "\r" << std::endl;
 };
 
 
 
 void CalibrationRun::SynchronizeCalibrationEvents()
 {
-    cout << "\033[33;1mRun::Synchronizing physics run:\033[0m running" << "\r" << std::flush;
+    std::cout << "\033[33;1mRun::Synchronizing physics run:\033[0m running" << "\r" << std::flush;
 
 		 // Create the calibration events based on the existing root files in the Run/int_root folde
 
@@ -298,6 +307,11 @@ void CalibrationRun::SynchronizeCalibrationEvents()
 
 void CalibrationRun::PDS_Calibration()
 {
+    //      double wall0 = claws::get_wall_time();
+    //      double cpu0  = claws::get_cpu_time();
+    //
+    std::cout << "\033[33;1mRun::Subtracting Calibration pedestal:\033[0m running" << "\r" << std::flush;
+
     boost::filesystem::path pds_calibration = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("PDS_Calibration");
     if(!boost::filesystem::is_directory(pds_calibration) )
     {
@@ -506,10 +520,27 @@ void CalibrationRun::PDS_Calibration()
         evt->SaveEvent(pds_calibration/boost::filesystem::path("Waveforms"), true);
         evt->DeleteHistograms();
     }
+
+    std::cout << "\033[32;1mRun::Subtracting Calibration pedestal:\033[0m done!       " << std::endl;
+    //
+    //      double wall1 = claws::get_wall_time();
+    //      double cpu1  = claws::get_cpu_time();
+    //
+    //      cout << "Wall Time = " << wall1 - wall0 << endl;
+    //      cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 };
 
 void CalibrationRun::GainDetermination()
 {
+    /**
+    *          TODO description
+    */
+
+    std::cout << "\033[33;1mRun::Calibrating gain:\033[0m running" << "\r" << std::flush;
+    //
+    //      double wall0 = claws::get_wall_time();
+    //      double cpu0  = claws::get_cpu_time();
+
     boost::filesystem::path gain_determination = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("GainDetermination");
     if(!boost::filesystem::is_directory(gain_determination) )
     {
@@ -563,6 +594,15 @@ void CalibrationRun::GainDetermination()
     gain->SaveGain( gain_determination );
 
     delete gain;
+
+    std::cout << "\033[32;1mRun::Calibrating gain:\033[0m done!     " << std::endl;
+    //
+    //      double wall1 = claws::get_wall_time();
+    //      double cpu1  = claws::get_cpu_time();
+    //
+    //      cout << "Wall Time = " << wall1 - wall0 << endl;
+    //      cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+
 };
 
 void CalibrationRun::Average1PE()
