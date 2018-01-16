@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
 		        ("write-ntp",       boost::program_options::value<bool>()->default_value(false), "Data directory containing runs meant to be analysed.")
 		        ("tasks",
 		        boost::program_options::value<std::string>()->default_value("0"),
-		        "Task to be processed:\n0: run the complete calibration cahin\n1: pedestal subtraction of the calibration waveforms\n1: gain determination\n2: calculation of the average 1 pe waveform\n3: pedestal subtraction on physics waveforms\n4: overshoot compensation\n5: ")
+		        "Task to be processed:\n0: run the complete calibration cahin\n1: pedestal subtraction of the calibration waveforms\n2: gain determination\n3: calculation of the average 1 pe waveform\n4: pedestal subtraction on physics waveforms\n5: overshoot compensation\n6: ")
 		;
 
 		boost::program_options::variables_map config_map;
@@ -124,6 +124,7 @@ int main(int argc, char* argv[]) {
 		 */
 
 		bool tasks[10] = {false};
+		std::string tasks_names[10] = {"Calibration waveform pedestal subtraction", "Gain determination", "Averaging of 1 pe waveforms", "Physics waveform pedestal subtraction", "", "", "", "", "", ""};
 
 		std::string tasks_tmp = config_map["tasks"].as<std::string>();
 
@@ -147,6 +148,15 @@ int main(int argc, char* argv[]) {
 				assert(false);
 		}
 
+		//cout << "\033[1;31mRun::Created run: \033[0m" << nr_ << " - at: " << p.string() << endl;
+		std::cout << "\033[1;31mRunning following tasks: \n";
+
+		for(int i = 0; i<10; ++i)
+		{
+			if(tasks[i]) std::cout << tasks_names[i] << "\n";
+		}
+
+		std::cout << "\033[0m" << std::endl;
 
 		//std::vector <boost::filesystem::path> runs = GS->GetRuns( config_map["data.input"].as<boost::filesystem::path>());
 
@@ -154,24 +164,19 @@ int main(int argc, char* argv[]) {
 
 		for(auto run_name : GS->GetRuns( config_map["data.input"].as<boost::filesystem::path>()) )
 		{
-				CalibrationRun* run = new CalibrationRun(run_name);
+		    CalibrationRun* run = new CalibrationRun(run_name);
 
-				run->SynchronizePhysicsEvents();
-				run->SynchronizeCalibrationEvents();
+			run->SynchronizePhysicsEvents();
+			run->SynchronizeCalibrationEvents();
 
-				run->LoadRunSettings();
+			run->LoadRunSettings();
 
-				//runs.emplace_back( run );
-
-		    /**	Pedestal subtraction on the calibration waveforms
-		 	*
-		 	*/
-			if(tasks[0])
+			/**	Pedestal subtraction on the calibration waveforms
+			*
+			*/
+		    if(tasks[0])
 			{
-		    	//for(auto run: runs)
-				//	{
-						run->PDS_Calibration();
-			//		}
+		    	run->PDS_Calibration();
 			}
 
 			/**	Gain determination on the calibration waveforms
@@ -179,10 +184,7 @@ int main(int argc, char* argv[]) {
 		 	*/
 			if(tasks[1])
 			{
-				//for(auto run: runs)
-				//{
-					run->GainDetermination();
-				//}
+				run->GainDetermination();
 			}
 
 			/**	Calculation of average 1 pe calibration waveform
@@ -190,10 +192,7 @@ int main(int argc, char* argv[]) {
 		 	*/
 			if(tasks[2])
 			{
-				//for(auto run: runs)
-				//{
-					run->Average1PE();
-			//	}
+				run->Average1PE();
 			}
 
 			/**	Pedestal subtraction on the physics waveforms
@@ -201,13 +200,11 @@ int main(int argc, char* argv[]) {
 		 	*/
 			if(tasks[3])
 			{
-
+				run->PDS_Physics();
 			}
 
-			// for(auto run : runs)
-			// {
 			delete run;
-			// }
+
 	}
 //----------------------------------------------------------------------------------------------
 // Now search for the right claws runs & events corresponding to the timestamp of the beast run

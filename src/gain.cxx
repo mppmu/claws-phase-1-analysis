@@ -244,67 +244,12 @@ double* GainChannel::FitAvg()
     return avg_res_;
 }
 
-
-// void Gain::FitAvg()
-// {
-// 		for(auto & ivec : channels_)
-// 		{
-// 				if(ivec->avg_wf->size() < 400)
-// 				{
-// 						std::string name = ivec->name + "_exponential";
-// 						std::replace(name.begin(), name.end(), '-','_');
-// 						TF1* expo=new TF1( name.c_str(),"[0]*exp([1]*(x-[2]))+[3]", 1, ivec->avg_hist->GetNbinsX());
-// 						expo->SetParameter(0, 37.9);
-// 						expo->SetParameter(1,-0.033);
-// 						expo->SetParameter(2,75.5);
-// 						expo->SetParameter(3,0);
-// 						// expo->SetParameter(3,-0.11);
-// 						ivec->avg_hist->Fit(expo, "Q", "", ivec->avg_hist->GetMaximumBin()+10, ivec->avg_wf->size());
-// 						ivec->end = round( expo->GetX(0.005) );
-// 						// std::cout<< "ivec->end: " << ivec->end << std::endl;
-// 						for(signed i = ivec->avg_wf->size()+1; i < ivec->end + 1; i++)
-// 						{
-// 								ivec->avg_hist->SetBinContent(i, expo->Eval(i));
-// 						}
-// 				}
-// 				else
-// 				{
-// 						ivec->end = ivec->avg_wf->size();
-// 				}
-// 		}
-// }
-
-
-
-
-
-//GS->GetParameter<int>("Average1PE.vector_size")
-// void Gain::AddIntWfs(std::vector<std::vector<IntChannel*> > int_channels)
-// {
-// 		for(unsigned i = 0; i < channels_.size(); i++)
-// 		{
-// 				int counter = 0;
-// 				for(auto &ivec : int_channels.at(i))
-// 				{
-// 						if(    ivec->GetIntegral() >= channels_.at(i)->gain*( 1 - GS->GetParameter<double>("Average1PE.allowed_gain") )
-// 						       && ivec->GetIntegral() <= channels_.at(i)->gain*( 1 + GS->GetParameter<double>("Average1PE.allowed_gain") )
-// 						       )
-// 						{
-// 								std::vector<float>* wf= ivec->GetWaveform();
-// 								std::transform(channels_.at(i)->avg_wf->begin(), channels_.at(i)->avg_wf->end(),wf->begin(), channels_.at(i)->avg_wf->begin(), std::plus<float>());
-// 								counter++;
-// 						}
-// 				}
-// 				this->NormalizeWaveform(i, counter);
-// 		}
-// };
-
-
 void GainChannel::Normalize()
 {
     if(n_ != 0 ) avg_->Scale(double(1)/n_);
 }
 
+// Setter and getter methods
 std::string GainChannel::GetName()
 {
     return name_;
@@ -338,6 +283,7 @@ double* GainChannel::GetAvgResults()
 {
     return avg_res_;
 }
+
 //----------------------------------------------------------------------------------------------
 // Definition of the Gain class used to determin the gain of the Calibration waveforms
 //----------------------------------------------------------------------------------------------
