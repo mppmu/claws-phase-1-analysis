@@ -115,12 +115,12 @@ int main(int argc, char* argv[]) {
 
 		/**		Determine the tasks to be processed
 		 *		\todo adapt number of tasks
-		 *		@param i [0: run the complete calibration cahin
-		 *							1: pedestal subtraction of the calibration waveforms
-		 *							2: gain determination
-		 *              3: calculation of the average 1 pe waveform
-		 *              4: pedestal subtraction on physics waveforms
-		 *              5: overshoot compensation]
+		 *		@param i [ 0: run the complete calibration cahin
+		 *				   1: pedestal subtraction of the calibration waveforms
+		 *				   2: gain determination
+		 *                 3: calculation of the average 1 pe waveform
+		 *                 4: pedestal subtraction on physics waveforms
+		 *                 5: overshoot compensation ]
 		 */
 
 		bool tasks[10] = {false};
@@ -161,54 +161,54 @@ int main(int argc, char* argv[]) {
 
 				run->LoadRunSettings();
 
-				runs.emplace_back( run );
-		}
+				//runs.emplace_back( run );
 
-		/**	Pedestal subtraction on the calibration waveforms
-		 *
-		 */
-		if(tasks[0])
-		{
-		    for(auto run: runs)
-				{
-					run->PDS_Calibration();
-				}
-		}
-
-		/**	Gain determination on the calibration waveforms
-		 *
-		 */
-		if(tasks[1])
-		{
-			for(auto run: runs)
+		    /**	Pedestal subtraction on the calibration waveforms
+		 	*
+		 	*/
+			if(tasks[0])
 			{
-				run->GainDetermination();
+		    	//for(auto run: runs)
+				//	{
+						run->PDS_Calibration();
+			//		}
 			}
-		}
 
-		/**	Calculation of average 1 pe calibration waveform
-		 *
-		 */
-		if(tasks[2])
-		{
-			for(auto run: runs)
+			/**	Gain determination on the calibration waveforms
+		 	*
+		 	*/
+			if(tasks[1])
 			{
-				run->Average1PE();
+				//for(auto run: runs)
+				//{
+					run->GainDetermination();
+				//}
 			}
-		}
 
-		/**	Pedestal subtraction on the physics waveforms
-		 *
-		 */
-		if(tasks[3])
-		{
+			/**	Calculation of average 1 pe calibration waveform
+		 	*
+		 	*/
+			if(tasks[2])
+			{
+				//for(auto run: runs)
+				//{
+					run->Average1PE();
+			//	}
+			}
 
-		}
+			/**	Pedestal subtraction on the physics waveforms
+		 	*
+		 	*/
+			if(tasks[3])
+			{
 
-		for(auto run : runs)
-		{
+			}
+
+			// for(auto run : runs)
+			// {
 			delete run;
-		}
+			// }
+	}
 //----------------------------------------------------------------------------------------------
 // Now search for the right claws runs & events corresponding to the timestamp of the beast run
 //----------------------------------------------------------------------------------------------

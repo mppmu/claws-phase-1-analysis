@@ -12,6 +12,7 @@
 #include <string>
 #include <iostream>
 #include <ctime>
+#include <fstream>
 //  #include <fstream>
 //  #include <vector>
 //  #include <map>
@@ -255,7 +256,13 @@ void CalibrationRun::SynchronizePhysicsEvents()
 
 void CalibrationRun::SynchronizeCalibrationEvents()
 {
-    std::cout << "\033[33;1mRun::Synchronizing physics run:\033[0m running" << "\r" << std::flush;
+    std::cout << "\033[33;1mRun::Synchronizing calibration run:\033[0m running" << "\r" << std::flush;
+
+    boost::filesystem::path calibration = path_/boost::filesystem::path("Calibration");
+    if(!boost::filesystem::is_directory(calibration) )
+    {
+        boost::filesystem::create_directory(calibration);
+    }
 
 		 // Create the calibration events based on the existing root files in the Run/int_root folde
 
@@ -270,7 +277,17 @@ void CalibrationRun::SynchronizeCalibrationEvents()
  	    path_int = path_.parent_path()/("Run-" + to_string(new_run) );
  	    path_int /= "int_root";
  	    std::cout << "\033[1;31mIntermediate Data not valid!!! \n Switching to: "<< path_int << "\033[0m"<< "\r" << std::endl;
- 	}
+
+        if(cal_nr_ != nr_)
+        {
+            ofstream myfile;
+            myfile.open (calibration.string()+"/CALIBRATION_FILE_WARNING");
+            myfile << "Warning different calibration files are used for this run!.\n";
+            myfile << "Original run:\n" << to_string(nr_) << "\n";
+            myfile << "run calibration files used:\n" << to_string(new_run) << std::endl;
+            myfile.close();
+        }
+    }
 
 
 	std::vector<boost::filesystem::path> cal_files;
@@ -310,7 +327,7 @@ void CalibrationRun::PDS_Calibration()
     //      double wall0 = claws::get_wall_time();
     //      double cpu0  = claws::get_cpu_time();
     //
-    std::cout << "\033[33;1mRun::Subtracting Calibration pedestal:\033[0m running" << "\r" << std::flush;
+    std::cout << "\033[33;1mRun::Subtracting calibration pedestal:\033[0m running" << "\r" << std::flush;
 
     boost::filesystem::path pds_calibration = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("PDS_Calibration");
     if(!boost::filesystem::is_directory(pds_calibration) )
@@ -521,7 +538,7 @@ void CalibrationRun::PDS_Calibration()
         evt->DeleteHistograms();
     }
 
-    std::cout << "\033[32;1mRun::Subtracting Calibration pedestal:\033[0m done!       " << std::endl;
+    std::cout << "\033[32;1mRun::Subtracting calibration pedestal:\033[0m done!       " << std::endl;
     //
     //      double wall1 = claws::get_wall_time();
     //      double cpu1  = claws::get_cpu_time();
@@ -546,17 +563,6 @@ void CalibrationRun::GainDetermination()
     {
         boost::filesystem::create_directory(gain_determination);
     }
-
-    // Gain* gain = this->LoadGain();
-    //
-    // for(auto evt: cal_evts_ )
-    // {
-    //     EventState state = evt->LoadFiles(EVENTSTATE_PDSUBTRACTED);
-    //     if( state == EVENTSTATE_PDFAILED)
-    //     {
-    //
-    //     }
-    // }
 
     /** Load all the events in a pd subtracted state.
     *   If the pd subtraction failed for any of them. Erase it.

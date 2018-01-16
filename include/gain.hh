@@ -48,8 +48,8 @@ class GainChannel
     *                    8: Fit Chi2
     *                    9: Fit NDF
     *                    10: Fit p-value
-    *                    11: x-value where exponential decaed below 0.005 ]
-    *                    12: Integral of avg 1 pe waveform
+    *                    11: x-value where exponential decaed below 0.005
+    *                    12: Integral of avg 1 pe waveform ]
     */
     public:
         GainChannel(std::string name);
