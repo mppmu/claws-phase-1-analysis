@@ -34,7 +34,7 @@
 // TODO proper description
 //----------------------------------------------------------------------------------------------
 
-Channel::Channel(std::string name) : name_(name), state_(CHANNELSTATE_VALID), hist_(NULL), pdhist_(NULL), pd_({-1}), scope_pos_("-1")
+Channel::Channel(std::string name) : name_(name), state_(CHANNELSTATE_VALID), hist_(NULL), pdhist_(NULL), pd_({-1}), scope_pos_("-1"), range_(-1)
 {
 
 };
@@ -59,7 +59,7 @@ void Channel::LoadHistogram(TFile* file)
 	hist_->SetDirectory(0);
 };
 
-void Channel::PrepHistogram( std::tuple<double, double> range )
+void Channel::PrepHistogram( double range )
 {
 	/**
 	 *  Make the signals go in the positiv direction
@@ -68,14 +68,14 @@ void Channel::PrepHistogram( std::tuple<double, double> range )
 	 */
     hist_->Scale(-1./256.);
 
-	if( std::get<0>(range) != 0 && std::get<1>(range) != 0)
+	if( range >= 0)
 	{
 		for( int i = 1; i <= hist_->GetNbinsX(); ++i)
 		{
-			double cont = hist_->GetBinContent(i);
-			if(cont < 0)  hist_->SetBinContent(i, cont/128 * std::get<0>(range) );
-			else          hist_->SetBinContent(i, cont/127 * std::get<1>(range) );
+			hist_->SetBinContent(i, hist_->GetBinContent(i)/127 * range );
 		}
+
+		range_ = range;
 	}
 
 	/**
@@ -110,7 +110,8 @@ void Channel::FillPedestal()
     }
 
 		std::string title = name_ + "_pd";
-		pdhist_ = new TH1I(title.c_str(), title.c_str(), 256, -128.5, 127.5);
+		if(range_ >= 0) pdhist_ = new TH1I(title.c_str(), title.c_str(), 255, -127.5*range_/127, 127.5 * range_/127);
+		else 			pdhist_ = new TH1I(title.c_str(), title.c_str(), 255, -127.5, 127.5);
 		pdhist_->SetDirectory(0);
 
 		//for(int i =1; i<115; i++)
@@ -556,7 +557,7 @@ PhysicsChannel::~PhysicsChannel() {
 		// TODO Auto-generated destructor stub
 };
 
-void PhysicsChannel::PrepHistogram(std::tuple<double, double> range, double offset)
+void PhysicsChannel::PrepHistogram( double range, double offset)
 {
 	// 	/* Make the signals go in the positiv direction
 	// 	 * and convert from [-32768, +32512] to

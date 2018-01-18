@@ -358,8 +358,8 @@ void PhysicsEvent::PrepHistograms(boost::property_tree::ptree &settings)
 
 		int range     = settings.get<int>(sec+".Range");
 		double offset = settings.get<double>(sec+".AnalogOffset");
-
-	    channel->PrepHistogram( claws::RangeToVoltage( (claws::enPS6000Range)range), offset );
+		PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(channel);
+	    tmp->PrepHistogram( claws::RangeToVoltage( (claws::enPS6000Range)range), offset );
 	}
 
     state_ = EVENTSTATE_PREP;

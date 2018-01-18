@@ -665,26 +665,26 @@ void CalibrationRun::PDS_Physics()
 	{
 	    evt->LoadFiles();
 
-        for(auto & ch: evt->GetChannels())
-        {
-            // GetScopePos returns a 2 digit string
-            std::string scope = ch->GetScopePos()[0];
-            std::string pos   = ch->GetScopePos()[1];
-            std::string sec   = "Scope-" + scope + "-Channel-Settings-" + pos ;
-
-            double offset = settings_.get<double>(sec+".AnalogOffset");
-            int range     = settings_.get<int>(sec+".Range");
-
-        }
-
-        evt->PrepHistograms();
+        // for(auto & ch: evt->GetChannels())
+        // {
+        //     // GetScopePos returns a 2 digit string
+        //     std::string scope = ch->GetScopePos()[0];
+        //     std::string pos   = ch->GetScopePos()[1];
+        //     std::string sec   = "Scope-" + scope + "-Channel-Settings-" + pos ;
+        //
+        //     double offset = settings_.get<double>(sec+".AnalogOffset");
+        //     int range     = settings_.get<int>(sec+".Range");
+        //
+        // }
+        PhysicsEvent* tmp = dynamic_cast<PhysicsEvent*>(evt);
+        tmp->PrepHistograms(settings_);
 	}
 
 
-    if( isdigit(position[0]) && isalpha(position[1]) )
-    {
-        channels_.emplace_back( new CalibrationChannel(name.first, position) );
-    }
+    // if( isdigit(position[0]) && isalpha(position[1]) )
+    // {
+    //     channels_.emplace_back( new CalibrationChannel(name.first, position) );
+    // }
 
 
     //

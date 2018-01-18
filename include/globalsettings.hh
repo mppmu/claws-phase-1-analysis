@@ -62,38 +62,38 @@ namespace claws {
         PS6000_MAX_RANGES
     };
 
-    std::tuple<double, double> RangeToVoltage(enPS6000Range range)
+   inline double RangeToVoltage(enPS6000Range range)
     {
         switch(range)
         {
             case PS6000_10MV:
-                return std::make_tuple(-10,10);
+                return 10;
             case PS6000_20MV:
-                return std::make_tuple(-20,20);
+                return 20;
             case PS6000_50MV:
-                return std::make_tuple(-50,50);
+                return 50;
             case PS6000_100MV:
-                return std::make_tuple(-100,100);
+                return 100;
             case PS6000_200MV:
-                return std::make_tuple(-200,200);
+                return 200;
             case PS6000_500MV:
-                return std::make_tuple(-500,500);
+                return 500;
             case PS6000_1V:
-                return std::make_tuple(-1000,1000);
+                return 1000;
             case PS6000_2V:
-                return std::make_tuple(-2000,2000);
+                return 2000;
             case PS6000_5V:
-                return std::make_tuple(-5000,5000);
+                return 5000;
             case PS6000_10V:
-                return std::make_tuple(-10000,10000);
+                return 10000;
             case PS6000_20V:
-                return std::make_tuple(-20000,20000);
+                return 20000;
             case PS6000_50V:
-                return std::make_tuple(-50000,50000);
+                return 50000;
             case PS6000_MAX_RANGES:
-                return std::make_tuple(-0,0);
+                return 0;
             default:
-                return std::make_tuple(0,0);
+                return 0;
         }
     }
 

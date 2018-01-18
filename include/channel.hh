@@ -82,7 +82,7 @@ class Channel
         virtual ~Channel();
 
         virtual     void        LoadHistogram(TFile* file);
-        virtual     void        PrepHistogram( std::tuple<double, double> range = std::make_tuple(0,0));
+        virtual     void        PrepHistogram( double range = -1);
         virtual     void        DeleteHistogram();
 
         virtual     void        FillPedestal();
@@ -106,6 +106,7 @@ class Channel
         TH1I*                  pdhist_;
         double                 pd_[10];
 
+        double                 range_;
         std::string scope_pos_;
 
 //         virtual     void        SubtractPedestal(double pedestal = 0, bool backup = false);
@@ -155,7 +156,7 @@ class PhysicsChannel : public Channel
 
         PhysicsChannel(std::string ch_name, std::string scope_pos);
         virtual ~PhysicsChannel();
-        virtual void PrepHistogram(std::tuple<double, double> range, double offset = 0.);
+        virtual void PrepHistogram( double range, double offset = 0.);
     private:
 
 //
