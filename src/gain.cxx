@@ -77,7 +77,6 @@ GainChannel::~GainChannel()
 {
     if(hist_ != NULL)       delete hist_;
     if(gain_otime_ != NULL) delete gain_otime_;
-
     if(avg_ != NULL)        delete avg_;
 };
 

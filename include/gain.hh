@@ -72,6 +72,8 @@ class GainChannel
         virtual double*      GetGain();
         virtual void         SetGain(double* gain);
         virtual double*      GetAvgResults();
+
+
         std::string name_;
         TH1I*       hist_;
         TGraph*     gain_otime_;

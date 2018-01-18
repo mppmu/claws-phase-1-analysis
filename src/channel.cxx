@@ -34,17 +34,8 @@
 // TODO proper description
 //----------------------------------------------------------------------------------------------
 
-Channel::Channel(std::string name) : name_(name), state_(CHANNELSTATE_VALID), hist_(NULL), pdhist_(NULL), pd_({-1})
+Channel::Channel(std::string name) : name_(name), state_(CHANNELSTATE_VALID), hist_(NULL), pdhist_(NULL), pd_({-1}), scope_pos_("-1")
 {
-		//waveform_       = new vector<int8_t>();
-		// waveform_           = new std::vector<float>();
-    //
-		// std::string title    = name_+"_pd";
-		// // Calling GetNBitsScope which returns the number of actual bits of the scope. That is not equal to the Max or Min values of the
-		// // integer values in the data.
-		// n_bits_         = GS->GetNBitsScope();
-		// pedestal_hist_      = new TH1I(title.c_str(), title.c_str(), n_bits_, GS->GetXLow(), GS->GetXUp());
-		// pedestal_hist_->SetDirectory(0);        // Root is the most stupid BITCH!!!
 
 };
 
@@ -52,48 +43,40 @@ Channel::~Channel(){
 		// // TODO Auto-generated destructor stub
 		if(hist_ != NULL) delete hist_;
 		if(pdhist_ != NULL) delete pdhist_;
-		// delete[] pd_;
-		// delete waveform_;
-		// if(hist_ != NULL)
-		// {
-		// 		delete hist_;
-		// 		hist_ = NULL;
-		// }
-		// if(pedestal_hist_ != NULL)
-		// {
-		// 		delete pedestal_hist_;
-		// 		pedestal_hist_ = NULL;
-		// }
-
 };
 
 
 void Channel::LoadHistogram(TFile* file)
 {
     // Prevent possible memory leak
-		if(hist_ != NULL)
-		{
-				delete hist_;
-				hist_ = NULL;
-		}
+    if(hist_ != NULL)
+	{
+		delete hist_;
+		hist_ = NULL;
+	}
 
-		hist_= (TH1*)file->Get(name_.c_str());
-		hist_->SetDirectory(0);
-
-
-
-	//	n_sample_ = hist_->GetNbinsX();
-		// //Last bin in physics wavefroms is filled with 0, takes care of that bug.
-		// if( hist_->GetBinContent(hist_->GetNbinsX()) == 0 && !boost::algorithm::ends_with(name_,"-INT") ) n_sample_--;
+	hist_= (TH1*)file->Get(name_.c_str());
+	hist_->SetDirectory(0);
 };
 
-void Channel::PrepHistogram()
+void Channel::PrepHistogram( std::tuple<double, double> range )
 {
-		/* Make the signals go in the positiv direction
-		 * and convert from [-32768, +32512] to
-		 * [-128, +127]
-		 */
+	/**
+	 *  Make the signals go in the positiv direction
+	 *  and convert from [-32768, +32512] to
+	 *  [-128, +127]
+	 */
     hist_->Scale(-1./256.);
+
+	if( std::get<0>(range) != 0 && std::get<1>(range) != 0)
+	{
+		for( int i = 1; i <= hist_->GetNbinsX(); ++i)
+		{
+			double cont = hist_->GetBinContent(i);
+			if(cont < 0)  hist_->SetBinContent(i, cont/128 * std::get<0>(range) );
+			else          hist_->SetBinContent(i, cont/127 * std::get<1>(range) );
+		}
+	}
 
 	/**
 	* Shift the bins and the x axis to resamble ns
@@ -322,7 +305,7 @@ TH1* Channel::GetHistogram(std::string type)
 {
 	if      (type == "waveform") return hist_;
 	else if (type == "pedestal") return pdhist_;
-	else												 exit(1);
+	else						 exit(1);
 };
 
 double* Channel::GetPedestal()
@@ -335,15 +318,23 @@ ChannelState Channel::GetState()
 	return state_;
 }
 
+std::string Channel::GetScopePos()
+{
+	return scope_pos_;
+};
+
+
 //----------------------------------------------------------------------------------------------
 // Definition of the CalibrationChannel class derived from Channel.
 // TODO proper description
 //----------------------------------------------------------------------------------------------
 
-CalibrationChannel::CalibrationChannel(std::string name) : Channel()
+CalibrationChannel::CalibrationChannel(std::string name, std::string scope_pos) : Channel()
 {
     if(boost::ends_with(name, "CAL")) this->SetName( name );
     else                      this->SetName( name+"-INT" );
+
+	scope_pos_ = scope_pos;
 };
 
 CalibrationChannel::~CalibrationChannel() {
@@ -369,7 +360,7 @@ void CalibrationChannel::LoadHistogram(TFile* file)
 		delete tmp;
 		//tmp->Copy(hist_);
     hist_->SetName(name_.c_str());
-		hist_->SetTitle(name_.c_str());
+	hist_->SetTitle(name_.c_str());
     // hist_ = tmp->Clone(name_.c_str());
     hist_->SetDirectory(0);
 		//n_sample_ = hist_->GetNbinsX();
@@ -404,15 +395,6 @@ void CalibrationChannel::LoadHistogram(TFile* file)
 // 		}
 //
 // };
-
-// void Channel::DeleteWaveform()
-// {
-// 		std::vector<float>().swap(*waveform_);
-// 		std::cout << "" << std::endl;
-// };
-//
-
-//
 // // void Channel::Subtract(double pedestal)
 // //             }GetChannelsform_->at( i )
 //
@@ -565,25 +547,44 @@ void CalibrationChannel::LoadHistogram(TFile* file)
 // // TODO prper description
 // //----------------------------------------------------------------------------------------------
 //
-// PhysicsChannel::PhysicsChannel(std::string ch_name) : Channel(ch_name)
-// {
-// 		waveform_workon_    =   new std::vector<float>();
-// 		waveform_photon_    =   new std::vector<std::uint8_t>();
-//
-// 		clean_wf_           =   new std::vector<float>();
-// 		wh_wf_              =   new std::vector<float>();
-// 		mip_wf_             =   new std::vector<float>();
-// };
-//
-// PhysicsChannel::~PhysicsChannel() {
-// 		// TODO Auto-generated destructor stub
-// };
-//
-// void PhysicsChannel::PrintType()
-// {
-// 		cout << "I'm a PhysicsChannel " << endl;
-// }
-//
+PhysicsChannel::PhysicsChannel(std::string ch_name, std::string scope_pos) : Channel(ch_name)
+{
+	scope_pos_ = scope_pos;
+};
+
+PhysicsChannel::~PhysicsChannel() {
+		// TODO Auto-generated destructor stub
+};
+
+void PhysicsChannel::PrepHistogram(std::tuple<double, double> range, double offset)
+{
+	// 	/* Make the signals go in the positiv direction
+	// 	 * and convert from [-32768, +32512] to
+	// 	 * [-128, +127]
+	// 	 */
+    // hist_->Scale(-1./256.);
+	//
+	// /**
+	// * Shift the bins and the x axis to resamble ns
+	// * \todo load binsize dynamically
+	// */
+	// double dt = GS->GetParameter<double>("Scope.delta_t");
+	//
+	// if( fabs(hist_->GetXaxis()->GetBinWidth(1) - dt) > 1e-10)
+	// {
+	// 	int nbins = hist_->GetNbinsX();
+	// 	hist_->SetBins(nbins,-dt/2, (nbins-1) *dt + dt/2);
+	// }
+	this->Channel::PrepHistogram( range );
+
+	for( int i = 0; i <= hist_->GetNbinsX(); ++i)
+	{
+		hist_->SetBinContent(i, hist_->GetBinContent(i) - offset);
+	}
+
+	// Somehow the last bin has an unphysical entry, set it to 0
+	if( hist_->GetBinContent(hist_->GetNbinsX()) != 0) hist_->SetBinContent(hist_->GetNbinsX(), 0);
+};
 // // void PhysicsChannel::LoadHistogram(TFile* file)
 // // {
 // //     /* Calls the base class LoadHistogram mehtod, therefore, function is identicall to base class
@@ -592,14 +593,7 @@ void CalibrationChannel::LoadHistogram(TFile* file)
 // //     this->Channel::LoadHistogram(file);
 // //     n_sample_ --;
 // // };
-//
-// void PhysicsChannel::CalculateIntegral()
-// {
-// 		/*
-// 		    TODO Implement
-// 		 */
-// };
-//
+
 // void PhysicsChannel::SetUpWaveforms()
 // {
 // 		waveform_workon_->clear();

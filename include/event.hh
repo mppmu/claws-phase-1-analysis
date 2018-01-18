@@ -203,7 +203,7 @@ class CalibrationEvent : public Event{
         CalibrationEvent(boost::filesystem::path file, boost::filesystem::path ini_file, double unixtime = -1);
 
         virtual ~CalibrationEvent();
-
+        virtual void PrepHistograms();
 
 
     protected:
@@ -233,6 +233,8 @@ class PhysicsEvent : public Event{
         PhysicsEvent(boost::filesystem::path file, boost::filesystem::path ini_file);
         PhysicsEvent(boost::filesystem::path file, boost::filesystem::path ini_file, boost::filesystem::path rate_file);
         virtual ~PhysicsEvent();
+
+        virtual void PrepHistograms( boost::property_tree::ptree &settings );
 
     //    virtual void PrepHistograms();
     private:

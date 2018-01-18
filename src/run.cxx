@@ -131,36 +131,9 @@ CalibrationRun::CalibrationRun(boost::filesystem::path p) : Run(p)
 
     GS->SaveConfigFiles(path_/boost::filesystem::path("Calibration"));
 
-    // for(auto name : GS->GetChannels("Calibration"))
-    // {
-    //     gainhist_.emplace_back( new TH1I((name.first + "_gain").c_str(),(name.first + "_gain").c_str() );
-    //     gain_.emplace_back( 0 );
-    //     1pe_.emplace_back( new TH1D() );
-    // }
-
 };
 
 CalibrationRun::~CalibrationRun() {
-
-//      // TODO Auto-generated destructor stub
-//      std::cout << "Deleteing Run object!" << std::endl;
-//      //  #pragma omp parallel num_threads(7)
-//      //  {
-//      //    #pragma omp for schedule(dynamic,1)
-//      for(unsigned int i=0; i< events_.size(); i++)
-//      {
-//              delete events_.at(i);
-//              events_.at(i) = NULL;
-//      }
-//
-//      //      #pragma omp for schedule(dynamic,1)
-//      for(unsigned int i=0; i< int_events_.size(); i++)
-//      {
-//              delete int_events_.at(i);
-//              int_events_.at(i) = NULL;
-//      }
-//
-//      //  }
 
     for(auto evt: evts_ )
     {
@@ -171,16 +144,6 @@ CalibrationRun::~CalibrationRun() {
     {
         delete evt;
     }
-
-    // for(auto hist: gainhist_ )
-    // {
-    //     delete hist;
-    // }
-    //
-    // for(auto 1pe: 1pe_ )
-    // {
-    //     delete 1pe;
-    // }
 
 };
 
@@ -317,8 +280,6 @@ void CalibrationRun::SynchronizeCalibrationEvents()
         evt_time += 0.1;
 	}
 
-//      pedestal_   = new Pedestal(run_nr_, int_nr_);
-//      gain_       = new Gain(int_nr_);
     cout << "\033[32;1mRun::Synchronizing calibration files:\033[0m done!   " << "\r" << std::endl;
 };
 
@@ -703,8 +664,29 @@ void CalibrationRun::PDS_Physics()
 	for(auto evt: evts_ )
 	{
 	    evt->LoadFiles();
-    //     evt->PrepHistograms();
+
+        for(auto & ch: evt->GetChannels())
+        {
+            // GetScopePos returns a 2 digit string
+            std::string scope = ch->GetScopePos()[0];
+            std::string pos   = ch->GetScopePos()[1];
+            std::string sec   = "Scope-" + scope + "-Channel-Settings-" + pos ;
+
+            double offset = settings_.get<double>(sec+".AnalogOffset");
+            int range     = settings_.get<int>(sec+".Range");
+
+        }
+
+        evt->PrepHistograms();
 	}
+
+
+    if( isdigit(position[0]) && isalpha(position[1]) )
+    {
+        channels_.emplace_back( new CalibrationChannel(name.first, position) );
+    }
+
+
     //
     // // Just to be sure and because they take no space, save them to disk
     // for(auto evt: cal_evts_ )
@@ -891,11 +873,11 @@ void CalibrationRun::PDS_Physics()
     //     evt->SubtractPedestals();
     // }
     //
-    // for(auto evt: cal_evts_ )
-    // {
-    //     evt->SaveEvent(pds_calibration/boost::filesystem::path("Waveforms"), true);
-    //     evt->DeleteHistograms();
-    // }
+    for(auto &evt: evts_ )
+    {
+        evt->SaveEvent(pds_physics/boost::filesystem::path("Waveforms"), false);
+        evt->DeleteHistograms();
+    }
 
     std::cout << "\033[32;1mRun::Subtracting physics pedestal:\033[0m done!       " << std::endl;
     //

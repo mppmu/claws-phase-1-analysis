@@ -18,6 +18,7 @@
 #include <vector>
 #include <memory>
 #include <utility>
+#include <tuple>
 // boost includes
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
@@ -43,6 +44,58 @@ namespace pt = boost::property_tree;
 
 
 namespace claws {
+
+    enum enPS6000Range
+    {
+        PS6000_10MV,
+        PS6000_20MV,
+        PS6000_50MV,
+        PS6000_100MV,
+        PS6000_200MV,
+        PS6000_500MV,
+        PS6000_1V,
+        PS6000_2V,
+        PS6000_5V,
+        PS6000_10V,
+        PS6000_20V,
+        PS6000_50V,
+        PS6000_MAX_RANGES
+    };
+
+    std::tuple<double, double> RangeToVoltage(enPS6000Range range)
+    {
+        switch(range)
+        {
+            case PS6000_10MV:
+                return std::make_tuple(-10,10);
+            case PS6000_20MV:
+                return std::make_tuple(-20,20);
+            case PS6000_50MV:
+                return std::make_tuple(-50,50);
+            case PS6000_100MV:
+                return std::make_tuple(-100,100);
+            case PS6000_200MV:
+                return std::make_tuple(-200,200);
+            case PS6000_500MV:
+                return std::make_tuple(-500,500);
+            case PS6000_1V:
+                return std::make_tuple(-1000,1000);
+            case PS6000_2V:
+                return std::make_tuple(-2000,2000);
+            case PS6000_5V:
+                return std::make_tuple(-5000,5000);
+            case PS6000_10V:
+                return std::make_tuple(-10000,10000);
+            case PS6000_20V:
+                return std::make_tuple(-20000,20000);
+            case PS6000_50V:
+                return std::make_tuple(-50000,50000);
+            case PS6000_MAX_RANGES:
+                return std::make_tuple(-0,0);
+            default:
+                return std::make_tuple(0,0);
+        }
+    }
 
     enum Detector
     {

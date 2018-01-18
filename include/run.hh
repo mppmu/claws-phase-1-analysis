@@ -94,28 +94,14 @@ class Run
 
     boost::property_tree::ptree settings_;
 
-// int int_nr_;
-
-
-//
 // virtual void SynchronizeFiles() = 0;
-//
-//
-//
 // // double GetStartTime();
 // // double GetStopTime();
 //
 // std::tuple<double, double> GetTime();
-// int    GetRunNr();
-//
-// boost::filesystem::path path_run_;
 // double tsMin;
 // double tsMax;
-//
-// int run_nr_;
-// int int_nr_;
-// std::string run_nr_str_;
-//
+
 };
 
 class CalibrationRun : public Run
@@ -145,10 +131,6 @@ class CalibrationRun : public Run
 
     std::vector<PhysicsEvent*>           evts_;
     std::vector<CalibrationEvent*>       cal_evts_;
-
-    // std::vector<TH1I*> gainhist_;
-    // std::vector<double> gain_;
-    // std::vector<TH1D*> 1pe_;
 
 //         int BuildOnlineTree();
 //         int BuildOfflineTree();

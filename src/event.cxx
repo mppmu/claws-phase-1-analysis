@@ -9,6 +9,7 @@
 
 // --- C++ includes ---
 #include <iostream>
+#include <ctype.h>
 #include <cxxabi.h>
 
 // --- BOOST includes ---
@@ -43,17 +44,15 @@ Event::Event(boost::filesystem::path file, boost::filesystem::path ini_file ): p
 	pt_.put("General.State", state_);
 };
 
-Event::~Event() {
-		// TODO Auto-generated destructor stub
-		// for(auto& m : channels_)
-		// {
-		// 		delete m.second;
-		// }
+Event::~Event()
+{
+	for(auto &channel: channels_) delete channel;
 }
 
 void Event::LoadFiles(EventState state)
 {
-        switch (state) {
+        switch (state)
+		{
             case EVENTSTATE_RAW:
             {
                 this->LoadRaw();
@@ -125,18 +124,15 @@ void Event::LoadHistograms(boost::filesystem::path file)
 	rfile = NULL;
 }
 
-
-
 void Event::PrepHistograms()
 {
-		for (auto channel : channels_)
-		{
-		    channel->PrepHistogram();
-		}
+	for (auto channel : channels_)
+	{
+	    channel->PrepHistogram();
+	}
 
     state_ = EVENTSTATE_PREP;
 	pt_.put("General.State", printEventState(state_));
-
 }
 
 void Event::SaveEvent(boost::filesystem::path dst, bool save_pd)
@@ -279,8 +275,17 @@ CalibrationEvent::CalibrationEvent(boost::filesystem::path file, boost::filesyst
 
 		for (auto name : GS->GetChannels("Calibration"))
 		{
-			 if( name.second.get_value<std::string>() == "true") channels_.emplace_back( new CalibrationChannel(name.first) );
+			 std::string position = name.second.get_value<std::string>();
+			 if( position != "false")
+			 {
+				 if( isdigit(position[0]) && isalpha(position[1]) )
+				 {
+					 channels_.emplace_back( new CalibrationChannel(name.first, position) );
+				 }
+			 }
 		}
+
+
 
 };
 
@@ -289,6 +294,18 @@ CalibrationEvent::~CalibrationEvent() {
 
 };
 
+void CalibrationEvent::PrepHistograms()
+{
+
+	for (auto &channel : channels_)
+	{
+	    channel->PrepHistogram( claws::RangeToVoltage(claws::PS6000_50MV) );
+	}
+
+    state_ = EVENTSTATE_PREP;
+	pt_.put("General.State", printEventState(state_));
+
+}
 
 //----------------------------------------------------------------------------------------------
 // Definition of the PhysicsEvent class derived from Event.
@@ -296,25 +313,28 @@ CalibrationEvent::~CalibrationEvent() {
 
 PhysicsEvent::PhysicsEvent(boost::filesystem::path file, boost::filesystem::path ini_file) : Event(file, ini_file)
 {
-		// fill_n(online_rate_, 6, -1);
-		// fill_n(fast_rate_, 3, -1);
-		// fill_n(rate_, 3, -1);
+    /**
+	 *TODO description of PhysicsEvent class.
+	 */
 
-		// nr_str_ = file_root.filename().string().substr(6,9);
-		nr_     = atoi(file.filename().string().substr(6,9).c_str());
+	// fill_n(online_rate_, 6, -1);
+	// fill_n(fast_rate_, 3, -1);
+	// fill_n(rate_, 3, -1);
 
-		/*
-		    TODO Implement a dynamic creation of channels getting the list list and therefore number of channels from somewhere else.
-		 */
-		// channels_["FWD1"] = new PhysicsChannel("FWD1");
-		// channels_["FWD2"] = new PhysicsChannel("FWD2");
-		// channels_["FWD3"] = new PhysicsChannel("FWD3");
-		// channels_["FWD4"] = new PhysicsChannel("FWD4");
-		//
-		// channels_["BWD1"] = new PhysicsChannel("BWD1");
-		// channels_["BWD2"] = new PhysicsChannel("BWD2");
-		// channels_["BWD3"] = new PhysicsChannel("BWD3");
-		// channels_["BWD4"] = new PhysicsChannel("BWD4");
+	// nr_str_ = file_root.filename().string().substr(6,9);
+	nr_     = atoi(file.filename().string().substr(6,9).c_str());
+
+	for (auto &name : GS->GetChannels("Physics"))
+ 	{
+		std::string position = name.second.get_value<std::string>();
+ 	    if( position != "false")
+		{
+			if( isdigit(position[0]) && isalpha(position[1]) )
+			{
+				channels_.emplace_back( new PhysicsChannel(name.first, position) );
+			}
+		}
+	}
 };
 
 PhysicsEvent::PhysicsEvent(boost::filesystem::path file, boost::filesystem::path ini_file, boost::filesystem::path rate_file) : PhysicsEvent(file, ini_file)
@@ -325,8 +345,27 @@ PhysicsEvent::PhysicsEvent(boost::filesystem::path file, boost::filesystem::path
 
 PhysicsEvent::~PhysicsEvent() {
 		// TODO Auto-generated destructor stub
-
 };
+
+void PhysicsEvent::PrepHistograms(boost::property_tree::ptree &settings)
+{
+
+	for (auto &channel : channels_)
+	{
+		std::string scope = std::string(1, channel->GetScopePos()[0]);
+		std::string pos   = std::string(1, channel->GetScopePos()[1]);
+		std::string sec   = "Scope-" + scope + "-Channel-Settings-" + pos ;
+
+		int range     = settings.get<int>(sec+".Range");
+		double offset = settings.get<double>(sec+".AnalogOffset");
+
+	    channel->PrepHistogram( claws::RangeToVoltage( (claws::enPS6000Range)range), offset );
+	}
+
+    state_ = EVENTSTATE_PREP;
+	pt_.put("General.State", printEventState(state_));
+
+}
 
 // void PhysicsEvent::LoadIniFile(){
 //

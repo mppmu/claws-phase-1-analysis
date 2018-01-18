@@ -82,7 +82,7 @@ class Channel
         virtual ~Channel();
 
         virtual     void        LoadHistogram(TFile* file);
-        virtual     void        PrepHistogram();
+        virtual     void        PrepHistogram( std::tuple<double, double> range = std::make_tuple(0,0));
         virtual     void        DeleteHistogram();
 
         virtual     void        FillPedestal();
@@ -92,6 +92,7 @@ class Channel
         virtual TH1*         GetHistogram(std::string type = "waveform");
         virtual double*      GetPedestal();
         virtual ChannelState GetState();
+        virtual std::string  GetScopePos();
 
         // virtual TH1D*           Get();
 
@@ -105,19 +106,12 @@ class Channel
         TH1I*                  pdhist_;
         double                 pd_[10];
 
-//
-//         virtual     void        LoadWaveform();
-//         virtual     void        DeleteWaveform();
-//
+        std::string scope_pos_;
 
-// //        virtual     void    Subtract();
 //         virtual     void        SubtractPedestal(double pedestal = 0, bool backup = false);
 //         virtual     void        SetPedestal(double pedestal = 0, bool backup = false);
 // //        virtual     void        Subtract2(double pedestal = 0, bool backup = false);
-//
-//
-//         virtual     void        PrintType() ;
-//
+
 //         void                    SetBaseline(float baseline);
 //         virtual void            CalculateIntegral() = 0;
 //
@@ -132,40 +126,21 @@ class Channel
 
 //         virtual void            CreateHistogram();
 //
-//     protected:
 
-//
-//         std::vector<float>*     waveform_      = NULL;
-//
-//
-//         float                   pedestal_   = 0;
-//         float                   baseline_   = 0;
-//
-
-//
-//         double                  integral_     = 0 ;
-//         unsigned int            n_sample_   = 0;
-//         int                     n_bits_;
-//
-//         int                     pd_gap_      = 25;
-//         float                   pd_delta_   = 4;
-//
-//
-//         // void Draw();
-//
 };
 
 class CalibrationChannel : public Channel
 {
     public:
 
-        CalibrationChannel(std::string name);
+        CalibrationChannel(std::string name, std::string scope_pos);
         virtual ~CalibrationChannel();
 
-        void LoadHistogram(TFile* file);
-
+        virtual void LoadHistogram(TFile* file);
     protected:
-        //TH1D*     hist_;
+        int scope_;
+        std::string channel_;
+
 //
 //
 //         void    CalculateIntegral();
@@ -174,12 +149,15 @@ class CalibrationChannel : public Channel
 
 };
 
-// class PhysicsChannel : public Channel
-// {
-//     public:
-//
-//         PhysicsChannel(std::string ch_name);
-//         virtual ~PhysicsChannel();
+class PhysicsChannel : public Channel
+{
+    public:
+
+        PhysicsChannel(std::string ch_name, std::string scope_pos);
+        virtual ~PhysicsChannel();
+        virtual void PrepHistogram(std::tuple<double, double> range, double offset = 0.);
+    private:
+
 //
 //         void    WaveformDecomposition();
 //         void    PrintType();
@@ -236,8 +214,8 @@ class CalibrationChannel : public Channel
 //
 //        double                  fast_rate_ = 0;
 //        double                  rate_      = 0;
-// };
-//
+};
+
 
 //
 // class AnalysisChannel : public Channel
