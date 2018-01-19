@@ -676,29 +676,22 @@ void CalibrationRun::PDS_Physics()
         //     int range     = settings_.get<int>(sec+".Range");
         //
         // }
-        PhysicsEvent* tmp = dynamic_cast<PhysicsEvent*>(evt);
-        tmp->PrepHistograms(settings_);
+        //PhysicsEvent* tmp = dynamic_cast<PhysicsEvent*>(evt);
+        evt->PrepHistograms(settings_);
 	}
-
-
-    // if( isdigit(position[0]) && isalpha(position[1]) )
-    // {
-    //     channels_.emplace_back( new CalibrationChannel(name.first, position) );
-    // }
-
 
     //
     // // Just to be sure and because they take no space, save them to disk
-    // for(auto evt: cal_evts_ )
-    // {
-    //     evt->SaveEvent(pds_calibration/boost::filesystem::path("Waveforms"));
-    // }
-    //
-    // // Now do the pedestal subtraction
-    // for(auto evt: cal_evts_ )
-    // {
-    //     evt->FillPedestals();
-    // }
+    for(auto evt: evts_ )
+    {
+        evt->SaveEvent(pds_physics/boost::filesystem::path("Waveforms"));
+    }
+
+    // Now do the pedestal subtraction
+    for(auto evt: cal_evts_ )
+    {
+        evt->FillPedestals();
+    }
     //
     // // Use the first event to get a dynamic number and name of channels.
     // std::vector<TGraph *> fit_status;

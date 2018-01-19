@@ -6,6 +6,7 @@
  */
 
 // --- C++ includes ---
+#include <typeinfo>
 // --- OpenMP includes ---
 // #include <omp.h>
 // --- BOOST includes ---
@@ -23,6 +24,7 @@
 // #include <gsl/gsl_complex_math.h>
 // --- ROOT includes ---
 #include <TF1.h>
+#include <TH1F.h>
 #include <TFitResult.h>
 #include <TFitResultPtr.h>
 // --- Project includes ---
@@ -55,16 +57,26 @@ void Channel::LoadHistogram(TFile* file)
 		hist_ = NULL;
 	}
 
-	hist_= (TH1*)file->Get(name_.c_str());
+	// Returns nullpty if histo in file not of type TH1F.
+	hist_ = dynamic_cast<TH1F*>(file->Get( name_.c_str() ) );
+
+	if( hist_ == nullptr )
+	{
+		// This on the otherhand does some shit and it works.... I think it returns a TH1
+		TH1F *tmp = static_cast<TH1F*>(file->Get( name_.c_str() ) );
+		hist_ = new TH1F( *tmp);
+	}
+
 	hist_->SetDirectory(0);
+
 };
 
 void Channel::PrepHistogram( double range )
 {
 	/**
 	 *  Make the signals go in the positiv direction
-	 *  and convert from [-32768, +32512] to
-	 *  [-128, +127]
+	 *  and convert from [-32512, +32512] to
+	 *  [-127, +127]
 	 */
     hist_->Scale(-1./256.);
 
@@ -76,6 +88,7 @@ void Channel::PrepHistogram( double range )
 		}
 
 		range_ = range;
+		hist_->GetYaxis()->SetTitle("Voltage [mV]");
 	}
 
 	/**
@@ -88,6 +101,7 @@ void Channel::PrepHistogram( double range )
 	{
 		int nbins = hist_->GetNbinsX();
 		hist_->SetBins(nbins,-dt/2, (nbins-1) *dt + dt/2);
+		hist_->GetXaxis()->SetTitle("Time [ns]");
 	}
 
 };
@@ -101,7 +115,99 @@ void Channel::DeleteHistogram()
 		}
 };
 
-void Channel::FillPedestal()
+void Channel::SubtractPedestal( double pd)
+{
+    if(pd != -1000)
+	{
+			pd_[2] = pd;
+	}
+
+	for( int bin = 1; bin <= hist_->GetNbinsX(); bin ++)
+	{
+			hist_->SetBinContent(bin, hist_->GetBinContent(bin) - pd_[2]);
+	}
+}
+
+
+std::string Channel::GetName()
+{
+		return name_;
+};
+
+void Channel::SetName(std::string name)
+{
+		name_ = name;
+};
+
+
+TH1* Channel::GetHistogram(std::string type)
+{
+	if      (type == "waveform") return hist_;
+	else if (type == "pedestal") return pdhist_;
+	else						 exit(1);
+};
+
+double* Channel::GetPedestal()
+{
+	return pd_;
+};
+
+ChannelState Channel::GetState()
+{
+	return state_;
+}
+
+std::string Channel::GetScopePos()
+{
+	return scope_pos_;
+};
+
+
+//----------------------------------------------------------------------------------------------
+// Definition of the CalibrationChannel class derived from Channel.
+// TODO proper description
+//----------------------------------------------------------------------------------------------
+
+CalibrationChannel::CalibrationChannel(std::string name, std::string scope_pos) : Channel()
+{
+    if(boost::ends_with(name, "CAL")) this->SetName( name );
+    else                      this->SetName( name+"-INT" );
+
+	scope_pos_ = scope_pos;
+};
+
+CalibrationChannel::~CalibrationChannel() {
+		// TODO Auto-generated destructor stub
+
+};
+
+void CalibrationChannel::LoadHistogram(TFile* file)
+{
+    // Prevent possible memory leak
+		if(hist_ != NULL)
+		{
+				delete hist_;
+				hist_ = NULL;
+		}
+
+		// Returns nullpty if histo in file not of type TH1F.
+		hist_ = dynamic_cast<TH1F*>(file->Get( (name_.substr(0,4)+"-INT").c_str() ) );
+
+		if( hist_ == nullptr )
+		{
+			// This on the otherhand does some shit and it works.... I think it returns a TH1
+			TH1F *tmp = static_cast<TH1F*>(file->Get( (name_.substr(0,4)+"-INT").c_str() ) );
+			hist_ = new TH1F( *tmp);
+		}
+
+    hist_->SetName(name_.c_str());
+	hist_->SetTitle(name_.c_str());
+
+    hist_->SetDirectory(0);
+
+};
+
+void CalibrationChannel::FillPedestal()
 {
     if( pdhist_ != NULL )
     {
@@ -249,7 +355,10 @@ void Channel::FillPedestal()
 		fit->SetParameter(1,0);
 		fit->SetParameter(2,1);
 
-		TFitResultPtr result = pdhist_->Fit(fit, "QS","", -5, 5);
+		double low = GS->GetParameter<double>("PDS_Calibration.fitrange_low");
+		double up = GS->GetParameter<double>("PDS_Calibration.fitrange_up");
+
+		TFitResultPtr result = pdhist_->Fit(fit, "QSL","", low, up);
 
 		pd_[0]    = int(result);
 
@@ -275,100 +384,6 @@ void Channel::FillPedestal()
 
 		delete fit;
 
-};
-
-void Channel::SubtractPedestal( double pd)
-{
-    if(pd != -1000)
-	{
-			pd_[2] = pd;
-	}
-
-	for( int bin = 1; bin <= hist_->GetNbinsX(); bin ++)
-	{
-			hist_->SetBinContent(bin, hist_->GetBinContent(bin) - pd_[2]);
-	}
-}
-
-
-std::string Channel::GetName()
-{
-		return name_;
-};
-
-void Channel::SetName(std::string name)
-{
-		name_ = name;
-};
-
-
-TH1* Channel::GetHistogram(std::string type)
-{
-	if      (type == "waveform") return hist_;
-	else if (type == "pedestal") return pdhist_;
-	else						 exit(1);
-};
-
-double* Channel::GetPedestal()
-{
-	return pd_;
-};
-
-ChannelState Channel::GetState()
-{
-	return state_;
-}
-
-std::string Channel::GetScopePos()
-{
-	return scope_pos_;
-};
-
-
-//----------------------------------------------------------------------------------------------
-// Definition of the CalibrationChannel class derived from Channel.
-// TODO proper description
-//----------------------------------------------------------------------------------------------
-
-CalibrationChannel::CalibrationChannel(std::string name, std::string scope_pos) : Channel()
-{
-    if(boost::ends_with(name, "CAL")) this->SetName( name );
-    else                      this->SetName( name+"-INT" );
-
-	scope_pos_ = scope_pos;
-};
-
-CalibrationChannel::~CalibrationChannel() {
-		// TODO Auto-generated destructor stub
-
-};
-
-void CalibrationChannel::LoadHistogram(TFile* file)
-{
-    // Prevent possible memory leak
-		if(hist_ != NULL)
-		{
-				delete hist_;
-				hist_ = NULL;
-		}
-
-  //  hist_ = (TH1D*)file->Get((name_.substr(0,4)+"-INT").c_str());
-		//hist_ = (TH1D*)file->Get((name_.substr(0,4)+"-INT").c_str())->Clone();
-		TH1D *tmp = (TH1D*)file->Get((name_.substr(0,4)+"-INT").c_str());
-
-		hist_ = new TH1D( *tmp);
-
-		delete tmp;
-		//tmp->Copy(hist_);
-    hist_->SetName(name_.c_str());
-	hist_->SetTitle(name_.c_str());
-    // hist_ = tmp->Clone(name_.c_str());
-    hist_->SetDirectory(0);
-		//n_sample_ = hist_->GetNbinsX();
-    // delete tmp;
-    // tmp = NULL;
-		// //Last bin in physics wavefroms is filled with 0, takes care of that bug.
-		// if( hist_->GetBinContent(hist_->GetNbinsX()) == 0 && !boost::algorithm::ends_with(name_,"-INT") ) n_sample_--;
 };
 
 
@@ -512,24 +527,7 @@ void CalibrationChannel::LoadHistogram(TFile* file)
 // 		}
 //
 // };
-//
-// void Channel::CreateHistogram()
-// {
-// 		if( waveform_->size() != 0 )
-// 		{
-// 				this->DeleteHistogram();
-//
-// 				std::string title = name_+"_wf";
-// 				hist_ = new TH1F( title.c_str(), title.c_str(), waveform_->size(), 0.5, waveform_->size()+0.5);
-//
-// 				for(unsigned int i = 0; i < waveform_->size(); i++)
-// 				{
-// 						hist_->SetBinContent(i+1, waveform_->at(i));
-// 				}
-// 		}
-// }
 
-//
 
 //
 // double Channel::GetIntegral()
@@ -559,23 +557,7 @@ PhysicsChannel::~PhysicsChannel() {
 
 void PhysicsChannel::PrepHistogram( double range, double offset)
 {
-	// 	/* Make the signals go in the positiv direction
-	// 	 * and convert from [-32768, +32512] to
-	// 	 * [-128, +127]
-	// 	 */
-    // hist_->Scale(-1./256.);
-	//
-	// /**
-	// * Shift the bins and the x axis to resamble ns
-	// * \todo load binsize dynamically
-	// */
-	// double dt = GS->GetParameter<double>("Scope.delta_t");
-	//
-	// if( fabs(hist_->GetXaxis()->GetBinWidth(1) - dt) > 1e-10)
-	// {
-	// 	int nbins = hist_->GetNbinsX();
-	// 	hist_->SetBins(nbins,-dt/2, (nbins-1) *dt + dt/2);
-	// }
+	// First convert Y to mV and X to ns
 	this->Channel::PrepHistogram( range );
 
 	for( int i = 0; i <= hist_->GetNbinsX(); ++i)
@@ -586,6 +568,190 @@ void PhysicsChannel::PrepHistogram( double range, double offset)
 	// Somehow the last bin has an unphysical entry, set it to 0
 	if( hist_->GetBinContent(hist_->GetNbinsX()) != 0) hist_->SetBinContent(hist_->GetNbinsX(), 0);
 };
+
+void PhysicsChannel::FillPedestal()
+{
+    if( pdhist_ != NULL )
+    {
+	      delete pdhist_;
+	      pdhist_ = NULL;
+    }
+
+	std::string title = name_ + "_pd";
+	if(range_ >= 0) pdhist_ = new TH1I(title.c_str(), title.c_str(), 255, -127.5*range_/127, 127.5 * range_/127);
+	else 			pdhist_ = new TH1I(title.c_str(), title.c_str(), 255, -127.5, 127.5);
+
+	pdhist_->SetDirectory(0);
+	pdhist_->GetXaxis()->SetTitle("Voltag [mV]");
+	pdhist_->GetYaxis()->SetTitle("Eintries");
+
+		//for(int i =1; i<115; i++)
+	for(int i =1; i <= hist_->GetNbinsX() ; ++i)
+	{
+		pdhist_->Fill( hist_->GetBinContent(i) );
+	}
+
+
+		//bool fillflag   = true;PD
+
+				// //float threshold = baseline_ + pd_delta_;
+				// float threshold = 3;
+				// float pd_gap = 20;
+				// unsigned i = pd_gap_;
+	// 	int bins_over_threshold = GS->GetParameter<int>("PDS_Calibration.bins_over_threshold");
+	// 	double threshold = GS->GetParameter<double>("PDS_Calibration.threshold");
+	// 	int signal_length = GS->GetParameter<int>("PDS_Calibration.signal_length");
+	//
+    // 	unsigned i=1;
+	//
+	// 	// while( i < hist_->GetNbinsX() - 2 * pd_gap_ +1 )
+	// 	// {
+	// 	while( i <= hist_->GetNbinsX() )
+	// 	{
+	// 	    double bin_contend  = hist_->GetBinContent(i);
+	//
+	// 			if( i <= hist_->GetNbinsX() - bins_over_threshold)
+	// 			{
+	// 			    if( bin_contend < threshold)
+	// 				  {
+	// 				      pdhist_->Fill( bin_contend );
+	// 				  }
+	// 					else
+	// 					{
+	// 							bool above_threshold = true;
+	// 							for (int j = 0; j < bins_over_threshold; j++)
+	// 							{
+	// 					 				if(hist_->GetBinContent(i+j) < threshold ) above_threshold = false;
+	// 							}
+	//
+	// 							if( above_threshold )
+	// 							{
+	// 								  i += signal_length;
+	// 							}
+	// 							else
+	// 							{
+	// 					    		pdhist_->Fill( bin_contend );
+	// 							}
+	//
+	// 					}
+	// 			}
+	// 			else
+	// 			{
+	// 					if( bin_contend < threshold)
+	// 					{
+	// 							pdhist_->Fill( bin_contend );
+	// 					}
+	// 			}
+	// 			i++;
+    // }
+	//
+
+
+				// if( waveform_->at( i + 1 ) >= threshold &&
+				//     waveform_->at( i + 2 ) >= threshold &&
+				//     waveform_->at( i + 3 ) >= threshold )
+				// {
+
+				// if(  < threshold && fillflag == true)
+				// {
+				// 		pdhist_->Fill(waveform_->at(i - pd_gap_) );
+				// }
+				//
+				// 		else if( waveform_->at( i ) >= threshold && fillflag == true)
+				// 		{
+				// 				if( waveform_->at( i + 1 ) >= threshold &&
+				// 				    waveform_->at( i + 2 ) >= threshold &&
+				// 				    waveform_->at( i + 3 ) >= threshold )
+				// 				{
+				// 						fillflag = false;
+				// 				}
+				// 				else
+				// 				{
+				// 						pedestal_hist_->Fill(waveform_->at(i - pd_gap_) );
+				// 				}
+				// 		}
+				//
+				// 		else if( waveform_->at( i ) < threshold &&
+				// 		         fillflag == false &&
+				// 		         // When jumping the tail of the signal (2*gap) needed to make
+				// 		         // sure we are not jumping into a signal again.
+				// 		         waveform_->at( i + 2 * pd_gap_ ) < threshold )
+				// 		{
+				// 				fillflag = true;
+				// 				if( i < waveform_->size() - 2 * pd_gap_ )
+				// 				{
+				// 						i += 2 * pd_gap_;
+				// 				}
+				// 		}
+				//
+				//
+
+				// if((pedestal_hist_->GetEntries()<waveform_->size()*0.01))
+				// {
+				//     std::string error = name_ + ":  (pedestal_hist_->GetEntries(): " + to_string(pedestal_hist_->GetEntries()) + ", waveform_->size(): "
+				//                         + to_string(waveform_->size())+ ", i: " + to_string(i) + ", pd_gap_: " + to_string(pd_gap_)+ ", threshold: " + to_string(threshold);
+				//     std::cout << error << std::endl;
+				// }
+				// std::cout << name_ << ": " << pedestal_hist_->GetEntries() << std::endl;
+
+		/** In some cases two 1 pe waveforms are within a calibration waveform,
+		*   leading to no value be able to pass the conditions to be filled into
+		*   the pedestal histogram. So don't bother fitting an empty histogram!
+		*/
+		if( pdhist_->GetEntries() == 0 )
+		{
+			state_ = CHANNELSTATE_PDFAILED;
+			return;
+		}
+		// if( pdhist_->GetEntries() == 0 )
+		// {
+		// 	for(int i = 1; i<7;i++ ) pd_[i] = -1;
+		//
+		// 	pd_[7]    = pdhist_->GetMean();
+		// 	pd_[8]    = pdhist_->GetMeanError();
+		// 	pd_[9]    = pdhist_->GetEntries();
+		//
+		// 	return;
+		// }
+
+		// TF1* fit=new TF1("gaus","gaus",1,3, TF1::EAddToList::kNo);
+		//
+		// fit->SetParameter(0,50);
+		// fit->SetParameter(1,0);
+		// fit->SetParameter(2,1);
+		//
+		//
+		//
+		// TFitResultPtr result = pdhist_->Fit(fit, "QS","", -5, 5);
+		//
+		// pd_[0]    = int(result);
+		//
+		// if( int(result) == 0)
+		// {
+		// 	pd_[1]    = fit->GetParameter(0);
+		// 	pd_[2]    = fit->GetParameter(1);
+		// 	pd_[3]    = fit->GetParameter(2);
+		// 	pd_[4]    = fit->GetChisquare();
+		// 	pd_[5]    = fit->GetNDF();
+		// 	pd_[6]    = result->Prob();
+		// }
+		// else
+		// {
+		// 	state_ = CHANNELSTATE_PDFAILED;
+		// //	pd_[0]    = int(result);
+		// //	for(int i = 1; i<7;i++ ) pd_[i] = -1;
+		// }
+		//
+		// pd_[7]    = pdhist_->GetMean();
+		// pd_[8]    = pdhist_->GetMeanError();
+		// pd_[9]    = pdhist_->GetEntries();
+		//
+		// delete fit;
+
+};
+
+
+
 // // void PhysicsChannel::LoadHistogram(TFile* file)
 // // {
 // //     /* Calls the base class LoadHistogram mehtod, therefore, function is identicall to base class

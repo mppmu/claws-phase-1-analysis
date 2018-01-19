@@ -145,8 +145,8 @@ double* GainChannel::FitGain()
 	d_gaus->SetParLimits(1,gaus->GetParameter(1)*0.9, gaus->GetParameter(1)*1.1);
 	d_gaus->SetParLimits(2,gaus->GetParameter(2)*0.75, gaus->GetParameter(2)*1.25);
 
-	d_gaus->SetParLimits(4,(gaus->GetParameter(1)- mean_bias)*1.75 + mean_bias, (gaus->GetParameter(1)-mean_bias)*2.25+mean_bias);
-	d_gaus->SetParLimits(5,gaus->GetParameter(2)*0.75, gaus->GetParameter(2)*1.25);
+	d_gaus->SetParLimits(4,(gaus->GetParameter(1)- mean_bias)*1.5 + mean_bias, (gaus->GetParameter(1)-mean_bias)*2.25+mean_bias);
+	d_gaus->SetParLimits(5,gaus->GetParameter(2)*0.5, gaus->GetParameter(2)*1.5);
 
     result = hist_->Fit(d_gaus,"SLQ","",(gaus->GetParameter(1)-3*gaus->GetParameter(2)),((gaus->GetParameter(1)-mean_bias)*2+3*gaus->GetParameter(2)+mean_bias));
 
@@ -181,7 +181,7 @@ void GainChannel::AddWaveform( CalibrationChannel * channel)
 
     if( integral >= low*gain_[12] && integral <= up*gain_[12])
     {
-        TH1D * hist_2add = dynamic_cast<TH1D*>(channel->GetHistogram());
+        TH1F * hist_2add = dynamic_cast<TH1F*>(channel->GetHistogram());
         for(int i = 1 ;i< hist_2add->GetNbinsX()+1; ++i) avg_->SetBinContent(i, avg_->GetBinContent(i) + hist_2add->GetBinContent(i) );
         //avg_->Sumw2();
         n_++;
@@ -316,9 +316,13 @@ void Gain::CreateChannels()
 {
     for (auto &name : GS->GetChannels("Calibration"))
     {
-        if( name.second.get_value<std::string>() == "true")
+        std::string position = name.second.get_value<std::string>();
+        if( position != "false")
         {
-            channels_.emplace_back(new GainChannel(name.first) );
+            if( isdigit(position[0]) && isalpha(position[1]) )
+            {
+                channels_.emplace_back(new GainChannel(name.first) );
+            }
         }
     }
 }
@@ -332,9 +336,13 @@ void Gain::LoadChannels(GainState state)
 
     for (auto &name : GS->GetChannels("Calibration"))
     {
-        if( name.second.get_value<std::string>() == "true")
+        std::string position = name.second.get_value<std::string>();
+        if( position != "false")
         {
-            channels_.emplace_back(new GainChannel(name.first, rfile) );
+            if( isdigit(position[0]) && isalpha(position[1]) )
+            {
+                channels_.emplace_back(new GainChannel(name.first, rfile) );
+            }
         }
     }
 

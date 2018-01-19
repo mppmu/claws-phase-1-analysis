@@ -185,11 +185,6 @@ void Event::DeleteHistograms()
 	pt_.put("General.State", state_);
 };
 
-// void Event::DeletePropertyTree()
-// {
-// 		delete pt_;
-// };
-
 void Event::FillPedestals()
 {
 	std::string pdnames[10] = {"PS_Status","PS_FitConstant","PS_FitMean","PS_FitSigma","PS_FitChi2","PS_FitNDF","PS_FitPVal","PS_HistMean","PS_HistError","PS_HistEntries"};
@@ -356,10 +351,14 @@ void PhysicsEvent::PrepHistograms(boost::property_tree::ptree &settings)
 		std::string pos   = std::string(1, channel->GetScopePos()[1]);
 		std::string sec   = "Scope-" + scope + "-Channel-Settings-" + pos ;
 
-		int range     = settings.get<int>(sec+".Range");
-		double offset = settings.get<double>(sec+".AnalogOffset");
+		int irange = settings.get<int>(sec+".Range");
+		double range     = claws::RangeToVoltage( (claws::enPS6000Range) irange );
+
+		// The -1 is needed because earlier the signals are truned from downwards
+		// to upwards.
+		double offset = -1*settings.get<double>(sec+".AnalogOffset")*range;
 		PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(channel);
-	    tmp->PrepHistogram( claws::RangeToVoltage( (claws::enPS6000Range)range), offset );
+	    tmp->PrepHistogram( range, offset );
 	}
 
     state_ = EVENTSTATE_PREP;

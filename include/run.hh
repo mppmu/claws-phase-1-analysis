@@ -85,9 +85,6 @@ class Run
 
     virtual void LoadRunSettings();
 
-
-    //virtual void SynchronizeFiles() = 0;
-
   protected:
     boost::filesystem::path path_;
     int nr_;
@@ -114,11 +111,6 @@ class CalibrationRun : public Run
     void PDS_Calibration();
     void GainDetermination();
     void Average1PE();
-    //    Gain* LoadGain();
-    //    void FitGain();
-
-//    void DeleteHistograms()
-    //void Average1PE_Creation();
 
     void SynchronizePhysicsEvents();
     void PDS_Physics();

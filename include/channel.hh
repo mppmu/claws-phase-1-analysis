@@ -85,7 +85,7 @@ class Channel
         virtual     void        PrepHistogram( double range = -1);
         virtual     void        DeleteHistogram();
 
-        virtual     void        FillPedestal();
+        virtual     void        FillPedestal() = 0;
         virtual     void        SubtractPedestal( double pd = -1000 );
 
         virtual std::string  GetName();
@@ -102,7 +102,7 @@ class Channel
     protected:
         std::string            name_;
         ChannelState           state_;
-        TH1*                   hist_;
+        TH1F*                   hist_;
         TH1I*                  pdhist_;
         double                 pd_[10];
 
@@ -138,6 +138,7 @@ class CalibrationChannel : public Channel
         virtual ~CalibrationChannel();
 
         virtual void LoadHistogram(TFile* file);
+        virtual     void        FillPedestal();
     protected:
         int scope_;
         std::string channel_;
@@ -157,6 +158,7 @@ class PhysicsChannel : public Channel
         PhysicsChannel(std::string ch_name, std::string scope_pos);
         virtual ~PhysicsChannel();
         virtual void PrepHistogram( double range, double offset = 0.);
+        virtual     void        FillPedestal();
     private:
 
 //
