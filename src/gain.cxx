@@ -126,7 +126,7 @@ double* GainChannel::FitGain()
     // 				ivec->gain =  ivec->gain_hist->GetMaximumBin();
     // }
 
-    TF1* d_gaus=new TF1( (name_ + "_d_gaus").c_str(),"gaus(220)+gaus(420)",0,3*gaus->GetParameter(1) );
+    TF1* d_gaus=new TF1( (name_ + "_d_gaus").c_str(),"gaus(0)+gaus(3)",0,3*gaus->GetParameter(1) );
 
 	double mean_bias = GS->GetParameter<double>("Gain.mean_bias");
 

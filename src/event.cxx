@@ -211,6 +211,16 @@ void Event::FillPedestals()
 			pt_.put("General.State", state_);
 		}
 	}
+
+	if( state_ == EVENTSTATE_PDFAILED )
+	{
+		return;
+	}
+	else
+	{
+		state_ = EVENTSTATE_PDFILLED;
+		pt_.put("General.State", state_);
+	}
 };
 
 void Event::SubtractPedestals(std::vector<double> pd)

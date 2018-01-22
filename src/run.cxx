@@ -661,214 +661,200 @@ void CalibrationRun::PDS_Physics()
     }
 
     // Get the histograms and prepare them
-	for(auto evt: evts_ )
+	for(auto &evt: evts_ )
 	{
 	    evt->LoadFiles();
-
-        // for(auto & ch: evt->GetChannels())
-        // {
-        //     // GetScopePos returns a 2 digit string
-        //     std::string scope = ch->GetScopePos()[0];
-        //     std::string pos   = ch->GetScopePos()[1];
-        //     std::string sec   = "Scope-" + scope + "-Channel-Settings-" + pos ;
-        //
-        //     double offset = settings_.get<double>(sec+".AnalogOffset");
-        //     int range     = settings_.get<int>(sec+".Range");
-        //
-        // }
-        //PhysicsEvent* tmp = dynamic_cast<PhysicsEvent*>(evt);
         evt->PrepHistograms(settings_);
 	}
 
-    //
-    // // Just to be sure and because they take no space, save them to disk
-    for(auto evt: evts_ )
+    // Just to be sure...
+    for(auto &evt: evts_ )
     {
         evt->SaveEvent(pds_physics/boost::filesystem::path("Waveforms"));
     }
 
     // Now do the pedestal subtraction
-    for(auto evt: cal_evts_ )
+    for(auto &evt: evts_ )
     {
         evt->FillPedestals();
     }
-    //
-    // // Use the first event to get a dynamic number and name of channels.
-    // std::vector<TGraph *> fit_status;
-    // std::vector<TGraph *> fit_const;
-    // std::vector<TGraphErrors *> fit_mean;
-    // std::vector<TGraph *> fit_chi2;
-    // std::vector<TGraph *> fit_ndf;
-    // std::vector<TGraph *> fit_chi2ndf;
-    // std::vector<TGraph *> fit_pval;
-    // std::vector<TGraphErrors *> hist_mean;
-    // std::vector<TGraph *> hist_entries;
-    //
-    // for(auto channel: cal_evts_.at(0)->GetChannels() )
-    // {
-    //
-    //   std::string name = channel->GetName();
-    //   boost::replace_last(name, "-INT", "");
-    //
-    //   TGraph * stg = new TGraph();
-    //   stg->SetName( (name+"_fit_status").c_str() );
-    //   stg->SetMarkerStyle(23);
-    //   stg->SetMarkerColor(kRed);
-    //   stg->SetMarkerSize(1);
-    //   stg->GetXaxis()->SetTitle("Time [s]");
-    //   stg->GetYaxis()->SetTitle("Fit status");
-    //   fit_status.push_back(stg);
-    //
-    //
-    //   TGraph * constantg = new TGraph();
-    //   constantg->SetName( (name +"_fit_const").c_str() );
-    //   constantg->SetMarkerStyle(23);
-    //   constantg->SetMarkerColor(kRed);
-    //   constantg->SetMarkerSize(1);
-    //   constantg->GetXaxis()->SetTitle("Time [s]");
-    //   constantg->GetYaxis()->SetTitle("Constant term [au]");
-    //   fit_const.push_back(constantg);
-    //
-    //   TGraphErrors * pdg = new TGraphErrors();
-    //   pdg->SetName( (name +"_fit_mean").c_str() );
-    //   pdg->SetMarkerStyle(23);
-    //   pdg->SetMarkerColor(kRed);
-    //   pdg->SetMarkerSize(1);
-    //   pdg->GetXaxis()->SetTitle("Time [s]");
-    //   pdg->GetYaxis()->SetTitle("Pedestal fit [1/256 * 50 mV]");
-    //   pdg->GetYaxis()->SetRangeUser(-128,127);
-    //   fit_mean.push_back(pdg);
-    //
-    //   TGraph * chig = new TGraph();
-    //   chig->SetName( (name +"_fit_chi2").c_str() );
-    //   chig->SetMarkerStyle(23);
-    //   chig->SetMarkerColor(kRed);
-    //   chig->SetMarkerSize(1);
-    //   chig->GetXaxis()->SetTitle("Time [s]");
-    //   chig->GetYaxis()->SetTitle("Chi2");
-    //   fit_chi2.push_back(chig);
-    //
-    //   TGraph * ndfg = new TGraph();
-    //   ndfg->SetName( (name +"_fit_ndf").c_str() );
-    //   ndfg->SetMarkerStyle(23);
-    //   ndfg->SetMarkerColor(kRed);
-    //   ndfg->SetMarkerSize(1);
-    //   ndfg->GetXaxis()->SetTitle("Time [s]");
-    //   ndfg->GetYaxis()->SetTitle("NDF");
-    //   fit_ndf.push_back(ndfg);
-    //
-    //   TGraph * chi2ndg = new TGraph();
-    //   chi2ndg->SetName( (name +"_fit_chi2ndf").c_str() );
-    //   chi2ndg->SetMarkerStyle(23);
-    //   chi2ndg->SetMarkerColor(kRed);
-    //   chi2ndg->SetMarkerSize(1);
-    //   chi2ndg->GetXaxis()->SetTitle("Time [s]");
-    //   chi2ndg->GetYaxis()->SetTitle("Chi2/NDF");
-    //   fit_chi2ndf.push_back(chi2ndg);
-    //
-    // //   TH1D * pval = new TH1D((name+"_fit_pval").c_str(),(name+"_fit_pval").c_str(),100,0,1);
-    //   TGraph * pval = new TGraph();
-    //   pval->SetName((name+"_fit_pval").c_str());
-    //   chi2ndg->SetMarkerStyle(23);
-    //   chi2ndg->SetMarkerColor(kRed);
-    //   chi2ndg->SetMarkerSize(1);
-    //   pval->GetXaxis()->SetTitle("Time [s]");
-    //   pval->GetYaxis()->SetTitle("Fit p-value");
-    //   pval->GetYaxis()->SetRangeUser(-0.05,1.05);
-    //   fit_pval.push_back(pval);
-    //
-    //   TGraphErrors * mng = new TGraphErrors();
-    //   mng->SetName( (name +"_hist_mean").c_str() );
-    //   mng->SetMarkerStyle(23);
-    //   mng->SetMarkerColor(kRed);
-    //   mng->SetMarkerSize(1);
-    //   mng->GetXaxis()->SetTitle("Time [s]");
-    //   mng->GetYaxis()->SetTitle("Pedestal mean [1/256 * 50 mV]");
-    //   mng->GetYaxis()->SetRangeUser(-128,127);
-    //   hist_mean.push_back(mng);
-    //
-    //   TGraph * ng = new TGraph();
-    //   ng->SetName( (name +"_hist_entries").c_str() );
-    //   ng->SetMarkerStyle(23);
-    //   ng->SetMarkerColor(kRed);
-    //   ng->SetMarkerSize(1);
-    //   ng->GetXaxis()->SetTitle("Time [s]");
-    //   ng->GetYaxis()->SetTitle("# entries");
-    //   hist_entries.push_back(ng);
-    // }
-    //
-    // // Iterate over all evts and fill the pedestal for each channel in the
-    // // corresponding TGraphErrors.
-    // // Pedestals are plotted over the unixtime of the event.
-    // int evt_counter = 0;
-    // for(auto evt: cal_evts_ )
-    // {
-    //   double   evt_time = evt->GetParameter<double>("Properties.UnixTime");
-    //   auto channels = evt->GetChannels();
-    //   for(unsigned int i = 0; i <channels.size(); i++)
-    //   {
-    //       double * pd = channels.at(i)->GetPedestal();
-    //
-    //       fit_status.at(i)->SetPoint(evt_counter, evt_time, pd[0]);
-    //       fit_const.at(i)->SetPoint(evt_counter, evt_time, pd[1]);
-    //
-    //       fit_mean.at(i)->SetPoint(evt_counter, evt_time, pd[2]);
-    //       fit_mean.at(i)->SetPointError(evt_counter, 0.05, pd[3]);
-    //
-    //       fit_chi2.at(i)->SetPoint(evt_counter, evt_time, pd[4]);
-    //
-    //       fit_ndf.at(i)->SetPoint(evt_counter, evt_time, pd[5]);
-    //
-    //
-    //       if( pd[5] !=0 ) fit_chi2ndf.at(i)->SetPoint(evt_counter, evt_time, pd[4]/pd[5]);
-    //       else fit_chi2ndf.at(i)->SetPoint(evt_counter, evt_time, -1.);
-    //
-    //       fit_pval.at(i)->SetPoint(evt_counter, evt_time,pd[6]);
-    //
-    //       hist_mean.at(i)->SetPoint(evt_counter, evt_time, pd[7]);
-    //       hist_mean.at(i)->SetPointError(evt_counter, 0.05, pd[8]);
-    //
-    //       hist_entries.at(i)->SetPoint(evt_counter, evt_time, pd[9]);
-    //   }
-    //
-    //   evt_counter ++;
-    // }
-    //
-    // std::string fname = pds_calibration.string() + "/run_"+std::to_string(nr_)+"_pedestal"+"_"+ GS->GetParameter<std::string>("General.CalibrationVersion")+".root";
-    // TFile *rfile = new TFile(fname.c_str(), "RECREATE");
-    //
-    // for(int i = 0; i < fit_status.size(); i++)
-    // {
-    //   fit_status.at(i)->Write();
-    //   delete fit_status.at(i);
-    //   fit_const.at(i)->Write();
-    //   delete fit_const.at(i);
-    //   fit_mean.at(i)->Write();
-    //   delete fit_mean.at(i);
-    //   fit_chi2.at(i)->Write();
-    //   delete fit_chi2.at(i);
-    //   fit_ndf.at(i)->Write();
-    //   delete fit_ndf.at(i);
-    //   fit_chi2ndf.at(i)->Write();
-    //   delete fit_chi2ndf.at(i);
-    //   fit_pval.at(i)->Write();
-    //   delete fit_pval.at(i);
-    //   hist_mean.at(i)->Write();
-    //   delete hist_mean.at(i);
-    //   hist_entries.at(i)->Write();
-    //   delete hist_entries.at(i);
-    // }
-    //
-    // rfile->Close("R");
-    //
-    // for(auto evt: cal_evts_ )
-    // {
-    //     evt->SubtractPedestals();
-    // }
-    //
+
+    // Use the first event to get a dynamic number and name of channels.
+    std::vector<TGraph *> fit_status;
+    std::vector<TGraph *> fit_const;
+    std::vector<TGraphErrors *> fit_mean;
+    std::vector<TGraph *> fit_chi2;
+    std::vector<TGraph *> fit_ndf;
+    std::vector<TGraph *> fit_chi2ndf;
+    std::vector<TGraph *> fit_pval;
+    std::vector<TGraphErrors *> hist_mean;
+    std::vector<TGraph *> hist_entries;
+
+    for(auto &channel: evts_.at(0)->GetChannels() )
+    {
+
+      std::string name = channel->GetName();
+     // boost::replace_last(name, "-INT", "");
+
+      TGraph * stg = new TGraph();
+      stg->SetName( (name+"_fit_status").c_str() );
+      stg->SetMarkerStyle(23);
+      stg->SetMarkerColor(kRed);
+      stg->SetMarkerSize(1);
+      stg->GetXaxis()->SetTitle("Time [s]");
+      stg->GetYaxis()->SetTitle("Fit status");
+      fit_status.push_back(stg);
+
+
+      TGraph * constantg = new TGraph();
+      constantg->SetName( (name +"_fit_const").c_str() );
+      constantg->SetMarkerStyle(23);
+      constantg->SetMarkerColor(kRed);
+      constantg->SetMarkerSize(1);
+      constantg->GetXaxis()->SetTitle("Time [s]");
+      constantg->GetYaxis()->SetTitle("Constant term [au]");
+      fit_const.push_back(constantg);
+
+      TGraphErrors * pdg = new TGraphErrors();
+      pdg->SetName( (name +"_fit_mean").c_str() );
+      pdg->SetMarkerStyle(23);
+      pdg->SetMarkerColor(kRed);
+      pdg->SetMarkerSize(1);
+      pdg->GetXaxis()->SetTitle("Time [s]");
+      pdg->GetYaxis()->SetTitle("Pedestal fit [1/256 * 50 mV]");
+      pdg->GetYaxis()->SetRangeUser(-128,127);
+      fit_mean.push_back(pdg);
+
+      TGraph * chig = new TGraph();
+      chig->SetName( (name +"_fit_chi2").c_str() );
+      chig->SetMarkerStyle(23);
+      chig->SetMarkerColor(kRed);
+      chig->SetMarkerSize(1);
+      chig->GetXaxis()->SetTitle("Time [s]");
+      chig->GetYaxis()->SetTitle("Chi2");
+      fit_chi2.push_back(chig);
+
+      TGraph * ndfg = new TGraph();
+      ndfg->SetName( (name +"_fit_ndf").c_str() );
+      ndfg->SetMarkerStyle(23);
+      ndfg->SetMarkerColor(kRed);
+      ndfg->SetMarkerSize(1);
+      ndfg->GetXaxis()->SetTitle("Time [s]");
+      ndfg->GetYaxis()->SetTitle("NDF");
+      fit_ndf.push_back(ndfg);
+
+      TGraph * chi2ndg = new TGraph();
+      chi2ndg->SetName( (name +"_fit_chi2ndf").c_str() );
+      chi2ndg->SetMarkerStyle(23);
+      chi2ndg->SetMarkerColor(kRed);
+      chi2ndg->SetMarkerSize(1);
+      chi2ndg->GetXaxis()->SetTitle("Time [s]");
+      chi2ndg->GetYaxis()->SetTitle("Chi2/NDF");
+      fit_chi2ndf.push_back(chi2ndg);
+
+    //   TH1D * pval = new TH1D((name+"_fit_pval").c_str(),(name+"_fit_pval").c_str(),100,0,1);
+      TGraph * pval = new TGraph();
+      pval->SetName((name+"_fit_pval").c_str());
+      chi2ndg->SetMarkerStyle(23);
+      chi2ndg->SetMarkerColor(kRed);
+      chi2ndg->SetMarkerSize(1);
+      pval->GetXaxis()->SetTitle("Time [s]");
+      pval->GetYaxis()->SetTitle("Fit p-value");
+      pval->GetYaxis()->SetRangeUser(-0.05,1.05);
+      fit_pval.push_back(pval);
+
+      TGraphErrors * mng = new TGraphErrors();
+      mng->SetName( (name +"_hist_mean").c_str() );
+      mng->SetMarkerStyle(23);
+      mng->SetMarkerColor(kRed);
+      mng->SetMarkerSize(1);
+      mng->GetXaxis()->SetTitle("Time [s]");
+      mng->GetYaxis()->SetTitle("Pedestal mean [1/256 * 50 mV]");
+      mng->GetYaxis()->SetRangeUser(-128,127);
+      hist_mean.push_back(mng);
+
+      TGraph * ng = new TGraph();
+      ng->SetName( (name +"_hist_entries").c_str() );
+      ng->SetMarkerStyle(23);
+      ng->SetMarkerColor(kRed);
+      ng->SetMarkerSize(1);
+      ng->GetXaxis()->SetTitle("Time [s]");
+      ng->GetYaxis()->SetTitle("# entries");
+      hist_entries.push_back(ng);
+    }
+
+    // Iterate over all evts and fill the pedestal for each channel in the
+    // corresponding TGraphErrors.
+    // Pedestals are plotted over the unixtime of the event.
+    int evt_counter = 0;
     for(auto &evt: evts_ )
     {
-        evt->SaveEvent(pds_physics/boost::filesystem::path("Waveforms"), false);
+      double   evt_time = evt->GetParameter<double>("Properties.UnixTime");
+      auto channels = evt->GetChannels();
+      for(unsigned int i = 0; i <channels.size(); i++)
+      {
+          double * pd = channels.at(i)->GetPedestal();
+
+          fit_status.at(i)->SetPoint(evt_counter, evt_time, pd[0]);
+          fit_const.at(i)->SetPoint(evt_counter, evt_time, pd[1]);
+
+          fit_mean.at(i)->SetPoint(evt_counter, evt_time, pd[2]);
+          fit_mean.at(i)->SetPointError(evt_counter, 0.05, pd[3]);
+
+          fit_chi2.at(i)->SetPoint(evt_counter, evt_time, pd[4]);
+
+          fit_ndf.at(i)->SetPoint(evt_counter, evt_time, pd[5]);
+
+
+          if( pd[5] !=0 ) fit_chi2ndf.at(i)->SetPoint(evt_counter, evt_time, pd[4]/pd[5]);
+          else fit_chi2ndf.at(i)->SetPoint(evt_counter, evt_time, -1.);
+
+          fit_pval.at(i)->SetPoint(evt_counter, evt_time,pd[6]);
+
+          hist_mean.at(i)->SetPoint(evt_counter, evt_time, pd[7]);
+          hist_mean.at(i)->SetPointError(evt_counter, 0.05, pd[8]);
+
+          hist_entries.at(i)->SetPoint(evt_counter, evt_time, pd[9]);
+      }
+
+      evt_counter ++;
+    }
+
+    std::string fname = pds_physics.string() + "/run_"+std::to_string(nr_)+"_pedestal"+"_"+ GS->GetParameter<std::string>("General.CalibrationVersion")+".root";
+    TFile *rfile = new TFile(fname.c_str(), "RECREATE");
+
+    for(int i = 0; i < fit_status.size(); i++)
+    {
+      fit_status.at(i)->Write();
+      delete fit_status.at(i);
+      fit_const.at(i)->Write();
+      delete fit_const.at(i);
+      fit_mean.at(i)->Write();
+      delete fit_mean.at(i);
+      fit_chi2.at(i)->Write();
+      delete fit_chi2.at(i);
+      fit_ndf.at(i)->Write();
+      delete fit_ndf.at(i);
+      fit_chi2ndf.at(i)->Write();
+      delete fit_chi2ndf.at(i);
+      fit_pval.at(i)->Write();
+      delete fit_pval.at(i);
+      hist_mean.at(i)->Write();
+      delete hist_mean.at(i);
+      hist_entries.at(i)->Write();
+      delete hist_entries.at(i);
+    }
+
+    rfile->Close("R");
+
+    for(auto &evt: evts_ )
+    {
+        evt->SubtractPedestals();
+    }
+
+    for(auto &evt: evts_ )
+    {
+        evt->SaveEvent(pds_physics/boost::filesystem::path("Waveforms"), true);
         evt->DeleteHistograms();
     }
 
