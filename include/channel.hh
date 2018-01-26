@@ -159,7 +159,13 @@ class PhysicsChannel : public Channel
         virtual ~PhysicsChannel();
         virtual void PrepHistogram( double range, double offset = 0.);
         virtual     void        FillPedestal();
+        virtual void OverShootCorrection();
+
+        virtual double*      GetOS();
+
     private:
+        double    os_[10];
+
 
 //
 //         void    WaveformDecomposition();

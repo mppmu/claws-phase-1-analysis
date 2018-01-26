@@ -65,7 +65,9 @@ enum EventState
     EVENTSTATE_PREP,
     EVENTSTATE_PDFILLED,
     EVENTSTATE_PDSUBTRACTED,
+    EVENTSTATE_OSCORRECTED,
     EVENTSTATE_PDFAILED,
+    EVENTSTATE_OSFAILED,
     // COLOR_GREEN, // assigned 3
     // COLOR_WHITE, // assigned 4
     // COLOR_CYAN, // assigned 5
@@ -91,8 +93,12 @@ inline std::string printEventState(EventState state)
       return "pd_filled";
     case EVENTSTATE_PDSUBTRACTED:
       return "pd_subtracted";
+    case EVENTSTATE_OSCORRECTED:
+      return "os_corrected";
+    case EVENTSTATE_OSFAILED:
+      return "os_failed";
     case EVENTSTATE_PDFAILED:
-      return "pd_subtracted";
+      return "pd_failed";
     default:
       return "Invalid Selection";
   }
@@ -136,9 +142,9 @@ class Event{
 
         virtual ~Event();
 
-        virtual void LoadFiles(EventState state = EVENTSTATE_RAW);
+        virtual void LoadFiles();
             virtual void LoadRaw();
-            virtual void LoadSubtracted();
+
                 virtual void LoadHistograms(boost::filesystem::path file);
 
 
@@ -202,6 +208,9 @@ class CalibrationEvent : public Event{
         // PhysicsEvent();
         CalibrationEvent(boost::filesystem::path file, boost::filesystem::path ini_file, double unixtime = -1);
 
+        virtual void LoadFiles(EventState state = EVENTSTATE_RAW);
+            virtual void LoadSubtracted();
+
         virtual ~CalibrationEvent();
         virtual void PrepHistograms();
 
@@ -234,8 +243,12 @@ class PhysicsEvent : public Event{
         PhysicsEvent(boost::filesystem::path file, boost::filesystem::path ini_file, boost::filesystem::path rate_file);
         virtual ~PhysicsEvent();
 
+        virtual void LoadFiles(EventState state = EVENTSTATE_RAW);
+            virtual void LoadSubtracted();
+
         virtual void PrepHistograms( boost::property_tree::ptree &settings );
 
+        virtual void OverShootCorrection();
     //    virtual void PrepHistograms();
     private:
         boost::filesystem::path rate_file_;

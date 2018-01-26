@@ -36,6 +36,21 @@
 // TODO proper description
 //----------------------------------------------------------------------------------------------
 
+Double_t osfunc(Double_t *x, Double_t *par)
+{
+    Double_t y = 0;
+    if(x[0] <= par[5])
+    {
+        y = par[0]*TMath::Exp(-(x[0] - par[1])*(x[0] - par[1])/(par[2]*par[2]));
+    }
+    else if(x[0] > par[5])
+    {
+        y = par[0]*TMath::Exp(-(par[5] - par[1])*(par[5] - par[1])/(par[2]*par[2]) - par[3]*(par[5] - par[4]));
+        y = y*TMath::Exp(par[3]*(x[0] - par[4]));
+    }
+    return y;
+}
+
 Channel::Channel(std::string name) : name_(name), state_(CHANNELSTATE_VALID), hist_(NULL), pdhist_(NULL), pd_({-1}), scope_pos_("-1"), range_(-1)
 {
 
@@ -80,11 +95,29 @@ void Channel::PrepHistogram( double range )
 	 */
     hist_->Scale(-1./256.);
 
+	/**
+	 *  Now convert from [-127, +127] to [mV] and set
+	 *  the error on the bins according to the specs
+	 *  from picotech:
+	 *  -127 = -range
+	 *   127 = range
+	 *   --> the value 128 is apparently not used, or
+	 *       is an error bit
+	 */
 	if( range >= 0)
 	{
+		/**
+		 *  The error on the voltage is 3% of the full range of the scope
+		 *  + the finite bin width of the 8 bit scope.
+		 */
+		double range_error = range*GS->GetParameter<double>("Scope.range_error");
+		double bin_error = range/127.;
+
 		for( int i = 1; i <= hist_->GetNbinsX(); ++i)
 		{
-			hist_->SetBinContent(i, hist_->GetBinContent(i)/127 * range );
+			double content = hist_->GetBinContent(i)/127 * range;
+			hist_->SetBinContent(i, content);
+			hist_->SetBinError(i, range_error + bin_error );
 		}
 
 		range_ = range;
@@ -92,8 +125,7 @@ void Channel::PrepHistogram( double range )
 	}
 
 	/**
-	* Shift the bins and the x axis to resamble ns
-	* \todo load binsize dynamically
+	*   Shift the bins and the x axis to resamble ns.
 	*/
 	double dt = GS->GetParameter<double>("Scope.delta_t");
 
@@ -393,7 +425,6 @@ void CalibrationChannel::FillPedestal()
 };
 
 
-
 //
 // // void Channel::LoadPedestaet(name_.c_str());
 // //     hist_->SetDirectory(0);
@@ -552,7 +583,7 @@ void CalibrationChannel::FillPedestal()
 // // TODO prper description
 // //----------------------------------------------------------------------------------------------
 //
-PhysicsChannel::PhysicsChannel(std::string ch_name, std::string scope_pos) : Channel(ch_name)
+PhysicsChannel::PhysicsChannel(std::string ch_name, std::string scope_pos) : Channel(ch_name), os_({-1})
 {
 	scope_pos_ = scope_pos;
 };
@@ -597,13 +628,6 @@ void PhysicsChannel::FillPedestal()
 	// 	pdhist_->Fill( hist_->GetBinContent(i) );
 	// }
 
-
-		//bool fillflag   = true;PD
-
-				// //float threshold = baseline_ + pd_delta_;
-				// float threshold = 3;
-				// float pd_gap = 20;
-				// unsigned i = pd_gap_;
 	int bins_over_threshold 	= GS->GetParameter<int>("PDS_Physics.bins_over_threshold");
 	double threshold_low 		= GS->GetParameter<double>("PDS_Physics.threshold_low");
 	double threshold_high 		= GS->GetParameter<double>("PDS_Physics.threshold_high");
@@ -611,9 +635,7 @@ void PhysicsChannel::FillPedestal()
 	int overshoot_length 		= GS->GetParameter<int>("PDS_Physics.overshoot_length");
 
 	unsigned i=1;
-	//
-	// 	// while( i < hist_->GetNbinsX() - 2 * pd_gap_ +1 )
-	// 	// {
+
 	while( i <= hist_->GetNbinsX() )
 	{
 	    double bin_contend  = hist_->GetBinContent(i);
@@ -658,65 +680,10 @@ void PhysicsChannel::FillPedestal()
 					pdhist_->Fill( bin_contend );
 				}
 			}
-	// 			}
-	// 			else
-	// 			{
-	// 					if( bin_contend < threshold)
-	// 					{
-	// 							pdhist_->Fill( bin_contend );
-	// 					}
+
 		}
 		i++;
     }
-	//
-
-
-				// if( waveform_->at( i + 1 ) >= threshold &&
-				//     waveform_->at( i + 2 ) >= threshold &&
-				//     waveform_->at( i + 3 ) >= threshold )
-				// {
-
-				// if(  < threshold && fillflag == true)
-				// {
-				// 		pdhist_->Fill(waveform_->at(i - pd_gap_) );
-				// }
-				//
-				// 		else if( waveform_->at( i ) >= threshold && fillflag == true)
-				// 		{
-				// 				if( waveform_->at( i + 1 ) >= threshold &&
-				// 				    waveform_->at( i + 2 ) >= threshold &&
-				// 				    waveform_->at( i + 3 ) >= threshold )
-				// 				{
-				// 						fillflag = false;
-				// 				}
-				// 				else
-				// 				{
-				// 						pedestal_hist_->Fill(waveform_->at(i - pd_gap_) );
-				// 				}
-				// 		}
-				//
-				// 		else if( waveform_->at( i ) < threshold &&
-				// 		         fillflag == false &&
-				// 		         // When jumping the tail of the signal (2*gap) needed to make
-				// 		         // sure we are not jumping into a signal again.
-				// 		         waveform_->at( i + 2 * pd_gap_ ) < threshold )
-				// 		{
-				// 				fillflag = true;
-				// 				if( i < waveform_->size() - 2 * pd_gap_ )
-				// 				{
-				// 						i += 2 * pd_gap_;
-				// 				}
-				// 		}
-				//
-				//
-
-				// if((pedestal_hist_->GetEntries()<waveform_->size()*0.01))
-				// {
-				//     std::string error = name_ + ":  (pedestal_hist_->GetEntries(): " + to_string(pedestal_hist_->GetEntries()) + ", waveform_->size(): "
-				//                         + to_string(waveform_->size())+ ", i: " + to_string(i) + ", pd_gap_: " + to_string(pd_gap_)+ ", threshold: " + to_string(threshold);
-				//     std::cout << error << std::endl;
-				// }
-				// std::cout << name_ << ": " << pedestal_hist_->GetEntries() << std::endl;
 
 		/** In some cases two 1 pe waveforms are within a calibration waveform,
 		*   leading to no value be able to pass the conditions to be filled into
@@ -727,17 +694,6 @@ void PhysicsChannel::FillPedestal()
 			state_ = CHANNELSTATE_PDFAILED;
 			return;
 		}
-
-		// if( pdhist_->GetEntries() == 0 )
-		// {
-		// 	for(int i = 1; i<7;i++ ) pd_[i] = -1;
-		//
-		// 	pd_[7]    = pdhist_->GetMean();
-		// 	pd_[8]    = pdhist_->GetMeanError();
-		// 	pd_[9]    = pdhist_->GetEntries();
-		//
-		// 	return;
-		// }
 
 		TF1* fit=new TF1("gaus","gaus",1,3, TF1::EAddToList::kNo);
 
@@ -772,6 +728,160 @@ void PhysicsChannel::FillPedestal()
 
 		delete fit;
 };
+
+void PhysicsChannel::OverShootCorrection()
+{
+	// int bins_over_threshold 	= GS->GetParameter<int>("PDS_Physics.bins_over_threshold");
+	// double threshold_low 		= GS->GetParameter<double>("PDS_Physics.threshold_low");
+	// double threshold_high 		= GS->GetParameter<double>("PDS_Physics.threshold_high");
+	// int signal_length 			= GS->GetParameter<int>("PDS_Physics.signal_length");
+	// int overshoot_length 		= GS->GetParameter<int>("PDS_Physics.overshoot_length");
+
+	double dt 					= GS->GetParameter<double>("Scope.delta_t");
+	double threshold 			= GS->GetParameter<double>("OverShootCorrection.threshold");
+	int line_after_threshold 	= GS->GetParameter<int>("OverShootCorrection.line_after_threshold");
+	int line_length 			= GS->GetParameter<int>("OverShootCorrection.line_length");
+
+	double line_par0 			= GS->GetParameter<double>("OverShootCorrection.line_par0");
+	double line_par2 			= GS->GetParameter<double>("OverShootCorrection.line_par2");
+
+	int os_after_start 			= GS->GetParameter<double>("OverShootCorrection.os_after_start");
+	double gconst				= GS->GetParameter<double>("OverShootCorrection.gconst");
+	double gmean				= GS->GetParameter<double>("OverShootCorrection.gmean");
+	double gsigma				= GS->GetParameter<double>("OverShootCorrection.gsigma");
+	double exdecay				= GS->GetParameter<double>("OverShootCorrection.exdecay");
+	double border				= GS->GetParameter<double>("OverShootCorrection.border");
+
+	for( int i = 1; i <= hist_->GetNbinsX(); ++i )
+	{
+		if(hist_->GetBinContent(i) > threshold)
+		{
+			double lstart = hist_->GetBinCenter(i) + line_after_threshold*dt;
+			double lstop = hist_->GetBinCenter(i) + (line_after_threshold + line_length)*dt;
+			TF1 *fit_line = new TF1("fit_line","[0]*(x-[1])+[2]", 0, 1, TF1::EAddToList::kNo);
+			fit_line->SetParameters(line_par0, lstart + 100*dt, line_par2);
+
+			TFitResultPtr result = 	hist_->Fit(fit_line, "QS+","", lstart, lstop);
+			//TFitResultPtr result = pdhist_->Fit(fit, "QSL","", low, up);
+
+			double osstart = fit_line->GetX( 0. );
+			double osstop  = osstart + os_after_start*dt ;
+
+			TF1 *osfit = new TF1("osfit", osfunc, 0., 1., 6);
+			osfit->SetParameter(0, gconst);
+			osfit->SetParLimits(0, -20*gconst, 0);
+
+			osfit->SetParameter(1, osstart + gmean);
+			osfit->SetParLimits(1, osstart, osstart+gmean*2.5);
+
+			osfit->SetParameter(2, gsigma);
+			osfit->SetParLimits(2, 0, 3.2e-6);
+
+			osfit->SetParameter(3, exdecay);
+			osfit->SetParLimits(3, -1., 0);
+
+			osfit->SetParameter(4, osstart + 1.2e-6);
+			osfit->SetParLimits(4, osstart, osstop);
+
+			osfit->SetParameter(5, osstart + border);
+			osfit->SetParLimits(5, osstart + 1.2e-6 , osstart + 2.4e-6);
+
+			result = 	hist_->Fit(osfit, "S+","", osstart, osstop);
+
+			if( int(result) != 0)
+			{
+
+			// 	pd_[1]    = fit->GetParameter(0);
+			// 	pd_[2]    = fit->GetParameter(1);
+			// 	pd_[3]    = fit->GetParameter(2);
+			// 	pd_[4]    = fit->GetChisquare();
+			// 	pd_[5]    = fit->GetNDF();
+			// 	pd_[6]    = result->Prob();
+			}
+			int substart = hist_->GetXaxis()->FindBin(osstart);
+			int substop  = hist_->GetXaxis()->FindBin(osfit->GetX(0.1, osstart+ 200e-9));
+
+			for(int j = substart; j<=substop; ++j )
+			{
+				double content  = hist_->GetBinContent(i);
+				double subtract = osfit->Eval(hist_->GetBinCenter(i));
+				hist_->SetBinContent(i, content - subtract);
+			}
+
+			// else
+			// {
+			// 	state_ = CHANNELSTATE_PDFAILED;
+			// //	pd_[0]    = int(result);
+			// //	for(int i = 1; i<7;i++ ) pd_[i] = -1;
+			// }
+			//
+			// pd_[7]    = pdhist_->GetMean();
+			// pd_[8]    = pdhist_->GetMeanError();
+			// pd_[9]    = pdhist_->GetEntries();
+
+
+			delete fit_line;
+			delete osfit;
+
+			i += line_after_threshold + line_length;
+		}
+	}
+	// unsigned i=1;
+	//
+	// while( i <= hist_->GetNbinsX() )
+	// {
+	// 	double bin_contend  = hist_->GetBinContent(i);
+	//
+	// 	if( i <= hist_->GetNbinsX() - bins_over_threshold)
+	// 	{
+	// 		if( bin_contend > threshold_low && bin_contend < threshold_high )
+	// 		{
+	// 			  pdhist_->Fill( bin_contend );
+	// 		}
+	// 		else if( bin_contend >= threshold_high )
+	// 		{
+	// 			bool above_threshold = true;
+	// 			for (int j = 0; j < bins_over_threshold; j++)
+	// 			{
+	// 				if(hist_->GetBinContent(i+j) < threshold_high ) above_threshold = false;
+	// 			}
+	//
+	// 			if( above_threshold )
+	// 			{
+	// 				i += signal_length;
+	// 			}
+	// 			else
+	// 			{
+	// 				pdhist_->Fill( bin_contend );
+	// 			}
+	// 		}
+	// 		else if( bin_contend <= threshold_low )
+	// 		{
+	// 			bool below_threshold = true;
+	// 			for (int j = 0; j < bins_over_threshold; j++)
+	// 			{
+	// 				if( hist_->GetBinContent(i+j) > threshold_low ) below_threshold = false;
+	// 			}
+	//
+	// 			if( below_threshold )
+	// 			{
+	// 				i += overshoot_length;
+	// 			}
+	// 			else
+	// 			{
+	// 				pdhist_->Fill( bin_contend );
+	// 			}
+	// 		}
+	//
+	// 	}
+	// 	i++;
+	// }
+}
+
+double * PhysicsChannel::GetOS()
+{
+	return os_;
+}
 
 
 

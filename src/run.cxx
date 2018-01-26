@@ -867,6 +867,72 @@ void CalibrationRun::PDS_Physics()
     //      cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 };
 
+void CalibrationRun::OverShootCorrection()
+{
+    //      double wall0 = claws::get_wall_time();
+    //      double cpu0  = claws::get_cpu_time();
+    //
+    std::cout << "\033[33;1mRun::Correcting for Amp OverShoot:\033[0m running" << "\r" << std::flush;
+
+    boost::filesystem::path overshoot = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("OverShootCorrection");
+    if(!boost::filesystem::is_directory( overshoot ) )
+    {
+        boost::filesystem::create_directory( overshoot );
+    }
+
+    if(!boost::filesystem::is_directory( overshoot/boost::filesystem::path("Waveforms")) )
+    {
+        boost::filesystem::create_directory( overshoot/boost::filesystem::path("Waveforms"));
+    }
+
+    // Get the histograms and prepare them
+	// for(auto &evt: evts_ )
+	// {
+	//     evt->LoadFiles(EVENTSTATE_PDSUBTRACTED);
+	// }
+
+
+    // Load the histograms & .ini file. If the event
+    // did not pass the pd subtraction, throw it away
+    auto evt_itr = evts_.begin();
+
+    while( evt_itr != evts_.end() )
+    {
+        (*evt_itr)->LoadFiles(EVENTSTATE_PDSUBTRACTED);
+
+        if( (*evt_itr)->GetState() == EVENTSTATE_PDFAILED )
+        {
+                delete (*evt_itr);
+                (*evt_itr) = NULL;
+                evts_.erase(evt_itr);
+        }
+        else
+        {
+                evt_itr++;
+        }
+    }
+
+
+    for(auto &evt: evts_ )
+    {
+        evt->OverShootCorrection();
+    }
+
+    for(auto &evt: evts_ )
+    {
+        evt->SaveEvent( overshoot/boost::filesystem::path("Waveforms") );
+        evt->DeleteHistograms();
+    }
+
+    std::cout << "\033[32;1mRun::Correcting for Amp OverShoot:\033[0m done!       " << std::endl;
+//
+//      double wall1 = claws::get_wall_time();
+//      double cpu1  = claws::get_cpu_time();
+//
+//      cout << "Wall Time = " << wall1 - wall0 << endl;
+//      cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+};
+
 void CalibrationRun::DeleteCalibrationHistograms()
 {
     for(auto evt: cal_evts_ )

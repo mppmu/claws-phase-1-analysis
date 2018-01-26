@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
 		 */
 
 		bool tasks[10] = {false};
-		std::string tasks_names[10] = {"Calibration waveform pedestal subtraction", "Gain determination", "Averaging of 1 pe waveforms", "Physics waveform pedestal subtraction", "", "", "", "", "", ""};
+		std::string tasks_names[10] = {"Calibration waveform pedestal subtraction", "Gain determination", "Averaging of 1 pe waveforms", "Physics waveform pedestal subtraction", "Correction for Amp OverShoot", "", "", "", "", ""};
 
 		std::string tasks_tmp = config_map["tasks"].as<std::string>();
 
@@ -201,6 +201,11 @@ int main(int argc, char* argv[]) {
 			if(tasks[3])
 			{
 				run->PDS_Physics();
+			}
+
+			if(tasks[4])
+			{
+				run->OverShootCorrection();
 			}
 
 			delete run;

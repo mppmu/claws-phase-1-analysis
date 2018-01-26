@@ -49,22 +49,9 @@ Event::~Event()
 	for(auto &channel: channels_) delete channel;
 }
 
-void Event::LoadFiles(EventState state)
+void Event::LoadFiles()
 {
-        switch (state)
-		{
-            case EVENTSTATE_RAW:
-            {
-                this->LoadRaw();
-                break;
-            }
-            case EVENTSTATE_PDSUBTRACTED:
-            {
-                this->LoadSubtracted();
-                break;
-            }
-        }
-
+	this->LoadRaw();
 }
 
 void Event::LoadRaw()
@@ -76,32 +63,6 @@ void Event::LoadRaw()
 	//state_ = static_cast<EventState>( pt_.get<int>("General.State") );
 	state_ = EVENTSTATE_RAW;
 	pt_.put("General.State", state_);
-}
-
-void Event::LoadSubtracted()
-{
-	std::string fname = (path_/boost::filesystem::path("Calibration")/boost::filesystem::path("PDS_Calibration")/boost::filesystem::path("Waveforms")).string() + "/";
-
-	int     status;
-	char   *realname;
-	const std::type_info  &ti = typeid(*this);
-	realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
-	fname += std::string(realname);
-	free(realname);
-
-	std::stringstream ss;
-	ss << std::setw(3) << std::setfill('0') << nr_;
-	fname += "_" + ss.str();
-	fname += "_" + printEventState(EVENTSTATE_PDSUBTRACTED);
-	fname += ".root";
-
-    this->LoadHistograms(boost::filesystem::path(fname));
-
-    boost::replace_last(fname, "root","ini");
-    boost::property_tree::ini_parser::read_ini(fname, pt_);
-
-	state_ = static_cast<EventState>( pt_.get<int>("General.State") );
-
 }
 
 void Event::LoadHistograms(boost::filesystem::path file)
@@ -290,14 +251,73 @@ CalibrationEvent::CalibrationEvent(boost::filesystem::path file, boost::filesyst
 			 }
 		}
 
-
-
 };
 
 CalibrationEvent::~CalibrationEvent() {
 		// TODO Auto-generated destructor stub
 
 };
+
+void CalibrationEvent::LoadFiles(EventState state)
+{
+        switch (state)
+		{
+            case EVENTSTATE_RAW:
+            {
+                this->LoadRaw();
+                break;
+            }
+            case EVENTSTATE_PDSUBTRACTED:
+            {
+                this->LoadSubtracted();
+                break;
+            }
+        }
+
+}
+
+void CalibrationEvent::LoadSubtracted()
+{
+	std::string fname = (path_/boost::filesystem::path("Calibration")/boost::filesystem::path("PDS_Calibration")/boost::filesystem::path("Waveforms")).string() + "/";
+
+	int     status;
+	char   *realname;
+	const std::type_info  &ti = typeid(*this);
+	realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
+	fname += std::string(realname);
+	free(realname);
+
+	std::stringstream ss;
+	ss << std::setw(3) << std::setfill('0') << nr_;
+	fname += "_" + ss.str();
+	fname += "_" + printEventState(EVENTSTATE_PDSUBTRACTED);
+	fname += ".root";
+
+	// If the PD failded the file will be saved with a pd_failed in its name
+	if( boost::filesystem::exists(fname) )
+    {
+		this->LoadHistograms(boost::filesystem::path(fname));
+	}
+	else
+	{
+		boost::replace_last(fname, printEventState(EVENTSTATE_PDSUBTRACTED),printEventState(EVENTSTATE_PDFAILED));
+		if( boost::filesystem::exists(fname) )
+		{
+			this->LoadHistograms(boost::filesystem::path(fname));
+		}
+		else
+		{
+			return;
+		}
+	}
+
+    boost::replace_last(fname, "root","ini");
+    boost::property_tree::ini_parser::read_ini(fname, pt_);
+
+	state_ = static_cast<EventState>( pt_.get<int>("General.State") );
+
+}
+
 
 void CalibrationEvent::PrepHistograms()
 {
@@ -352,6 +372,66 @@ PhysicsEvent::~PhysicsEvent() {
 		// TODO Auto-generated destructor stub
 };
 
+void PhysicsEvent::LoadFiles(EventState state)
+{
+        switch (state)
+		{
+            case EVENTSTATE_RAW:
+            {
+                this->LoadRaw();
+                break;
+            }
+            case EVENTSTATE_PDSUBTRACTED:
+            {
+                this->LoadSubtracted();
+                break;
+            }
+        }
+
+}
+
+void PhysicsEvent::LoadSubtracted()
+{
+	std::string fname = (path_/boost::filesystem::path("Calibration")/boost::filesystem::path("PDS_Physics")/boost::filesystem::path("Waveforms")).string() + "/";
+
+	int     status;
+	char   *realname;
+	const std::type_info  &ti = typeid(*this);
+	realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
+	fname += std::string(realname);
+	free(realname);
+
+	std::stringstream ss;
+	ss << std::setw(3) << std::setfill('0') << nr_;
+	fname += "_" + ss.str();
+	fname += "_" + printEventState(EVENTSTATE_PDSUBTRACTED);
+	fname += ".root";
+
+	// If the PD failded the file will be saved with a pd_failed in its name
+	if( boost::filesystem::exists(fname) )
+	{
+		this->LoadHistograms(boost::filesystem::path(fname));
+	}
+	else
+	{
+		boost::replace_last(fname, printEventState(EVENTSTATE_PDSUBTRACTED),printEventState(EVENTSTATE_PDFAILED));
+		if( boost::filesystem::exists(fname) )
+		{
+			this->LoadHistograms(boost::filesystem::path(fname));
+		}
+		else
+		{
+			return;
+		}
+	}
+	
+    boost::replace_last(fname, "root","ini");
+    boost::property_tree::ini_parser::read_ini(fname, pt_);
+
+	state_ = static_cast<EventState>( pt_.get<int>("General.State") );
+
+}
+
 void PhysicsEvent::PrepHistograms(boost::property_tree::ptree &settings)
 {
 
@@ -376,6 +456,17 @@ void PhysicsEvent::PrepHistograms(boost::property_tree::ptree &settings)
 
 }
 
+void PhysicsEvent::OverShootCorrection()
+{
+	for (auto &channel : channels_)
+	{
+		PhysicsChannel *phc = dynamic_cast<PhysicsChannel*>(channel);
+		phc->OverShootCorrection();
+	}
+
+	state_ = EVENTSTATE_OSCORRECTED;
+	pt_.put("General.State", printEventState(state_));
+}
 // void PhysicsEvent::LoadIniFile(){
 //
 //
@@ -400,44 +491,6 @@ void PhysicsEvent::PrepHistograms(boost::property_tree::ptree &settings)
 // 		//TODO load the rest that is written in the .ini file.
 // };
 
-
-//
-// void Event::LoadWaveform()
-// {
-// 		// for (auto &mmap : channels_)
-// 		// {
-// 		//     std::cout<< mmap.first << std::endl;
-// 		// }
-//
-// 		// std::vector<std::string> vch = GS->GetChannels(1);
-// 		std::vector<std::string> chs;
-// 		std::pair<std::string, Channel*> pair;
-//
-// 		BOOST_FOREACH(pair, channels_)
-// 		{
-// 				chs.push_back(pair.first);
-// 		}
-//
-// //  #pragma omp parallel for num_threads(8)
-// 		for(unsigned i = 0; i < chs.size(); i++)
-// 		{
-// 				channels_[chs.at(i)]->LoadWaveform();
-// 		}
-//
-// };
-//
-
-//
-// void Event::DeleteWaveforms()
-// {
-//
-// 		for (const auto &itr : channels_)
-// 		{
-// 				itr.second->DeleteWaveform();
-// 		}
-//
-// };
-//
 
 //
 // // void Event::SubtractPedestal()
