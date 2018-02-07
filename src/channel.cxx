@@ -27,6 +27,7 @@
 #include <TH1F.h>
 #include <TFitResult.h>
 #include <TFitResultPtr.h>
+#include <TMinuit.h>
 // --- Project includes ---
 #include "channel.hh"
 #include "globalsettings.hh"
@@ -764,12 +765,27 @@ void PhysicsChannel::OverShootCorrection()
 			TFitResultPtr result = 	hist_->Fit(fit_line, "QS+","", lstart, lstop);
 			//TFitResultPtr result = pdhist_->Fit(fit, "QSL","", low, up);
 
-			double osstart = fit_line->GetX( 0. );
+			double osstart = fit_line->GetX( 0. )+100e-9;
+			double osborder = osstart + border;
 			double osstop  = osstart + os_after_start*dt ;
+
+			// TF1* gaus  = new TF1("gaus","gaus",1,3, TF1::EAddToList::kNo);
+			// gaus->SetParameter(0, gconst);
+			// gaus->SetParLimits(0, 15*gconst, 0);
+			//
+			// gaus->SetParameter(1, osstart + gmean);
+			// gaus->SetParLimits(1, osstart, osstart+gmean*2.5);
+			//
+			// gaus->SetParameter(2, gsigma);
+			// gaus->SetParLimits(2, 0, 1.5e-6);
+			//
+			// result = 	hist_->Fit(gaus, "S+","", osstart, osstart+border);
+			//
+			// TF1* expo  = new TF1("expo","[o]*TMath::Exp([1]*(x-[2]))",1,3, TF1::EAddToList::kNo);
 
 			TF1 *osfit = new TF1("osfit", osfunc, 0., 1., 6);
 			osfit->SetParameter(0, gconst);
-			osfit->SetParLimits(0, -20*gconst, 0);
+			osfit->SetParLimits(0, 10*gconst, 0);
 
 			osfit->SetParameter(1, osstart + gmean);
 			osfit->SetParLimits(1, osstart, osstart+gmean*2.5);
@@ -778,36 +794,42 @@ void PhysicsChannel::OverShootCorrection()
 			osfit->SetParLimits(2, 0, 3.2e-6);
 
 			osfit->SetParameter(3, exdecay);
-			osfit->SetParLimits(3, -1., 0);
+			osfit->SetParLimits(3, -1.e7, -1e4);
 
 			osfit->SetParameter(4, osstart + 1.2e-6);
 			osfit->SetParLimits(4, osstart, osstop);
 
 			osfit->SetParameter(5, osstart + border);
-			osfit->SetParLimits(5, osstart + 1.2e-6 , osstart + 2.4e-6);
+			osfit->SetParLimits(5, osstart + gmean , osstop);
+
 
 			result = 	hist_->Fit(osfit, "S+","", osstart, osstop);
-
-			if( int(result) != 0)
-			{
-
-			// 	pd_[1]    = fit->GetParameter(0);
-			// 	pd_[2]    = fit->GetParameter(1);
-			// 	pd_[3]    = fit->GetParameter(2);
-			// 	pd_[4]    = fit->GetChisquare();
-			// 	pd_[5]    = fit->GetNDF();
-			// 	pd_[6]    = result->Prob();
-			}
-			int substart = hist_->GetXaxis()->FindBin(osstart);
-			int substop  = hist_->GetXaxis()->FindBin(osfit->GetX(0.1, osstart+ 200e-9));
-
-			for(int j = substart; j<=substop; ++j )
-			{
-				double content  = hist_->GetBinContent(i);
-				double subtract = osfit->Eval(hist_->GetBinCenter(i));
-				hist_->SetBinContent(i, content - subtract);
-			}
-
+			auto status = result->Status();
+		// 	auto isval = result->IsValid();
+		// //	auto bla = gMinuit->fStatus;
+		// 	if( int(result) == 0)
+		// 	{
+		//
+		// 		std::cout << "Fitting channel: " << name_ << std::endl;
+		// 	// // 	pd_[1]    = fit->GetParameter(0);
+		// 	// // 	pd_[2]    = fit->GetParameter(1);
+		// 	// // 	pd_[3]    = fit->GetParameter(2);
+		// 	// // 	pd_[4]    = fit->GetChisquare();
+		// 	// // 	pd_[5]    = fit->GetNDF();
+		// 	// // 	pd_[6]    = result->Prob();
+		// 	}
+			// else
+			// {
+			// 	int substart = hist_->GetXaxis()->FindBin(osstart);
+			// 	int substop  = hist_->GetXaxis()->FindBin(osfit->GetX(0.1, osstart+ 200e-9));
+			//
+			// 	for(int j = substart; j<=substop; ++j )
+			// 	{
+			// 		double content  = hist_->GetBinContent(i);
+			// 		double subtract = osfit->Eval(hist_->GetBinCenter(i));
+			// 		hist_->SetBinContent(i, content - subtract);
+			// 	}
+			// }
 			// else
 			// {
 			// 	state_ = CHANNELSTATE_PDFAILED;
@@ -821,6 +843,7 @@ void PhysicsChannel::OverShootCorrection()
 
 
 			delete fit_line;
+			//delete gaus;
 			delete osfit;
 
 			i += line_after_threshold + line_length;
