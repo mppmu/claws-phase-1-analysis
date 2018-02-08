@@ -39,6 +39,8 @@
 #include <iostream>
 #include <fstream>
 
+#include <TF1.h>
+
 namespace pt = boost::property_tree;
 
 
@@ -159,6 +161,7 @@ namespace claws {
             int GetNThreads();
             boost::filesystem::path GetHook();
             boost::filesystem::path GetDetector();
+            TF1* GetOverShootFunction();
 
             GlobalSettings* ResetHook();
             GlobalSettings* SetData();
@@ -216,6 +219,8 @@ namespace claws {
             const boost::filesystem::path path_data_     = "/remote/ceph/group/ilc/claws/data";
             const boost::filesystem::path path_ntp_      = "/NTP";
             const boost::filesystem::path path_raw_data_ = "/RAW";
+
+            TF1* overshoot_function;
 
     };
 

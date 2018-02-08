@@ -59,6 +59,7 @@ inline std::string printChannelState(ChannelState state)
    }
  }
 
+
 class Channel
 {
     /**
@@ -151,6 +152,24 @@ class CalibrationChannel : public Channel
 
 };
 
+struct OverShootResult
+{
+    double lstart = -1;
+    double lstop  = -1;
+    double lresult = -1;
+    double start   = -1;
+    double stop   = -1;
+    int result   = -1;
+    double par0  = -1;
+    double par1  = -1;
+    double par2  = -1;
+    double chi2  = -1;
+    int ndf      = -1;
+    double pval  = -1;
+    int n        =  0;
+};
+
+
 class PhysicsChannel : public Channel
 {
     public:
@@ -159,7 +178,7 @@ class PhysicsChannel : public Channel
         virtual ~PhysicsChannel();
         virtual void PrepHistogram( double range, double offset = 0.);
         virtual     void        FillPedestal();
-        virtual void OverShootCorrection();
+        virtual std::vector<OverShootResult> OverShootCorrection();
 
         virtual double*      GetOS();
 

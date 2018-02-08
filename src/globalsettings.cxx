@@ -17,6 +17,9 @@
 //project includes
 #include "globalsettings.hh"
 
+
+#include <TFile.h>
+
 std::unique_ptr<claws::GlobalSettings>  GS = std::unique_ptr<claws::GlobalSettings>(new claws::GlobalSettings);
 
 namespace claws {
@@ -153,6 +156,10 @@ namespace claws {
         {
         //   boost::property_tree::ini_parser::read_ini(boost::filesystem::path("./config/pe_to_mip.ini").string(), pe_to_mip_);
           boost::property_tree::ini_parser::read_ini(boost::filesystem::path("./config/config_architecture.ini").string(), config_architecture_);
+
+          TFile* rfile = new TFile("./config/overshoot_template_function.root", "open");
+          overshoot_function = (TF1*) rfile->Get("kde");
+          rfile->Close();
 
         }
 
@@ -320,6 +327,11 @@ namespace claws {
         {
             hook_ = hook_ / path_data_;
             return this;
+        };
+
+        TF1* GlobalSettings::GetOverShootFunction()
+        {
+            return overshoot_function;
         };
 
         GlobalSettings* GlobalSettings::ResetHook()

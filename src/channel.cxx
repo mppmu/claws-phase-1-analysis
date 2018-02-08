@@ -37,20 +37,27 @@
 // TODO proper description
 //----------------------------------------------------------------------------------------------
 
+// Double_t osfunc(Double_t *x, Double_t *par)
+// {
+//     Double_t y = 0;
+//     if(x[0] <= par[5])
+//     {
+//         y = par[0]*TMath::Exp(-(x[0] - par[1])*(x[0] - par[1])/(par[2]*par[2]));
+//     }
+//     else if(x[0] > par[5])
+//     {
+//         y = par[0]*TMath::Exp(-(par[5] - par[1])*(par[5] - par[1])/(par[2]*par[2]) - par[3]*(par[5] - par[4]));
+//         y = y*TMath::Exp(par[3]*(x[0] - par[4]));
+//     }
+//     return y;
+// }
+
 Double_t osfunc(Double_t *x, Double_t *par)
 {
-    Double_t y = 0;
-    if(x[0] <= par[5])
-    {
-        y = par[0]*TMath::Exp(-(x[0] - par[1])*(x[0] - par[1])/(par[2]*par[2]));
-    }
-    else if(x[0] > par[5])
-    {
-        y = par[0]*TMath::Exp(-(par[5] - par[1])*(par[5] - par[1])/(par[2]*par[2]) - par[3]*(par[5] - par[4]));
-        y = y*TMath::Exp(par[3]*(x[0] - par[4]));
-    }
-    return y;
+    double number = par[0]*(GS->GetOverShootFunction()->Eval(x[0] - par[1]) - 53500.) + par[2];
+    return number;
 }
+
 
 Channel::Channel(std::string name) : name_(name), state_(CHANNELSTATE_VALID), hist_(NULL), pdhist_(NULL), pd_({-1}), scope_pos_("-1"), range_(-1)
 {
@@ -730,7 +737,7 @@ void PhysicsChannel::FillPedestal()
 		delete fit;
 };
 
-void PhysicsChannel::OverShootCorrection()
+std::vector<OverShootResult> PhysicsChannel::OverShootCorrection()
 {
 	// int bins_over_threshold 	= GS->GetParameter<int>("PDS_Physics.bins_over_threshold");
 	// double threshold_low 		= GS->GetParameter<double>("PDS_Physics.threshold_low");
@@ -746,159 +753,83 @@ void PhysicsChannel::OverShootCorrection()
 	double line_par0 			= GS->GetParameter<double>("OverShootCorrection.line_par0");
 	double line_par2 			= GS->GetParameter<double>("OverShootCorrection.line_par2");
 
-	int os_after_start 			= GS->GetParameter<double>("OverShootCorrection.os_after_start");
-	double gconst				= GS->GetParameter<double>("OverShootCorrection.gconst");
-	double gmean				= GS->GetParameter<double>("OverShootCorrection.gmean");
-	double gsigma				= GS->GetParameter<double>("OverShootCorrection.gsigma");
-	double exdecay				= GS->GetParameter<double>("OverShootCorrection.exdecay");
-	double border				= GS->GetParameter<double>("OverShootCorrection.border");
+    double length				= GS->GetParameter<double>("OverShootCorrection.length");
 
+	// int os_after_start 			= GS->GetParameter<double>("OverShootCorrection.os_after_start");
+	// double gconst				= GS->GetParameter<double>("OverShootCorrection.gconst");
+	// double gmean				= GS->GetParameter<double>("OverShootCorrection.gmean");
+	// double gsigma				= GS->GetParameter<double>("OverShootCorrection.gsigma");
+	// double exdecay				= GS->GetParameter<double>("OverShootCorrection.exdecay");
+	// double border				= GS->GetParameter<double>("OverShootCorrection.border");
+    std::vector<OverShootResult> results;
+    int nfits = 0;
 	for( int i = 1; i <= hist_->GetNbinsX(); ++i )
 	{
 		if(hist_->GetBinContent(i) > threshold)
 		{
-			double lstart = hist_->GetBinCenter(i) + line_after_threshold*dt;
-			double lstop = hist_->GetBinCenter(i) + (line_after_threshold + line_length)*dt;
+
+            OverShootResult result;
+            result.n = nfits;
+            ++nfits;
+			result.lstart = hist_->GetBinCenter(i) + line_after_threshold*dt;
+			result.lstop = hist_->GetBinCenter(i) + (line_after_threshold + line_length)*dt;
+
+
 			TF1 *fit_line = new TF1("fit_line","[0]*(x-[1])+[2]", 0, 1, TF1::EAddToList::kNo);
-			fit_line->SetParameters(line_par0, lstart + 100*dt, line_par2);
+			fit_line->SetParameters(line_par0, result.lstart + 100*dt, line_par2);
 
-			TFitResultPtr result = 	hist_->Fit(fit_line, "QS+","", lstart, lstop);
-			//TFitResultPtr result = pdhist_->Fit(fit, "QSL","", low, up);
+            // fresult stands for fit result
+			TFitResultPtr fresult = 	hist_->Fit(fit_line, "QS+","", result.lstart, result.lstop);
 
-			double osstart = fit_line->GetX( 0. )+100e-9;
-			double osborder = osstart + border;
-			double osstop  = osstart + os_after_start*dt ;
-
-			// TF1* gaus  = new TF1("gaus","gaus",1,3, TF1::EAddToList::kNo);
-			// gaus->SetParameter(0, gconst);
-			// gaus->SetParLimits(0, 15*gconst, 0);
-			//
-			// gaus->SetParameter(1, osstart + gmean);
-			// gaus->SetParLimits(1, osstart, osstart+gmean*2.5);
-			//
-			// gaus->SetParameter(2, gsigma);
-			// gaus->SetParLimits(2, 0, 1.5e-6);
-			//
-			// result = 	hist_->Fit(gaus, "S+","", osstart, osstart+border);
-			//
-			// TF1* expo  = new TF1("expo","[o]*TMath::Exp([1]*(x-[2]))",1,3, TF1::EAddToList::kNo);
-
-			TF1 *osfit = new TF1("osfit", osfunc, 0., 1., 6);
-			osfit->SetParameter(0, gconst);
-			osfit->SetParLimits(0, 10*gconst, 0);
-
-			osfit->SetParameter(1, osstart + gmean);
-			osfit->SetParLimits(1, osstart, osstart+gmean*2.5);
-
-			osfit->SetParameter(2, gsigma);
-			osfit->SetParLimits(2, 0, 3.2e-6);
-
-			osfit->SetParameter(3, exdecay);
-			osfit->SetParLimits(3, -1.e7, -1e4);
-
-			osfit->SetParameter(4, osstart + 1.2e-6);
-			osfit->SetParLimits(4, osstart, osstop);
-
-			osfit->SetParameter(5, osstart + border);
-			osfit->SetParLimits(5, osstart + gmean , osstop);
+            result.lresult = int(fresult);
+			result.start = fit_line->GetX( 0. );
+            result.stop  = result.start + length;
 
 
-			result = 	hist_->Fit(osfit, "S+","", osstart, osstop);
-			auto status = result->Status();
-		// 	auto isval = result->IsValid();
-		// //	auto bla = gMinuit->fStatus;
-		// 	if( int(result) == 0)
-		// 	{
-		//
-		// 		std::cout << "Fitting channel: " << name_ << std::endl;
-		// 	// // 	pd_[1]    = fit->GetParameter(0);
-		// 	// // 	pd_[2]    = fit->GetParameter(1);
-		// 	// // 	pd_[3]    = fit->GetParameter(2);
-		// 	// // 	pd_[4]    = fit->GetChisquare();
-		// 	// // 	pd_[5]    = fit->GetNDF();
-		// 	// // 	pd_[6]    = result->Prob();
-		// 	}
-			// else
-			// {
-			// 	int substart = hist_->GetXaxis()->FindBin(osstart);
-			// 	int substop  = hist_->GetXaxis()->FindBin(osfit->GetX(0.1, osstart+ 200e-9));
-			//
-			// 	for(int j = substart; j<=substop; ++j )
-			// 	{
-			// 		double content  = hist_->GetBinContent(i);
-			// 		double subtract = osfit->Eval(hist_->GetBinCenter(i));
-			// 		hist_->SetBinContent(i, content - subtract);
-			// 	}
-			// }
-			// else
-			// {
-			// 	state_ = CHANNELSTATE_PDFAILED;
-			// //	pd_[0]    = int(result);
-			// //	for(int i = 1; i<7;i++ ) pd_[i] = -1;
-			// }
-			//
-			// pd_[7]    = pdhist_->GetMean();
-			// pd_[8]    = pdhist_->GetMeanError();
-			// pd_[9]    = pdhist_->GetEntries();
+            TF1 *osfit = new TF1("osfit", osfunc, 0., 1., 3);
 
+            osfit->SetParameter(0, 0.001);
+            osfit->SetParLimits(0, 0, 100);
+
+            osfit->SetParameter(1, result.start);
+            osfit->SetParLimits(1, result.start - 50e-9, result.start + 50e-9);
+
+            osfit->FixParameter(2, 0);
+
+            fresult = 	hist_->Fit(osfit, "QS+","", result.start, result.stop);
+
+            result.result = int(fresult);
+
+            if( fresult->IsValid() )
+            {
+                result.par0 = osfit->GetParameter(0);
+                result.par1 = osfit->GetParameter(1);
+                result.par2 = osfit->GetParameter(2);
+                result.chi2 = osfit->GetChisquare();
+                result.ndf  = osfit->GetNDF();
+                result.pval = fresult->Prob();
+
+                // 	// // 	pd_[4]    = fit->GetChisquare();
+        		// 	// // 	pd_[5]    = fit->GetNDF();
+        		// 	// // 	pd_[6]    = result->Prob();
+                for(int j = hist_->GetXaxis()->FindBin(result.start); j < hist_->GetXaxis()->FindBin(result.stop); ++j )
+                {
+             		double content  = hist_->GetBinContent(j);
+             		double subtract = osfit->Eval(hist_->GetBinCenter(j));
+             		hist_->SetBinContent(j, content - subtract);
+                }
+            }
+
+            results.push_back(result);
 
 			delete fit_line;
-			//delete gaus;
 			delete osfit;
 
 			i += line_after_threshold + line_length;
 		}
 	}
-	// unsigned i=1;
-	//
-	// while( i <= hist_->GetNbinsX() )
-	// {
-	// 	double bin_contend  = hist_->GetBinContent(i);
-	//
-	// 	if( i <= hist_->GetNbinsX() - bins_over_threshold)
-	// 	{
-	// 		if( bin_contend > threshold_low && bin_contend < threshold_high )
-	// 		{
-	// 			  pdhist_->Fill( bin_contend );
-	// 		}
-	// 		else if( bin_contend >= threshold_high )
-	// 		{
-	// 			bool above_threshold = true;
-	// 			for (int j = 0; j < bins_over_threshold; j++)
-	// 			{
-	// 				if(hist_->GetBinContent(i+j) < threshold_high ) above_threshold = false;
-	// 			}
-	//
-	// 			if( above_threshold )
-	// 			{
-	// 				i += signal_length;
-	// 			}
-	// 			else
-	// 			{
-	// 				pdhist_->Fill( bin_contend );
-	// 			}
-	// 		}
-	// 		else if( bin_contend <= threshold_low )
-	// 		{
-	// 			bool below_threshold = true;
-	// 			for (int j = 0; j < bins_over_threshold; j++)
-	// 			{
-	// 				if( hist_->GetBinContent(i+j) > threshold_low ) below_threshold = false;
-	// 			}
-	//
-	// 			if( below_threshold )
-	// 			{
-	// 				i += overshoot_length;
-	// 			}
-	// 			else
-	// 			{
-	// 				pdhist_->Fill( bin_contend );
-	// 			}
-	// 		}
-	//
-	// 	}
-	// 	i++;
-	// }
+
+    return results;
 }
 
 double * PhysicsChannel::GetOS()

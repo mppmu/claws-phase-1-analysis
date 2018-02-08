@@ -248,7 +248,7 @@ class PhysicsEvent : public Event{
 
         virtual void PrepHistograms( boost::property_tree::ptree &settings );
 
-        virtual void OverShootCorrection();
+        virtual std::vector<std::vector<OverShootResult>> OverShootCorrection();
     //    virtual void PrepHistograms();
     private:
         boost::filesystem::path rate_file_;

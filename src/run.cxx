@@ -912,11 +912,70 @@ void CalibrationRun::OverShootCorrection()
         }
     }
 
+    std::vector<std::vector<TGraph*>> graphs;
+    std::string names[12] = {"_lstart", "_lstop", "_lresult", "_start", "_stop", "_result", "_par0", "_par1", "_par2", "_chi2", "_ndf", +"_pval"};
+    std::string ytitles[12] = {"Time [s]", "Time [s]", "Fit status","Time [s]", "Time [s]", "Fit status", "Slope [mV/s]", "X-shift [s]", "Y-shift [s]", "Chi2", "Ndf", "P-value"};
+
+    for(auto &channel: evts_.at(0)->GetChannels() )
+    {
+        std::vector<TGraph*> gch;
+
+        std::string name = channel->GetName();
+        for(int i =0 ; i < 12; ++i)
+        {
+            TGraph * g = new TGraph();
+            g->SetName( (name+names[i]).c_str() );
+            g->GetYaxis()->SetTitle(ytitles[i].c_str());
+            g->GetXaxis()->SetTitle("Time [s]");
+            g->SetMarkerStyle(23);
+            g->SetMarkerColor(kRed);
+            g->SetMarkerSize(1);
+            gch.push_back(g);
+        }
+
+        graphs.push_back(gch);
+    }
 
     for(auto &evt: evts_ )
     {
-        evt->OverShootCorrection();
+        // Here the actual overshoot correction is done, the rest is just
+        // getting the info out.
+        auto channels = evt->OverShootCorrection();
+
+        double   evt_time = evt->GetParameter<double>("Properties.UnixTime");
+        for(unsigned int i = 0; i <channels.size(); i++)
+        {
+            for(int j = 0; j < channels.at(i).size(); ++j)
+            {
+                OverShootResult result =  channels[i][j];
+                graphs[i][0]->SetPoint(graphs[i][0]->GetN(), evt_time, result.lstart );
+                graphs[i][1]->SetPoint(graphs[i][1]->GetN(), evt_time, result.lstop );
+                graphs[i][2]->SetPoint(graphs[i][2]->GetN(), evt_time, result.lresult );
+                graphs[i][3]->SetPoint(graphs[i][3]->GetN(), evt_time, result.start );
+                graphs[i][4]->SetPoint(graphs[i][4]->GetN(), evt_time, result.stop );
+                graphs[i][5]->SetPoint(graphs[i][5]->GetN(), evt_time, result.result );
+                graphs[i][6]->SetPoint(graphs[i][6]->GetN(), evt_time, result.par0 );
+                graphs[i][7]->SetPoint(graphs[i][7]->GetN(), evt_time, result.par1 );
+                graphs[i][8]->SetPoint(graphs[i][8]->GetN(), evt_time, result.par2 );
+                graphs[i][9]->SetPoint(graphs[i][9]->GetN(), evt_time, result.chi2 );
+                graphs[i][10]->SetPoint(graphs[i][10]->GetN(), evt_time, result.ndf );
+                graphs[i][11]->SetPoint(graphs[i][11]->GetN(), evt_time, result.pval );
+            }
+        }
     }
+
+    std::string fname = overshoot.string() + "/run_"+std::to_string(nr_)+"_pedestal"+"_"+ GS->GetParameter<std::string>("General.CalibrationVersion")+".root";
+    TFile *rfile = new TFile(fname.c_str(), "RECREATE");
+    for(auto &channel : graphs)
+    {
+        for(auto & graph : channel)
+        {
+            graph->Write();
+            delete graph;
+        }
+    }
+
+    rfile->Close("R");
 
     for(auto &evt: evts_ )
     {

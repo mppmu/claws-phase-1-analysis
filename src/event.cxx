@@ -424,7 +424,7 @@ void PhysicsEvent::LoadSubtracted()
 			return;
 		}
 	}
-	
+
     boost::replace_last(fname, "root","ini");
     boost::property_tree::ini_parser::read_ini(fname, pt_);
 
@@ -456,16 +456,41 @@ void PhysicsEvent::PrepHistograms(boost::property_tree::ptree &settings)
 
 }
 
-void PhysicsEvent::OverShootCorrection()
+std::vector<std::vector<OverShootResult>> PhysicsEvent::OverShootCorrection()
 {
+	std::string names[12] = {"_LStart", "_LStop", "_LResult", "_Start", "_Stop", "_Result", "_Par0", "_Par1", "_Par2", "_Chi2", "_Ndf", +"_PVal"};
+
+	std::vector<std::vector<OverShootResult>> allresults;
+
 	for (auto &channel : channels_)
 	{
 		PhysicsChannel *phc = dynamic_cast<PhysicsChannel*>(channel);
-		phc->OverShootCorrection();
+		std::vector<OverShootResult> results = phc->OverShootCorrection();
+
+		for(auto &result : results)
+		{
+			std::string chname = phc->GetName();
+			pt_.put("OSFIT_" +names[0] +"." + chname + "_" + std::to_string(result.n), result.lstart );
+			pt_.put("OSFIT_" +names[1] +"." + chname + "_" + std::to_string(result.n), result.lstop );
+			pt_.put("OSFIT_" +names[3] +"." + chname + "_" + std::to_string(result.n), result.start );
+			pt_.put("OSFIT_" +names[2] +"." + chname + "_" + std::to_string(result.n), result.lresult );
+			pt_.put("OSFIT_" +names[4] +"." + chname + "_" + std::to_string(result.n), result.stop );
+			pt_.put("OSFIT_" +names[5] +"." + chname + "_" + std::to_string(result.n), result.result );
+			pt_.put("OSFIT_" +names[6] +"." + chname + "_" + std::to_string(result.n), result.par0 );
+			pt_.put("OSFIT_" +names[7] +"." + chname + "_" + std::to_string(result.n), result.par1 );
+			pt_.put("OSFIT_" +names[8] +"." + chname + "_" + std::to_string(result.n), result.par2 );
+			pt_.put("OSFIT_" +names[9] +"." + chname + "_" + std::to_string(result.n), result.chi2 );
+			pt_.put("OSFIT_" +names[10] +"." + chname + "_" + std::to_string(result.n), result.ndf );
+			pt_.put("OSFIT_" +names[11] +"." + chname + "_" + std::to_string(result.n), result.pval );
+		}
+
+		allresults.push_back(results);
 	}
 
 	state_ = EVENTSTATE_OSCORRECTED;
 	pt_.put("General.State", printEventState(state_));
+
+	return allresults;
 }
 // void PhysicsEvent::LoadIniFile(){
 //
