@@ -179,6 +179,7 @@ class PhysicsChannel : public Channel
         virtual void PrepHistogram( double range, double offset = 0.);
         virtual     void        FillPedestal();
         virtual std::vector<OverShootResult> OverShootCorrection();
+        virtual void WaveformDecomposition();
 
         virtual double*      GetOS();
 

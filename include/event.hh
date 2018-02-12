@@ -47,6 +47,7 @@
 
 // Project includes
 #include "channel.hh"
+#include "gain.hh"
 
 
 // using namespace boost;
@@ -99,6 +100,10 @@ inline std::string printEventState(EventState state)
       return "os_failed";
     case EVENTSTATE_PDFAILED:
       return "pd_failed";
+    case EVENTSTATE_WFDECOMPOSED:
+      return "os_corrected";
+    case EVENTSTATE_WDFAILED:
+      return "os_failed";
     default:
       return "Invalid Selection";
   }
@@ -230,6 +235,12 @@ class CalibrationEvent : public Event{
 
 };
 
+/* This is called a "forward declaration".  We use it to tell the compiler that the
+   identifier "B" will from now on stand for a class, and this class will be defined
+   later.  We will not be able to make any use of "B" before it has been defined, but
+   we will at least be able to declare pointers to it. */
+class Gain;
+
 
 /**
 *   Description of the PhysicsEvent class.
@@ -245,10 +256,12 @@ class PhysicsEvent : public Event{
 
         virtual void LoadFiles(EventState state = EVENTSTATE_RAW);
             virtual void LoadSubtracted();
+            virtual void LoadOSCorrected();
 
         virtual void PrepHistograms( boost::property_tree::ptree &settings );
 
         virtual std::vector<std::vector<OverShootResult>> OverShootCorrection();
+        virtual void WaveformDecomposition(Gain* gain);
     //    virtual void PrepHistograms();
     private:
         boost::filesystem::path rate_file_;

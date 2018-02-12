@@ -285,9 +285,6 @@ void CalibrationRun::SynchronizeCalibrationEvents()
 
 void CalibrationRun::PDS_Calibration()
 {
-    //      double wall0 = claws::get_wall_time();
-    //      double cpu0  = claws::get_cpu_time();
-    //
     std::cout << "\033[33;1mRun::Subtracting calibration pedestal:\033[0m running" << "\r" << std::flush;
 
     boost::filesystem::path pds_calibration = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("PDS_Calibration");
@@ -500,12 +497,6 @@ void CalibrationRun::PDS_Calibration()
     }
 
     std::cout << "\033[32;1mRun::Subtracting calibration pedestal:\033[0m done!       " << std::endl;
-    //
-    //      double wall1 = claws::get_wall_time();
-    //      double cpu1  = claws::get_cpu_time();
-    //
-    //      cout << "Wall Time = " << wall1 - wall0 << endl;
-    //      cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 };
 
 void CalibrationRun::GainDetermination()
@@ -515,9 +506,6 @@ void CalibrationRun::GainDetermination()
     */
 
     std::cout << "\033[33;1mRun::Calibrating gain:\033[0m running" << "\r" << std::flush;
-    //
-    //      double wall0 = claws::get_wall_time();
-    //      double cpu0  = claws::get_cpu_time();
 
     boost::filesystem::path gain_determination = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("GainDetermination");
     if(!boost::filesystem::is_directory(gain_determination) )
@@ -563,13 +551,6 @@ void CalibrationRun::GainDetermination()
     delete gain;
 
     std::cout << "\033[32;1mRun::Calibrating gain:\033[0m done!     " << std::endl;
-    //
-    //      double wall1 = claws::get_wall_time();
-    //      double cpu1  = claws::get_cpu_time();
-    //
-    //      cout << "Wall Time = " << wall1 - wall0 << endl;
-    //      cout << "CPU Time  = " << cpu1  - cpu0  << endl;
-
 };
 
 void CalibrationRun::Average1PE()
@@ -579,9 +560,6 @@ void CalibrationRun::Average1PE()
       */
 
      std::cout << "\033[33;1mRun::Extracting average 1 pe:\033[0m running" << "\r" << std::flush;
-
-     double wall0 = claws::get_wall_time();
-     double cpu0  = claws::get_cpu_time();
 
      boost::filesystem::path average_1pe = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("Average1PE");
      if(!boost::filesystem::is_directory( average_1pe ) )
@@ -612,12 +590,6 @@ void CalibrationRun::Average1PE()
     delete gain;
 
     std::cout << "\033[32;1mRun::Extracting average 1 pe:\033[0m done!     " << std::endl;
-
-    double wall1 = claws::get_wall_time();
-    double cpu1  = claws::get_cpu_time();
-
-    cout << "Wall Time = " << wall1 - wall0 << endl;
-    cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 };
 
 // Gain* CalibrationRun::LoadGain()
@@ -644,9 +616,6 @@ void CalibrationRun::Average1PE()
 
 void CalibrationRun::PDS_Physics()
 {
-    //      double wall0 = claws::get_wall_time();
-    //      double cpu0  = claws::get_cpu_time();
-    //
     std::cout << "\033[33;1mRun::Subtracting physics pedestal:\033[0m running" << "\r" << std::flush;
 
     boost::filesystem::path pds_physics = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("PDS_Physics");
@@ -859,30 +828,21 @@ void CalibrationRun::PDS_Physics()
     }
 
     std::cout << "\033[32;1mRun::Subtracting physics pedestal:\033[0m done!       " << std::endl;
-    //
-    //      double wall1 = claws::get_wall_time();
-    //      double cpu1  = claws::get_cpu_time();
-    //
-    //      cout << "Wall Time = " << wall1 - wall0 << endl;
-    //      cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 };
 
 void CalibrationRun::OverShootCorrection()
 {
-    //      double wall0 = claws::get_wall_time();
-    //      double cpu0  = claws::get_cpu_time();
-    //
     std::cout << "\033[33;1mRun::Correcting for Amp OverShoot:\033[0m running" << "\r" << std::flush;
 
-    boost::filesystem::path overshoot = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("OverShootCorrection");
-    if(!boost::filesystem::is_directory( overshoot ) )
+    boost::filesystem::path outfolder = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("OverShootCorrection");
+    if(!boost::filesystem::is_directory( outfolder ) )
     {
-        boost::filesystem::create_directory( overshoot );
+        boost::filesystem::create_directory( outfolder );
     }
 
-    if(!boost::filesystem::is_directory( overshoot/boost::filesystem::path("Waveforms")) )
+    if(!boost::filesystem::is_directory( outfolder/boost::filesystem::path("Waveforms")) )
     {
-        boost::filesystem::create_directory( overshoot/boost::filesystem::path("Waveforms"));
+        boost::filesystem::create_directory( outfolder/boost::filesystem::path("Waveforms"));
     }
 
     // Get the histograms and prepare them
@@ -964,8 +924,9 @@ void CalibrationRun::OverShootCorrection()
         }
     }
 
-    std::string fname = overshoot.string() + "/run_"+std::to_string(nr_)+"_pedestal"+"_"+ GS->GetParameter<std::string>("General.CalibrationVersion")+".root";
+    std::string fname = outfolder.string() + "/run_"+std::to_string(nr_)+"_pedestal"+"_"+ GS->GetParameter<std::string>("General.CalibrationVersion")+".root";
     TFile *rfile = new TFile(fname.c_str(), "RECREATE");
+
     for(auto &channel : graphs)
     {
         for(auto & graph : channel)
@@ -979,18 +940,96 @@ void CalibrationRun::OverShootCorrection()
 
     for(auto &evt: evts_ )
     {
-        evt->SaveEvent( overshoot/boost::filesystem::path("Waveforms") );
+        evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
         evt->DeleteHistograms();
     }
 
     std::cout << "\033[32;1mRun::Correcting for Amp OverShoot:\033[0m done!       " << std::endl;
-//
-//      double wall1 = claws::get_wall_time();
-//      double cpu1  = claws::get_cpu_time();
-//
-//      cout << "Wall Time = " << wall1 - wall0 << endl;
-//      cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 };
+
+
+void CalibrationRun::WaveformDecomposition()
+{
+    std::cout << "\033[33;1mRun::Waveform decomposition(NOT IMPLEMENTED):\033[0m running" << "\r" << std::flush;
+
+    boost::filesystem::path outfolder = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("WaveformDecomposition");
+    if(!boost::filesystem::is_directory( outfolder ) )
+    {
+        boost::filesystem::create_directory( outfolder );
+    }
+
+    if(!boost::filesystem::is_directory( outfolder/boost::filesystem::path("Waveforms")) )
+    {
+         boost::filesystem::create_directory( outfolder/boost::filesystem::path("Waveforms"));
+    }
+
+    // Get the histograms and prepare them
+	// for(auto &evt: evts_ )
+	// {
+	//      evt->LoadFiles(EVENTSTATE_OSCORRECTED);
+	// }
+
+    // Load the histograms & .ini file. If the event
+    // did not pass the pd subtraction, throw it away
+    auto evt_itr = evts_.begin();
+
+    while( evt_itr != evts_.end() )
+    {
+        (*evt_itr)->LoadFiles(EVENTSTATE_OSCORRECTED);
+
+        if( (*evt_itr)->GetState() == EVENTSTATE_OSFAILED )
+        {
+                delete (*evt_itr);
+                (*evt_itr) = NULL;
+                evts_.erase(evt_itr);
+        }
+        else
+        {
+                evt_itr++;
+        }
+    }
+
+    Gain* gain = new Gain(path_, GAINSTATE_EXTENDED);
+
+    for(auto &evt: evts_ )
+    {
+        // Here the actual waveform decomposition is done, the rest is just
+        // getting the info out.
+        //auto channels = evt->WaveformDecomposition(gain);
+        evt->WaveformDecomposition(gain);
+    }
+
+    // std::string fname = overshoot.string() + "/run_"+std::to_string(nr_)+"_pedestal"+"_"+ GS->GetParameter<std::string>("General.CalibrationVersion")+".root";
+    // TFile *rfile = new TFile(fname.c_str(), "RECREATE");
+    // for(auto &channel : graphs)
+    // {
+    //     for(auto & graph : channel)
+    //     {
+    //         graph->Write();
+    //         delete graph;
+    //     }
+    // }
+    //
+    // rfile->Close("R");
+    //
+    for(auto &evt: evts_ )
+    {
+        evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
+        evt->DeleteHistograms();
+    }
+
+    delete gain;
+
+    std::cout << "\033[32;1mRun::Waveform decomposition(NOT IMPLEMENTED):\033[0m done!       " << std::endl;
+};
+
+void CalibrationRun::WaveformReconstruction()
+{
+    std::cout << "\033[33;1mRun::Waveform reconstruction(NOT IMPLEMENTED):\033[0m running" << "\r" << std::flush;
+
+    std::cout << "\033[32;1mRun::Waveform reconstruction(NOT IMPLEMENTED):\033[0m done!       " << std::endl;
+};
+
 
 void CalibrationRun::DeleteCalibrationHistograms()
 {

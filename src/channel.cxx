@@ -809,9 +809,6 @@ std::vector<OverShootResult> PhysicsChannel::OverShootCorrection()
                 result.ndf  = osfit->GetNDF();
                 result.pval = fresult->Prob();
 
-                // 	// // 	pd_[4]    = fit->GetChisquare();
-        		// 	// // 	pd_[5]    = fit->GetNDF();
-        		// 	// // 	pd_[6]    = result->Prob();
                 for(int j = hist_->GetXaxis()->FindBin(result.start); j < hist_->GetXaxis()->FindBin(result.stop); ++j )
                 {
              		double content  = hist_->GetBinContent(j);

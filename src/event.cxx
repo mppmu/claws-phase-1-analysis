@@ -93,7 +93,7 @@ void Event::PrepHistograms()
 	}
 
     state_ = EVENTSTATE_PREP;
-	pt_.put("General.State", printEventState(state_));
+	pt_.put("General.State", state_);
 }
 
 void Event::SaveEvent(boost::filesystem::path dst, bool save_pd)
@@ -386,6 +386,12 @@ void PhysicsEvent::LoadFiles(EventState state)
                 this->LoadSubtracted();
                 break;
             }
+
+			case EVENTSTATE_OSCORRECTED:
+			{
+				this->LoadOSCorrected();
+				break;
+			}
         }
 
 }
@@ -432,6 +438,48 @@ void PhysicsEvent::LoadSubtracted()
 
 }
 
+void PhysicsEvent::LoadOSCorrected()
+{
+	std::string fname = (path_/boost::filesystem::path("Calibration")/boost::filesystem::path("OverShootCorrection")/boost::filesystem::path("Waveforms")).string() + "/";
+
+	int     status;
+	char   *realname;
+	const std::type_info  &ti = typeid(*this);
+	realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
+	fname += std::string(realname);
+	free(realname);
+
+	std::stringstream ss;
+	ss << std::setw(3) << std::setfill('0') << nr_;
+	fname += "_" + ss.str();
+	fname += "_" + printEventState(EVENTSTATE_OSCORRECTED);
+	fname += ".root";
+	//
+	// // If the PD failded the file will be saved with a pd_failed in its name
+	// if( boost::filesystem::exists(fname) )
+	// {
+	this->LoadHistograms(boost::filesystem::path(fname));
+	// }
+	// else
+	// {
+	// 	boost::replace_last(fname, printEventState(EVENTSTATE_PDSUBTRACTED),printEventState(EVENTSTATE_PDFAILED));
+	// 	if( boost::filesystem::exists(fname) )
+	// 	{
+	// 		this->LoadHistograms(boost::filesystem::path(fname));
+	// 	}
+	// 	else
+	// 	{
+	// 		return;
+	// 	}
+	// }
+	//
+    boost::replace_last(fname, "root","ini");
+    boost::property_tree::ini_parser::read_ini(fname, pt_);
+
+	state_ = static_cast<EventState>( pt_.get<int>("General.State") );
+
+};
+
 void PhysicsEvent::PrepHistograms(boost::property_tree::ptree &settings)
 {
 
@@ -452,7 +500,7 @@ void PhysicsEvent::PrepHistograms(boost::property_tree::ptree &settings)
 	}
 
     state_ = EVENTSTATE_PREP;
-	pt_.put("General.State", printEventState(state_));
+	pt_.put("General.State", state_);
 
 }
 
@@ -488,10 +536,95 @@ std::vector<std::vector<OverShootResult>> PhysicsEvent::OverShootCorrection()
 	}
 
 	state_ = EVENTSTATE_OSCORRECTED;
-	pt_.put("General.State", printEventState(state_));
+	pt_.put("General.State", state_);
 
 	return allresults;
 }
+
+
+void PhysicsEvent::WaveformDecomposition(Gain* gain)
+{
+		/**
+		 * [for description]
+		 * @param  i [description]
+		 * \todo
+		 */
+
+		 //std::string names[12] = {"_LStart", "_LStop", "_LResult", "_Start", "_Stop", "_Result", "_Par0", "_Par1", "_Par2", "_Chi2", "_Ndf", +"_PVal"};
+
+		 //std::vector<std::vector<OverShootResult>> allresults;
+
+		 for (auto &channel : channels_)
+		 {
+			 PhysicsChannel *phc = dynamic_cast<PhysicsChannel*>(channel);
+			 std::vector<OverShootResult> results = phc->WaveformDecomposition();
+
+			//  for(auto &result : results)
+			//  {
+			// 	 std::string chname = phc->GetName();
+			// 	 pt_.put("OSFIT_" +names[0] +"." + chname + "_" + std::to_string(result.n), result.lstart );
+			// 	 pt_.put("OSFIT_" +names[1] +"." + chname + "_" + std::to_string(result.n), result.lstop );
+			// 	 pt_.put("OSFIT_" +names[3] +"." + chname + "_" + std::to_string(result.n), result.start );
+			// 	 pt_.put("OSFIT_" +names[2] +"." + chname + "_" + std::to_string(result.n), result.lresult );
+			// 	 pt_.put("OSFIT_" +names[4] +"." + chname + "_" + std::to_string(result.n), result.stop );
+			// 	 pt_.put("OSFIT_" +names[5] +"." + chname + "_" + std::to_string(result.n), result.result );
+			// 	 pt_.put("OSFIT_" +names[6] +"." + chname + "_" + std::to_string(result.n), result.par0 );
+			// 	 pt_.put("OSFIT_" +names[7] +"." + chname + "_" + std::to_string(result.n), result.par1 );
+			// 	 pt_.put("OSFIT_" +names[8] +"." + chname + "_" + std::to_string(result.n), result.par2 );
+			// 	 pt_.put("OSFIT_" +names[9] +"." + chname + "_" + std::to_string(result.n), result.chi2 );
+			// 	 pt_.put("OSFIT_" +names[10] +"." + chname + "_" + std::to_string(result.n), result.ndf );
+			// 	 pt_.put("OSFIT_" +names[11] +"." + chname + "_" + std::to_string(result.n), result.pval );
+			//  }
+			 //
+			//  allresults.push_back(results);
+		 }
+
+		 state_ = EVENTSTATE_WFDECOMPOSED;
+		 pt_.put("General.State", state_);
+		 //
+		//  return allresults;
+
+
+		// std::vector<std::string> keys;
+		//
+		// for(auto& mvec : avg_waveforms)
+		// {
+		//     keys.push_back(mvec.first);
+		// }
+		//
+		// for(auto& mvec : avg_waveforms)
+		// {
+		//     std::string tmp_name = mvec.first;
+		//     replace_last(tmp_name,Results." + tmp_name, chi2);
+		// }
+
+// 		std::vector<std::string> vch = GS->GetChannels(1);
+//
+// 	#pragma omp parallel for num_threads(8) firstprivate(avg_waveforms)
+// 		for(unsigned i = 0; i < vch.size(); i++)
+// 		{
+//
+// 				std::string ch_name = vch.at(i);
+//
+// //        #pragma omp critical
+// //        std::cout << "Thread id: " << int(omp_get_thread_num()) << ", in channel: " << ch_name << std::endl;
+//
+// 				if(!ends_with(ch_name, "4"))
+// 				{
+// 						PhysicsChannel*     tmp     = dynamic_cast<PhysicsChannel*>(channels_[ch_name]);
+// 						double chi2    = tmp->DecomposeV2(avg_waveforms[ch_name + "-INT"]);
+//
+// 			#pragma omp critical
+// 						pt_.put("DecompositionResults." + ch_name, chi2);
+//
+// 						if( chi2 > GS->GetCaliPar<double>("PhysicsChannel.chi2_bound") )
+// 						{
+// 								std::cout << "\033[1;31mReconstruction failed! Name: "<< ch_name << " Nr: "<< nr_ <<" Chi2: "<< chi2 << "\033[0m"<< "\r" << std::endl;
+// 						}
+// 				}
+// 		}
+};
+
 // void PhysicsEvent::LoadIniFile(){
 //
 //
@@ -916,53 +1049,7 @@ std::vector<std::vector<OverShootResult>> PhysicsEvent::OverShootCorrection()
 // 				}
 // 		}
 // };
-//
-// void PhysicsEvent::Decompose(std::map<std::string, std::vector<float>*> avg_waveforms)
-// {
-// 		/**
-// 		 * [for description]
-// 		 * @param  i [description]
-// 		 * \todo
-// 		 */
-// 		// std::vector<std::string> keys;
-// 		//
-// 		// for(auto& mvec : avg_waveforms)
-// 		// {
-// 		//     keys.push_back(mvec.first);
-// 		// }
-// 		//
-// 		// for(auto& mvec : avg_waveforms)
-// 		// {
-// 		//     std::string tmp_name = mvec.first;
-// 		//     replace_last(tmp_name,Results." + tmp_name, chi2);
-// 		// }
-//
-// 		std::vector<std::string> vch = GS->GetChannels(1);
-//
-// 	#pragma omp parallel for num_threads(8) firstprivate(avg_waveforms)
-// 		for(unsigned i = 0; i < vch.size(); i++)
-// 		{
-//
-// 				std::string ch_name = vch.at(i);
-//
-// //        #pragma omp critical
-// //        std::cout << "Thread id: " << int(omp_get_thread_num()) << ", in channel: " << ch_name << std::endl;
-//
-// 				if(!ends_with(ch_name, "4"))
-// 				{
-// 						PhysicsChannel*     tmp     = dynamic_cast<PhysicsChannel*>(channels_[ch_name]);
-// 						double chi2    = tmp->DecomposeV2(avg_waveforms[ch_name + "-INT"]);
-//
-// 			#pragma omp critical
-// 						pt_.put("DecompositionResults." + ch_name, chi2);
-//
-// 						if( chi2 > GS->GetCaliPar<double>("PhysicsChannel.chi2_bound") )
-// 						{
-// 								std::cout << "\033[1;31mReconstruction failed! Name: "<< ch_name << " Nr: "<< nr_ <<" Chi2: "<< chi2 << "\033[0m"<< "\r" << std::endl;
-// 						}
-// 				}
-// 		}
-// };
+
 //
 //
 // void PhysicsEvent::Reconstruct(std::map<std::string, std::vector<float>*> avg_waveforms)

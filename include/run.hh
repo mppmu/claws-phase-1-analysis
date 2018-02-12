@@ -115,6 +115,8 @@ class CalibrationRun : public Run
     void SynchronizePhysicsEvents();
     void PDS_Physics();
     void OverShootCorrection();
+    void WaveformDecomposition();
+    void WaveformReconstruction();
     //void LoadH
     //void DeleteHistograms();
     void DeleteCalibrationHistograms();
