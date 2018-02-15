@@ -778,32 +778,41 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
     // Here the subtraction begins.
     int avg_nbins      = avg->GetNbinsX();
     double avg_max     = avg->GetMaximum();
-    int avg_maxbin     = avg->GetMaximumBin();
+    int avg_maxbin     = avg->GetMaximumBin() -1 ;
 
     double threshold =  GS->GetParameter<double>("WaveformDecomposition.threshold");
     int search_range =  GS->GetParameter<double>("WaveformDecomposition.search_range");
     int search_edge   =  GS->GetParameter<double>("WaveformDecomposition.search_edge");
 
 
+    // make sure the edges in the histogram are handled properly:
+    //double b_low = recowf_->GetBinCenter(avg_maxbin);
+    double b_low = recowf_->GetBinCenter(search_range);
+    // double b_up  = recowf_->GetBinCenter( nbins - ( avg->GetNbinsX() - avg_maxbin ) );
+    double b_up  = recowf_->GetBinCenter( nbins - search_range );
+    recowf_->GetXaxis()->SetRangeUser(b_low, b_up);
+
+
     int maxbin = recowf_->GetMaximumBin();
 
     while( recowf_->GetBinContent(maxbin) > threshold )
     {
-        if( maxbin > avg_maxbin && maxbin < ( nbins - ( avg->GetNbinsX() - avg_maxbin ) ) )
-        {
+    //    if( maxbin > avg_maxbin && maxbin < ( nbins - ( avg->GetNbinsX() - avg_maxbin ) ) )
+    //    {
             /**
             * \todo Find out why there is na negative spike in the reco wf
             * \todo Validate
             */
-            for( unsigned i = 1 + maxbin - avg_maxbin; i < ( maxbin - avg_maxbin + avg_nbins ); ++i)
+            for( unsigned i = maxbin - avg_maxbin + 1 ; i <= ( maxbin + avg_nbins - avg_maxbin ); ++i)
             {
                 double bincont     = recowf_->GetBinContent(i);
                 double avg_bincont = avg->GetBinContent(i - maxbin + avg_maxbin);
+            //    double avg_bincont = avg->GetBinContent(i - maxbin;
                 recowf_->SetBinContent(i, bincont - avg_bincont);
             }
             // does ++GetBinContent(maxbin)
             mipwf_->AddBinContent(maxbin);
-        }
+
 
 
         // // Because it is very time consuming to search the full waveform with each iteration
@@ -820,8 +829,7 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
             }
         }
 
-        //finnaly make sure we are not at an edge of the search window
-        if( tmp_max > threshold*3 )
+        if( tmp_max > threshold*2 )
         {
             if( tmp_max_bin > (maxbin - search_range + search_edge) && tmp_max_bin < (maxbin + search_range - search_edge))
             {
@@ -839,6 +847,12 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
         }
 
         //maxbin = recowf_->GetMaximumBin();
+        //}
+        // else
+        // {
+        //     // Think of something in case maxbin is out of the bounds on the waveform
+        //     // i.e. GetMaximumBin(in range of bounds)
+        // }
     }
 };
 
