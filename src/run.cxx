@@ -823,7 +823,7 @@ void CalibrationRun::PDS_Physics()
 
     for(auto &evt: evts_ )
     {
-        evt->SaveEvent(pds_physics/boost::filesystem::path("Waveforms"), true);
+        evt->SaveEvent(pds_physics/boost::filesystem::path("Waveforms"));
         evt->DeleteHistograms();
     }
 
@@ -991,7 +991,12 @@ void CalibrationRun::WaveformDecomposition()
 
     Gain* gain = new Gain(path_, GAINSTATE_EXTENDED);
 
-    for(auto &evt: evts_ )
+    int nthreads   = GS->GetParameter<int>("General.nthreads");
+    bool parallelize = GS->GetParameter<bool>("General.parallelize");
+
+    //#pragma omp parallel for if(parallelize) num_threads(nthreads)
+    // for(auto evt = evts_.begin(); evt != evts_.end(); evt++ )
+    for(auto evt: evts_ )
     {
         // Here the actual waveform decomposition is done, the rest is just
         // getting the info out.

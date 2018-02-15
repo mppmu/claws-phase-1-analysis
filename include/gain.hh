@@ -48,7 +48,7 @@ class GainChannel
     *                    8: Fit Chi2
     *                    9: Fit NDF
     *                    10: Fit p-value
-    *                    11: x-value where exponential decaed below 0.005
+    *                    11: x-value where exponeCreateChannelsntial decaed below 0.005
     *                    12: Integral of avg 1 pe waveform ]
     */
     public:
@@ -68,7 +68,7 @@ class GainChannel
         std::string GetName();
         TH1I*   GetHistogram();
         TGraph* GetGraph();
-        TH1D*   GetAvg();
+        TH1F*   GetAvg();
         virtual double*      GetGain();
         virtual void         SetGain(double* gain);
         virtual double*      GetAvgResults();
@@ -77,7 +77,7 @@ class GainChannel
         std::string name_;
         TH1I*       hist_;
         TGraph*     gain_otime_;
-        TH1D*       avg_;
+        TH1F*       avg_;
         // double      gain_;
         int         n_;
         double      gain_[13];
@@ -142,6 +142,8 @@ class Gain
         virtual void FitAvg();
 
         virtual void SaveGain(boost::filesystem::path dst);
+
+        virtual GainChannel* GetChannel(std::string channel);
 
     protected:
         GainState state_;

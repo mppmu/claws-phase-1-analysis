@@ -103,7 +103,7 @@ class Channel
     protected:
         std::string            name_;
         ChannelState           state_;
-        TH1F*                   hist_;
+        TH1F*                  wf_;
         TH1I*                  pdhist_;
         double                 pd_[10];
 
@@ -179,12 +179,15 @@ class PhysicsChannel : public Channel
         virtual void PrepHistogram( double range, double offset = 0.);
         virtual     void        FillPedestal();
         virtual std::vector<OverShootResult> OverShootCorrection();
-        virtual void WaveformDecomposition();
+        virtual void WaveformDecomposition(TH1F* avg);
 
         virtual double*      GetOS();
-
+        virtual TH1*        GetHistogram(std::string type);
     private:
         double    os_[10];
+        TH1F*                  mipwf_;
+        TH1F*                  recowf_;
+
 
 
 //

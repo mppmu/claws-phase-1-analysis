@@ -11,7 +11,7 @@
 #include <iostream>
 #include <ctype.h>
 #include <cxxabi.h>
-
+#include <algorithm>
 // --- BOOST includes ---
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/algorithm/string/replace.hpp>
@@ -553,12 +553,46 @@ void PhysicsEvent::WaveformDecomposition(Gain* gain)
 		 //std::string names[12] = {"_LStart", "_LStop", "_LResult", "_Start", "_Stop", "_Result", "_Par0", "_Par1", "_Par2", "_Chi2", "_Ndf", +"_PVal"};
 
 		 //std::vector<std::vector<OverShootResult>> allresults;
+		 std::vector<std::string> cont;
+		 std::string channel = "FWD1";
 
-		 for (auto &channel : channels_)
-		 {
-			 PhysicsChannel *phc = dynamic_cast<PhysicsChannel*>(channel);
-			 std::vector<OverShootResult> results = phc->WaveformDecomposition();
+		//  for (auto name : GS->GetChannels("Calibration"))
+		//  {
+		// 	  std::string position = name.second.get_value<std::string>();
+		// 	  if( position != "false")
+		// 	  {
+		// 		  if( isdigit(position[0]) && isalpha(position[1]) )
+		// 		  {
+		// 			  cont.emplace_back( name.first);
+		// 		  }
+		// 	  }
+		//  }
+		 //
+		//  auto res = std::find( cont.begin(), cont.end(), "FWD1");
 
+		for(auto & channel : channels_)
+		{
+			GainChannel * gch = gain->GetChannel(channel->GetName());
+
+			PhysicsChannel *pch = dynamic_cast<PhysicsChannel*>(channel);
+			pch->WaveformDecomposition(gch->GetAvg());
+		}
+
+	// auto test = std::search(cont.begin(), cont.end(), "FWD1");
+
+// 		 for (auto &channel : channels_)
+// 		 {
+// 			 PhysicsChannel *phc = dynamic_cast<PhysicsChannel*>(channel);
+// 			 std::vector<OverShootResult> results = phc->WaveformDecomposition();
+//
+// 			 auto calib_channel_list = GS->GetChannels("Calibration");
+//
+// 			 if(std::find_if(vec.begin(), vec.end(), [](const std::string& str) { return str.find("substring") != std::string::npos; }) != vec.end()) {
+//     ...
+// }
+// 			 std::search(cont.begin(), cont.end(), s.begin(), s.end()) != cont.end();
+//
+// 			 GainChannel * gch = gain->GetChan
 			//  for(auto &result : results)
 			//  {
 			// 	 std::string chname = phc->GetName();
@@ -577,7 +611,7 @@ void PhysicsEvent::WaveformDecomposition(Gain* gain)
 			//  }
 			 //
 			//  allresults.push_back(results);
-		 }
+		// }
 
 		 state_ = EVENTSTATE_WFDECOMPOSED;
 		 pt_.put("General.State", state_);
@@ -625,6 +659,52 @@ void PhysicsEvent::WaveformDecomposition(Gain* gain)
 // 		}
 };
 
+void PhysicsEvent::SaveEvent(boost::filesystem::path dst)
+{
+		/**
+		*  \todo Kill the path paramter and make it state dependet!
+		*/
+
+		std::string fname = dst.string() + "/";
+
+    	int     status;
+		char   *realname;
+		const std::type_info  &ti = typeid(*this);
+		realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
+		fname += std::string(realname);
+		free(realname);
+
+		std::stringstream ss;
+		ss << std::setw(3) << std::setfill('0') << nr_;
+		fname += "_" + ss.str();
+		fname += "_" + printEventState(state_);
+		fname += ".root";
+
+		TFile *rfile = new TFile(fname.c_str(), "RECREATE");
+
+		for(auto channel : channels_)
+		{
+				channel->GetHistogram()->Write();
+
+				auto pdhist = channel->GetHistogram("pedestal");
+				if( pdhist ) pdhist->Write();
+
+				auto mip = channel->GetHistogram("mip");
+				if( mip ) mip->Write();
+
+				auto reco = channel->GetHistogram("reco");
+				if( reco ) reco->Write();
+		}
+
+		rfile->Close("R");
+		delete rfile;
+
+		boost::replace_last(fname, "root", "ini");
+		boost::property_tree::write_ini(fname.c_str(), pt_);
+
+		// boost::filesystem::path dest = folder/path_file_ini_.filename();
+		// boost::filesystem::copy_file(path_file_ini_, dest, copy_option::overwrite_if_exists );
+};
 // void PhysicsEvent::LoadIniFile(){
 //
 //

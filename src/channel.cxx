@@ -59,14 +59,14 @@ Double_t osfunc(Double_t *x, Double_t *par)
 }
 
 
-Channel::Channel(std::string name) : name_(name), state_(CHANNELSTATE_VALID), hist_(NULL), pdhist_(NULL), pd_({-1}), scope_pos_("-1"), range_(-1)
+Channel::Channel(std::string name) : name_(name), state_(CHANNELSTATE_VALID), wf_(NULL), pdhist_(NULL), pd_({-1}), scope_pos_("-1"), range_(-1)
 {
 
 };
 
 Channel::~Channel(){
 		// // TODO Auto-generated destructor stub
-		if(hist_ != NULL) delete hist_;
+		if(wf_ != NULL) delete wf_;
 		if(pdhist_ != NULL) delete pdhist_;
 };
 
@@ -74,23 +74,23 @@ Channel::~Channel(){
 void Channel::LoadHistogram(TFile* file)
 {
     // Prevent possible memory leak
-    if(hist_ != NULL)
+    if(wf_ != NULL)
 	{
-		delete hist_;
-		hist_ = NULL;
+		delete wf_;
+		wf_ = NULL;
 	}
 
 	// Returns nullpty if histo in file not of type TH1F.
-	hist_ = dynamic_cast<TH1F*>(file->Get( name_.c_str() ) );
+	wf_ = dynamic_cast<TH1F*>(file->Get( name_.c_str() ) );
 
-	if( hist_ == nullptr )
+	if( wf_ == nullptr )
 	{
 		// This on the otherhand does some shit and it works.... I think it returns a TH1
 		TH1F *tmp = static_cast<TH1F*>(file->Get( name_.c_str() ) );
-		hist_ = new TH1F( *tmp);
+		wf_ = new TH1F( *tmp);
 	}
 
-	hist_->SetDirectory(0);
+	wf_->SetDirectory(0);
 
 };
 
@@ -101,7 +101,7 @@ void Channel::PrepHistogram( double range )
 	 *  and convert from [-32512, +32512] to
 	 *  [-127, +127]
 	 */
-    hist_->Scale(-1./256.);
+    wf_->Scale(-1./256.);
 
 	/**
 	 *  Now convert from [-127, +127] to [mV] and set
@@ -121,15 +121,15 @@ void Channel::PrepHistogram( double range )
 		double range_error = range*GS->GetParameter<double>("Scope.range_error");
 		double bin_error = range/127.;
 
-		for( int i = 1; i <= hist_->GetNbinsX(); ++i)
+		for( int i = 1; i <= wf_->GetNbinsX(); ++i)
 		{
-			double content = hist_->GetBinContent(i)/127 * range;
-			hist_->SetBinContent(i, content);
-			hist_->SetBinError(i, range_error + bin_error );
+			double content = wf_->GetBinContent(i)/127 * range;
+			wf_->SetBinContent(i, content);
+			wf_->SetBinError(i, range_error + bin_error );
 		}
 
 		range_ = range;
-		hist_->GetYaxis()->SetTitle("Voltage [mV]");
+		wf_->GetYaxis()->SetTitle("Voltage [mV]");
 	}
 
 	/**
@@ -137,21 +137,21 @@ void Channel::PrepHistogram( double range )
 	*/
 	double dt = GS->GetParameter<double>("Scope.delta_t");
 
-	if( fabs(hist_->GetXaxis()->GetBinWidth(1) - dt) > 1e-10)
+	if( fabs(wf_->GetXaxis()->GetBinWidth(1) - dt) > 1e-10)
 	{
-		int nbins = hist_->GetNbinsX();
-		hist_->SetBins(nbins,-dt/2, (nbins-1) *dt + dt/2);
-		hist_->GetXaxis()->SetTitle("Time [ns]");
+		int nbins = wf_->GetNbinsX();
+		wf_->SetBins(nbins,-dt/2, (nbins-1) *dt + dt/2);
+		wf_->GetXaxis()->SetTitle("Time [ns]");
 	}
 
 };
 
 void Channel::DeleteHistogram()
 {
-		if(hist_ != NULL)
+		if(wf_ != NULL)
 		{
-				delete hist_;
-				hist_ = NULL;
+				delete wf_;
+				wf_ = NULL;
 		}
 
 		if(pdhist_ != NULL)
@@ -168,9 +168,9 @@ void Channel::SubtractPedestal( double pd)
 			pd_[2] = pd;
 	}
 
-	for( int bin = 1; bin <= hist_->GetNbinsX(); bin ++)
+	for( int bin = 1; bin <= wf_->GetNbinsX(); bin ++)
 	{
-			hist_->SetBinContent(bin, hist_->GetBinContent(bin) - pd_[2]);
+			wf_->SetBinContent(bin, wf_->GetBinContent(bin) - pd_[2]);
 	}
 }
 
@@ -188,7 +188,7 @@ void Channel::SetName(std::string name)
 
 TH1* Channel::GetHistogram(std::string type)
 {
-	if      (type == "waveform") return hist_;
+	if      (type == "waveform") return wf_;
 	else if (type == "pedestal") return pdhist_;
 	else						 exit(1);
 };
@@ -230,26 +230,26 @@ CalibrationChannel::~CalibrationChannel() {
 void CalibrationChannel::LoadHistogram(TFile* file)
 {
     // Prevent possible memory leak
-		if(hist_ != NULL)
+		if(wf_ != NULL)
 		{
-				delete hist_;
-				hist_ = NULL;
+				delete wf_;
+				wf_ = NULL;
 		}
 
 		// Returns nullpty if histo in file not of type TH1F.
-		hist_ = dynamic_cast<TH1F*>(file->Get( (name_.substr(0,4)+"-INT").c_str() ) );
+		wf_ = dynamic_cast<TH1F*>(file->Get( (name_.substr(0,4)+"-INT").c_str() ) );
 
-		if( hist_ == nullptr )
+		if( wf_ == nullptr )
 		{
 			// This on the otherhand does some shit and it works.... I think it returns a TH1
 			TH1F *tmp = static_cast<TH1F*>(file->Get( (name_.substr(0,4)+"-INT").c_str() ) );
-			hist_ = new TH1F( *tmp);
+			wf_ = new TH1F( *tmp);
 		}
 
-    hist_->SetName(name_.c_str());
-	hist_->SetTitle(name_.c_str());
+    wf_->SetName(name_.c_str());
+	wf_->SetTitle(name_.c_str());
 
-    hist_->SetDirectory(0);
+    wf_->SetDirectory(0);
 
 };
 
@@ -287,11 +287,11 @@ void CalibrationChannel::FillPedestal()
 
 		// while( i < hist_->GetNbinsX() - 2 * pd_gap_ +1 )
 		// {
-		while( i <= hist_->GetNbinsX() )
+		while( i <= wf_->GetNbinsX() )
 		{
-		    double bin_contend  = hist_->GetBinContent(i);
+		    double bin_contend  = wf_->GetBinContent(i);
 
-				if( i <= hist_->GetNbinsX() - bins_over_threshold)
+				if( i <= wf_->GetNbinsX() - bins_over_threshold)
 				{
 				    if( bin_contend < threshold)
 					  {
@@ -302,7 +302,7 @@ void CalibrationChannel::FillPedestal()
 								bool above_threshold = true;
 								for (int j = 0; j < bins_over_threshold; j++)
 								{
-						 				if(hist_->GetBinContent(i+j) < threshold ) above_threshold = false;
+						 				if(wf_->GetBinContent(i+j) < threshold ) above_threshold = false;
 								}
 
 								if( above_threshold )
@@ -433,41 +433,7 @@ void CalibrationChannel::FillPedestal()
 };
 
 
-//
-// // void Channel::LoadPedestaet(name_.c_str());
-// //     hist_->SetDirectory(0);
-// //     n_sample_  = hist_->GetNbinsX();
-// // };
-//
-// void Channel::LoadWaveform()
-// {
-// 		if(hist_ == NULL)
-// 		{
-// 				cout << "ERROR waveform histogram doesn't exists!" << endl;
-// 				exit(-1);
-// 		}
-// 		// The vectors need to hold 10^6 or more elements, allocate enough memory in advance.
-// 		waveform_->clear();
-// 		waveform_->reserve(n_sample_+1);
-//
-// 		for(unsigned int i=0; i< n_sample_; i++)
-// 		{
-// 				waveform_->push_back( -hist_->GetBinContent(i+1)/n_bits_ + baseline_ - pedestal_);
-// 		}
-//
-// };
-// // void Channel::Subtract(double pedestal)
-// //             }GetChannelsform_->at( i )
-//
-// // void Channel::Subtract()
-// // {
-// //     /*
-// //         If no argument is given just use the mean value from the pedestal histogram, i.e. the event specific pedestal.
-// //         This can be usefull when the pedestal over time is experiencing a shift or some pickup!
-// //     */
-// //     this->Subtract(pedestal_hist_->GetMean());
-// // };
-//
+
 // // void Channel::Subtract(double pedestal, double pedestal_hist_sigma, bool backup)
 // void Channel::SubtractPedestal(double pedestal, bool backup)
 // {
@@ -511,93 +477,30 @@ void CalibrationChannel::FillPedestal()
 // 				}
 // 		}
 // };
-//
-// void Channel::SetPedestal(double pedestal, bool backup)
-// {
-// 		// TODO Pasing the sigma of the pedestal for the signal rejection in the wavefrom decomposition
-// 		if( pedestal == 0 )
-// 		{
-// 				pedestal_= pedestal_hist_->GetMean();
-// 		}
-// 		else if(pedestal != 0 && !backup)
-// 		{
-// 				pedestal_ = pedestal;
-// 		}
-// 		else if( backup )
-// 		{
-// 				if(pedestal_hist_->GetEntries() == 0)
-// 				{
-// 						pedestal_ = pedestal;
-// 				}
-// 				else
-// 				{
-// 						pedestal_ = pedestal_hist_->GetMean();
-// 				}
-// 		}
-// };
-//
-// void Channel::SetBaseline(float baseline)
-// {
-// 		baseline_ = baseline;
-// };
-
-// vector<float>* Channel::GetWaveform()
-// // vector<int8_t>* Channel::GetWaveform()
-// {
-// 		return waveform_;
-// };
-//// TH1I* Channel::GetPedestal()
-// {
-// 		return pedestal_hist_;
-// };
-// TH1F* Channel::GetWaveformHist()
-// {
-// //    std::cout<< "Channel::GetWaveformHist(), name: "<< name_ << std::endl;
-// 		if( waveform_->size() != 0 )
-// 		{
-// 				string title = name_+"_wf";
-//
-// 				TH1F* hist_wf = new TH1F( title.c_str(), title.c_str(), waveform_->size(), 0.5, waveform_->size()+0.5);
-//
-// 				for(unsigned int i = 0; i < waveform_->size(); i++)
-// 				{
-// 						hist_wf->SetBinContent(i+1, waveform_->at(i));
-// 				}
-//
-// 				return hist_wf;
-// 		}
-// 		else
-// 		{
-// 				return NULL;
-// 		}
-//
-// };
 
 
-//
-// double Channel::GetIntegral()
-// {
-// 		return integral_;
-// }
-//
-// void Channel::PrintType()
-// {
-// 		cout << "I'm a Channel " << endl;
-// }
-//
-//
-// //----------------------------------------------------------------------------------------------
-// // Definition of the PhysicsChannel class derived from Event.
-// // TODO prper description
-// //----------------------------------------------------------------------------------------------
-//
-PhysicsChannel::PhysicsChannel(std::string ch_name, std::string scope_pos) : Channel(ch_name), os_({-1})
+//----------------------------------------------------------------------------------------------
+// Definition of the PhysicsChannel class derived from Event.
+// TODO prper description
+//----------------------------------------------------------------------------------------------
+
+PhysicsChannel::PhysicsChannel(std::string ch_name, std::string scope_pos) : Channel(ch_name), os_({-1}), mipwf_(nullptr), recowf_(nullptr)
 {
 	scope_pos_ = scope_pos;
 };
 
 PhysicsChannel::~PhysicsChannel() {
-		// TODO Auto-generated destructor stub
+	// TODO Auto-generated destructor stub
+    if( mipwf_ != nullptr )
+    {
+        delete mipwf_;
+        mipwf_ = nullptr;
+    }
+    if( recowf_ != nullptr )
+    {
+        delete recowf_;
+        recowf_ = nullptr;
+    }
 };
 
 void PhysicsChannel::PrepHistogram( double range, double offset)
@@ -605,13 +508,13 @@ void PhysicsChannel::PrepHistogram( double range, double offset)
 	// First convert Y to mV and X to ns
 	this->Channel::PrepHistogram( range );
 
-	for( int i = 0; i <= hist_->GetNbinsX(); ++i)
+	for( int i = 0; i <= wf_->GetNbinsX(); ++i)
 	{
-		hist_->SetBinContent(i, hist_->GetBinContent(i) - offset);
+		wf_->SetBinContent(i, wf_->GetBinContent(i) - offset);
 	}
 
 	// Somehow the last bin has an unphysical entry, set it to 0
-	if( hist_->GetBinContent(hist_->GetNbinsX()) != 0) hist_->SetBinContent(hist_->GetNbinsX(), 0);
+	if( wf_->GetBinContent(wf_->GetNbinsX()) != 0) wf_->SetBinContent(wf_->GetNbinsX(), 0);
 };
 
 void PhysicsChannel::FillPedestal()
@@ -644,11 +547,11 @@ void PhysicsChannel::FillPedestal()
 
 	unsigned i=1;
 
-	while( i <= hist_->GetNbinsX() )
+	while( i <= wf_->GetNbinsX() )
 	{
-	    double bin_contend  = hist_->GetBinContent(i);
+	    double bin_contend  = wf_->GetBinContent(i);
 
-		if( i <= hist_->GetNbinsX() - bins_over_threshold)
+		if( i <= wf_->GetNbinsX() - bins_over_threshold)
 		{
 		    if( bin_contend > threshold_low && bin_contend < threshold_high )
 		  	{
@@ -659,7 +562,7 @@ void PhysicsChannel::FillPedestal()
 				bool above_threshold = true;
 				for (int j = 0; j < bins_over_threshold; j++)
 				{
-	 				if(hist_->GetBinContent(i+j) < threshold_high ) above_threshold = false;
+	 				if(wf_->GetBinContent(i+j) < threshold_high ) above_threshold = false;
 				}
 
 				if( above_threshold )
@@ -676,7 +579,7 @@ void PhysicsChannel::FillPedestal()
 				bool below_threshold = true;
 				for (int j = 0; j < bins_over_threshold; j++)
 				{
-					if( hist_->GetBinContent(i+j) > threshold_low ) below_threshold = false;
+					if( wf_->GetBinContent(i+j) > threshold_low ) below_threshold = false;
 				}
 
 				if( below_threshold )
@@ -705,7 +608,7 @@ void PhysicsChannel::FillPedestal()
 
 		TF1* fit=new TF1("gaus","gaus",1,3, TF1::EAddToList::kNo);
 
-		fit->SetParameter(0, hist_->GetNbinsX() );
+		fit->SetParameter(0, wf_->GetNbinsX() );
 		fit->SetParameter(1,0);
 		//fit->SetParameter(2,1);
 
@@ -763,23 +666,23 @@ std::vector<OverShootResult> PhysicsChannel::OverShootCorrection()
 	// double border				= GS->GetParameter<double>("OverShootCorrection.border");
     std::vector<OverShootResult> results;
     int nfits = 0;
-	for( int i = 1; i <= hist_->GetNbinsX(); ++i )
+	for( int i = 1; i <= wf_->GetNbinsX(); ++i )
 	{
-		if(hist_->GetBinContent(i) > threshold)
+		if(wf_->GetBinContent(i) > threshold)
 		{
 
             OverShootResult result;
             result.n = nfits;
             ++nfits;
-			result.lstart = hist_->GetBinCenter(i) + line_after_threshold*dt;
-			result.lstop = hist_->GetBinCenter(i) + (line_after_threshold + line_length)*dt;
+			result.lstart = wf_->GetBinCenter(i) + line_after_threshold*dt;
+			result.lstop = wf_->GetBinCenter(i) + (line_after_threshold + line_length)*dt;
 
 
 			TF1 *fit_line = new TF1("fit_line","[0]*(x-[1])+[2]", 0, 1, TF1::EAddToList::kNo);
 			fit_line->SetParameters(line_par0, result.lstart + 100*dt, line_par2);
 
             // fresult stands for fit result
-			TFitResultPtr fresult = 	hist_->Fit(fit_line, "QS+","", result.lstart, result.lstop);
+			TFitResultPtr fresult = 	wf_->Fit(fit_line, "QS+","", result.lstart, result.lstop);
 
             result.lresult = int(fresult);
 			result.start = fit_line->GetX( 0. );
@@ -796,7 +699,7 @@ std::vector<OverShootResult> PhysicsChannel::OverShootCorrection()
 
             osfit->FixParameter(2, 0);
 
-            fresult = 	hist_->Fit(osfit, "QS+","", result.start, result.stop);
+            fresult = 	wf_->Fit(osfit, "QS+","", result.start, result.stop);
 
             result.result = int(fresult);
 
@@ -809,11 +712,11 @@ std::vector<OverShootResult> PhysicsChannel::OverShootCorrection()
                 result.ndf  = osfit->GetNDF();
                 result.pval = fresult->Prob();
 
-                for(int j = hist_->GetXaxis()->FindBin(result.start); j < hist_->GetXaxis()->FindBin(result.stop); ++j )
+                for(int j = wf_->GetXaxis()->FindBin(result.start); j < wf_->GetXaxis()->FindBin(result.stop); ++j )
                 {
-             		double content  = hist_->GetBinContent(j);
-             		double subtract = osfit->Eval(hist_->GetBinCenter(j));
-             		hist_->SetBinContent(j, content - subtract);
+             		double content  = wf_->GetBinContent(j);
+             		double subtract = osfit->Eval(wf_->GetBinCenter(j));
+             		wf_->SetBinContent(j, content - subtract);
                 }
             }
 
@@ -834,16 +737,255 @@ double * PhysicsChannel::GetOS()
 	return os_;
 }
 
+TH1* PhysicsChannel::GetHistogram(std::string type)
+{
+	if      (type == "waveform") return wf_;
+	else if (type == "pedestal") return pdhist_;
+    else if (type == "mip") return mipwf_;
+    else if (type == "reco") return recowf_;
+	else						 exit(1);
+};
+
+void PhysicsChannel::WaveformDecomposition(TH1F* avg)
+{
+    // First set up the waveforms
+    if( recowf_ != nullptr )
+    {
+        delete recowf_;
+        recowf_ = nullptr;
+    }
+
+    std::string title = name_ + "_reco";
+
+    recowf_ = (TH1F*) wf_->Clone(title.c_str());
+    recowf_->SetTitle( title.c_str() );
+    recowf_->SetDirectory(0);
+
+    if( mipwf_ != nullptr )
+    {
+        delete mipwf_;
+        mipwf_ = nullptr;
+    }
+
+    title             = name_ + "_mip";
+    int nbins         = wf_->GetNbinsX();
+    double lowedge    = wf_->GetBinLowEdge(1);
+    double highedge   = wf_->GetBinLowEdge(nbins) + wf_->GetBinWidth(nbins);
+
+    mipwf_ = new TH1F(title.c_str(), title.c_str(), nbins, lowedge, highedge);
+    mipwf_->SetDirectory(0);
+
+    // Here the subtraction begins.
+    int avg_nbins      = avg->GetNbinsX();
+    double avg_max     = avg->GetMaximum();
+    int avg_maxbin     = avg->GetMaximumBin();
+
+    double threshold =  GS->GetParameter<double>("WaveformDecomposition.threshold");
+    int search_range =  GS->GetParameter<double>("WaveformDecomposition.search_range");
+    int search_edge   =  GS->GetParameter<double>("WaveformDecomposition.search_edge");
 
 
-// // void PhysicsChannel::LoadHistogram(TFile* file)
-// // {
-// //     /* Calls the base class LoadHistogram mehtod, therefore, function is identicall to base class
-// //        method. Last bin in physics wavefrom is filled with 0, mehtod takes care of that bug.
-// //     */
-// //     this->Channel::LoadHistogram(file);
-// //     n_sample_ --;
-// // };
+    int maxbin = recowf_->GetMaximumBin();
+
+    while( recowf_->GetBinContent(maxbin) > threshold )
+    {
+        if( maxbin > avg_maxbin && maxbin < ( nbins - ( avg->GetNbinsX() - avg_maxbin ) ) )
+        {
+            /**
+            * \todo Find out why there is na negative spike in the reco wf
+            * \todo Validate
+            */
+            for( unsigned i = 1 + maxbin - avg_maxbin; i < ( maxbin - avg_maxbin + avg_nbins ); ++i)
+            {
+                double bincont     = recowf_->GetBinContent(i);
+                double avg_bincont = avg->GetBinContent(i - maxbin + avg_maxbin);
+                recowf_->SetBinContent(i, bincont - avg_bincont);
+            }
+            // does ++GetBinContent(maxbin)
+            mipwf_->AddBinContent(maxbin);
+        }
+
+
+        // // Because it is very time consuming to search the full waveform with each iteration
+        // // look only in the vincity of the last maximum first.
+        double tmp_max = 0;
+        int tmp_max_bin = maxbin - search_range;
+
+        for(int j = maxbin - search_range; j< maxbin + search_range; ++j)
+        {
+            if(recowf_->GetBinContent(j) > tmp_max)
+            {
+                tmp_max = recowf_->GetBinContent(j);
+                tmp_max_bin = j;
+            }
+        }
+
+        //finnaly make sure we are not at an edge of the search window
+        if( tmp_max > threshold*3 )
+        {
+            if( tmp_max_bin > (maxbin - search_range + search_edge) && tmp_max_bin < (maxbin + search_range - search_edge))
+            {
+                maxbin = tmp_max_bin;
+            }
+            else
+            {
+                maxbin = recowf_->GetMaximumBin();
+            }
+        }
+        // If not search for the new maximum in the waveform
+        else
+        {
+            maxbin = recowf_->GetMaximumBin();
+        }
+
+        //maxbin = recowf_->GetMaximumBin();
+    }
+};
+
+//// double PhysicsChannel::DecomposeV2(std::vector<float>* avg_wf)
+// {
+// 		/**
+// 		 * [adsasd]
+// 		 * @param avg_wf [Full average 1 pe waveform that will be subtracted.]
+// 		 */
+// 		this->Subtract1PE(avg_wf);
+// 		this->ReconstructV2(avg_wf);
+// 		this->CalculateChi2V2();
+//
+// 		return this->GetChi2();
+// };
+//
+// void PhysicsChannel::Subtract1PE(std::vector<float>* avg_wf)
+// {
+// 		/** [Test description of Subtract1PE]
+// 		 *
+// 		 *  @param avg_wf [Full average 1 pe waveform that will be subtracted.]
+// 		 */
+// 		double avg_max        = *std::max_element(avg_wf->begin(),avg_wf->end());
+// 		int avg_peak       =  std::distance(avg_wf->begin(), std::max_element(avg_wf->begin(),avg_wf->end()));
+//
+// 		double stop_decompose =  GS->GetParameter<double>("PhysicsChannel.stop_decompose");
+// 		double int_ratio      =  GS->GetParameter<double>("PhysicsChannel.int_ratio");
+//
+// 		while((*std::max_element(wh_wf_->begin(), wh_wf_->end())) > stop_decompose*avg_max/int_ratio)
+// 		{
+// 				int max = std::distance(wh_wf_->begin(), std::max_element(wh_wf_->begin(), wh_wf_->end()));
+//
+// 				int sub_start = max - avg_peak;
+// 				int sub_stop  = max + (avg_wf->size() - avg_peak);
+//
+// 				// If max is close to the begining, begining of avg_wf would be be-
+// 				// fore the start of wh_wf_.
+// 				if( sub_start < 0 )
+// 				{
+// 						sub_start = 0;
+// 				}
+//
+// 				// If max is close to the end of wh_wf_, avg_wf would excide it.
+// 				if( sub_stop > wh_wf_->size() )
+// 				{
+// 						sub_stop = wh_wf_->size();
+// 				}
+//
+//
+// 				for(int i = sub_start; i < sub_stop; i++)
+// 				{
+// //            std::cout << "Subtracting: " << avg_waveform->at(i - sub_start )/20. << " at: " << i << ",  in avg at: "<< (i - sub_start ) << std::endl;
+// 						// if( (wh_wf_->at(i) - avg_wf->at(i - sub_start )/20.) >= 0 ) wh_wf_->at(i) -= avg_wf->at(i - sub_start )/20.;
+// 						// else                                                        wh_wf_->at(i) = 0;
+// 						if( (wh_wf_->at(i)  - avg_wf->at(i - ( max - avg_peak ) )/int_ratio) >= 0)
+// 						{
+// 								wh_wf_->at(i) -= avg_wf->at(i - ( max - avg_peak ) )/int_ratio;
+// 						}
+// 						else
+// 						{
+// 								wh_wf_->at(i) = 0;
+// 						}
+// 				}
+//
+// 				mip_wf_->at(max)++;
+// 		}
+//
+// 		// Get the total number of photons in the waveform for the rate.
+// 		for(auto &ivec: (*mip_wf_))
+// 		{
+// 				nr_ph_ += ivec;
+// 		}
+//
+// };
+//
+// void PhysicsChannel::ReconstructV2(std::vector<float>* avg_waveform)
+// {
+// 		/**
+// 		 * \todo Validate
+// 		 * \todo Line 621 make avg_waveform height 20 dynamic;
+// 		 */
+//
+// 		for(unsigned i = 0; i < wh_wf_->size(); i++)
+// 		{
+// 				wh_wf_->at(i) = 0;
+// 		}
+//
+// 		int avg_peak = std::distance(avg_waveform->begin(), std::max_element(avg_waveform->begin(),avg_waveform->end()));
+//
+// 		double int_ratio      =  GS->GetParameter<double>("PhysicsChannel.int_ratio");
+//
+// 		for(unsigned ph_pos = 0; ph_pos < mip_wf_->size(); ph_pos++ )
+// 		{
+// 				if( mip_wf_->at( ph_pos ) != 0 )
+// 				{
+// 						// Add the photon:
+// 						int add_start = ph_pos - avg_peak;
+// 						if( add_start < 0 ) add_start = 0;
+//
+// 						int add_stop  = ph_pos + ( avg_waveform->size() - avg_peak );
+// 						if(add_stop > wh_wf_->size() ) add_stop = wh_wf_->size();
+//
+// 						for(int i = add_start; i < add_stop; i++)
+// 						{
+// 								wh_wf_->at(i) += avg_waveform->at(i - (ph_pos - avg_peak) ) * mip_wf_->at(ph_pos)/int_ratio;
+// 						}
+//
+// 				}
+// 		}
+// };
+//
+// void PhysicsChannel::CalculateChi2V2()
+// {
+// 		/** [The ensure, that the reconstructed waveform and the cleaned original one
+// 		 *  agree, calculate a Chi2 test statistic. ]
+// 		 * \todo Validate
+// 		 * \todo implement useful definition of Chi2 and it's sigma. Maybe with Poisson/Binomial of number of detected photons.
+// 		 *
+// 		 */
+//
+// 		double sigma = GS->GetParameter<double>("PhysicsChannel.chi2_sigma");
+// 		int n = 0;
+//
+// 		chi2_ = 0;
+//
+// 		for(unsigned i = 0; i < wh_wf_->size(); i++)
+// 		{
+//
+// 				if(wh_wf_->at(i) != 0) n++;
+// 				chi2_ += ( clean_wf_->at(i) - wh_wf_->at(i) ) * ( clean_wf_->at(i) - wh_wf_->at(i) ) / ( sigma * sigma );
+// 		}
+//
+// //   chi2_ /= wh_wf_->size();
+// 		if(nr_ph_ > 0)
+// 		{
+// 				chi2_ /= nr_ph_ * wh_wf_->size();
+// 		}
+// 		else
+// 		{
+// 				chi2_ /= -1 * wh_wf_->size();
+// 		}
+// 		// std::cout << "Channel: " <<  name_<< " Chi2 " << chi2_ << std::endl;
+// };
+//
+
+
+
 
 // void PhysicsChannel::SetUpWaveforms()
 // {
@@ -1029,147 +1171,7 @@ double * PhysicsChannel::GetOS()
 // 		}
 // };
 //
-// double PhysicsChannel::DecomposeV2(std::vector<float>* avg_wf)
-// {
-// 		/**
-// 		 * [adsasd]
-// 		 * @param avg_wf [Full average 1 pe waveform that will be subtracted.]
-// 		 */
-// 		this->Subtract1PE(avg_wf);
-// 		this->ReconstructV2(avg_wf);
-// 		this->CalculateChi2V2();
-//
-// 		return this->GetChi2();
-// };
-//
-// void PhysicsChannel::Subtract1PE(std::vector<float>* avg_wf)
-// {
-// 		/** [Test description of Subtract1PE]
-// 		 *
-// 		 *  @param avg_wf [Full average 1 pe waveform that will be subtracted.]
-// 		 */
-// 		double avg_max        = *std::max_element(avg_wf->begin(),avg_wf->end());
-// 		int avg_peak       =  std::distance(avg_wf->begin(), std::max_element(avg_wf->begin(),avg_wf->end()));
-//
-// 		double stop_decompose =  GS->GetParameter<double>("PhysicsChannel.stop_decompose");
-// 		double int_ratio      =  GS->GetParameter<double>("PhysicsChannel.int_ratio");
-//
-// 		while((*std::max_element(wh_wf_->begin(), wh_wf_->end())) > stop_decompose*avg_max/int_ratio)
-// 		{
-// 				int max = std::distance(wh_wf_->begin(), std::max_element(wh_wf_->begin(), wh_wf_->end()));
-//
-// 				int sub_start = max - avg_peak;
-// 				int sub_stop  = max + (avg_wf->size() - avg_peak);
-//
-// 				// If max is close to the begining, begining of avg_wf would be be-
-// 				// fore the start of wh_wf_.
-// 				if( sub_start < 0 )
-// 				{
-// 						sub_start = 0;
-// 				}
-//
-// 				// If max is close to the end of wh_wf_, avg_wf would excide it.
-// 				if( sub_stop > wh_wf_->size() )
-// 				{
-// 						sub_stop = wh_wf_->size();
-// 				}
-//
-//
-// 				for(int i = sub_start; i < sub_stop; i++)
-// 				{
-// //            std::cout << "Subtracting: " << avg_waveform->at(i - sub_start )/20. << " at: " << i << ",  in avg at: "<< (i - sub_start ) << std::endl;
-// 						// if( (wh_wf_->at(i) - avg_wf->at(i - sub_start )/20.) >= 0 ) wh_wf_->at(i) -= avg_wf->at(i - sub_start )/20.;
-// 						// else                                                        wh_wf_->at(i) = 0;
-// 						if( (wh_wf_->at(i)  - avg_wf->at(i - ( max - avg_peak ) )/int_ratio) >= 0)
-// 						{
-// 								wh_wf_->at(i) -= avg_wf->at(i - ( max - avg_peak ) )/int_ratio;
-// 						}
-// 						else
-// 						{
-// 								wh_wf_->at(i) = 0;
-// 						}
-// 				}
-//
-// 				mip_wf_->at(max)++;
-// 		}
-//
-// 		// Get the total number of photons in the waveform for the rate.
-// 		for(auto &ivec: (*mip_wf_))
-// 		{
-// 				nr_ph_ += ivec;
-// 		}
-//
-// };
-//
-// void PhysicsChannel::ReconstructV2(std::vector<float>* avg_waveform)
-// {
-// 		/**
-// 		 * \todo Validate
-// 		 * \todo Line 621 make avg_waveform height 20 dynamic;
-// 		 */
-//
-// 		for(unsigned i = 0; i < wh_wf_->size(); i++)
-// 		{
-// 				wh_wf_->at(i) = 0;
-// 		}
-//
-// 		int avg_peak = std::distance(avg_waveform->begin(), std::max_element(avg_waveform->begin(),avg_waveform->end()));
-//
-// 		double int_ratio      =  GS->GetParameter<double>("PhysicsChannel.int_ratio");
-//
-// 		for(unsigned ph_pos = 0; ph_pos < mip_wf_->size(); ph_pos++ )
-// 		{
-// 				if( mip_wf_->at( ph_pos ) != 0 )
-// 				{
-// 						// Add the photon:
-// 						int add_start = ph_pos - avg_peak;
-// 						if( add_start < 0 ) add_start = 0;
-//
-// 						int add_stop  = ph_pos + ( avg_waveform->size() - avg_peak );
-// 						if(add_stop > wh_wf_->size() ) add_stop = wh_wf_->size();
-//
-// 						for(int i = add_start; i < add_stop; i++)
-// 						{
-// 								wh_wf_->at(i) += avg_waveform->at(i - (ph_pos - avg_peak) ) * mip_wf_->at(ph_pos)/int_ratio;
-// 						}
-//
-// 				}
-// 		}
-// };
-//
-// void PhysicsChannel::CalculateChi2V2()
-// {
-// 		/** [The ensure, that the reconstructed waveform and the cleaned original one
-// 		 *  agree, calculate a Chi2 test statistic. ]
-// 		 * \todo Validate
-// 		 * \todo implement useful definition of Chi2 and it's sigma. Maybe with Poisson/Binomial of number of detected photons.
-// 		 *
-// 		 */
-//
-// 		double sigma = GS->GetParameter<double>("PhysicsChannel.chi2_sigma");
-// 		int n = 0;
-//
-// 		chi2_ = 0;
-//
-// 		for(unsigned i = 0; i < wh_wf_->size(); i++)
-// 		{
-//
-// 				if(wh_wf_->at(i) != 0) n++;
-// 				chi2_ += ( clean_wf_->at(i) - wh_wf_->at(i) ) * ( clean_wf_->at(i) - wh_wf_->at(i) ) / ( sigma * sigma );
-// 		}
-//
-// //   chi2_ /= wh_wf_->size();
-// 		if(nr_ph_ > 0)
-// 		{
-// 				chi2_ /= nr_ph_ * wh_wf_->size();
-// 		}
-// 		else
-// 		{
-// 				chi2_ /= -1 * wh_wf_->size();
-// 		}
-// 		// std::cout << "Channel: " <<  name_<< " Chi2 " << chi2_ << std::endl;
-// };
-//
+
 // void PhysicsChannel::RunFFT()
 // {
 // 		gsl_fft_real_wavetable *        real;

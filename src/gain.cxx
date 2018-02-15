@@ -61,16 +61,19 @@ GainChannel::GainChannel(std::string name, TFile* rfile): name_(name), n_(0), ga
         gain_otime_ = NULL;
     }
 
-    // if(rfile->GetListOfKeys()->Contains((name+"_avg").c_str()) )
-    // {
-    //     avg_ = (TH1D*) rfile->Get((name+"_avg").c_str());
-    //     avg_->SetDirectory(0);
-    // }
+    if(rfile->GetListOfKeys()->Contains((name+"_avg").c_str()) )
+    {
+        avg_ = (TH1F*) rfile->Get((name+"_avg").c_str());
+        avg_->SetDirectory(0);
+    }
+    else
+    {
+        int nbins = GS->GetParameter<int>("Average1PE.waveform_size");
+        double dt = GS->GetParameter<double>("Scope.delta_t");
+        avg_ = new TH1F((name+"_avg").c_str(), (name+"_avg").c_str(), nbins, - dt/2, dt*(nbins-1)+dt/2);
+        avg_->SetDirectory(0);
+    }
 
-    int nbins = GS->GetParameter<int>("Average1PE.waveform_size");
-    double dt = GS->GetParameter<double>("Scope.delta_t");
-    avg_ = new TH1D((name+"_avg").c_str(), (name+"_avg").c_str(), nbins, - dt/2, dt*(nbins-1)+dt/2);
-    avg_->SetDirectory(0);
 }
 
 GainChannel::~GainChannel()
@@ -264,7 +267,7 @@ TGraph* GainChannel::GetGraph()
     return gain_otime_;
 }
 
-TH1D* GainChannel::GetAvg()
+TH1F* GainChannel::GetAvg()
 {
     return avg_;
 }
@@ -296,6 +299,10 @@ Gain::Gain(boost::filesystem::path path, GainState state): path_(path)
         case GAINSTATE_FITTED:
             this->LoadChannels(state);
             state_ = GAINSTATE_FITTED;
+            break;
+        case GAINSTATE_EXTENDED:
+            this->LoadChannels(state);
+            state_ = GAINSTATE_EXTENDED;
             break;
         default:
             this->CreateChannels();
@@ -329,7 +336,17 @@ void Gain::CreateChannels()
 
 void Gain::LoadChannels(GainState state)
 {
-    boost::filesystem::path src = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("GainDetermination");
+    boost::filesystem::path src = path_/boost::filesystem::path("Calibration");
+
+    if(state_ == GAINSTATE_FITTED)
+    {
+        src = src/boost::filesystem::path("GainDetermination");
+    }
+    else if(GAINSTATE_EXTENDED)
+    {
+        src = src/boost::filesystem::path("Average1PE");
+    }
+
     std::string fname = (src/("run_"+std::to_string(nr_)+"_" + printGainState(state)+"_"+ GS->GetParameter<std::string>("General.CalibrationVersion")+".root")).string();
 
     TFile *rfile = new TFile(fname.c_str(), "OPEN");
@@ -461,7 +478,17 @@ void Gain::SaveGain(boost::filesystem::path dst)
 };
 
 
+GainChannel* Gain::GetChannel(std::string ch)
+{
+    GainChannel * rtn = nullptr;
 
+    for(auto channel : channels_)
+    {
+        if(channel->GetName() == ch) rtn = channel;
+    }
+
+    return rtn;
+}
 
 
 // Gain::Gain(int int_nr) : int_nr_(int_nr)

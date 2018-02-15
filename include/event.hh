@@ -69,6 +69,8 @@ enum EventState
     EVENTSTATE_OSCORRECTED,
     EVENTSTATE_PDFAILED,
     EVENTSTATE_OSFAILED,
+    EVENTSTATE_WFDECOMPOSED,
+    EVENTSTATE_WDFAILED,
     // COLOR_GREEN, // assigned 3
     // COLOR_WHITE, // assigned 4
     // COLOR_CYAN, // assigned 5
@@ -257,6 +259,8 @@ class PhysicsEvent : public Event{
         virtual void LoadFiles(EventState state = EVENTSTATE_RAW);
             virtual void LoadSubtracted();
             virtual void LoadOSCorrected();
+
+        virtual void SaveEvent(boost::filesystem::path dst);
 
         virtual void PrepHistograms( boost::property_tree::ptree &settings );
 
