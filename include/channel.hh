@@ -176,10 +176,15 @@ class PhysicsChannel : public Channel
 
         PhysicsChannel(std::string ch_name, std::string scope_pos);
         virtual ~PhysicsChannel();
+
+        virtual void LoadHistogram(TFile* rfile);
+
         virtual void PrepHistogram( double range, double offset = 0.);
         virtual     void        FillPedestal();
         virtual std::vector<OverShootResult> OverShootCorrection();
+        virtual void PrepareDecomposition();
         virtual void WaveformDecomposition(TH1F* avg);
+        virtual void WaveformReconstruction(TH1F* avg);
 
         virtual double*      GetOS();
         virtual TH1*        GetHistogram(std::string type);

@@ -503,6 +503,29 @@ PhysicsChannel::~PhysicsChannel() {
     }
 };
 
+void PhysicsChannel::LoadHistogram(TFile* rfile)
+{
+    // Get the normal waveform
+    Channel::LoadHistogram( rfile );
+
+    if(rfile->GetListOfKeys()->Contains((name_+"_mip").c_str()) )
+    {
+        mipwf_ = (TH1F*) rfile->Get((name_+"_mip").c_str());
+        mipwf_->SetDirectory(0);
+    }
+
+    if(rfile->GetListOfKeys()->Contains((name_+"_reco").c_str()) )
+    {
+        std::string title = name_+"_reco";
+        int nbins         = wf_->GetNbinsX();
+        double lowedge    = wf_->GetBinLowEdge(1);
+        double highedge   = wf_->GetBinLowEdge(nbins) + wf_->GetBinWidth(nbins);
+
+        recowf_ = new TH1F(title.c_str(), title.c_str(), nbins, lowedge, highedge);
+        recowf_->SetDirectory(0);
+    }
+};
+
 void PhysicsChannel::PrepHistogram( double range, double offset)
 {
 	// First convert Y to mV and X to ns
@@ -746,9 +769,8 @@ TH1* PhysicsChannel::GetHistogram(std::string type)
 	else						 exit(1);
 };
 
-void PhysicsChannel::WaveformDecomposition(TH1F* avg)
+void PhysicsChannel::PrepareDecomposition()
 {
-    // First set up the waveforms
     if( recowf_ != nullptr )
     {
         delete recowf_;
@@ -774,15 +796,19 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
 
     mipwf_ = new TH1F(title.c_str(), title.c_str(), nbins, lowedge, highedge);
     mipwf_->SetDirectory(0);
+};
 
-    // Here the subtraction begins.
+void PhysicsChannel::WaveformDecomposition(TH1F* avg)
+{
+    int nbins          = recowf_->GetNbinsX();
+
     int avg_nbins      = avg->GetNbinsX();
     double avg_max     = avg->GetMaximum();
     int avg_maxbin     = avg->GetMaximumBin() -1 ;
 
     double threshold =  GS->GetParameter<double>("WaveformDecomposition.threshold");
     int search_range =  GS->GetParameter<double>("WaveformDecomposition.search_range");
-    int search_edge   =  GS->GetParameter<double>("WaveformDecomposition.search_edge");
+    // int search_edge   =  GS->GetParameter<double>("WaveformDecomposition.search_edge");
 
 
     // make sure the edges in the histogram are handled properly:
@@ -797,41 +823,37 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
 
     while( recowf_->GetBinContent(maxbin) > threshold )
     {
-    //    if( maxbin > avg_maxbin && maxbin < ( nbins - ( avg->GetNbinsX() - avg_maxbin ) ) )
-    //    {
-            /**
-            * \todo Find out why there is na negative spike in the reco wf
-            * \todo Validate
-            */
-            for( unsigned i = maxbin - avg_maxbin + 1 ; i <= ( maxbin + avg_nbins - avg_maxbin ); ++i)
-            {
-                double bincont     = recowf_->GetBinContent(i);
-                double avg_bincont = avg->GetBinContent(i - maxbin + avg_maxbin);
-            //    double avg_bincont = avg->GetBinContent(i - maxbin;
-                recowf_->SetBinContent(i, bincont - avg_bincont);
-            }
-            // does ++GetBinContent(maxbin)
-            mipwf_->AddBinContent(maxbin);
+        /**
+        * \todo Validate
+        */
+        for( unsigned i = maxbin - avg_maxbin + 1 ; i <= ( maxbin + avg_nbins - avg_maxbin ); ++i)
+        {
+            double bincont     = recowf_->GetBinContent(i);
+            double avg_bincont = avg->GetBinContent(i - maxbin + avg_maxbin);
+            recowf_->SetBinContent(i, bincont - avg_bincont);
+        }
 
-
+        // does ++GetBinContent(maxbin)
+        mipwf_->AddBinContent(maxbin);
 
         // // Because it is very time consuming to search the full waveform with each iteration
         // // look only in the vincity of the last maximum first.
-        double tmp_max = 0;
-        int tmp_max_bin = maxbin - search_range;
-
-        for(int j = maxbin - search_range; j< maxbin + search_range; ++j)
+        if( recowf_->GetBinContent(maxbin) > threshold*2 )
         {
-            if(recowf_->GetBinContent(j) > tmp_max)
+            double tmp_max = 0;
+            int tmp_max_bin = maxbin - search_range;
+
+            for(int j = maxbin - search_range; j< maxbin + search_range; ++j)
             {
-                tmp_max = recowf_->GetBinContent(j);
-                tmp_max_bin = j;
+                if(recowf_->GetBinContent(j) > tmp_max)
+                {
+                    tmp_max = recowf_->GetBinContent(j);
+                    tmp_max_bin = j;
+                }
             }
-        }
 
-        if( tmp_max > threshold*2 )
-        {
-            if( tmp_max_bin > (maxbin - search_range + search_edge) && tmp_max_bin < (maxbin + search_range - search_edge))
+            // Make sure we are not in the flank of a large signal at the edge of the search region
+            if( tmp_max_bin > (maxbin - int(search_range*0.9)) && tmp_max_bin < (maxbin + int(0.9*search_range)) )
             {
                 maxbin = tmp_max_bin;
             }
@@ -840,19 +862,10 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
                 maxbin = recowf_->GetMaximumBin();
             }
         }
-        // If not search for the new maximum in the waveform
         else
         {
             maxbin = recowf_->GetMaximumBin();
         }
-
-        //maxbin = recowf_->GetMaximumBin();
-        //}
-        // else
-        // {
-        //     // Think of something in case maxbin is out of the bounds on the waveform
-        //     // i.e. GetMaximumBin(in range of bounds)
-        // }
     }
 };
 
@@ -868,81 +881,19 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
 //
 // 		return this->GetChi2();
 // };
-//
-// void PhysicsChannel::Subtract1PE(std::vector<float>* avg_wf)
-// {
-// 		/** [Test description of Subtract1PE]
-// 		 *
-// 		 *  @param avg_wf [Full average 1 pe waveform that will be subtracted.]
-// 		 */
-// 		double avg_max        = *std::max_element(avg_wf->begin(),avg_wf->end());
-// 		int avg_peak       =  std::distance(avg_wf->begin(), std::max_element(avg_wf->begin(),avg_wf->end()));
-//
-// 		double stop_decompose =  GS->GetParameter<double>("PhysicsChannel.stop_decompose");
-// 		double int_ratio      =  GS->GetParameter<double>("PhysicsChannel.int_ratio");
-//
-// 		while((*std::max_element(wh_wf_->begin(), wh_wf_->end())) > stop_decompose*avg_max/int_ratio)
-// 		{
-// 				int max = std::distance(wh_wf_->begin(), std::max_element(wh_wf_->begin(), wh_wf_->end()));
-//
-// 				int sub_start = max - avg_peak;
-// 				int sub_stop  = max + (avg_wf->size() - avg_peak);
-//
-// 				// If max is close to the begining, begining of avg_wf would be be-
-// 				// fore the start of wh_wf_.
-// 				if( sub_start < 0 )
-// 				{
-// 						sub_start = 0;
-// 				}
-//
-// 				// If max is close to the end of wh_wf_, avg_wf would excide it.
-// 				if( sub_stop > wh_wf_->size() )
-// 				{
-// 						sub_stop = wh_wf_->size();
-// 				}
-//
-//
-// 				for(int i = sub_start; i < sub_stop; i++)
-// 				{
-// //            std::cout << "Subtracting: " << avg_waveform->at(i - sub_start )/20. << " at: " << i << ",  in avg at: "<< (i - sub_start ) << std::endl;
-// 						// if( (wh_wf_->at(i) - avg_wf->at(i - sub_start )/20.) >= 0 ) wh_wf_->at(i) -= avg_wf->at(i - sub_start )/20.;
-// 						// else                                                        wh_wf_->at(i) = 0;
-// 						if( (wh_wf_->at(i)  - avg_wf->at(i - ( max - avg_peak ) )/int_ratio) >= 0)
-// 						{
-// 								wh_wf_->at(i) -= avg_wf->at(i - ( max - avg_peak ) )/int_ratio;
-// 						}
-// 						else
-// 						{
-// 								wh_wf_->at(i) = 0;
-// 						}
-// 				}
-//
-// 				mip_wf_->at(max)++;
-// 		}
-//
-// 		// Get the total number of photons in the waveform for the rate.
-// 		for(auto &ivec: (*mip_wf_))
-// 		{
-// 				nr_ph_ += ivec;
-// 		}
-//
-// };
-//
-// void PhysicsChannel::ReconstructV2(std::vector<float>* avg_waveform)
-// {
-// 		/**
-// 		 * \todo Validate
-// 		 * \todo Line 621 make avg_waveform height 20 dynamic;
-// 		 */
-//
-// 		for(unsigned i = 0; i < wh_wf_->size(); i++)
-// 		{
-// 				wh_wf_->at(i) = 0;
-// 		}
-//
-// 		int avg_peak = std::distance(avg_waveform->begin(), std::max_element(avg_waveform->begin(),avg_waveform->end()));
-//
-// 		double int_ratio      =  GS->GetParameter<double>("PhysicsChannel.int_ratio");
+
+void PhysicsChannel::WaveformReconstruction(TH1F* avg)
+{
+ 		/**
+ 		 * \todo Validate
+ 		 * \todo Line 621 make avg_waveform height 20 dynamic;
+ 		 */
+
+         int nbins          = recowf_->GetNbinsX();
+
+         int avg_nbins      = avg->GetNbinsX();
+         double avg_max     = avg->GetMaximum();
+         int avg_maxbin     = avg->GetMaximumBin();
 //
 // 		for(unsigned ph_pos = 0; ph_pos < mip_wf_->size(); ph_pos++ )
 // 		{
@@ -962,7 +913,7 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
 //
 // 				}
 // 		}
-// };
+};
 //
 // void PhysicsChannel::CalculateChi2V2()
 // {

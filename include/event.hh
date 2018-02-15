@@ -70,7 +70,9 @@ enum EventState
     EVENTSTATE_PDFAILED,
     EVENTSTATE_OSFAILED,
     EVENTSTATE_WFDECOMPOSED,
-    EVENTSTATE_WDFAILED,
+    EVENTSTATE_WFDFAILED,
+    EVENTSTATE_WFRECONSTRUCTED,
+    EVENTSTATE_WFRFAILED,
     // COLOR_GREEN, // assigned 3
     // COLOR_WHITE, // assigned 4
     // COLOR_CYAN, // assigned 5
@@ -103,9 +105,13 @@ inline std::string printEventState(EventState state)
     case EVENTSTATE_PDFAILED:
       return "pd_failed";
     case EVENTSTATE_WFDECOMPOSED:
-      return "os_corrected";
-    case EVENTSTATE_WDFAILED:
-      return "os_failed";
+      return "wf_decomposed";
+    case EVENTSTATE_WFDFAILED:
+      return "wfd_failed";
+    case EVENTSTATE_WFRECONSTRUCTED:
+      return "wf_reconstructed";
+    case EVENTSTATE_WFRFAILED:
+      return "wfr_failed";
     default:
       return "Invalid Selection";
   }
@@ -259,13 +265,17 @@ class PhysicsEvent : public Event{
         virtual void LoadFiles(EventState state = EVENTSTATE_RAW);
             virtual void LoadSubtracted();
             virtual void LoadOSCorrected();
+            virtual void LoadWFDecomposed();
 
         virtual void SaveEvent(boost::filesystem::path dst);
 
         virtual void PrepHistograms( boost::property_tree::ptree &settings );
 
         virtual std::vector<std::vector<OverShootResult>> OverShootCorrection();
+
+        virtual void PrepareDecomposition();
         virtual void WaveformDecomposition(Gain* gain);
+        virtual void WaveformReconstruction(Gain* gain);
     //    virtual void PrepHistograms();
     private:
         boost::filesystem::path rate_file_;

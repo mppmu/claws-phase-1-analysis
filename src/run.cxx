@@ -690,7 +690,7 @@ void CalibrationRun::PDS_Physics()
       pdg->SetMarkerColor(kRed);
       pdg->SetMarkerSize(1);
       pdg->GetXaxis()->SetTitle("Time [s]");
-      pdg->GetYaxis()->SetTitle("Pedestal fit [1/256 * 50 mV]");
+      pdg->GetYaxis()->SetTitle("Pedestal mean [mV]");
       pdg->GetYaxis()->SetRangeUser(-128,127);
       fit_mean.push_back(pdg);
 
@@ -738,7 +738,7 @@ void CalibrationRun::PDS_Physics()
       mng->SetMarkerColor(kRed);
       mng->SetMarkerSize(1);
       mng->GetXaxis()->SetTitle("Time [s]");
-      mng->GetYaxis()->SetTitle("Pedestal mean [1/256 * 50 mV]");
+      mng->GetYaxis()->SetTitle("Pedestal mean [mV]");
       mng->GetYaxis()->SetRangeUser(-128,127);
       hist_mean.push_back(mng);
 
@@ -950,7 +950,7 @@ void CalibrationRun::OverShootCorrection()
 
 void CalibrationRun::WaveformDecomposition()
 {
-    std::cout << "\033[33;1mRun::Waveform decomposition(NOT IMPLEMENTED):\033[0m running" << "\r" << std::flush;
+    std::cout << "\033[33;1mRun::Waveform decomposition:\033[0m running" << "\r" << std::flush;
 
     boost::filesystem::path outfolder = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("WaveformDecomposition");
     if(!boost::filesystem::is_directory( outfolder ) )
@@ -994,14 +994,25 @@ void CalibrationRun::WaveformDecomposition()
     int nthreads   = GS->GetParameter<int>("General.nthreads");
     bool parallelize = GS->GetParameter<bool>("General.parallelize");
 
-    //#pragma omp parallel for if(parallelize) num_threads(nthreads)
+    //
     // for(auto evt = evts_.begin(); evt != evts_.end(); evt++ )
-    for(auto evt: evts_ )
+    //for(auto evt: evts_ )
+    // #pragma omp parallel for if(parallelize) num_threads(nthreads)
+    //for(std::vector<PhysicsEvent*>::iterator evt = evts_.begin(); evt != evts_.end(); ++evt)
+
+    // Creating the mip and reco wavforsm because Clone is not threadsafe
+    for(auto &evt: evts_)
+    {
+        evt->PrepareDecomposition();
+    }
+
+    #pragma omp parallel for if(parallelize) num_threads(nthreads)
+    for(int i = 0; i < evts_.size(); ++i)
     {
         // Here the actual waveform decomposition is done, the rest is just
         // getting the info out.
         //auto channels = evt->WaveformDecomposition(gain);
-        evt->WaveformDecomposition(gain);
+        evts_.at(i)->WaveformDecomposition(gain);
     }
 
     // std::string fname = overshoot.string() + "/run_"+std::to_string(nr_)+"_pedestal"+"_"+ GS->GetParameter<std::string>("General.CalibrationVersion")+".root";
@@ -1025,12 +1036,77 @@ void CalibrationRun::WaveformDecomposition()
 
     delete gain;
 
-    std::cout << "\033[32;1mRun::Waveform decomposition(NOT IMPLEMENTED):\033[0m done!       " << std::endl;
+    std::cout << "\033[32;1mRun::Waveform decomposition:\033[0m done!       " << std::endl;
 };
 
 void CalibrationRun::WaveformReconstruction()
 {
     std::cout << "\033[33;1mRun::Waveform reconstruction(NOT IMPLEMENTED):\033[0m running" << "\r" << std::flush;
+
+    boost::filesystem::path outfolder = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("WaveformReconstruction");
+    if(!boost::filesystem::is_directory( outfolder ) )
+    {
+        boost::filesystem::create_directory( outfolder );
+    }
+
+    if(!boost::filesystem::is_directory( outfolder/boost::filesystem::path("Waveforms")) )
+    {
+         boost::filesystem::create_directory( outfolder/boost::filesystem::path("Waveforms"));
+    }
+
+    //Get the histograms and prepare them
+    for(auto &evt: evts_ )
+    {
+         evt->LoadFiles(EVENTSTATE_WFDECOMPOSED);
+    }
+
+    // Load the histograms & .ini file. If the event
+    // did not pass the pd subtraction, throw it away
+    // auto evt_itr = evts_.begin();
+    //
+    // while( evt_itr != evts_.end() )
+    // {
+    //     (*evt_itr)->LoadFiles(EVENTSTATE_OSCORRECTED);
+    //
+    //     if( (*evt_itr)->GetState() == EVENTSTATE_OSFAILED )
+    //     {
+    //             delete (*evt_itr);
+    //             (*evt_itr) = NULL;
+    //             evts_.erase(evt_itr);
+    //     }
+    //     else
+    //     {
+    //             evt_itr++;
+    //     }
+    // }
+
+    Gain* gain = new Gain(path_, GAINSTATE_EXTENDED);
+
+    for(auto &evt : evts_)
+    {
+        evt->WaveformReconstruction(gain);
+    }
+    // int nthreads   = GS->GetParameter<int>("General.nthreads");
+    // bool parallelize = GS->GetParameter<bool>("General.parallelize");
+    //
+    // //#pragma omp parallel for if(parallelize) num_threads(nthreads)
+    // // for(auto evt = evts_.begin(); evt != evts_.end(); evt++ )
+    // for(auto evt: evts_ )
+    // {
+    // //     // Here the actual waveform decomposition is done, the rest is just
+    // //     // getting the info out.
+    // //     //auto channels = evt->WaveformDecomposition(gain);
+    //     evt->WaveformReconstruction(gain);
+    // }
+
+    for(auto &evt: evts_ )
+    {
+        evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
+        evt->DeleteHistograms();
+    }
+
+    delete gain;
+
 
     std::cout << "\033[32;1mRun::Waveform reconstruction(NOT IMPLEMENTED):\033[0m done!       " << std::endl;
 };
