@@ -824,46 +824,54 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
         /**
         * \todo Validate
         */
-        for( unsigned i = maxbin - avg_maxbin + 1 ; i <= ( maxbin + avg_nbins - avg_maxbin ); ++i)
+        // for( unsigned i = maxbin - avg_maxbin + 1 ; i <= ( maxbin + avg_nbins - avg_maxbin ); ++i)
+        // {
+        //     double bincont     = recowf_->GetBinContent(i);
+        //     double avg_bincont = avg->GetBinContent(i - maxbin + avg_maxbin);
+        //     recowf_->SetBinContent(i, bincont - avg_bincont);
+        // }
+        for( unsigned int i = 1 ; i <= avg_nbins; ++i)
         {
-            double bincont     = recowf_->GetBinContent(i);
-            double avg_bincont = avg->GetBinContent(i - maxbin + avg_maxbin);
+            double avg_bincont = avg->GetBinContent( i );
+            double bincont     = recowf_->GetBinContent( i + maxbin - avg_maxbin );
+
             recowf_->SetBinContent(i, bincont - avg_bincont);
         }
 
         // does ++GetBinContent(maxbin)
         mipwf_->AddBinContent(maxbin);
 
-        // // Because it is very time consuming to search the full waveform with each iteration
-        // // look only in the vincity of the last maximum first.
-        if( recowf_->GetBinContent(maxbin) > threshold*2 )
-        {
-            double tmp_max = 0;
-            int tmp_max_bin = maxbin - search_range;
-
-            for(int j = maxbin - search_range; j< maxbin + search_range; ++j)
-            {
-                if(recowf_->GetBinContent(j) > tmp_max)
-                {
-                    tmp_max = recowf_->GetBinContent(j);
-                    tmp_max_bin = j;
-                }
-            }
-
-            // Make sure we are not in the flank of a large signal at the edge of the search region
-            if( tmp_max_bin > (maxbin - int(search_range*0.9)) && tmp_max_bin < (maxbin + int(0.9*search_range)) )
-            {
-                maxbin = tmp_max_bin;
-            }
-            else
-            {
-                maxbin = recowf_->GetMaximumBin();
-            }
-        }
-        else
-        {
-            maxbin = recowf_->GetMaximumBin();
-        }
+        // // // Because it is very time consuming to search the full waveform with each iteration
+        // // // look only in the vincity of the last maximum first.
+        // if( recowf_->GetBinContent(maxbin) > threshold*2 )
+        // {
+        //     double tmp_max = 0;
+        //     int tmp_max_bin = maxbin - search_range;
+        //
+        //     for(int j = maxbin - search_range; j< maxbin + search_range; ++j)
+        //     {
+        //         if(recowf_->GetBinContent(j) > tmp_max)
+        //         {
+        //             tmp_max = recowf_->GetBinContent(j);
+        //             tmp_max_bin = j;
+        //         }
+        //     }
+        //
+        //     // Make sure we are not in the flank of a large signal at the edge of the search region
+        //     if( tmp_max_bin > (maxbin - int(search_range*0.9)) && tmp_max_bin < (maxbin + int(0.9*search_range)) )
+        //     {
+        //         maxbin = tmp_max_bin;
+        //     }
+        //     else
+        //     {
+        //         maxbin = recowf_->GetMaximumBin();
+        //     }
+        // }
+        // else
+        // {
+        //     maxbin = recowf_->GetMaximumBin();
+        // }
+        maxbin = recowf_->GetMaximumBin();
     }
 };
 
