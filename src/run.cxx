@@ -1060,6 +1060,9 @@ void CalibrationRun::WaveformReconstruction()
          evt->LoadFiles(EVENTSTATE_WFDECOMPOSED);
     }
 
+
+
+
     // Load the histograms & .ini file. If the event
     // did not pass the pd subtraction, throw it away
     // auto evt_itr = evts_.begin();
@@ -1082,22 +1085,81 @@ void CalibrationRun::WaveformReconstruction()
 
     Gain* gain = new Gain(path_, GAINSTATE_EXTENDED);
 
-    for(auto &evt : evts_)
-    {
-        evt->WaveformReconstruction(gain);
-    }
-    // int nthreads   = GS->GetParameter<int>("General.nthreads");
-    // bool parallelize = GS->GetParameter<bool>("General.parallelize");
+    int nthreads   = GS->GetParameter<int>("General.nthreads");
+    bool parallelize = GS->GetParameter<bool>("General.parallelize");
     //
-    // //#pragma omp parallel for if(parallelize) num_threads(nthreads)
-    // // for(auto evt = evts_.begin(); evt != evts_.end(); evt++ )
-    // for(auto evt: evts_ )
-    // {
-    // //     // Here the actual waveform decomposition is done, the rest is just
-    // //     // getting the info out.
-    // //     //auto channels = evt->WaveformDecomposition(gain);
-    //     evt->WaveformReconstruction(gain);
-    // }
+    #pragma omp parallel for if(parallelize) num_threads(nthreads)
+    for(int i = 0; i < evts_.size(); ++i)
+    {
+        // Here the actual waveform decomposition is done, the rest is just
+        // getting the info out.
+        //auto channels = evt->WaveformDecomposition(gain);
+        evts_.at(i)->WaveformReconstruction(gain);
+    }
+
+    std::vector<std::vector<TGraph*>> graphs;
+    std::string names[5] = {"_nbins", "_binerror", "_chi2", "_pval", "_chi2ndf"};
+    std::string ytitles[5] = {"Ndf", "BinError", "Chi2", "P-Value","Chi2/Ndf"};
+
+    for(auto &channel: evts_.at(0)->GetChannels() )
+    {
+        std::vector<TGraph*> gch;
+
+        std::string name = channel->GetName();
+
+        for(int i =0 ; i < 5; ++i)
+        {
+            TGraph * g = new TGraph();
+            g->SetName( (name+names[i]).c_str() );
+            g->GetYaxis()->SetTitle(ytitles[i].c_str());
+            g->GetXaxis()->SetTitle("Time [s]");
+            g->SetMarkerStyle(23);
+            g->SetMarkerColor(kRed);
+            g->SetMarkerSize(1);
+            gch.push_back(g);
+        }
+
+        graphs.push_back(gch);
+    }
+
+    for(auto &evt: evts_ )
+    {
+        // Here the actual overshoot correction is done, the rest is just
+        // getting the info out.
+        std::vector<std::vector<double>> results = evt->GetReconstruction();
+
+        double   evt_time = evt->GetParameter<double>("Properties.UnixTime");
+
+        for(unsigned int i = 0; i < results.size(); ++i)
+        {
+            std::vector<double> res = results[i];
+            for(unsigned int j = 0; j < 4; ++j)
+            {
+                TGraph* graph = graphs.at(i).at(j);
+                graph->SetPoint(graph->GetN(), evt_time, res[j]);
+            }
+
+            TGraph* graph = graphs.at(i).at(4);
+
+            graph->SetPoint(graph->GetN(), evt_time, res[2]/res[0]);
+        }
+    }
+
+    std::string fname = outfolder.string() + "/run_"+std::to_string(nr_)+"_wfreco"+"_"+ GS->GetParameter<std::string>("General.CalibrationVersion")+".root";
+    TFile *rfile = new TFile(fname.c_str(), "RECREATE");
+
+    for(auto &channel : graphs)
+    {
+        for(auto & graph : channel)
+        {
+            graph->Write();
+            delete graph;
+        }
+    }
+
+    rfile->Close("R");
+
+
 
     for(auto &evt: evts_ )
     {
@@ -1120,6 +1182,39 @@ void CalibrationRun::DeleteCalibrationHistograms()
     }
 };
 
+void CalibrationRun::MipTimeRetrieval()
+{
+    std::cout << "\033[33;1mRun::MIP time retrieval(NOT IMPLEMENTED):\033[0m running" << "\r" << std::flush;
+
+    boost::filesystem::path outfolder = path_/boost::filesystem::path("Results");
+    if(!boost::filesystem::is_directory( outfolder ) )
+    {
+        boost::filesystem::create_directory( outfolder );
+    }
+
+    if(!boost::filesystem::is_directory( outfolder/boost::filesystem::path("Waveforms")) )
+    {
+         boost::filesystem::create_directory( outfolder/boost::filesystem::path("Waveforms"));
+    }
+
+    //Get the histograms and prepare them
+    for(auto &evt: evts_ )
+    {
+         evt->LoadFiles(EVENTSTATE_WFRECONSTRUCTED);
+    }
+    // rfile->Close("R");
+    //
+    //
+    //
+
+    for(auto &evt: evts_ )
+    {
+         evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
+         evt->DeleteHistograms();
+    }
+
+    std::cout << "\033[32;1mRun::MIP time retrieval(NOT IMPLEMENTED):\033[0m done!       " << std::endl;
+};
 
 // void CalibrationRun::LoadData()
 // {

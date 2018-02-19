@@ -398,6 +398,11 @@ void PhysicsEvent::LoadFiles(EventState state)
 				this->LoadWFDecomposed();
 				break;
 			}
+			case EVENTSTATE_WFRECONSTRUCTED:
+			{
+				this->LoadWFReconstructed();
+				break;
+			}
         }
 
 }
@@ -501,6 +506,31 @@ void PhysicsEvent::LoadWFDecomposed()
 	ss << std::setw(3) << std::setfill('0') << nr_;
 	fname += "_" + ss.str();
 	fname += "_" + printEventState(EVENTSTATE_WFDECOMPOSED);
+	fname += ".root";
+
+	this->LoadHistograms(boost::filesystem::path(fname));
+
+    boost::replace_last(fname, "root","ini");
+    boost::property_tree::ini_parser::read_ini(fname, pt_);
+
+	state_ = static_cast<EventState>( pt_.get<int>("General.State") );
+};
+
+void PhysicsEvent::LoadWFReconstructed()
+{
+	std::string fname = (path_/boost::filesystem::path("Calibration")/boost::filesystem::path("WaveformReconstruction")/boost::filesystem::path("Waveforms")).string() + "/";
+
+	int     status;
+	char   *realname;
+	const std::type_info  &ti = typeid(*this);
+	realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
+	fname += std::string(realname);
+	free(realname);
+
+	std::stringstream ss;
+	ss << std::setw(3) << std::setfill('0') << nr_;
+	fname += "_" + ss.str();
+	fname += "_" + printEventState(EVENTSTATE_WFRECONSTRUCTED);
 	fname += ".root";
 
 	this->LoadHistograms(boost::filesystem::path(fname));
@@ -632,62 +662,37 @@ void PhysicsEvent::WaveformReconstruction(Gain* gain)
 		 * @param  i [description]
 		 * \todo Verify that allways FWD1 is matched to FWD1 etc
 		 */
+    std::string names[5] = {"NBins", "BinError", "Chi2", "PVal", "Chi2/Ndf"};
+
+	for(int i = 0; i < channels_.size(); ++i)
+	{
+		GainChannel * gch = gain->GetChannel(channels_.at(i)->GetName());
+
+	    PhysicsChannel *pch = dynamic_cast<PhysicsChannel*>(channels_.at(i));
+
+		std::vector<double> result = pch->WaveformReconstruction(gch->GetAvg());
 
 
-		for(auto & channel : channels_)
+
+		std::string chname = pch->GetName();
+
+		for(unsigned int j = 0; j < 4; ++j)
 		{
-			GainChannel * gch = gain->GetChannel(channel->GetName());
-
-			PhysicsChannel *pch = dynamic_cast<PhysicsChannel*>(channel);
-			pch->WaveformReconstruction(gch->GetAvg());
+			pt_.put("WFReco_" + names[j] +"." + chname, result[j] );
 		}
+		pt_.put("WFReco_" + names[4] +"." + chname, result[2]/result[0] );
 
+		reco_.emplace_back(result);
+	}
 
-		 state_ = EVENTSTATE_WFRECONSTRUCTED;
-		 pt_.put("General.State", state_);
-		 //
-		//  return allresults;
-
-
-		// std::vector<std::string> keys;
-		//
-		// for(auto& mvec : avg_waveforms)
-		// {
-		//     keys.push_back(mvec.first);
-		// }
-		//
-		// for(auto& mvec : avg_waveforms)
-		// {
-		//     std::string tmp_name = mvec.first;
-		//     replace_last(tmp_name,Results." + tmp_name, chi2);
-		// }
-
-// 		std::vector<std::string> vch = GS->GetChannels(1);
-//
-// 	#pragma omp parallel for num_threads(8) firstprivate(avg_waveforms)
-// 		for(unsigned i = 0; i < vch.size(); i++)
-// 		{
-//
-// 				std::string ch_name = vch.at(i);
-//
-// //        #pragma omp critical
-// //        std::cout << "Thread id: " << int(omp_get_thread_num()) << ", in channel: " << ch_name << std::endl;
-//
-// 				if(!ends_with(ch_name, "4"))
-// 				{
-// 						PhysicsChannel*     tmp     = dynamic_cast<PhysicsChannel*>(channels_[ch_name]);
-// 						double chi2    = tmp->DecomposeV2(avg_waveforms[ch_name + "-INT"]);
-//
-// 			#pragma omp critical
-// 						pt_.put("DecompositionResults." + ch_name, chi2);
-//
-// 						if( chi2 > GS->GetCaliPar<double>("PhysicsChannel.chi2_bound") )
-// 						{
-// 								std::cout << "\033[1;31mReconstruction failed! Name: "<< ch_name << " Nr: "<< nr_ <<" Chi2: "<< chi2 << "\033[0m"<< "\r" << std::endl;
-// 						}
-// 				}
-// 		}
+	state_ = EVENTSTATE_WFRECONSTRUCTED;
+	pt_.put("General.State", state_);
 };
+
+std::vector<std::vector<double>> PhysicsEvent::GetReconstruction()
+{
+	return reco_;
+}
 
 void PhysicsEvent::SaveEvent(boost::filesystem::path dst)
 {

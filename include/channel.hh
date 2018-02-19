@@ -184,14 +184,17 @@ class PhysicsChannel : public Channel
         virtual std::vector<OverShootResult> OverShootCorrection();
         virtual void PrepareDecomposition();
         virtual void WaveformDecomposition(TH1F* avg);
-        virtual void WaveformReconstruction(TH1F* avg);
+        virtual std::vector<double> WaveformReconstruction(TH1F* avg);
 
-        virtual double*      GetOS();
+        virtual double*     GetOS();
         virtual TH1*        GetHistogram(std::string type);
+
+    //    virtual double*     GetReco();
     private:
         double    os_[10];
         TH1F*                  mipwf_;
         TH1F*                  recowf_;
+    //     double              reco_res_[4];
 
 
 

@@ -117,6 +117,7 @@ class CalibrationRun : public Run
     void OverShootCorrection();
     void WaveformDecomposition();
     void WaveformReconstruction();
+    void MipTimeRetrieval();
     //void LoadH
     //void DeleteHistograms();
     void DeleteCalibrationHistograms();

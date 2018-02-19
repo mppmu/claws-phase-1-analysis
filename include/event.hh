@@ -266,6 +266,7 @@ class PhysicsEvent : public Event{
             virtual void LoadSubtracted();
             virtual void LoadOSCorrected();
             virtual void LoadWFDecomposed();
+            virtual void LoadWFReconstructed();
 
         virtual void SaveEvent(boost::filesystem::path dst);
 
@@ -276,9 +277,12 @@ class PhysicsEvent : public Event{
         virtual void PrepareDecomposition();
         virtual void WaveformDecomposition(Gain* gain);
         virtual void WaveformReconstruction(Gain* gain);
+
+        std::vector<std::vector<double>> GetReconstruction();
     //    virtual void PrepHistograms();
     private:
         boost::filesystem::path rate_file_;
+        std::vector<std::vector<double>> reco_;
 };
 //
 // //        void                   LoadRootFile();

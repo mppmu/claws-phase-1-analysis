@@ -523,6 +523,12 @@ void PhysicsChannel::LoadHistogram(TFile* rfile)
 
         recowf_ = new TH1F(title.c_str(), title.c_str(), nbins, lowedge, highedge);
         recowf_->SetDirectory(0);
+
+        double bin_error = wf_->GetBinError(1);
+        for(unsigned int i = 1; i<=recowf_->GetNbinsX(); ++i)
+        {
+            recowf_->SetBinError(i, bin_error);
+        }
     }
 };
 
@@ -769,6 +775,11 @@ TH1* PhysicsChannel::GetHistogram(std::string type)
 	else						 exit(1);
 };
 
+// double * PhysicsChannel::GetReco()
+// {
+// 	return reco_res_;
+// }
+
 void PhysicsChannel::PrepareDecomposition()
 {
     if( recowf_ != nullptr )
@@ -823,19 +834,15 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
     {
         /**
         * \todo Validate
+        * \todo find out why the hell I need to shift the avg by -1
         */
-        // for( unsigned i = maxbin - avg_maxbin + 1 ; i <= ( maxbin + avg_nbins - avg_maxbin ); ++i)
-        // {
-        //     double bincont     = recowf_->GetBinContent(i);
-        //     double avg_bincont = avg->GetBinContent(i - maxbin + avg_maxbin);
-        //     recowf_->SetBinContent(i, bincont - avg_bincont);
-        // }
-        for( unsigned int i = 1 ; i <= avg_nbins; ++i)
+
+        for( unsigned int i = 2 ; i <= avg_nbins; ++i)
         {
-            double avg_bincont = avg->GetBinContent( i );
+            double avg_bincont = avg->GetBinContent( i - 1 );
             double bincont     = recowf_->GetBinContent( i + maxbin - avg_maxbin );
 
-            recowf_->SetBinContent(i, bincont - avg_bincont);
+            recowf_->SetBinContent( i + maxbin - avg_maxbin, bincont - avg_bincont);
         }
 
         // does ++GetBinContent(maxbin)
@@ -843,83 +850,96 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
 
         // // // Because it is very time consuming to search the full waveform with each iteration
         // // // look only in the vincity of the last maximum first.
-        // if( recowf_->GetBinContent(maxbin) > threshold*2 )
-        // {
-        //     double tmp_max = 0;
-        //     int tmp_max_bin = maxbin - search_range;
-        //
-        //     for(int j = maxbin - search_range; j< maxbin + search_range; ++j)
-        //     {
-        //         if(recowf_->GetBinContent(j) > tmp_max)
-        //         {
-        //             tmp_max = recowf_->GetBinContent(j);
-        //             tmp_max_bin = j;
-        //         }
-        //     }
-        //
-        //     // Make sure we are not in the flank of a large signal at the edge of the search region
-        //     if( tmp_max_bin > (maxbin - int(search_range*0.9)) && tmp_max_bin < (maxbin + int(0.9*search_range)) )
-        //     {
-        //         maxbin = tmp_max_bin;
-        //     }
-        //     else
-        //     {
-        //         maxbin = recowf_->GetMaximumBin();
-        //     }
-        // }
-        // else
-        // {
-        //     maxbin = recowf_->GetMaximumBin();
-        // }
-        maxbin = recowf_->GetMaximumBin();
+        if( recowf_->GetBinContent(maxbin) > threshold*2 )
+        {
+            double tmp_max = 0;
+            int tmp_max_bin = maxbin - search_range;
+
+            for(int j = maxbin - search_range; j< maxbin + search_range; ++j)
+            {
+                if(recowf_->GetBinContent(j) > tmp_max)
+                {
+                    tmp_max = recowf_->GetBinContent(j);
+                    tmp_max_bin = j;
+                }
+            }
+
+            // Make sure we are not in the flank of a large signal at the edge of the search region
+            if( tmp_max_bin > (maxbin - int(search_range*0.9)) && tmp_max_bin < (maxbin + int(0.9*search_range)) )
+            {
+                maxbin = tmp_max_bin;
+            }
+            else
+            {
+                maxbin = recowf_->GetMaximumBin();
+            }
+        }
+        else
+        {
+            maxbin = recowf_->GetMaximumBin();
+        }
+        //maxbin = recowf_->GetMaximumBin();
     }
 };
 
-//// double PhysicsChannel::DecomposeV2(std::vector<float>* avg_wf)
-// {
-// 		/**
-// 		 * [adsasd]
-// 		 * @param avg_wf [Full average 1 pe waveform that will be subtracted.]
-// 		 */
-// 		this->Subtract1PE(avg_wf);
-// 		this->ReconstructV2(avg_wf);
-// 		this->CalculateChi2V2();
-//
-// 		return this->GetChi2();
-// };
-
-void PhysicsChannel::WaveformReconstruction(TH1F* avg)
+std::vector<double> PhysicsChannel::WaveformReconstruction(TH1F* avg)
 {
  		/**
  		 * \todo Validate
  		 * \todo Line 621 make avg_waveform height 20 dynamic;
  		 */
 
-         int nbins          = recowf_->GetNbinsX();
+    int reco_range =  GS->GetParameter<double>("WaveformReconstruction.reco_range");
 
-         int avg_nbins      = avg->GetNbinsX();
-         double avg_max     = avg->GetMaximum();
-         int avg_maxbin     = avg->GetMaximumBin();
-//
-// 		for(unsigned ph_pos = 0; ph_pos < mip_wf_->size(); ph_pos++ )
-// 		{
-// 				if( mip_wf_->at( ph_pos ) != 0 )
-// 				{
-// 						// Add the photon:
-// 						int add_start = ph_pos - avg_peak;
-// 						if( add_start < 0 ) add_start = 0;
-//
-// 						int add_stop  = ph_pos + ( avg_waveform->size() - avg_peak );
-// 						if(add_stop > wh_wf_->size() ) add_stop = wh_wf_->size();
-//
-// 						for(int i = add_start; i < add_stop; i++)
-// 						{
-// 								wh_wf_->at(i) += avg_waveform->at(i - (ph_pos - avg_peak) ) * mip_wf_->at(ph_pos)/int_ratio;
-// 						}
-//
-// 				}
-// 		}
+    int nbins          = recowf_->GetNbinsX();
+
+    int avg_nbins      = avg->GetNbinsX();
+    int avg_maxbin     = avg->GetMaximumBin();
+
+    for(unsigned int i = 1 + reco_range; i <= mipwf_->GetNbinsX() - reco_range; ++i)
+    {
+        if(mipwf_->GetBinContent(i) > 0)
+        {
+            int n_ph    = mipwf_->GetBinContent(i);
+            int ph_bin  = i;
+
+            for(int j = 0; j < n_ph; ++j)
+            {
+                for(unsigned int k = 2 ; k <= avg_nbins; ++k)
+                {
+                    double avg_bincont = avg->GetBinContent( k - 1 );
+                    double bincont     = recowf_->GetBinContent(k + ph_bin - avg_maxbin);
+
+                    recowf_->SetBinContent(k + ph_bin - avg_maxbin, bincont + avg_bincont);
+                }
+            }
+        }
+    }
+
+    double bin_error = wf_->GetBinError(1);
+
+    std::vector<double> res(4);
+
+    res[0] = nbins;
+    res[1] = bin_error;
+
+    double chi2 = 0;
+
+    for(unsigned int i =1; i<= wf_->GetNbinsX(); ++i)
+    {
+        double org = wf_->GetBinContent(i);
+        double reco = recowf_->GetBinContent(i);
+
+        chi2 += (org-reco)*(org-reco)/(bin_error*bin_error);
+    }
+
+    res[2] = chi2;
+    res[3] = TMath::Prob(chi2, nbins);
+
+    return res;
 };
+
+
 //
 // void PhysicsChannel::CalculateChi2V2()
 // {
