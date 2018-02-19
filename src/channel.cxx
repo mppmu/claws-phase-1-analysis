@@ -7,6 +7,7 @@
 
 // --- C++ includes ---
 #include <typeinfo>
+#include <algorithm>
 // --- OpenMP includes ---
 // #include <omp.h>
 // --- BOOST includes ---
@@ -32,25 +33,13 @@
 #include "channel.hh"
 #include "globalsettings.hh"
 
+
+using namespace std;
+
 //----------------------------------------------------------------------------------------------
 // Definition of the Channel class.
 // TODO proper description
 //----------------------------------------------------------------------------------------------
-
-// Double_t osfunc(Double_t *x, Double_t *par)
-// {
-//     Double_t y = 0;
-//     if(x[0] <= par[5])
-//     {
-//         y = par[0]*TMath::Exp(-(x[0] - par[1])*(x[0] - par[1])/(par[2]*par[2]));
-//     }
-//     else if(x[0] > par[5])
-//     {
-//         y = par[0]*TMath::Exp(-(par[5] - par[1])*(par[5] - par[1])/(par[2]*par[2]) - par[3]*(par[5] - par[4]));
-//         y = y*TMath::Exp(par[3]*(x[0] - par[4]));
-//     }
-//     return y;
-// }
 
 Double_t osfunc(Double_t *x, Double_t *par)
 {
@@ -59,7 +48,7 @@ Double_t osfunc(Double_t *x, Double_t *par)
 }
 
 
-Channel::Channel(std::string name) : name_(name), state_(CHANNELSTATE_VALID), wf_(NULL), pdhist_(NULL), pd_({-1}), scope_pos_("-1"), range_(-1)
+Channel::Channel( string name) : name_(name), state_(CHANNELSTATE_VALID), wf_(NULL), pdhist_(NULL), pd_({-1}), scope_pos_("-1"), range_(-1)
 {
 
 };
@@ -503,31 +492,48 @@ PhysicsChannel::~PhysicsChannel() {
     }
 };
 
-void PhysicsChannel::LoadHistogram(TFile* rfile)
+void PhysicsChannel::LoadHistogram(TFile* rfile, vector<string> types)
 {
-    // Get the normal waveform
-    Channel::LoadHistogram( rfile );
-
-    if(rfile->GetListOfKeys()->Contains((name_+"_mip").c_str()) )
+    if ( std::find(types.begin(), types.end(), "wf") != types.end() )
     {
-        mipwf_ = (TH1F*) rfile->Get((name_+"_mip").c_str());
-        mipwf_->SetDirectory(0);
+        // Get the normal waveform
+        Channel::LoadHistogram( rfile );
     }
 
-    if(rfile->GetListOfKeys()->Contains((name_+"_reco").c_str()) )
+    if ( std::find(types.begin(), types.end(), "mip") != types.end() )
     {
-        std::string title = name_+"_reco";
-        int nbins         = wf_->GetNbinsX();
-        double lowedge    = wf_->GetBinLowEdge(1);
-        double highedge   = wf_->GetBinLowEdge(nbins) + wf_->GetBinWidth(nbins);
-
-        recowf_ = new TH1F(title.c_str(), title.c_str(), nbins, lowedge, highedge);
-        recowf_->SetDirectory(0);
-
-        double bin_error = wf_->GetBinError(1);
-        for(unsigned int i = 1; i<=recowf_->GetNbinsX(); ++i)
+        if(rfile->GetListOfKeys()->Contains((name_+"_mip").c_str()) )
         {
-            recowf_->SetBinError(i, bin_error);
+            mipwf_ = (TH1F*) rfile->Get((name_+"_mip").c_str());
+            mipwf_->SetDirectory(0);
+        }
+        else
+        {
+            cout << "WARNING! item: mip not in rfile!" << endl;
+        }
+    }
+
+    if ( std::find(types.begin(), types.end(), "reco") != types.end() )
+    {
+        if(rfile->GetListOfKeys()->Contains((name_+"_reco").c_str()) )
+        {
+            std::string title = name_+"_reco";
+            int nbins         = wf_->GetNbinsX();
+            double lowedge    = wf_->GetBinLowEdge(1);
+            double highedge   = wf_->GetBinLowEdge(nbins) + wf_->GetBinWidth(nbins);
+
+            recowf_ = new TH1F(title.c_str(), title.c_str(), nbins, lowedge, highedge);
+            recowf_->SetDirectory(0);
+
+            double bin_error = wf_->GetBinError(1);
+            for(unsigned int i = 1; i<=recowf_->GetNbinsX(); ++i)
+            {
+                recowf_->SetBinError(i, bin_error);
+            }
+        }
+        else
+        {
+            cout << "WARNING! item: mip not in rfile!" << endl;
         }
     }
 };

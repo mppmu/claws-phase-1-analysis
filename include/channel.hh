@@ -95,9 +95,6 @@ class Channel
         virtual ChannelState GetState();
         virtual std::string  GetScopePos();
 
-        // virtual TH1D*           Get();
-
-
         void SetName(std::string name);
 
     protected:
@@ -109,26 +106,6 @@ class Channel
 
         double                 range_;
         std::string scope_pos_;
-
-//         virtual     void        SubtractPedestal(double pedestal = 0, bool backup = false);
-//         virtual     void        SetPedestal(double pedestal = 0, bool backup = false);
-// //        virtual     void        Subtract2(double pedestal = 0, bool backup = false);
-
-//         void                    SetBaseline(float baseline);
-//         virtual void            CalculateIntegral() = 0;
-//
-//         std::string             GetName();
-//         std::vector<float>*     GetWaveform();
-//         virtual TH1F*           GetWaveformHist();
-
-//         float                   GetPDMean();
-//         float                   GetPDError();
-//         double                  GetIntegral();
-//
-
-//         virtual void            CreateHistogram();
-//
-
 };
 
 class CalibrationChannel : public Channel
@@ -143,13 +120,6 @@ class CalibrationChannel : public Channel
     protected:
         int scope_;
         std::string channel_;
-
-//
-//
-//         void    CalculateIntegral();
-//
-//         void    PrintType();
-
 };
 
 struct OverShootResult
@@ -177,7 +147,7 @@ class PhysicsChannel : public Channel
         PhysicsChannel(std::string ch_name, std::string scope_pos);
         virtual ~PhysicsChannel();
 
-        virtual void LoadHistogram(TFile* rfile);
+        virtual void LoadHistogram(TFile* rfile, std::vector<std::string> types = {"wf"});
 
         virtual void PrepHistogram( double range, double offset = 0.);
         virtual     void        FillPedestal();

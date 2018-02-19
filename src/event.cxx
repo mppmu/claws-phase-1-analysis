@@ -374,102 +374,134 @@ PhysicsEvent::~PhysicsEvent() {
 
 void PhysicsEvent::LoadFiles(EventState state)
 {
-        switch (state)
-		{
-            case EVENTSTATE_RAW:
-            {
-                this->LoadRaw();
-                break;
-            }
-            case EVENTSTATE_PDSUBTRACTED:
-            {
-                this->LoadSubtracted();
+    boost::filesystem::path tmppath = path_/boost::filesystem::path("Calibration");
+
+	switch (state)
+	{
+        case EVENTSTATE_RAW:
+        {
+            this->LoadRaw();
+            break;
+        }
+    case EVENTSTATE_PDSUBTRACTED:
+    {
+		tmppath /= boost::filesystem::path("PDS_Physics");
+		tmppath /= boost::filesystem::path("Waveforms");
+
+	    std::string fname = tmppath.string() + "/";
+
+				int     status;
+				char   *realname;
+				const std::type_info  &ti = typeid(*this);
+				realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
+				fname += std::string(realname);
+				free(realname);
+
+				std::stringstream ss;
+				ss << std::setw(3) << std::setfill('0') << nr_;
+				fname += "_" + ss.str();
+				fname += "_" + printEventState(EVENTSTATE_PDSUBTRACTED);
+				fname += ".root";
+
+				// If the PD failded the file will be saved with a pd_failed in its name
+				if( boost::filesystem::exists(fname) )
+				{
+					this->LoadHistograms(boost::filesystem::path(fname));
+				}
+				else
+				{
+					boost::replace_last(fname, printEventState(EVENTSTATE_PDSUBTRACTED),printEventState(EVENTSTATE_PDFAILED));
+					if( boost::filesystem::exists(fname) )
+					{
+						this->LoadHistograms(boost::filesystem::path(fname));
+					}
+					else
+					{
+						return;
+					}
+				}
+
                 break;
             }
 
 			case EVENTSTATE_OSCORRECTED:
 			{
-				this->LoadOSCorrected();
+				std::string fname = (path_/boost::filesystem::path("Calibration")/boost::filesystem::path("OverShootCorrection")/boost::filesystem::path("Waveforms")).string() + "/";
+
+				int     status;
+				char   *realname;
+				const std::type_info  &ti = typeid(*this);
+				realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
+				fname += std::string(realname);
+				free(realname);
+
+				std::stringstream ss;
+				ss << std::setw(3) << std::setfill('0') << nr_;
+				fname += "_" + ss.str();
+				fname += "_" + printEventState(EVENTSTATE_OSCORRECTED);
+				fname += ".root";
+				//
+				// // If the PD failded the file will be saved with a pd_failed in its name
+				// if( boost::filesystem::exists(fname) )
+				// {
+				this->LoadHistograms(boost::filesystem::path(fname));
 				break;
 			}
 
 			case EVENTSTATE_WFDECOMPOSED:
 			{
-				this->LoadWFDecomposed();
+				std::string fname = (path_/boost::filesystem::path("Calibration")/boost::filesystem::path("WaveformDecomposition")/boost::filesystem::path("Waveforms")).string() + "/";
+
+				int     status;
+				char   *realname;
+				const std::type_info  &ti = typeid(*this);
+				realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
+				fname += std::string(realname);
+				free(realname);
+
+				std::stringstream ss;
+				ss << std::setw(3) << std::setfill('0') << nr_;
+				fname += "_" + ss.str();
+				fname += "_" + printEventState(EVENTSTATE_WFDECOMPOSED);
+				fname += ".root";
+
+				this->LoadHistograms(boost::filesystem::path(fname));
 				break;
 			}
 			case EVENTSTATE_WFRECONSTRUCTED:
 			{
-				this->LoadWFReconstructed();
+				std::string fname = (path_/boost::filesystem::path("Calibration")/boost::filesystem::path("WaveformReconstruction")/boost::filesystem::path("Waveforms")).string() + "/";
+
+				int     status;
+				char   *realname;
+				const std::type_info  &ti = typeid(*this);
+				realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
+				fname += std::string(realname);
+				free(realname);
+
+				std::stringstream ss;
+				ss << std::setw(3) << std::setfill('0') << nr_;
+				fname += "_" + ss.str();
+				fname += "_" + printEventState(EVENTSTATE_WFRECONSTRUCTED);
+				fname += ".root";
+
+				this->LoadHistograms(boost::filesystem::path(fname));
 				break;
 			}
         }
 
-}
 
-void PhysicsEvent::LoadSubtracted()
-{
-	std::string fname = (path_/boost::filesystem::path("Calibration")/boost::filesystem::path("PDS_Physics")/boost::filesystem::path("Waveforms")).string() + "/";
+	boost::replace_last(fname, "root","ini");
+	boost::property_tree::ini_parser::read_ini(fname, pt_);
 
-	int     status;
-	char   *realname;
-	const std::type_info  &ti = typeid(*this);
-	realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
-	fname += std::string(realname);
-	free(realname);
+    state_ = static_cast<EventState>( pt_.get<int>("General.State") );
+};
 
-	std::stringstream ss;
-	ss << std::setw(3) << std::setfill('0') << nr_;
-	fname += "_" + ss.str();
-	fname += "_" + printEventState(EVENTSTATE_PDSUBTRACTED);
-	fname += ".root";
 
-	// If the PD failded the file will be saved with a pd_failed in its name
-	if( boost::filesystem::exists(fname) )
-	{
-		this->LoadHistograms(boost::filesystem::path(fname));
-	}
-	else
-	{
-		boost::replace_last(fname, printEventState(EVENTSTATE_PDSUBTRACTED),printEventState(EVENTSTATE_PDFAILED));
-		if( boost::filesystem::exists(fname) )
-		{
-			this->LoadHistograms(boost::filesystem::path(fname));
-		}
-		else
-		{
-			return;
-		}
-	}
-
-    boost::replace_last(fname, "root","ini");
-    boost::property_tree::ini_parser::read_ini(fname, pt_);
-
-	state_ = static_cast<EventState>( pt_.get<int>("General.State") );
-
-}
 
 void PhysicsEvent::LoadOSCorrected()
 {
-	std::string fname = (path_/boost::filesystem::path("Calibration")/boost::filesystem::path("OverShootCorrection")/boost::filesystem::path("Waveforms")).string() + "/";
 
-	int     status;
-	char   *realname;
-	const std::type_info  &ti = typeid(*this);
-	realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
-	fname += std::string(realname);
-	free(realname);
-
-	std::stringstream ss;
-	ss << std::setw(3) << std::setfill('0') << nr_;
-	fname += "_" + ss.str();
-	fname += "_" + printEventState(EVENTSTATE_OSCORRECTED);
-	fname += ".root";
-	//
-	// // If the PD failded the file will be saved with a pd_failed in its name
-	// if( boost::filesystem::exists(fname) )
-	// {
-	this->LoadHistograms(boost::filesystem::path(fname));
 	// }
 	// else
 	// {
@@ -493,22 +525,7 @@ void PhysicsEvent::LoadOSCorrected()
 
 void PhysicsEvent::LoadWFDecomposed()
 {
-	std::string fname = (path_/boost::filesystem::path("Calibration")/boost::filesystem::path("WaveformDecomposition")/boost::filesystem::path("Waveforms")).string() + "/";
 
-	int     status;
-	char   *realname;
-	const std::type_info  &ti = typeid(*this);
-	realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
-	fname += std::string(realname);
-	free(realname);
-
-	std::stringstream ss;
-	ss << std::setw(3) << std::setfill('0') << nr_;
-	fname += "_" + ss.str();
-	fname += "_" + printEventState(EVENTSTATE_WFDECOMPOSED);
-	fname += ".root";
-
-	this->LoadHistograms(boost::filesystem::path(fname));
 
     boost::replace_last(fname, "root","ini");
     boost::property_tree::ini_parser::read_ini(fname, pt_);
@@ -518,22 +535,7 @@ void PhysicsEvent::LoadWFDecomposed()
 
 void PhysicsEvent::LoadWFReconstructed()
 {
-	std::string fname = (path_/boost::filesystem::path("Calibration")/boost::filesystem::path("WaveformReconstruction")/boost::filesystem::path("Waveforms")).string() + "/";
 
-	int     status;
-	char   *realname;
-	const std::type_info  &ti = typeid(*this);
-	realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
-	fname += std::string(realname);
-	free(realname);
-
-	std::stringstream ss;
-	ss << std::setw(3) << std::setfill('0') << nr_;
-	fname += "_" + ss.str();
-	fname += "_" + printEventState(EVENTSTATE_WFRECONSTRUCTED);
-	fname += ".root";
-
-	this->LoadHistograms(boost::filesystem::path(fname));
 
     boost::replace_last(fname, "root","ini");
     boost::property_tree::ini_parser::read_ini(fname, pt_);
