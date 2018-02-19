@@ -390,26 +390,26 @@ void PhysicsEvent::LoadFiles(EventState state)
 
 	    std::string fname = tmppath.string() + "/";
 
-				int     status;
-				char   *realname;
-				const std::type_info  &ti = typeid(*this);
-				realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
-				fname += std::string(realname);
-				free(realname);
+		int     status;
+		char   *realname;
+		const std::type_info  &ti = typeid(*this);
+		realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
+		fname += std::string(realname);
+		free(realname);
 
-				std::stringstream ss;
-				ss << std::setw(3) << std::setfill('0') << nr_;
-				fname += "_" + ss.str();
-				fname += "_" + printEventState(EVENTSTATE_PDSUBTRACTED);
-				fname += ".root";
+		std::stringstream ss;
+		ss << std::setw(3) << std::setfill('0') << nr_;
+		fname += "_" + ss.str();
+		fname += "_" + printEventState(EVENTSTATE_PDSUBTRACTED);
+		fname += ".root";
 
-				// If the PD failded the file will be saved with a pd_failed in its name
-				if( boost::filesystem::exists(fname) )
-				{
-					this->LoadHistograms(boost::filesystem::path(fname));
-				}
-				else
-				{
+		// If the PD failded the file will be saved with a pd_failed in its name
+		if( boost::filesystem::exists(fname) )
+		{
+			this->LoadHistograms(boost::filesystem::path(fname));
+		}
+		else
+		{
 					boost::replace_last(fname, printEventState(EVENTSTATE_PDSUBTRACTED),printEventState(EVENTSTATE_PDFAILED));
 					if( boost::filesystem::exists(fname) )
 					{
