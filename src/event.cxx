@@ -86,11 +86,11 @@ void Event::LoadHistograms(boost::filesystem::path file)
 	rfile = NULL;
 }
 
-void Event::PrepHistograms()
+void Event::PrepareHistograms()
 {
 	for (auto channel : channels_)
 	{
-	    channel->PrepHistogram();
+	    channel->PrepareHistogram();
 	}
 
     state_ = EVENTSTATE_PREP;
@@ -320,12 +320,12 @@ void CalibrationEvent::LoadSubtracted()
 }
 
 
-void CalibrationEvent::PrepHistograms()
+void CalibrationEvent::PrepareHistograms()
 {
 
 	for (auto &channel : channels_)
 	{
-	    channel->PrepHistogram( claws::RangeToVoltage(claws::PS6000_50MV) );
+	    channel->PrepareHistogram( claws::RangeToVoltage(claws::PS6000_50MV) );
 	}
 
     state_ = EVENTSTATE_PREP;
@@ -496,7 +496,7 @@ void PhysicsEvent::LoadFiles(EventState state)
 
 		case EVENTSTATE_WFDECOMPOSED:
 		{
-			this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"wf", "reco load", "mip"}));
+			this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"wf", "reco load"}));
 
 			boost::replace_last(fname, "root","ini");
 			boost::property_tree::ini_parser::read_ini(fname, pt_);
@@ -506,7 +506,7 @@ void PhysicsEvent::LoadFiles(EventState state)
 
 		case EVENTSTATE_WFRECONSTRUCTED:
 		{
-			this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"mip"}) );
+			this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"wf", "reco recreate", "pe"}) );
 
 			boost::replace_last(fname, "root","ini");
 			boost::property_tree::ini_parser::read_ini(fname, pt_);
@@ -583,7 +583,7 @@ void PhysicsEvent::LoadHistograms(boost::filesystem::path file, std::vector<std:
 // 	state_ = static_cast<EventState>( pt_.get<int>("General.State") );
 // };
 
-void PhysicsEvent::PrepHistograms(boost::property_tree::ptree &settings)
+void PhysicsEvent::PrepareHistograms(boost::property_tree::ptree &settings)
 {
 
 	for (auto &channel : channels_)
@@ -599,7 +599,7 @@ void PhysicsEvent::PrepHistograms(boost::property_tree::ptree &settings)
 		// to upwards.
 		double offset = -1*settings.get<double>(sec+".AnalogOffset")*range;
 		PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(channel);
-	    tmp->PrepHistogram( range, offset );
+	    tmp->PrepareHistogram( range, offset );
 	}
 
     state_ = EVENTSTATE_PREP;
@@ -655,6 +655,11 @@ void PhysicsEvent::PrepareTagging()
 void PhysicsEvent::SignalTagging()
 {
 //	std::string names[12] = {"_LStart", "_LStop", "_LResult", "_Start", "_Stop", "_Result", "_Par0", "_Par1", "_Par2", "_Chi2", "_Ndf", +"_PVal"};
+	for(auto & channel : channels_)
+	{
+		PhysicsChannel *pch = dynamic_cast<PhysicsChannel*>(channel);
+		pch->SignalTagging();
+	}
 
 	state_ = EVENTSTATE_TAGGED;
 	pt_.put("General.State", state_);
@@ -783,8 +788,8 @@ void PhysicsEvent::SaveEvent(boost::filesystem::path dst)
 				auto pdhist = channel->GetHistogram("pedestal");
 				if( pdhist ) pdhist->Write();
 
-				auto mip = channel->GetHistogram("mip");
-				if( mip ) mip->Write();
+				auto pe = channel->GetHistogram("pe");
+				if( pe ) pe->Write();
 
 				auto reco = channel->GetHistogram("reco");
 				if( reco ) reco->Write();

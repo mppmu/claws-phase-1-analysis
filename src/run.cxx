@@ -302,7 +302,7 @@ void CalibrationRun::PDS_Calibration()
 	for(auto evt: cal_evts_ )
 	{
 	    evt->LoadFiles();
-        evt->PrepHistograms();
+        evt->PrepareHistograms();
 	}
 
     // Just to be sure and because they take no space, save them to disk
@@ -633,7 +633,7 @@ void CalibrationRun::PDS_Physics()
 	for(auto &evt: evts_ )
 	{
 	    evt->LoadFiles();
-        evt->PrepHistograms(settings_);
+        evt->PrepareHistograms(settings_);
 	}
 
     // Just to be sure...
@@ -980,6 +980,12 @@ void CalibrationRun::SignalTagging()
                 evt_itr++;
         }
     }
+
+    for(auto &evt: evts_ )
+    {
+         evt->PrepareTagging();
+    }
+
 
     for(auto &evt: evts_ )
     {

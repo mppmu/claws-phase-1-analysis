@@ -83,7 +83,7 @@ void Channel::LoadHistogram(TFile* file)
 
 };
 
-void Channel::PrepHistogram( double range )
+void Channel::PrepareHistogram( double range )
 {
 	/**
 	 *  Make the signals go in the positiv direction
@@ -473,17 +473,17 @@ void CalibrationChannel::FillPedestal()
 // TODO prper description
 //----------------------------------------------------------------------------------------------
 
-PhysicsChannel::PhysicsChannel(std::string ch_name, std::string scope_pos) : Channel(ch_name), os_({-1}), mipwf_(nullptr), recowf_(nullptr)
+PhysicsChannel::PhysicsChannel(std::string ch_name, std::string scope_pos) : Channel(ch_name), os_({-1}), pewf_(nullptr), recowf_(nullptr)
 {
 	scope_pos_ = scope_pos;
 };
 
 PhysicsChannel::~PhysicsChannel() {
 	// TODO Auto-generated destructor stub
-    if( mipwf_ != nullptr )
+    if( pewf_ != nullptr )
     {
-        delete mipwf_;
-        mipwf_ = nullptr;
+        delete pewf_;
+        pewf_ = nullptr;
     }
     if( recowf_ != nullptr )
     {
@@ -494,41 +494,21 @@ PhysicsChannel::~PhysicsChannel() {
 
 void PhysicsChannel::LoadHistogram(TFile* rfile, vector<string> types)
 {
-    if ( std::find(types.begin(), types.end(), "wf") != types.end() )
+    for(auto& type: types)
     {
-        // Get the normal waveform
-        Channel::LoadHistogram( rfile );
-    }
-
-    if ( std::find(types.begin(), types.end(), "mip") != types.end() )
-    {
-        if(rfile->GetListOfKeys()->Contains((name_+"_mip").c_str()) )
+        if( type == "wf")
         {
-            mipwf_ = (TH1F*) rfile->Get((name_+"_mip").c_str());
-            mipwf_->SetDirectory(0);
+            // Get the normal waveform
+            Channel::LoadHistogram( rfile );
         }
-        else
-        {
-            cout << "WARNING! item: mip not in rfile!" << endl;
-        }
-    }
 
-    if ( std::find(types.begin(), types.end(), "reco load") != types.end() )
-    {
-        if(rfile->GetListOfKeys()->Contains((name_+"_reco").c_str()) )
+        else if( type == "reco load" )
         {
             recowf_ = (TH1F*) rfile->Get((name_+"_reco").c_str());
             recowf_->SetDirectory(0);
         }
-        else
-        {
-            cout << "WARNING! item: reco not in rfile!" << endl;
-        }
-    }
 
-    if ( std::find(types.begin(), types.end(), "reco recreate") != types.end() )
-    {
-        if(rfile->GetListOfKeys()->Contains((name_+"_reco").c_str()) )
+        else if( type == "reco recreate" )
         {
             std::string title = name_+"_reco";
             int nbins         = wf_->GetNbinsX();
@@ -544,17 +524,79 @@ void PhysicsChannel::LoadHistogram(TFile* rfile, vector<string> types)
                 recowf_->SetBinError(i, bin_error);
             }
         }
+
+        else if( type == "pe" )
+        {
+            pewf_ = (TH1F*) rfile->Get((name_+"_pe").c_str());
+            pewf_->SetDirectory(0);
+        }
+
         else
         {
-            cout << "WARNING! item: reco not in rfile!" << endl;
+            cout << "WARNING! item not in rfile!" << endl;
         }
     }
+    // if ( std::find(types.begin(), types.end(), "wf") != types.end() )
+    // {
+    //     // Get the normal waveform
+    //     Channel::LoadHistogram( rfile );
+    // }
+    //
+    // if ( std::find(types.begin(), types.end(), "mip") != types.end() )
+    // {
+    //     if(rfile->GetListOfKeys()->Contains((name_+"_mip").c_str()) )
+    //     {
+    //         mipwf_ = (TH1F*) rfile->Get((name_+"_mip").c_str());
+    //         mipwf_->SetDirectory(0);
+    //     }
+    //     else
+    //     {
+    //         cout << "WARNING! item: mip not in rfile!" << endl;
+    //     }
+    // }
+    //
+    // if ( std::find(types.begin(), types.end(), "reco load") != types.end() )
+    // {
+    //     if(rfile->GetListOfKeys()->Contains((name_+"_reco").c_str()) )
+    //     {
+    //         recowf_ = (TH1F*) rfile->Get((name_+"_reco").c_str());
+    //         recowf_->SetDirectory(0);
+    //     }
+    //     else
+    //     {
+    //         cout << "WARNING! item: reco not in rfile!" << endl;
+    //     }
+    // }
+    //
+    // if ( std::find(types.begin(), types.end(), "reco recreate") != types.end() )
+    // {
+    //     if(rfile->GetListOfKeys()->Contains((name_+"_reco").c_str()) )
+    //     {
+    //         std::string title = name_+"_reco";
+    //         int nbins         = wf_->GetNbinsX();
+    //         double lowedge    = wf_->GetBinLowEdge(1);
+    //         double highedge   = wf_->GetBinLowEdge(nbins) + wf_->GetBinWidth(nbins);
+    //
+    //         recowf_ = new TH1F(title.c_str(), title.c_str(), nbins, lowedge, highedge);
+    //         recowf_->SetDirectory(0);
+    //
+    //         double bin_error = wf_->GetBinError(1);
+    //         for(unsigned int i = 1; i<=recowf_->GetNbinsX(); ++i)
+    //         {
+    //             recowf_->SetBinError(i, bin_error);
+    //         }
+    //     }
+    //     else
+    //     {
+    //         cout << "WARNING! item: reco not in rfile!" << endl;
+    //     }
+    // }
 };
 
-void PhysicsChannel::PrepHistogram( double range, double offset)
+void PhysicsChannel::PrepareHistogram( double range, double offset)
 {
 	// First convert Y to mV and X to ns
-	this->Channel::PrepHistogram( range );
+	this->Channel::PrepareHistogram( range );
 
 	for( int i = 0; i <= wf_->GetNbinsX(); ++i)
 	{
@@ -581,12 +623,6 @@ void PhysicsChannel::FillPedestal()
 	pdhist_->GetXaxis()->SetTitle("Voltag [mV]");
 	pdhist_->GetYaxis()->SetTitle("Eintries");
 
-
-	// for(int i =1; i <= hist_->GetNbinsX() ; ++i)
-	// {
-	// 	pdhist_->Fill( hist_->GetBinContent(i) );
-	// }
-
 	int bins_over_threshold 	= GS->GetParameter<int>("PDS_Physics.bins_over_threshold");
 	double threshold_low 		= GS->GetParameter<double>("PDS_Physics.threshold_low");
 	double threshold_high 		= GS->GetParameter<double>("PDS_Physics.threshold_high");
@@ -597,15 +633,15 @@ void PhysicsChannel::FillPedestal()
 
 	while( i <= wf_->GetNbinsX() )
 	{
-	    double bin_contend  = wf_->GetBinContent(i);
+	    double bin_content  = wf_->GetBinContent(i);
 
 		if( i <= wf_->GetNbinsX() - bins_over_threshold)
 		{
-		    if( bin_contend > threshold_low && bin_contend < threshold_high )
+		    if( bin_content > threshold_low && bin_content < threshold_high )
 		  	{
-			      pdhist_->Fill( bin_contend );
+			      pdhist_->Fill( bin_content );
 	    	}
-			else if( bin_contend >= threshold_high )
+			else if( bin_content >= threshold_high )
 			{
 				bool above_threshold = true;
 				for (int j = 0; j < bins_over_threshold; j++)
@@ -619,10 +655,10 @@ void PhysicsChannel::FillPedestal()
 				}
 				else
 				{
-		    		pdhist_->Fill( bin_contend );
+		    		pdhist_->Fill( bin_content );
 				}
 			}
-			else if( bin_contend <= threshold_low )
+			else if( bin_content <= threshold_low )
 			{
 				bool below_threshold = true;
 				for (int j = 0; j < bins_over_threshold; j++)
@@ -636,7 +672,7 @@ void PhysicsChannel::FillPedestal()
 				}
 				else
 				{
-					pdhist_->Fill( bin_contend );
+					pdhist_->Fill( bin_content );
 				}
 			}
 
@@ -644,48 +680,48 @@ void PhysicsChannel::FillPedestal()
 		i++;
     }
 
-		/** In some cases two 1 pe waveforms are within a calibration waveform,
-		*   leading to no value be able to pass the conditions to be filled into
-		*   the pedestal histogram. So don't bother fitting an empty histogram!
-		*/
-		if( pdhist_->GetEntries() == 0 )
-		{
-			state_ = CHANNELSTATE_PDFAILED;
-			return;
-		}
+	/** In some cases two 1 pe waveforms are within a calibration waveform,
+	*   leading to no value be able to pass the conditions to be filled into
+	*   the pedestal histogram. So don't bother fitting an empty histogram!
+	*/
+	if( pdhist_->GetEntries() == 0 )
+	{
+		state_ = CHANNELSTATE_PDFAILED;
+		return;
+	}
 
-		TF1* fit=new TF1("gaus","gaus",1,3, TF1::EAddToList::kNo);
+	TF1* fit=new TF1("gaus","gaus",1,3, TF1::EAddToList::kNo);
 
-		fit->SetParameter(0, wf_->GetNbinsX() );
-		fit->SetParameter(1,0);
-		//fit->SetParameter(2,1);
+	fit->SetParameter(0, wf_->GetNbinsX() );
+	fit->SetParameter(1,0);
+	//fit->SetParameter(2,1);
 
-		double low = GS->GetParameter<double>("PDS_Physics.fitrange_low");
-		double up  = GS->GetParameter<double>("PDS_Physics.fitrange_up");
+	double low = GS->GetParameter<double>("PDS_Physics.fitrange_low");
+	double up  = GS->GetParameter<double>("PDS_Physics.fitrange_up");
 
-		TFitResultPtr result = pdhist_->Fit(fit, "QSL","", low, up);
+	TFitResultPtr result = pdhist_->Fit(fit, "QSL","", low, up);
 
-		pd_[0]    = int(result);
+	pd_[0]    = int(result);
 
-		if( int(result) == 0)
-		{
-			pd_[1]    = fit->GetParameter(0);
-			pd_[2]    = fit->GetParameter(1);
-			pd_[3]    = fit->GetParameter(2);
-			pd_[4]    = fit->GetChisquare();
-			pd_[5]    = fit->GetNDF();
-			pd_[6]    = result->Prob();
-		}
-		else
-		{
-			state_ = CHANNELSTATE_PDFAILED;
-		}
+	if( int(result) == 0)
+	{
+		pd_[1]    = fit->GetParameter(0);
+		pd_[2]    = fit->GetParameter(1);
+		pd_[3]    = fit->GetParameter(2);
+		pd_[4]    = fit->GetChisquare();
+		pd_[5]    = fit->GetNDF();
+		pd_[6]    = result->Prob();
+	}
+	else
+	{
+		state_ = CHANNELSTATE_PDFAILED;
+	}
 
-		pd_[7]    = pdhist_->GetMean();
-		pd_[8]    = pdhist_->GetMeanError();
-		pd_[9]    = pdhist_->GetEntries();
+	pd_[7]    = pdhist_->GetMean();
+	pd_[8]    = pdhist_->GetMeanError();
+	pd_[9]    = pdhist_->GetEntries();
 
-		delete fit;
+	delete fit;
 };
 
 std::vector<OverShootResult> PhysicsChannel::OverShootCorrection()
@@ -789,7 +825,7 @@ TH1* PhysicsChannel::GetHistogram(std::string type)
 {
 	if      (type == "waveform") return wf_;
 	else if (type == "pedestal") return pdhist_;
-    else if (type == "mip") return mipwf_;
+    else if (type == "pe") return pewf_;
     else if (type == "reco") return recowf_;
 	else						 exit(1);
 };
@@ -802,7 +838,7 @@ void PhysicsChannel::PrepareTagging()
         recowf_ = nullptr;
     }
 
-    std::string title = name_ + "_reco";
+    string title = name_ + "_reco";
 
     recowf_ = (TH1F*) wf_->Clone(title.c_str());
     recowf_->SetTitle( title.c_str() );
@@ -811,24 +847,66 @@ void PhysicsChannel::PrepareTagging()
 
 void PhysicsChannel::SignalTagging()
 {
+    int bins_over_threshold 	= GS->GetParameter<int>("SignalTagging.bins_over_threshold");
+    double threshold 		= GS->GetParameter<double>("SignalTagging.threshold");
+    int signal_length 			= GS->GetParameter<int>("SignalTagging.signal_length");
+
+    unsigned i=1;
+
+    while( i <= recowf_->GetNbinsX() )
+    {
+        double bin_content  = recowf_->GetBinContent(i);
+
+        if( i <= recowf_->GetNbinsX() - bins_over_threshold)
+        {
+            if( bin_content < threshold )
+            {
+                  recowf_->SetBinContent(i, 0);
+            }
+            else if( bin_content >= threshold )
+            {
+                bool above_threshold = true;
+                for (int j = 0; j < bins_over_threshold; j++)
+                {
+                    if(recowf_->GetBinContent(i+j) < threshold ) above_threshold = false;
+                }
+
+                if( above_threshold )
+                {
+                    i += signal_length;
+                }
+                else
+                {
+                    recowf_->SetBinContent(i, 0);
+                }
+            }
+        }
+
+        else
+        {
+            recowf_->SetBinContent(i, 0);
+        }
+        
+        i++;
+    }
 
 };
 
 void PhysicsChannel::PrepareDecomposition()
 {
-    if( mipwf_ != nullptr )
+    if( pewf_ != nullptr )
     {
-        delete mipwf_;
-        mipwf_ = nullptr;
+        delete pewf_;
+        pewf_ = nullptr;
     }
 
-    title             = name_ + "_mip";
+    string title             = name_ + "_pe";
     int nbins         = wf_->GetNbinsX();
     double lowedge    = wf_->GetBinLowEdge(1);
     double highedge   = wf_->GetBinLowEdge(nbins) + wf_->GetBinWidth(nbins);
 
-    mipwf_ = new TH1F(title.c_str(), title.c_str(), nbins, lowedge, highedge);
-    mipwf_->SetDirectory(0);
+    pewf_ = new TH1F(title.c_str(), title.c_str(), nbins, lowedge, highedge);
+    pewf_->SetDirectory(0);
 };
 
 void PhysicsChannel::WaveformDecomposition(TH1F* avg)
@@ -868,7 +946,7 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
         }
 
         // does ++GetBinContent(maxbin)
-        mipwf_->AddBinContent(maxbin);
+        pewf_->AddBinContent(maxbin);
 
         // // // Because it is very time consuming to search the full waveform with each iteration
         // // // look only in the vincity of the last maximum first.
@@ -918,11 +996,11 @@ std::vector<double> PhysicsChannel::WaveformReconstruction(TH1F* avg)
     int avg_nbins      = avg->GetNbinsX();
     int avg_maxbin     = avg->GetMaximumBin();
 
-    for(unsigned int i = 1 + reco_range; i <= mipwf_->GetNbinsX() - reco_range; ++i)
+    for(unsigned int i = 1 + reco_range; i <= pewf_->GetNbinsX() - reco_range; ++i)
     {
-        if(mipwf_->GetBinContent(i) > 0)
+        if(pewf_->GetBinContent(i) > 0)
         {
-            int n_ph    = mipwf_->GetBinContent(i);
+            int n_ph    = pewf_->GetBinContent(i);
             int ph_bin  = i;
 
             for(int j = 0; j < n_ph; ++j)

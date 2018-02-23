@@ -83,7 +83,7 @@ class Channel
         virtual ~Channel();
 
         virtual     void        LoadHistogram(TFile* file);
-        virtual     void        PrepHistogram( double range = -1);
+        virtual     void        PrepareHistogram( double range = -1);
         virtual     void        DeleteHistogram();
 
         virtual     void        FillPedestal() = 0;
@@ -149,8 +149,9 @@ class PhysicsChannel : public Channel
 
         virtual void LoadHistogram(TFile* rfile, std::vector<std::string> types = {"wf"});
 
-        virtual void PrepHistogram( double range, double offset = 0.);
-        virtual     void        FillPedestal();
+        virtual void PrepareHistogram( double range, double offset = 0.);
+        virtual void FillPedestal();
+
         virtual std::vector<OverShootResult> OverShootCorrection();
 
         virtual void PrepareTagging();
@@ -166,7 +167,7 @@ class PhysicsChannel : public Channel
     //    virtual double*     GetReco();
     private:
         double    os_[10];
-        TH1F*                  mipwf_;
+        TH1F*                  pewf_;
         TH1F*                  recowf_;
     //     double              reco_res_[4];
 

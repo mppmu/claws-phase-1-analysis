@@ -167,7 +167,7 @@ class Event{
                 virtual void LoadHistograms(boost::filesystem::path file);
 
 
-        virtual void PrepHistograms();
+        virtual void PrepareHistograms();
         virtual void SaveEvent(boost::filesystem::path dst, bool save_pd = false);
 
         virtual void DeleteHistograms();
@@ -231,7 +231,7 @@ class CalibrationEvent : public Event{
             virtual void LoadSubtracted();
 
         virtual ~CalibrationEvent();
-        virtual void PrepHistograms();
+        virtual void PrepareHistograms();
 
 
     protected:
@@ -277,7 +277,7 @@ class PhysicsEvent : public Event{
 
         virtual void SaveEvent(boost::filesystem::path dst);
 
-        virtual void PrepHistograms( boost::property_tree::ptree &settings );
+        virtual void PrepareHistograms( boost::property_tree::ptree &settings );
 
         virtual std::vector<std::vector<OverShootResult>> OverShootCorrection();
 
@@ -286,7 +286,7 @@ class PhysicsEvent : public Event{
 
         virtual void PrepareDecomposition();
         virtual void WaveformDecomposition(Gain* gain);
-        
+
         virtual void WaveformReconstruction(Gain* gain);
 
         std::vector<std::vector<double>> GetReconstruction();
