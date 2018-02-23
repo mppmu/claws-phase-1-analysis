@@ -513,7 +513,20 @@ void PhysicsChannel::LoadHistogram(TFile* rfile, vector<string> types)
         }
     }
 
-    if ( std::find(types.begin(), types.end(), "reco") != types.end() )
+    if ( std::find(types.begin(), types.end(), "reco load") != types.end() )
+    {
+        if(rfile->GetListOfKeys()->Contains((name_+"_reco").c_str()) )
+        {
+            recowf_ = (TH1F*) rfile->Get((name_+"_reco").c_str());
+            recowf_->SetDirectory(0);
+        }
+        else
+        {
+            cout << "WARNING! item: reco not in rfile!" << endl;
+        }
+    }
+
+    if ( std::find(types.begin(), types.end(), "reco recreate") != types.end() )
     {
         if(rfile->GetListOfKeys()->Contains((name_+"_reco").c_str()) )
         {
@@ -533,7 +546,7 @@ void PhysicsChannel::LoadHistogram(TFile* rfile, vector<string> types)
         }
         else
         {
-            cout << "WARNING! item: mip not in rfile!" << endl;
+            cout << "WARNING! item: reco not in rfile!" << endl;
         }
     }
 };
@@ -781,12 +794,7 @@ TH1* PhysicsChannel::GetHistogram(std::string type)
 	else						 exit(1);
 };
 
-// double * PhysicsChannel::GetReco()
-// {
-// 	return reco_res_;
-// }
-
-void PhysicsChannel::PrepareDecomposition()
+void PhysicsChannel::PrepareTagging()
 {
     if( recowf_ != nullptr )
     {
@@ -799,7 +807,15 @@ void PhysicsChannel::PrepareDecomposition()
     recowf_ = (TH1F*) wf_->Clone(title.c_str());
     recowf_->SetTitle( title.c_str() );
     recowf_->SetDirectory(0);
+};
 
+void PhysicsChannel::SignalTagging()
+{
+
+};
+
+void PhysicsChannel::PrepareDecomposition()
+{
     if( mipwf_ != nullptr )
     {
         delete mipwf_;

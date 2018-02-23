@@ -69,6 +69,8 @@ enum EventState
     EVENTSTATE_OSCORRECTED,
     EVENTSTATE_PDFAILED,
     EVENTSTATE_OSFAILED,
+    EVENTSTATE_TAGGED,
+    EVENTSTATE_TAGFAILED,
     EVENTSTATE_WFDECOMPOSED,
     EVENTSTATE_WFDFAILED,
     EVENTSTATE_WFRECONSTRUCTED,
@@ -104,6 +106,10 @@ inline std::string printEventState(EventState state)
       return "os_failed";
     case EVENTSTATE_PDFAILED:
       return "pd_failed";
+    case EVENTSTATE_TAGGED:
+      return "tagged";
+    case EVENTSTATE_TAGFAILED:
+      return "tag_failed";
     case EVENTSTATE_WFDECOMPOSED:
       return "wf_decomposed";
     case EVENTSTATE_WFDFAILED:
@@ -263,10 +269,11 @@ class PhysicsEvent : public Event{
         virtual ~PhysicsEvent();
 
         virtual void LoadFiles(EventState state = EVENTSTATE_RAW);
-            virtual void LoadSubtracted();
-            virtual void LoadOSCorrected();
-            virtual void LoadWFDecomposed();
-            virtual void LoadWFReconstructed();
+            virtual void LoadHistograms( boost::filesystem::path file, std::vector<std::string> types = {"wf"} );
+            // virtual void LoadSubtracted();
+            // virtual void LoadOSCorrected();
+            // virtual void LoadWFDecomposed();
+            // virtual void LoadWFReconstructed();
 
         virtual void SaveEvent(boost::filesystem::path dst);
 
@@ -274,8 +281,12 @@ class PhysicsEvent : public Event{
 
         virtual std::vector<std::vector<OverShootResult>> OverShootCorrection();
 
+        virtual void PrepareTagging();
+        virtual void SignalTagging();
+
         virtual void PrepareDecomposition();
         virtual void WaveformDecomposition(Gain* gain);
+        
         virtual void WaveformReconstruction(Gain* gain);
 
         std::vector<std::vector<double>> GetReconstruction();

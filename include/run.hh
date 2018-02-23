@@ -115,6 +115,7 @@ class CalibrationRun : public Run
     void SynchronizePhysicsEvents();
     void PDS_Physics();
     void OverShootCorrection();
+    void SignalTagging();
     void WaveformDecomposition();
     void WaveformReconstruction();
     void MipTimeRetrieval();

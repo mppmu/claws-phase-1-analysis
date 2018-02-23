@@ -131,8 +131,8 @@ int main(int argc, char* argv[]) {
 		 *				   7: Waveform reconstruction ]
 		 */
 
-		bool tasks[8] = {false};
-		std::string tasks_names[8] = {"Calibration waveform pedestal subtraction", "Gain determination", "Averaging of 1 pe waveforms", "Physics waveform pedestal subtraction", "Overshoot correction", "Waveform decomposition", "Waveform reconstruction", "MIP time retrieval"};
+		bool tasks[9] = {false};
+		std::string tasks_names[9] = {"Calibration waveform pedestal subtraction", "Gain determination", "Averaging of 1 pe waveforms", "Physics waveform pedestal subtraction", "Overshoot correction", "Signal tagging", "Waveform decomposition", "Waveform reconstruction", "MIP time retrieval"};
 
 		std::string tasks_tmp = config_map["tasks"].as<std::string>();
 		bool profile_timing   = config_map["profile-timing"].as<bool>();
@@ -282,7 +282,7 @@ int main(int argc, char* argv[]) {
 				double wall0 = claws::get_wall_time();
 				double cpu0  = claws::get_cpu_time();
 
-				run->WaveformDecomposition();
+				run->SignalTagging();
 
 				double wall1 = claws::get_wall_time();
 				double cpu1  = claws::get_cpu_time();
@@ -299,7 +299,7 @@ int main(int argc, char* argv[]) {
 				double wall0 = claws::get_wall_time();
 				double cpu0  = claws::get_cpu_time();
 
-				run->WaveformReconstruction();
+				run->WaveformDecomposition();
 
 				double wall1 = claws::get_wall_time();
 				double cpu1  = claws::get_cpu_time();
@@ -312,6 +312,23 @@ int main(int argc, char* argv[]) {
 			}
 
 			if(tasks[7])
+			{
+				double wall0 = claws::get_wall_time();
+				double cpu0  = claws::get_cpu_time();
+
+				run->WaveformReconstruction();
+
+				double wall1 = claws::get_wall_time();
+				double cpu1  = claws::get_cpu_time();
+
+				if(profile_timing)
+				{
+					cout << "Wall Time = " << wall1 - wall0 << endl;
+					cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+				}
+			}
+
+			if(tasks[8])
 			{
 				double wall0 = claws::get_wall_time();
 				double cpu0  = claws::get_cpu_time();

@@ -947,12 +947,11 @@ void CalibrationRun::OverShootCorrection()
     std::cout << "\033[32;1mRun::Correcting for Amp OverShoot:\033[0m done!       " << std::endl;
 };
 
-
-void CalibrationRun::WaveformDecomposition()
+void CalibrationRun::SignalTagging()
 {
-    std::cout << "\033[33;1mRun::Waveform decomposition:\033[0m running" << "\r" << std::flush;
+    std::cout << "\033[33;1mRun::Signal tagging(NOT IMPLEMENTED):\033[0m running" << "\r" << std::flush;
 
-    boost::filesystem::path outfolder = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("WaveformDecomposition");
+    boost::filesystem::path outfolder = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("SignalTagging");
     if(!boost::filesystem::is_directory( outfolder ) )
     {
         boost::filesystem::create_directory( outfolder );
@@ -963,14 +962,7 @@ void CalibrationRun::WaveformDecomposition()
          boost::filesystem::create_directory( outfolder/boost::filesystem::path("Waveforms"));
     }
 
-    // Get the histograms and prepare them
-	// for(auto &evt: evts_ )
-	// {
-	//      evt->LoadFiles(EVENTSTATE_OSCORRECTED);
-	// }
-
-    // Load the histograms & .ini file. If the event
-    // did not pass the pd subtraction, throw it away
+    //Get the histograms and prepare them
     auto evt_itr = evts_.begin();
 
     while( evt_itr != evts_.end() )
@@ -988,6 +980,66 @@ void CalibrationRun::WaveformDecomposition()
                 evt_itr++;
         }
     }
+
+    for(auto &evt: evts_ )
+    {
+         evt->SignalTagging();
+    }
+    // rfile->Close("R");
+    //
+    //
+    //
+
+    for(auto &evt: evts_ )
+    {
+         evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
+         evt->DeleteHistograms();
+    }
+
+    std::cout << "\033[32;1mRun::Signal tagging(NOT IMPLEMENTED):\033[0m done!       " << std::endl;
+};
+
+
+void CalibrationRun::WaveformDecomposition()
+{
+    std::cout << "\033[33;1mRun::Waveform decomposition:\033[0m running" << "\r" << std::flush;
+
+    boost::filesystem::path outfolder = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("WaveformDecomposition");
+    if(!boost::filesystem::is_directory( outfolder ) )
+    {
+        boost::filesystem::create_directory( outfolder );
+    }
+
+    if(!boost::filesystem::is_directory( outfolder/boost::filesystem::path("Waveforms")) )
+    {
+         boost::filesystem::create_directory( outfolder/boost::filesystem::path("Waveforms"));
+    }
+
+    //Get the histograms and prepare them
+	for(auto &evt: evts_ )
+	{
+	     evt->LoadFiles(EVENTSTATE_TAGGED);
+	}
+
+    // Load the histograms & .ini file. If the event
+    // did not pass the pd subtraction, throw it away
+    // auto evt_itr = evts_.begin();
+    //
+    // while( evt_itr != evts_.end() )
+    // {
+    //     (*evt_itr)->LoadFiles(EVENTSTATE_OSCORRECTED);
+    //
+    //     if( (*evt_itr)->GetState() == EVENTSTATE_OSFAILED )
+    //     {
+    //             delete (*evt_itr);
+    //             (*evt_itr) = NULL;
+    //             evts_.erase(evt_itr);
+    //     }
+    //     else
+    //     {
+    //             evt_itr++;
+    //     }
+    // }
 
     Gain* gain = new Gain(path_, GAINSTATE_EXTENDED);
 
