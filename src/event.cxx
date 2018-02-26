@@ -486,7 +486,7 @@ void PhysicsEvent::LoadFiles(EventState state)
 
 		case EVENTSTATE_TAGGED:
 		{
-			this->LoadHistograms(boost::filesystem::path(fname));
+			this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"wf", "reco load"}));
 
 			boost::replace_last(fname, "root","ini");
 			boost::property_tree::ini_parser::read_ini(fname, pt_);
@@ -496,7 +496,7 @@ void PhysicsEvent::LoadFiles(EventState state)
 
 		case EVENTSTATE_WFDECOMPOSED:
 		{
-			this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"wf", "reco load"}));
+			this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"wf", "reco recreate", "pe"}));
 
 			boost::replace_last(fname, "root","ini");
 			boost::property_tree::ini_parser::read_ini(fname, pt_);
@@ -506,7 +506,7 @@ void PhysicsEvent::LoadFiles(EventState state)
 
 		case EVENTSTATE_WFRECONSTRUCTED:
 		{
-			this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"wf", "reco recreate", "pe"}) );
+			this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"pe"}) );
 
 			boost::replace_last(fname, "root","ini");
 			boost::property_tree::ini_parser::read_ini(fname, pt_);

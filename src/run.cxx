@@ -924,7 +924,7 @@ void CalibrationRun::OverShootCorrection()
         }
     }
 
-    std::string fname = outfolder.string() + "/run_"+std::to_string(nr_)+"_pedestal"+"_"+ GS->GetParameter<std::string>("General.CalibrationVersion")+".root";
+    std::string fname = outfolder.string() + "/run_"+std::to_string(nr_)+"_overshootcorrection_"+ GS->GetParameter<std::string>("General.CalibrationVersion")+".root";
     TFile *rfile = new TFile(fname.c_str(), "RECREATE");
 
     for(auto &channel : graphs)
@@ -986,15 +986,14 @@ void CalibrationRun::SignalTagging()
          evt->PrepareTagging();
     }
 
+    int nthreads   = GS->GetParameter<int>("General.nthreads");
+    bool parallelize = GS->GetParameter<bool>("General.parallelize");
 
-    for(auto &evt: evts_ )
+    #pragma omp parallel for if(parallelize) num_threads(nthreads)
+    for(int i = 0; i < evts_.size(); ++i)
     {
-         evt->SignalTagging();
+        evts_.at(i)->SignalTagging();
     }
-    // rfile->Close("R");
-    //
-    //
-    //
 
     for(auto &evt: evts_ )
     {
@@ -1260,10 +1259,11 @@ void CalibrationRun::MipTimeRetrieval()
     {
          evt->LoadFiles(EVENTSTATE_WFRECONSTRUCTED);
     }
-    // rfile->Close("R");
-    //
-    //
-    //
+
+    for(auto &evt: evts_ )
+    {
+         evt->MipTimeRetrieval();
+    }
 
     for(auto &evt: evts_ )
     {

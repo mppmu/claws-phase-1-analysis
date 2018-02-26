@@ -289,6 +289,8 @@ class PhysicsEvent : public Event{
 
         virtual void WaveformReconstruction(Gain* gain);
 
+        virtual void MipTimeRetrieval();
+
         std::vector<std::vector<double>> GetReconstruction();
     //    virtual void PrepHistograms();
     private:
