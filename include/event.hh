@@ -75,6 +75,7 @@ enum EventState
     EVENTSTATE_WFDFAILED,
     EVENTSTATE_WFRECONSTRUCTED,
     EVENTSTATE_WFRFAILED,
+    EVENTSTATE_CALIBRATED,
     // COLOR_GREEN, // assigned 3
     // COLOR_WHITE, // assigned 4
     // COLOR_CYAN, // assigned 5
@@ -118,6 +119,8 @@ inline std::string printEventState(EventState state)
       return "wf_reconstructed";
     case EVENTSTATE_WFRFAILED:
       return "wfr_failed";
+    case EVENTSTATE_CALIBRATED:
+      return "calibrated";
     default:
       return "Invalid Selection";
   }
@@ -180,6 +183,7 @@ class Event{
         virtual int    GetNumber();
         virtual std::vector<Channel*> GetChannels();
         virtual EventState GetState();
+
         template<typename T>
         T GetParameter(std::string pv)
         {
@@ -280,6 +284,8 @@ class PhysicsEvent : public Event{
         virtual void PrepareHistograms( boost::property_tree::ptree &settings );
 
         virtual std::vector<std::vector<OverShootResult>> OverShootCorrection();
+        
+        virtual void FastRate( Gain* gain );
 
         virtual void PrepareTagging();
         virtual void SignalTagging();
@@ -289,13 +295,21 @@ class PhysicsEvent : public Event{
 
         virtual void WaveformReconstruction(Gain* gain);
 
+        virtual void PrepareRetrieval();
         virtual void MipTimeRetrieval();
 
         std::vector<std::vector<double>> GetReconstruction();
+        std::vector<double> GetOnlineRates();
+        std::vector<double> GetFastRates();
+        std::vector<double> GetRates();
     //    virtual void PrepHistograms();
     private:
         boost::filesystem::path rate_file_;
         std::vector<std::vector<double>> reco_;
+
+        std::vector<double> online_rates_;
+        std::vector<double> fast_rates_;
+        std::vector<double> rates_;
 };
 //
 // //        void                   LoadRootFile();

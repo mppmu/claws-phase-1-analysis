@@ -141,7 +141,7 @@ int main(int argc, char* argv[]) {
 		{
 				if(std::stoi(tasks_tmp) == 0)
 				{
-						for(int i = 0; i<8; i++) tasks[i]=true;
+						for(int i = 0; i<9; i++) tasks[i]=true;
 				}
 				else
 				{

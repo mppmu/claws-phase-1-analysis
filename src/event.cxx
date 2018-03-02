@@ -365,7 +365,44 @@ PhysicsEvent::PhysicsEvent(boost::filesystem::path file, boost::filesystem::path
 
 PhysicsEvent::PhysicsEvent(boost::filesystem::path file, boost::filesystem::path ini_file, boost::filesystem::path rate_file) : PhysicsEvent(file, ini_file)
 {
-		rate_file_ = rate_file;
+	rate_file_ = rate_file;
+
+	online_rates_.resize(6, -1);
+	fast_rates_.resize(3,-1);
+	rates_.resize(3,-1);
+
+    std::ifstream ratefile(rate_file.string());
+
+	if (ratefile)
+	{
+	    double dummy;
+
+		ratefile >> online_rates_.at(0) >> online_rates_.at(1) >> online_rates_.at(2) >> dummy >> online_rates_.at(3) >> online_rates_.at(4) >> online_rates_.at(5) >> dummy;
+	}
+	else
+	{
+		cout << "\033[1;31mOnlinerate missing:   \033[0m" << nr_ << endl;
+	}
+
+	ratefile.close();
+		//
+		//
+		//
+		// 		for(unsigned i = 0; i < 4; i++)
+		// 		{
+		// 				if(!ends_with(GS->GetChannels(1).at(i), "4"))
+		// 				{
+		// 						pt_.put("OnlineRate." + GS->GetChannels(1).at(i), online_rate_[i]);
+		// 				}
+		// 		}
+		// 		for(unsigned i = 4; i < 8; i++)
+		// 		{
+		// 				if(!ends_with(GS->GetChannels(1).at(i), "4"))
+		// 				{
+		// 						pt_.put("OnlineRate." + GS->GetChannels(1).at(i), online_rate_[i-1]);
+		// 				}
+		// 		}
+
 };
 
 
@@ -449,6 +486,14 @@ void PhysicsEvent::LoadFiles(EventState state)
 			// Don't do shit...
 			// The raw files are loaded via the standard path given in the constructor
 			this->LoadRaw();
+
+			string chnames[6] = {"FWD1", "FWD2", "FWD3", "BWD1", "BWD2", "BWD3"};
+
+			for(unsigned int j = 0; j < rates_.size(); ++j)
+			{
+				pt_.put("OnlineRate." + chnames[j], online_rates_.at(j) );
+			}
+
 			break;
 		}
 
@@ -643,6 +688,25 @@ std::vector<std::vector<OverShootResult>> PhysicsEvent::OverShootCorrection()
 
 	return allresults;
 };
+
+void PhysicsEvent::FastRate( Gain* gain )
+{
+
+	for(int i = 0; i< channels_.size(); ++i)
+	{
+		GainChannel * gch = gain->GetChannel(channels_.at(i)->GetName());
+
+		PhysicsChannel *pch = dynamic_cast<PhysicsChannel*>(channels_.at(i));
+
+		double rate = pch->FastRate(gch->GetAvg(), unixtime_);
+
+		pt_.put("FastRate." + pch->GetName(), rate);
+
+		fast_rates_.at(i) = rate;
+	}
+
+}
+
 void PhysicsEvent::PrepareTagging()
 {
 	for(auto & channel : channels_)
@@ -692,30 +756,6 @@ void PhysicsEvent::WaveformDecomposition(Gain* gain)
 
 		 state_ = EVENTSTATE_WFDECOMPOSED;
 		 pt_.put("General.State", state_);
-
-// 	#pragma omp parallel for num_threads(8) firstprivate(avg_waveforms)
-// 		for(unsigned i = 0; i < vch.size(); i++)
-// 		{
-//
-// 				std::string ch_name = vch.at(i);
-//
-// //        #pragma omp critical
-// //        std::cout << "Thread id: " << int(omp_get_thread_num()) << ", in channel: " << ch_name << std::endl;
-//
-// 				if(!ends_with(ch_name, "4"))
-// 				{
-// 						PhysicsChannel*     tmp     = dynamic_cast<PhysicsChannel*>(channels_[ch_name]);
-// 						double chi2    = tmp->DecomposeV2(avg_waveforms[ch_name + "-INT"]);
-//
-// 			#pragma omp critical
-// 						pt_.put("DecompositionResults." + ch_name, chi2);
-//
-// 						if( chi2 > GS->GetCaliPar<double>("PhysicsChannel.chi2_bound") )
-// 						{
-// 								std::cout << "\033[1;31mReconstruction failed! Name: "<< ch_name << " Nr: "<< nr_ <<" Chi2: "<< chi2 << "\033[0m"<< "\r" << std::endl;
-// 						}
-// 				}
-// 		}
 };
 
 void PhysicsEvent::WaveformReconstruction(Gain* gain)
@@ -752,6 +792,44 @@ void PhysicsEvent::WaveformReconstruction(Gain* gain)
 	pt_.put("General.State", state_);
 };
 
+void PhysicsEvent::PrepareRetrieval()
+{
+	for(auto & channel : channels_)
+	{
+		PhysicsChannel *pch = dynamic_cast<PhysicsChannel*>(channel);
+		pch->PrepareRetrieval();
+	}
+};
+
+void PhysicsEvent::MipTimeRetrieval()
+{
+	/**
+	* [for description]
+	* @param  i [description]
+	* \todo Verify that allways FWD1 is matched to FWD1 etc
+	*/
+
+	for(int i = 0; i < channels_.size(); ++i)
+	{
+
+		PhysicsChannel *pch = dynamic_cast<PhysicsChannel*>(channels_.at(i));
+
+		pch->MipTimeRetrieval(unixtime_);
+
+		std::string    chname = pch->GetName();
+
+		double rate   = pch->GetRate();
+
+		rates_.at(i) = rate;
+
+		pt_.put("Rate." + chname, rate );
+
+	}
+
+	state_ = EVENTSTATE_CALIBRATED;
+	pt_.put("General.State", state_);
+};
+
 std::vector<std::vector<double>> PhysicsEvent::GetReconstruction()
 {
 	return reco_;
@@ -760,7 +838,7 @@ std::vector<std::vector<double>> PhysicsEvent::GetReconstruction()
 void PhysicsEvent::SaveEvent(boost::filesystem::path dst)
 {
 		/**
-		*  \todo Kill the path paramter and make it state dependet!
+		*  \todo Kill the path parameter and make it state dependet!
 		*/
 
 		std::string fname = dst.string() + "/";
@@ -788,11 +866,14 @@ void PhysicsEvent::SaveEvent(boost::filesystem::path dst)
 				auto pdhist = channel->GetHistogram("pedestal");
 				if( pdhist ) pdhist->Write();
 
+				auto reco = channel->GetHistogram("reco");
+				if( reco ) reco->Write();
+
 				auto pe = channel->GetHistogram("pe");
 				if( pe ) pe->Write();
 
-				auto reco = channel->GetHistogram("reco");
-				if( reco ) reco->Write();
+				auto mip = channel->GetHistogram("mip");
+				if( mip ) mip->Write();
 		}
 
 		rfile->Close("R");
@@ -804,6 +885,21 @@ void PhysicsEvent::SaveEvent(boost::filesystem::path dst)
 		// boost::filesystem::path dest = folder/path_file_ini_.filename();
 		// boost::filesystem::copy_file(path_file_ini_, dest, copy_option::overwrite_if_exists );
 };
+
+vector<double> PhysicsEvent::GetOnlineRates()
+{
+	return online_rates_;
+}
+
+vector<double> PhysicsEvent::GetFastRates()
+{
+	return fast_rates_;
+}
+
+vector<double> PhysicsEvent::GetRates()
+{
+	return rates_;
+}
 // void PhysicsEvent::LoadIniFile(){
 //
 //

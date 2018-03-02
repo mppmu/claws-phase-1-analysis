@@ -924,6 +924,8 @@ void CalibrationRun::OverShootCorrection()
         }
     }
 
+
+
     std::string fname = outfolder.string() + "/run_"+std::to_string(nr_)+"_overshootcorrection_"+ GS->GetParameter<std::string>("General.CalibrationVersion")+".root";
     TFile *rfile = new TFile(fname.c_str(), "RECREATE");
 
@@ -949,7 +951,7 @@ void CalibrationRun::OverShootCorrection()
 
 void CalibrationRun::SignalTagging()
 {
-    std::cout << "\033[33;1mRun::Signal tagging(NOT IMPLEMENTED):\033[0m running" << "\r" << std::flush;
+    std::cout << "\033[33;1mRun::Signal tagging:\033[0m running" << "\r" << std::flush;
 
     boost::filesystem::path outfolder = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("SignalTagging");
     if(!boost::filesystem::is_directory( outfolder ) )
@@ -995,13 +997,22 @@ void CalibrationRun::SignalTagging()
         evts_.at(i)->SignalTagging();
     }
 
+    Gain* gain = new Gain(path_, GAINSTATE_EXTENDED);
+
+    for(auto &evt: evts_ )
+    {
+        evt->FastRate( gain );
+    }
+
+    delete gain;
+
     for(auto &evt: evts_ )
     {
          evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
          evt->DeleteHistograms();
     }
 
-    std::cout << "\033[32;1mRun::Signal tagging(NOT IMPLEMENTED):\033[0m done!       " << std::endl;
+    std::cout << "\033[32;1mRun::Signal tagging:\033[0m done!       " << std::endl;
 };
 
 
@@ -1098,7 +1109,7 @@ void CalibrationRun::WaveformDecomposition()
 
 void CalibrationRun::WaveformReconstruction()
 {
-    std::cout << "\033[33;1mRun::Waveform reconstruction(NOT IMPLEMENTED):\033[0m running" << "\r" << std::flush;
+    std::cout << "\033[33;1mRun::Waveform reconstruction:\033[0m running" << "\r" << std::flush;
 
     boost::filesystem::path outfolder = path_/boost::filesystem::path("Calibration")/boost::filesystem::path("WaveformReconstruction");
     if(!boost::filesystem::is_directory( outfolder ) )
@@ -1227,7 +1238,7 @@ void CalibrationRun::WaveformReconstruction()
     delete gain;
 
 
-    std::cout << "\033[32;1mRun::Waveform reconstruction(NOT IMPLEMENTED):\033[0m done!       " << std::endl;
+    std::cout << "\033[32;1mRun::Waveform reconstruction:\033[0m done!       " << std::endl;
 };
 
 
@@ -1262,8 +1273,104 @@ void CalibrationRun::MipTimeRetrieval()
 
     for(auto &evt: evts_ )
     {
-         evt->MipTimeRetrieval();
+         evt->PrepareRetrieval();
     }
+
+    int nthreads   = GS->GetParameter<int>("General.nthreads");
+    bool parallelize = GS->GetParameter<bool>("General.parallelize");
+    //
+    #pragma omp parallel for if(parallelize) num_threads(nthreads)
+    for(int i = 0; i < evts_.size(); ++i)
+    {
+        // Here the actual waveform decomposition is done, the rest is just
+        // getting the info out.
+        //auto channels = evt->WaveformDecomposition(gain);
+        evts_.at(i)->MipTimeRetrieval();
+    }
+
+    std::vector<std::vector<TGraph*>> graphs;
+    std::string names[2] = { "_FastRate", "_Rate"};
+
+    for(auto &channel: evts_.at(0)->GetChannels() )
+    {
+        std::vector<TGraph*> gch;
+
+        std::string name = channel->GetName();
+
+        for(int i =0 ; i < 2; ++i)
+        {
+            TGraph * g = new TGraph();
+            g->SetName( (name+names[i]).c_str() );
+            g->GetYaxis()->SetTitle( "Particle rate [MIPs/s]");
+            g->GetXaxis()->SetTitle("Time [s]");
+            g->SetMarkerStyle(23);
+            g->SetMarkerColor(kRed);
+            g->SetMarkerSize(1);
+            gch.push_back(g);
+        }
+
+        graphs.push_back(gch);
+    }
+    //
+    // //Fake BWD
+    // vector<string> channels = {"BWD1","BWD2", "BWD3"};
+    //
+    // for(auto &channel: channels )
+    // {
+    //     std::vector<TGraph*> gch;
+    //
+    //     std::string name = channel;
+    //
+    //     for(int i =0 ; i < 3; ++i)
+    //     {
+    //         TGraph * g = new TGraph();
+    //         g->SetName( (name+names[i]).c_str() );
+    //         g->GetYaxis()->SetTitle( "Particle rate [MIPs/s]");
+    //         g->GetXaxis()->SetTitle("Time [s]");
+    //         g->SetMarkerStyle(23);
+    //         g->SetMarkerColor(kRed);
+    //         g->SetMarkerSize(1);
+    //         gch.push_back(g);
+    //     }
+    //
+    //     graphs.push_back(gch);
+    // }
+    //
+    //
+    // for(auto &evt: evts_ )
+    // {
+    //     // Here the actual overshoot correction is done, the rest is just
+    //     // getting the info out.
+    //     std::vector<std::vector<double>> rates = evt->GetRates();
+    //
+    //     double   evt_time = evt->GetParameter<double>("Properties.UnixTime");
+    //
+    //     for(unsigned int i = 0; i < rates.size(); ++i)
+    //     {
+    //         std::vector<double> rate = rates.at(i);
+    //         for(unsigned int j = 0; j < 3; ++j)
+    //         {
+    //             TGraph* graph = graphs.at(i).at(j);
+    //             graph->SetPoint( graph->GetN(), evt_time, rate.at(j) );
+    //         }
+    //     }
+    // }
+    //
+    // std::string fname = outfolder.string() + "/run_"+std::to_string(nr_)+"_rate"+"_"+ GS->GetParameter<std::string>("General.CalibrationVersion")+".root";
+    // TFile *rfile = new TFile(fname.c_str(), "RECREATE");
+    //
+    // for(auto &channel : graphs)
+    // {
+    //     for(auto & graph : channel)
+    //     {
+    //         graph->Write();
+    //         delete graph;
+    //     }
+    // }
+    //
+    // rfile->Close("R");
+
+
 
     for(auto &evt: evts_ )
     {

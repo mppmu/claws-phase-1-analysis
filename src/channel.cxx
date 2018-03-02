@@ -5,6 +5,10 @@
  *      Author: mgabriel
  */
 
+ // --- Project includes ---
+ #include "channel.hh"
+ #include "globalsettings.hh"
+
 // --- C++ includes ---
 #include <typeinfo>
 #include <algorithm>
@@ -29,9 +33,7 @@
 #include <TFitResult.h>
 #include <TFitResultPtr.h>
 #include <TMinuit.h>
-// --- Project includes ---
-#include "channel.hh"
-#include "globalsettings.hh"
+
 
 
 using namespace std;
@@ -473,22 +475,27 @@ void CalibrationChannel::FillPedestal()
 // TODO prper description
 //----------------------------------------------------------------------------------------------
 
-PhysicsChannel::PhysicsChannel(std::string ch_name, std::string scope_pos) : Channel(ch_name), os_({-1}), pewf_(nullptr), recowf_(nullptr)
+PhysicsChannel::PhysicsChannel(std::string ch_name, std::string scope_pos) : Channel(ch_name), os_({-1}), recowf_(nullptr), pewf_(nullptr), mipwf_(nullptr), fast_rate_(-1), rate_(-1)
 {
 	scope_pos_ = scope_pos;
 };
 
 PhysicsChannel::~PhysicsChannel() {
 	// TODO Auto-generated destructor stub
+    if( recowf_ != nullptr )
+    {
+        delete recowf_;
+        recowf_ = nullptr;
+    }
     if( pewf_ != nullptr )
     {
         delete pewf_;
         pewf_ = nullptr;
     }
-    if( recowf_ != nullptr )
+    if( mipwf_ != nullptr )
     {
-        delete recowf_;
-        recowf_ = nullptr;
+        delete mipwf_;
+        mipwf_ = nullptr;
     }
 };
 
@@ -527,7 +534,7 @@ void PhysicsChannel::LoadHistogram(TFile* rfile, vector<string> types)
 
         else if( type == "pe" )
         {
-            pewf_ = (TH1F*) rfile->Get((name_+"_pe").c_str());
+            pewf_ = (TH1I*) rfile->Get((name_+"_pe").c_str());
             pewf_->SetDirectory(0);
         }
 
@@ -816,19 +823,7 @@ std::vector<OverShootResult> PhysicsChannel::OverShootCorrection()
     return results;
 }
 
-double * PhysicsChannel::GetOS()
-{
-	return os_;
-}
 
-TH1* PhysicsChannel::GetHistogram(std::string type)
-{
-	if      (type == "waveform") return wf_;
-	else if (type == "pedestal") return pdhist_;
-    else if (type == "pe") return pewf_;
-    else if (type == "reco") return recowf_;
-	else						 exit(1);
-};
 
 void PhysicsChannel::PrepareTagging()
 {
@@ -886,11 +881,41 @@ void PhysicsChannel::SignalTagging()
         {
             recowf_->SetBinContent(i, 0);
         }
-        
+
         i++;
     }
 
 };
+
+double PhysicsChannel::FastRate(TH1F* avg, double unixtime )
+{
+    double pe_per_mip = -1.;
+
+    if( GS->GetParameter<string>("PEToMIP." + name_) != "false")
+    {
+        if( GS->GetParameter<double>("PEToMIP." + name_) > unixtime )
+        {
+            pe_per_mip = GS->GetParameter<double>("PEToMIP." + name_ + "val2");
+        }
+        else
+        {
+            pe_per_mip = GS->GetParameter<double>("PEToMIP." + name_ + "val");
+        }
+    }
+    else
+    {
+        pe_per_mip = GS->GetParameter<double>("PEToMIP." + name_ + "val");
+    }
+
+    double dt = GS->GetParameter<double>("Scope.delta_t");
+
+    fast_rate_ = recowf_->Integral()/avg->Integral();
+
+    fast_rate_ = fast_rate_/pe_per_mip;
+    fast_rate_ = fast_rate_/( dt*recowf_->GetNbinsX() );
+
+    return fast_rate_;
+}
 
 void PhysicsChannel::PrepareDecomposition()
 {
@@ -905,7 +930,7 @@ void PhysicsChannel::PrepareDecomposition()
     double lowedge    = wf_->GetBinLowEdge(1);
     double highedge   = wf_->GetBinLowEdge(nbins) + wf_->GetBinWidth(nbins);
 
-    pewf_ = new TH1F(title.c_str(), title.c_str(), nbins, lowedge, highedge);
+    pewf_ = new TH1I(title.c_str(), title.c_str(), nbins, lowedge, highedge);
     pewf_->SetDirectory(0);
 };
 
@@ -946,7 +971,8 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
         }
 
         // does ++GetBinContent(maxbin)
-        pewf_->AddBinContent(maxbin);
+        //pewf_->AddBinContent(maxbin);
+        pewf_->Fill( recowf_->GetBinCenter(maxbin));
 
         // // // Because it is very time consuming to search the full waveform with each iteration
         // // // look only in the vincity of the last maximum first.
@@ -1039,6 +1065,110 @@ std::vector<double> PhysicsChannel::WaveformReconstruction(TH1F* avg)
     return res;
 };
 
+
+void PhysicsChannel::PrepareRetrieval()
+{
+    if( mipwf_ != nullptr )
+    {
+        delete mipwf_;
+        mipwf_ = nullptr;
+    }
+
+    string title = name_ + "_mip";
+    int nbinsx   = pewf_->GetNbinsX();
+    double xlow  = pewf_->GetBinLowEdge(1);
+    double xup   = pewf_->GetBinLowEdge(nbinsx) + pewf_->GetBinWidth(nbinsx);
+
+    mipwf_       = new TH1F(title.c_str(), title.c_str(), nbinsx, xlow, xup);
+    mipwf_->SetDirectory(0);
+};
+
+void PhysicsChannel::MipTimeRetrieval(double unixtime)
+{
+    int window_length =  GS->GetParameter<int>("MipTimeRetrieval.window_length");
+    int window_threshold =  GS->GetParameter<int>("MipTimeRetrieval.window_threshold");
+    int npe_hit_time =  GS->GetParameter<int>("MipTimeRetrieval.pe_hit_time");
+
+
+    double pe_per_mip = -1.;
+
+    if( GS->GetParameter<string>("PEToMIP." + name_) != "false")
+    {
+        if( GS->GetParameter<double>("PEToMIP." + name_) > unixtime )
+        {
+            pe_per_mip = GS->GetParameter<double>("PEToMIP." + name_ + "val2");
+        }
+        else
+        {
+            pe_per_mip = GS->GetParameter<double>("PEToMIP." + name_ + "val");
+        }
+    }
+    else
+    {
+        pe_per_mip = GS->GetParameter<double>("PEToMIP." + name_ + "val");
+    }
+
+    for(int i = 1; i<=pewf_->GetNbinsX(); ++i)
+    {
+        if( pewf_->GetBinContent(i) > 0)
+        {
+            // First check how many pes are in the
+            // integration window
+            int pes_in_window = 0;
+            for( int j = i; j < i + window_length; ++j)
+            {
+                pes_in_window += pewf_->GetBinContent(j);
+            }
+
+            if( pes_in_window >= window_threshold )
+            {
+                int j = i-1;
+                int pe = 0;
+                while( pe < npe_hit_time )
+                {
+                    ++j;
+                    pe += pewf_->GetBinContent(j);
+                }
+
+                for( int k = 0; k < pes_in_window; ++ k)
+                {
+                    mipwf_->Fill(pewf_->GetBinCenter(j), 1./pe_per_mip);
+                }
+
+                i += window_length-1;
+            }
+        }
+    }
+
+    double dt = GS->GetParameter<double>("Scope.delta_t");
+    rate_ = mipwf_->Integral()/(dt*mipwf_->GetNbinsX());
+};
+
+
+double * PhysicsChannel::GetOS()
+{
+	return os_;
+}
+
+TH1* PhysicsChannel::GetHistogram(std::string type)
+{
+	if      (type == "waveform") return wf_;
+	else if (type == "pedestal") return pdhist_;
+    else if (type == "reco")     return recowf_;
+    else if (type == "pe")       return pewf_;
+    else if (type == "mip")      return mipwf_;
+	else						 exit(1);
+};
+
+double PhysicsChannel::GetFastRate()
+{
+	return fast_rate_;
+}
+
+double PhysicsChannel::GetRate()
+{
+	return rate_;
+}
 
 //
 // void PhysicsChannel::CalculateChi2V2()

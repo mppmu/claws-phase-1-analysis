@@ -154,6 +154,8 @@ class PhysicsChannel : public Channel
 
         virtual std::vector<OverShootResult> OverShootCorrection();
 
+        virtual double FastRate(TH1F* avg, double unixtime);
+
         virtual void PrepareTagging();
         virtual void SignalTagging();
 
@@ -161,14 +163,28 @@ class PhysicsChannel : public Channel
         virtual void WaveformDecomposition(TH1F* avg);
         virtual std::vector<double> WaveformReconstruction(TH1F* avg);
 
-        virtual double*     GetOS();
-        virtual TH1*        GetHistogram(std::string type);
+        virtual void PrepareRetrieval();
+        virtual void MipTimeRetrieval(double unixtime = -1.);
+
+        virtual double*                 GetOS();
+        virtual TH1*                    GetHistogram(std::string type);
+
+        virtual double     GetFastRate();
+        virtual double     GetRate();
 
     //    virtual double*     GetReco();
     private:
         double    os_[10];
-        TH1F*                  pewf_;
         TH1F*                  recowf_;
+        TH1I*                  pewf_;
+        TH1F*                  mipwf_;
+
+        /** [0] == online rate
+        *   [1] == fast offline
+        *   [2] == foll reco
+        */
+        double         fast_rate_;
+        double         rate_;
     //     double              reco_res_[4];
 
 
