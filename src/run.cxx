@@ -1375,9 +1375,60 @@ void CalibrationRun::MipTimeRetrieval()
          evt->DeleteHistograms();
     }
 
-    std::cout << "\033[32;1mRun::MIP time retrieval(NOT IMPLEMENTED):\033[0m done!       " << std::endl;
+    std::cout << "\033[32;1mRun::MIP time retrieval:\033[0m done!       " << std::endl;
 };
 
+void CalibrationRun::SystematicsStudy()
+{
+    std::cout << "\033[33;1mRun::Systematics study(NOT IMPLEMENTED):\033[0m running" << "\r" << std::flush;
+
+    boost::filesystem::path outfolder = path_/boost::filesystem::path("Results");
+    if(!boost::filesystem::is_directory( outfolder ) )
+    {
+        boost::filesystem::create_directory( outfolder );
+    }
+
+    //Get the histograms and prepare them
+    for(auto &evt: evts_ )
+    {
+         evt->LoadFiles(EVENTSTATE_CALIBRATED);
+    }
+
+    std::vector<TH1F*> hists;
+    std::string names[3] = { "_online_rate", "_fast_rate", "_rate"};
+
+    for(auto &channel: evts_.at(0)->GetChannels() )
+    {
+        string title = channel->GetName() + "_mip";
+        int nbinsx   = pewf_->GetNbinsX();
+        double xlow  = -0.5;
+        double xup   = nbinsx + 1.5;
+
+        hists.push_back( new TH1F(title.c_str(), title.c_str(), nbinsx, xlow, xup) );
+    }
+
+    std::string fname = outfolder.string() + "/run_"+std::to_string(nr_)+"_systematics_"+ GS->GetParameter<std::string>("General.CalibrationVersion")+".root";
+
+    TFile *rfile = new TFile(fname.c_str(), "RECREATE");
+
+    for(auto &hist : hists)
+    {
+            hist->Write();
+            delete hist;
+
+    }
+
+    rfile->Close("R");
+
+
+    for(auto &evt: evts_ )
+    {
+//         evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
+         evt->DeleteHistograms();
+    }
+
+    std::cout << "\033[32;1mRun::Systematics study(NOT IMPLEMENTED):\033[0m done!       " << std::endl;
+};
 // void CalibrationRun::LoadData()
 // {
 //      double wall0 = claws::get_wall_time();

@@ -538,6 +538,12 @@ void PhysicsChannel::LoadHistogram(TFile* rfile, vector<string> types)
             pewf_->SetDirectory(0);
         }
 
+        else if( type == "mip" )
+        {
+            mipwf_ = (TH1F*) rfile->Get((name_+"_mip").c_str());
+            mipwf_->SetDirectory(0);
+        }
+
         else
         {
             cout << "WARNING! item not in rfile!" << endl;
