@@ -284,7 +284,7 @@ class PhysicsEvent : public Event{
         virtual void PrepareHistograms( boost::property_tree::ptree &settings );
 
         virtual std::vector<std::vector<OverShootResult>> OverShootCorrection();
-        
+
         virtual void FastRate( Gain* gain );
 
         virtual void PrepareTagging();
@@ -299,17 +299,17 @@ class PhysicsEvent : public Event{
         virtual void MipTimeRetrieval();
 
         std::vector<std::vector<double>> GetReconstruction();
-        std::vector<double> GetOnlineRates();
-        std::vector<double> GetFastRates();
-        std::vector<double> GetRates();
+        // std::vector<double> GetOnlineRates();
+        // std::vector<double> GetFastRates();
+        std::vector<std::vector<double>> GetRates();
     //    virtual void PrepHistograms();
     private:
         boost::filesystem::path rate_file_;
         std::vector<std::vector<double>> reco_;
 
-        std::vector<double> online_rates_;
-        std::vector<double> fast_rates_;
-        std::vector<double> rates_;
+        // std::vector<double> online_rates_;
+        // std::vector<double> fast_rates_;
+        // std::vector<double> rates_;
 };
 //
 // //        void                   LoadRootFile();

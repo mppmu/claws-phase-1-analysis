@@ -9,6 +9,7 @@
 
 // --- C++ includes ---
 #include <iostream>
+#include <string>
 #include <ctype.h>
 #include <cxxabi.h>
 #include <algorithm>
@@ -367,24 +368,11 @@ PhysicsEvent::PhysicsEvent(boost::filesystem::path file, boost::filesystem::path
 {
 	rate_file_ = rate_file;
 
-	online_rates_.resize(6, -1);
-	fast_rates_.resize(3,-1);
-	rates_.resize(3,-1);
+	// online_rates_.resize(6, -1);
+	// fast_rates_.resize(3,-1);
+	// rates_.resize(3,-1);
 
-    std::ifstream ratefile(rate_file.string());
 
-	if (ratefile)
-	{
-	    double dummy;
-
-		ratefile >> online_rates_.at(0) >> online_rates_.at(1) >> online_rates_.at(2) >> dummy >> online_rates_.at(3) >> online_rates_.at(4) >> online_rates_.at(5) >> dummy;
-	}
-	else
-	{
-		cout << "\033[1;31mOnlinerate missing:   \033[0m" << nr_ << endl;
-	}
-
-	ratefile.close();
 		//
 		//
 		//
@@ -487,11 +475,28 @@ void PhysicsEvent::LoadFiles(EventState state)
 			// The raw files are loaded via the standard path given in the constructor
 			this->LoadRaw();
 
+			vector<double> online_rates(6,-1);
+
+			std::ifstream ratefile(rate_file_.string());
+
+			if (ratefile)
+			{
+				double dummy;
+
+				ratefile >> online_rates.at(0) >> online_rates.at(1) >> online_rates.at(2) >> dummy >> online_rates.at(3) >> online_rates.at(4) >> online_rates.at(5) >> dummy;
+			}
+			else
+			{
+				cout << "\033[1;31mOnlinerate missing:   \033[0m" << nr_ << endl;
+			}
+
+			ratefile.close();
+
 			string chnames[6] = {"FWD1", "FWD2", "FWD3", "BWD1", "BWD2", "BWD3"};
 
-			for(unsigned int j = 0; j < rates_.size(); ++j)
+			for(unsigned int j = 0; j < online_rates.size(); ++j)
 			{
-				pt_.put("OnlineRate." + chnames[j], online_rates_.at(j) );
+				pt_.put("OnlineRate." + chnames[j], online_rates.at(j) );
 			}
 
 			break;
@@ -702,7 +707,7 @@ void PhysicsEvent::FastRate( Gain* gain )
 
 		pt_.put("FastRate." + pch->GetName(), rate);
 
-		fast_rates_.at(i) = rate;
+		//fast_rates_.at(i) = rate;
 	}
 
 }
@@ -820,7 +825,7 @@ void PhysicsEvent::MipTimeRetrieval()
 
 		double rate   = pch->GetRate();
 
-		rates_.at(i) = rate;
+		//rates_.at(i) = rate;
 
 		pt_.put("Rate." + chname, rate );
 
@@ -886,19 +891,53 @@ void PhysicsEvent::SaveEvent(boost::filesystem::path dst)
 		// boost::filesystem::copy_file(path_file_ini_, dest, copy_option::overwrite_if_exists );
 };
 
-vector<double> PhysicsEvent::GetOnlineRates()
-{
-	return online_rates_;
-}
+// vector<double> PhysicsEvent::GetOnlineRates()
+// {
+// 	return online_rates_;
+// }
 
-vector<double> PhysicsEvent::GetFastRates()
-{
-	return fast_rates_;
-}
+// vector< vector<double> > PhysicsEvent::GetFastRates()
+// {
+// 	// vector<vector<double>> rates;
+// 	// pt_.get
+// 	return fast_rates_;
+// }
 
-vector<double> PhysicsEvent::GetRates()
+vector<vector<double>> PhysicsEvent::GetRates()
 {
-	return rates_;
+	vector<double> init(3,-1);
+	vector<vector<double>> rates(6,init);
+
+	boost::property_tree::ptree childpt = pt_.get_child("OnlineRate");
+
+	int i = 0;
+
+	for(auto iter = childpt.begin(); iter != childpt.end(); iter++)
+	{
+		rates.at(i).at(0) = stod(iter->second.data());
+		++i;
+	}
+
+	childpt = pt_.get_child("FastRate");
+
+	i = 0;
+
+	for(auto iter = childpt.begin(); iter != childpt.end(); iter++)
+	{
+		rates.at(i).at(1) = stod(iter->second.data());
+		++i;
+	}
+
+	childpt = pt_.get_child("Rate");
+
+	i = 0;
+	for(auto iter = childpt.begin(); iter != childpt.end(); iter++)
+	{
+		rates.at(i).at(2) = stod(iter->second.data());
+		++i;
+	}
+
+	return rates;
 }
 // void PhysicsEvent::LoadIniFile(){
 //
