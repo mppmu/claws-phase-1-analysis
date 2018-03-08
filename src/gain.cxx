@@ -7,7 +7,7 @@
 // Description :
 //============================================================================
 
-// --- C++ includes ---
+
 // --- BOOST includes ---
 // --- ROOT includes ---
 #include "TF1.h"
@@ -16,10 +16,17 @@
 #include "channel.hh"
 #include "gain.hh"
 #include "globalsettings.hh"
-
+// --- C++ includes ---
+#include <math.h>
 //----------------------------------------------------------------------------------------------
 // Definition of the GainChannel class
 //----------------------------------------------------------------------------------------------
+
+Double_t gainfunc(Double_t *x, Double_t *par)
+{
+    double number = par[0]*TMath::Exp(-0.5*pow((x[0] - par[1])/par[2], 2)) + par[3]*TMath::Exp(-0.5*pow((x[0] - par[4])/(par[2]*1.4142), 2));
+    return number;
+}
 
 GainChannel::GainChannel(std::string name): name_(name), n_(0), gain_({-1}), avg_res_({-1})
 {
@@ -129,29 +136,42 @@ double* GainChannel::FitGain()
     // 				ivec->gain =  ivec->gain_hist->GetMaximumBin();
     // }
 
-    TF1* d_gaus=new TF1( (name_ + "_d_gaus").c_str(),"gaus(0)+gaus(3)",0,3*gaus->GetParameter(1) );
+    //TF1* d_gaus=new TF1( (name_ + "_d_gaus").c_str(),"gaus(0)+gaus(3)",0,3*gaus->GetParameter(1) );
+    TF1* d_gaus=new TF1( (name_ + "_d_gaus").c_str(),gainfunc, 0, 3*gaus->GetParameter(1), 5);
 
 	double mean_bias = GS->GetParameter<double>("Gain.mean_bias");
 
     // A lot of magic number shit to get the double fit working;
 	d_gaus->SetParameter(0,gaus->GetParameter(0));
+    d_gaus->SetParLimits(0,gaus->GetParameter(0)*0.75, gaus->GetParameter(0)*1.25);
+
 	d_gaus->SetParameter(1,gaus->GetParameter(1));
     d_gaus->SetParLimits(1,gaus->GetParameter(1)*0.5, gaus->GetParameter(1)*1.5);
+    //d_gaus->SetParLimits(1,gaus->GetParameter(1)*0.9, gaus->GetParameter(1)*1.1);
+
 	d_gaus->SetParameter(2,gaus->GetParameter(2));
+	d_gaus->SetParLimits(2,gaus->GetParameter(2)*0.5, gaus->GetParameter(2)*1.5);
 
 	d_gaus->SetParameter(3,gaus->GetParameter(0)*0.1);
+
 	d_gaus->SetParameter(4,(gaus->GetParameter(1)-mean_bias)*2 + mean_bias);
-    d_gaus->SetParLimits(1,gaus->GetParameter(1), gaus->GetParameter(1)*3);
-	d_gaus->SetParameter(5,gaus->GetParameter(2));
+    //d_gaus->SetParLimits(4,(gaus->GetParameter(1)- mean_bias)*1.5 + mean_bias, (gaus->GetParameter(1)-mean_bias)*2.25+mean_bias);
+    d_gaus->SetParLimits(4,gaus->GetParameter(1), gaus->GetParameter(1)*3);
+    //d_gaus->SetParLimits(1,gaus->GetParameter(1), gaus->GetParameter(1)*3);
+//	d_gaus->SetParameter(5,gaus->GetParameter(2));
 
-	d_gaus->SetParLimits(0,gaus->GetParameter(0)*0.75, gaus->GetParameter(0)*1.25);
-	d_gaus->SetParLimits(1,gaus->GetParameter(1)*0.9, gaus->GetParameter(1)*1.1);
-	d_gaus->SetParLimits(2,gaus->GetParameter(2)*0.75, gaus->GetParameter(2)*1.25);
+//    d_gaus->FixParameter(5,gaus->GetParameter(2)*1.414);
 
-	d_gaus->SetParLimits(4,(gaus->GetParameter(1)- mean_bias)*1.5 + mean_bias, (gaus->GetParameter(1)-mean_bias)*2.25+mean_bias);
-	d_gaus->SetParLimits(5,gaus->GetParameter(2)*0.5, gaus->GetParameter(2)*1.5);
 
-    result = hist_->Fit(d_gaus,"SLQ","",(gaus->GetParameter(1)-3*gaus->GetParameter(2)),((gaus->GetParameter(1)-mean_bias)*2+3*gaus->GetParameter(2)+mean_bias));
+
+
+
+
+	//d_gaus->SetParLimits(5,gaus->GetParameter(2)*0.25, gaus->GetParameter(2)*2.5);
+
+    //result = hist_->Fit(d_gaus,"SLQ","",(gaus->GetParameter(1)-3*gaus->GetParameter(2)),((gaus->GetParameter(1)-mean_bias)*2+3*gaus->GetParameter(2)+mean_bias));
+
+    result = hist_->Fit(d_gaus,"SLQ","",(gaus->GetParameter(1)-10*gaus->GetParameter(2)),gaus->GetParameter(1)*2+10*gaus->GetParameter(2));
 
     gain_[0]    = int(result);
     for(int i = 1; i<7; i++ ) gain_[i]    = d_gaus->GetParameter( i-1 );

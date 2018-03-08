@@ -57,7 +57,7 @@ int error(){
 		return 0;
 }
 
-
+using namespace std;
 
 int main(int argc, char* argv[]) {
 
@@ -152,6 +152,14 @@ int main(int argc, char* argv[]) {
 		{
 				for(int i = std::stoi(tasks_tmp.substr(0,1)) -1; i<std::stoi( tasks_tmp.substr(2,1) ); i++) tasks[i]=true;
 		}
+
+		else if (tasks_tmp.size() == 4)
+		{
+			int found = tasks_tmp.find("-");
+
+			for(int i = std::stoi(tasks_tmp.substr(0,found)) -1; i<std::stoi( tasks_tmp.substr(found+1) ); i++) tasks[i]=true;
+		}
+
 		else
 		{
 				assert(false);
@@ -160,7 +168,7 @@ int main(int argc, char* argv[]) {
 		//cout << "\033[1;31mRun::Created run: \033[0m" << nr_ << " - at: " << p.string() << endl;
 		std::cout << "\033[1;31mRunning following tasks: \n";
 
-		for(int i = 0; i<8; ++i)
+		for(int i = 0; i<10; ++i)
 		{
 			if(tasks[i]) std::cout << tasks_names[i] << "\n";
 		}

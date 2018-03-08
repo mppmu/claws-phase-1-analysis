@@ -257,25 +257,60 @@ void CalibrationChannel::FillPedestal()
 		else 			pdhist_ = new TH1I(title.c_str(), title.c_str(), 255, -127.5, 127.5);
 		pdhist_->SetDirectory(0);
 
-		//for(int i =1; i<115; i++)
-		// for(int i =1; (i<hist_->GetNbinsX()+1)/2. ;i++)
-		// {
-		// 	pdhist_->Fill( hist_->GetBinContent(i) );
-		// }
+        for(int i = 1; i <= wf_->GetNbinsX(); ++i)
+        {
+            pdhist_->Fill( wf_->GetBinContent(i) );
+        }
+
+        double tmp_mean = pdhist_->GetMean();
+
+        pdhist_->Reset();
+        // TF1* fit=new TF1("gaus","gaus",1,3, TF1::EAddToList::kNo);
+        //
+        // fit->SetParameter(0,50);
+        // fit->SetParameter(1,0);
+        // fit->SetParameter(2,1);
+        //
+        // double max = pdhist_->GetBinCenter( pdhist_->GetMaximumBin() );
+        //
+        // double low = max + GS->GetParameter<double>("PDS_Calibration.fitrange_low");
+        // double up  = max + GS->GetParameter<double>("PDS_Calibration.fitrange_up");
+
+        // TFitResultPtr result = pdhist_->Fit(fit, "QSL","", low, up);
+        //
+        // double tmp_mean = fit->GetParameter(1);
+        //
+        // pd_[0]    = int(result);
+        //
+        // if( int(result) == 0)
+        // {
+        //     pd_[1]    = fit->GetParameter(0);
+        //     pd_[2]    = fit->GetParameter(1);
+        //     pd_[3]    = fit->GetParameter(2);
+        //     pd_[4]    = fit->GetChisquare();
+        //     pd_[5]    = fit->GetNDF();
+        //     pd_[6]    = result->Prob();
+        // }
+        // else
+        // {
+        //     state_ = CHANNELSTATE_PDFAILED;
+        // //	pd_[0]    = int(result);
+        // //	for(int i = 1; i<7;i++ ) pd_[i] = -1;
+        // }
+        //
+        // pd_[7]    = pdhist_->GetMean();
+        // pd_[8]    = pdhist_->GetMeanError();
+        // pd_[9]    = pdhist_->GetEntries();
+        //
+        // delete fit;
 
 
-		//bool fillflag   = true;PD
 
-				// //float threshold = baseline_ + pd_delta_;
-				// float threshold = 3;
-				// float pd_gap = 20;
-				// unsigned i = pd_gap_;
 		int bins_over_threshold = GS->GetParameter<int>("PDS_Calibration.bins_over_threshold");
-		double threshold = GS->GetParameter<double>("PDS_Calibration.threshold");
+		double threshold = tmp_mean + GS->GetParameter<double>("PDS_Calibration.threshold");
 		int signal_length = GS->GetParameter<int>("PDS_Calibration.signal_length");
 
     	unsigned i=1;
-
 		// while( i < hist_->GetNbinsX() - 2 * pd_gap_ +1 )
 		// {
 		while( i <= wf_->GetNbinsX() )
@@ -318,54 +353,6 @@ void CalibrationChannel::FillPedestal()
     }
 
 
-
-				// if( waveform_->at( i + 1 ) >= threshold &&
-				//     waveform_->at( i + 2 ) >= threshold &&
-				//     waveform_->at( i + 3 ) >= threshold )
-				// {
-
-				// if(  < threshold && fillflag == true)
-				// {
-				// 		pdhist_->Fill(waveform_->at(i - pd_gap_) );
-				// }
-				//
-				// 		else if( waveform_->at( i ) >= threshold && fillflag == true)
-				// 		{
-				// 				if( waveform_->at( i + 1 ) >= threshold &&
-				// 				    waveform_->at( i + 2 ) >= threshold &&
-				// 				    waveform_->at( i + 3 ) >= threshold )
-				// 				{
-				// 						fillflag = false;
-				// 				}
-				// 				else
-				// 				{
-				// 						pedestal_hist_->Fill(waveform_->at(i - pd_gap_) );
-				// 				}
-				// 		}
-				//
-				// 		else if( waveform_->at( i ) < threshold &&
-				// 		         fillflag == false &&
-				// 		         // When jumping the tail of the signal (2*gap) needed to make
-				// 		         // sure we are not jumping into a signal again.
-				// 		         waveform_->at( i + 2 * pd_gap_ ) < threshold )
-				// 		{
-				// 				fillflag = true;
-				// 				if( i < waveform_->size() - 2 * pd_gap_ )
-				// 				{
-				// 						i += 2 * pd_gap_;
-				// 				}
-				// 		}
-				//
-				//
-
-				// if((pedestal_hist_->GetEntries()<waveform_->size()*0.01))
-				// {
-				//     std::string error = name_ + ":  (pedestal_hist_->GetEntries(): " + to_string(pedestal_hist_->GetEntries()) + ", waveform_->size(): "
-				//                         + to_string(waveform_->size())+ ", i: " + to_string(i) + ", pd_gap_: " + to_string(pd_gap_)+ ", threshold: " + to_string(threshold);
-				//     std::cout << error << std::endl;
-				// }
-				// std::cout << name_ << ": " << pedestal_hist_->GetEntries() << std::endl;
-
 		/** In some cases two 1 pe waveforms are within a calibration waveform,
 		*   leading to no value be able to pass the conditions to be filled into
 		*   the pedestal histogram. So don't bother fitting an empty histogram!
@@ -392,8 +379,10 @@ void CalibrationChannel::FillPedestal()
 		fit->SetParameter(1,0);
 		fit->SetParameter(2,1);
 
-		double low = GS->GetParameter<double>("PDS_Calibration.fitrange_low");
-		double up = GS->GetParameter<double>("PDS_Calibration.fitrange_up");
+        double max = pdhist_->GetBinCenter( pdhist_->GetMaximumBin() );
+
+		double low = max + GS->GetParameter<double>("PDS_Calibration.fitrange_low");
+		double up  = max + GS->GetParameter<double>("PDS_Calibration.fitrange_up");
 
 		TFitResultPtr result = pdhist_->Fit(fit, "QSL","", low, up);
 
@@ -958,7 +947,6 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
     double b_up  = recowf_->GetBinCenter( nbins - search_range );
     recowf_->GetXaxis()->SetRangeUser(b_low, b_up);
 
-
     int maxbin = recowf_->GetMaximumBin();
 
     while( recowf_->GetBinContent(maxbin) > threshold )
@@ -970,7 +958,8 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
 
         for( unsigned int i = 2 ; i <= avg_nbins; ++i)
         {
-            double avg_bincont = avg->GetBinContent( i - 1 );
+            //double avg_bincont = avg->GetBinContent( i - 1 );
+            double avg_bincont = avg->GetBinContent( i );
             double bincont     = recowf_->GetBinContent( i + maxbin - avg_maxbin );
 
             recowf_->SetBinContent( i + maxbin - avg_maxbin, bincont - avg_bincont);

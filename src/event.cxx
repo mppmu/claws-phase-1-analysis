@@ -573,7 +573,7 @@ void PhysicsEvent::LoadFiles(EventState state)
 
 		case EVENTSTATE_CALIBRATED:
 		{
-			this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"mip"}) );
+			this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"pe", "mip"}) );
 
 			boost::replace_last(fname, "root","ini");
 			boost::property_tree::ini_parser::read_ini(fname, pt_);
@@ -664,7 +664,7 @@ void PhysicsEvent::PrepareHistograms(boost::property_tree::ptree &settings)
 
 		// The -1 is needed because earlier the signals are truned from downwards
 		// to upwards.
-		double offset = -1*settings.get<double>(sec+".AnalogOffset")*range;
+		double offset = -1*settings.get<double>(sec+".AnalogOffset")*1000.;
 		PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(channel);
 	    tmp->PrepareHistogram( range, offset );
 	}

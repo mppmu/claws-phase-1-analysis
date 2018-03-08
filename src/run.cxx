@@ -68,6 +68,60 @@
 using namespace std;
 
 
+Double_t langaufun(Double_t *x, Double_t *par) {
+
+   //Fit parameters:
+   //par[0]=Width (scale) parameter of Landau density
+   //par[1]=Most Probable (MP, location) parameter of Landau density
+   //par[2]=Total area (integral -inf to inf, normalization constant)
+   //par[3]=Width (sigma) of convoluted Gaussian function
+   //
+   //In the Landau distribution (represented by the CERNLIB approximation),
+   //the maximum is located at x=-0.22278298 with the location parameter=0.
+   //This shift is corrected within this function, so that the actual
+   //maximum is identical to the MP parameter.
+
+      // Numeric constants
+      Double_t invsq2pi = 0.3989422804014;   // (2 pi)^(-1/2)
+      Double_t mpshift  = -0.22278298;       // Landau maximum location
+
+      // Control constants
+      Double_t np = 100.0;      // number of convolution steps
+      Double_t sc =   5.0;      // convolution extends to +-sc Gaussian sigmas
+
+      // Variables
+      Double_t xx;
+      Double_t mpc;
+      Double_t fland;
+      Double_t sum = 0.0;
+      Double_t xlow,xupp;
+      Double_t step;
+      Double_t i;
+
+
+      // MP shift correction
+      mpc = par[1] - mpshift * par[0];
+
+      // Range of convolution integral
+      xlow = x[0] - sc * par[3];
+      xupp = x[0] + sc * par[3];
+
+      step = (xupp-xlow) / np;
+
+      // Convolution integral of Landau and Gaussian by sum
+      for(i=1.0; i<=np/2; i++) {
+         xx = xlow + (i-.5) * step;
+         fland = TMath::Landau(xx,mpc,par[0]) / par[0];
+         sum += fland * TMath::Gaus(x[0],xx,par[3]);
+
+         xx = xupp - (i-.5) * step;
+         fland = TMath::Landau(xx,mpc,par[0]) / par[0];
+         sum += fland * TMath::Gaus(x[0],xx,par[3]);
+      }
+
+      return (par[2] * step * sum * invsq2pi / par[3]);
+}
+
 //----------------------------------------------------------------------------------------------
 // Definition of the Run class.
 //----------------------------------------------------------------------------------------------
@@ -359,7 +413,7 @@ void CalibrationRun::PDS_Calibration()
       pdg->SetMarkerColor(kRed);
       pdg->SetMarkerSize(1);
       pdg->GetXaxis()->SetTitle("Time [s]");
-      pdg->GetYaxis()->SetTitle("Pedestal fit [1/256 * 50 mV]");
+      pdg->GetYaxis()->SetTitle("Pedestal mean [mV]");
       pdg->GetYaxis()->SetRangeUser(-128,127);
       fit_mean.push_back(pdg);
 
@@ -407,7 +461,7 @@ void CalibrationRun::PDS_Calibration()
       mng->SetMarkerColor(kRed);
       mng->SetMarkerSize(1);
       mng->GetXaxis()->SetTitle("Time [s]");
-      mng->GetYaxis()->SetTitle("Pedestal mean [1/256 * 50 mV]");
+      mng->GetYaxis()->SetTitle("Pedestal mean [mV]");
       mng->GetYaxis()->SetRangeUser(-128,127);
       hist_mean.push_back(mng);
 
@@ -1252,7 +1306,7 @@ void CalibrationRun::DeleteCalibrationHistograms()
 
 void CalibrationRun::MipTimeRetrieval()
 {
-    std::cout << "\033[33;1mRun::MIP time retrieval(NOT IMPLEMENTED):\033[0m running" << "\r" << std::flush;
+    std::cout << "\033[33;1mRun::MIP time retrieval:\033[0m running" << "\r" << std::flush;
 
     boost::filesystem::path outfolder = path_/boost::filesystem::path("Results");
     if(!boost::filesystem::is_directory( outfolder ) )
@@ -1380,9 +1434,9 @@ void CalibrationRun::MipTimeRetrieval()
 
 void CalibrationRun::SystematicsStudy()
 {
-    std::cout << "\033[33;1mRun::Systematics study(NOT IMPLEMENTED):\033[0m running" << "\r" << std::flush;
+    std::cout << "\033[33;1mRun::Systematics study:\033[0m running" << "\r" << std::flush;
 
-    boost::filesystem::path outfolder = path_/boost::filesystem::path("Results");
+    boost::filesystem::path outfolder = path_/boost::filesystem::path("Results")/boost::filesystem::path("SystematicsStudy");
     if(!boost::filesystem::is_directory( outfolder ) )
     {
         boost::filesystem::create_directory( outfolder );
@@ -1399,14 +1453,115 @@ void CalibrationRun::SystematicsStudy()
 
     for(auto &channel: evts_.at(0)->GetChannels() )
     {
-        string title = channel->GetName() + "_mip";
-        int nbinsx   = pewf_->GetNbinsX();
-        double xlow  = -0.5;
-        double xup   = nbinsx + 1.5;
+        string title = channel->GetName() + "_pe_per_event";
+        int nbinsx   = GS->GetParameter<int>("SystematicsStudy.nbinsx_pe");
+        double xlow  = - 0.5;
+        double xup   = nbinsx - 0.5;
 
         hists.push_back( new TH1F(title.c_str(), title.c_str(), nbinsx, xlow, xup) );
     }
 
+    string title = "time_resolution";
+    int nbinsx   = GS->GetParameter<int>("SystematicsStudy.nbinsx_time");
+    // Allways have an even number of bins because of bin at 0
+    if( nbinsx % 2 == 0 ) ++nbinsx;
+
+    double dt = GS->GetParameter<double>("Scope.delta_t");
+
+    double xlow  = -dt*(nbinsx/2 + 0.5);
+    double xup   = dt*(nbinsx/2 + 0.5);
+
+    hists.push_back( new TH1F(title.c_str(), title.c_str(), nbinsx, xlow, xup) );
+
+    for(auto & evt: evts_)
+    {
+        for(int i = 0; i < evt->GetChannels().size(); ++i)
+        {
+            TH1I* pewf = dynamic_cast<TH1I*>(evt->GetChannels().at(i)->GetHistogram("pe"));
+            hists.at(i)->Fill( pewf->Integral() );
+        }
+
+        double threshold = GS->GetParameter<double>("SystematicsStudy.threshold_time");
+
+        TH1F* mipwf_fwd2 = dynamic_cast<TH1F*>(evt->GetChannels().at(1)->GetHistogram("mip"));
+
+        double t1 = -1;
+
+        for( int i = 1; i <= mipwf_fwd2->GetNbinsX(); ++i)
+        {
+            if( mipwf_fwd2->GetBinContent(i) > threshold )
+            {
+                t1 = mipwf_fwd2->GetBinCenter(i);
+                break;
+            }
+        }
+
+        TH1F* mipwf_fwd3 = dynamic_cast<TH1F*>(evt->GetChannels().at(2)->GetHistogram("mip"));
+
+        double t2 = -1;
+
+        for( int i = 1; i <= mipwf_fwd3->GetNbinsX(); ++i)
+        {
+            if( mipwf_fwd3->GetBinContent(i) > threshold )
+            {
+                t2 = mipwf_fwd3->GetBinCenter(i);
+                break;
+            }
+        }
+
+        if( t1 >= 0 && t2 >= 0) hists.back()->Fill(t1-t2);
+        else hists.back()->Fill(-625*dt);
+    }
+
+    // Now fit the pe hists with a langaus
+    for(int i = 0; i < evts_.at(0)->GetChannels().size(); ++i )
+    {
+        string funcname = hists.at(i)->GetName();
+        funcname += "langaus";
+        double rlow = hists.at(i)->GetBinLowEdge(2);
+        //double rup = hists.at(i)->GetBinLowEdge( hists.at(i)->GetNbinsX() ) + hists.at(i)->GetBinWidth(2);
+        double rup = hists.at(i)->GetMean()*3.0;
+
+        // Shit basically stolen from the root example:
+        // https://root.cern.ch/root/html/tutorials/fit/langaus.C.html
+        TF1 *langaus = new TF1(funcname.c_str(),langaufun, rlow, rup,4);
+
+        double par1 = hists.at(i)->GetBinCenter(hists.at(i)->GetMaximumBin());
+
+        langaus->SetParameters(1.8, par1, 50000.0, 3.0);
+        langaus->SetParNames("Width","MP","Area","GSigma");
+
+        Double_t pllo[4], plhi[4];
+
+        pllo[0]=0.25; pllo[1]=1.0;   pllo[2]=1.0; pllo[3]=0.1;
+        plhi[0]=10.0; plhi[1]=100.0; plhi[2]=1000000.0; plhi[3]=20.0;
+
+        for ( int j = 0; j < 4 ; ++j)
+        {
+            langaus->SetParLimits(j, pllo[j], plhi[j]);
+        }
+
+        hists.at(i)->Fit(langaus, "QRSL");
+
+        delete langaus;
+    }
+
+    // Fit the time resolution with a gaussian
+    TF1* time_res =new TF1("gaus","gaus",1,3, TF1::EAddToList::kNo);
+
+    time_res->SetParameter(0, 50);
+    time_res->SetParameter(1, 0);
+    time_res->SetParameter(2, dt);
+
+    double low = -dt*GS->GetParameter<double>("SystematicsStudy.range_time");
+    double up  = - low;
+
+    hists.back()->Fit(time_res, "QSL","", low, up);
+
+    delete time_res;
+
+
+    // Now save the hists to file to be sure
     std::string fname = outfolder.string() + "/run_"+std::to_string(nr_)+"_systematics_"+ GS->GetParameter<std::string>("General.CalibrationVersion")+".root";
 
     TFile *rfile = new TFile(fname.c_str(), "RECREATE");
@@ -1415,7 +1570,6 @@ void CalibrationRun::SystematicsStudy()
     {
             hist->Write();
             delete hist;
-
     }
 
     rfile->Close("R");
@@ -1423,11 +1577,10 @@ void CalibrationRun::SystematicsStudy()
 
     for(auto &evt: evts_ )
     {
-//         evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
          evt->DeleteHistograms();
     }
 
-    std::cout << "\033[32;1mRun::Systematics study(NOT IMPLEMENTED):\033[0m done!       " << std::endl;
+    std::cout << "\033[32;1mRun::Systematics study:\033[0m done!       " << std::endl;
 };
 // void CalibrationRun::LoadData()
 // {
