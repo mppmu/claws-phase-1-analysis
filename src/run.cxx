@@ -1528,7 +1528,7 @@ void CalibrationRun::SystematicsStudy()
 
         double par1 = hists.at(i)->GetBinCenter(hists.at(i)->GetMaximumBin());
 
-        langaus->SetParameters(1.8, par1, 50000.0, 3.0);
+        langaus->SetParameters(1.25, par1, 225., 3.0);
         langaus->SetParNames("Width","MP","Area","GSigma");
 
         Double_t pllo[4], plhi[4];

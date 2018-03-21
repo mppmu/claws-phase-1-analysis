@@ -1119,7 +1119,7 @@ void PhysicsChannel::MipTimeRetrieval(double unixtime)
             {
                 int j = i-1;
                 int pe = 0;
-                while( pe < npe_hit_time )
+                while( pe < npe_hit_time && (j - i) <= window_length )
                 {
                     ++j;
                     pe += pewf_->GetBinContent(j);
