@@ -1019,52 +1019,70 @@ void CalibrationRun::SignalTagging()
     }
 
     //Get the histograms and prepare them
-    auto evt_itr = evts_.begin();
-
-    while( evt_itr != evts_.end() )
-    {
-        (*evt_itr)->LoadFiles(EVENTSTATE_OSCORRECTED);
-
-        if( (*evt_itr)->GetState() == EVENTSTATE_OSFAILED )
-        {
-                delete (*evt_itr);
-                (*evt_itr) = NULL;
-                evts_.erase(evt_itr);
-        }
-        else
-        {
-                evt_itr++;
-        }
-    }
-
-    for(auto &evt: evts_ )
-    {
-         evt->PrepareTagging();
-    }
-
-    int nthreads   = GS->GetParameter<int>("General.nthreads");
-    bool parallelize = GS->GetParameter<bool>("General.parallelize");
-
-    #pragma omp parallel for if(parallelize) num_threads(nthreads)
-    for(int i = 0; i < evts_.size(); ++i)
-    {
-        evts_.at(i)->SignalTagging();
-    }
-
+    // auto evt_itr = evts_.begin();
+    //
+    // while( evt_itr != evts_.end() )
+    // {
+    //     (*evt_itr)->LoadFiles(EVENTSTATE_OSCORRECTED);
+    //
+    //     if( (*evt_itr)->GetState() == EVENTSTATE_OSFAILED )
+    //     {
+    //             delete (*evt_itr);
+    //             (*evt_itr) = NULL;
+    //             evts_.erase(evt_itr);
+    //     }
+    //     else
+    //     {
+    //             evt_itr++;
+    //     }
+    // }
+    //
+    // for(auto &evt: evts_ )
+    // {
+    //      evt->PrepareTagging();
+    // }
+    //
+    // int nthreads   = GS->GetParameter<int>("General.nthreads");
+    // bool parallelize = GS->GetParameter<bool>("General.parallelize");
+    //
+    // #pragma omp parallel for if(parallelize) num_threads(nthreads)
+    // for(int i = 0; i < evts_.size(); ++i)
+    // {
+    //     evts_.at(i)->SignalTagging();
+    // }
+    //
+    // Gain* gain = new Gain(path_, GAINSTATE_EXTENDED);
+    //
+    // for(auto &evt: evts_ )
+    // {
+    //     evt->FastRate( gain );
+    // }
+    //
+    // delete gain;
+    //
+    // for(auto &evt: evts_ )
+    // {
+    //      evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
+    //      evt->DeleteHistograms();
+    // }
     Gain* gain = new Gain(path_, GAINSTATE_EXTENDED);
 
-    for(auto &evt: evts_ )
+    for(auto evt : evts_)
     {
-        evt->FastRate( gain );
+        evt->LoadFiles(EVENTSTATE_OSCORRECTED);
+
+        if( !evt->GetState() == EVENTSTATE_OSFAILED )
+        {
+            evt->PrepareTagging();
+            evt->SignalTagging();
+            evt->FastRate( gain );
+            evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
+        }
+
+        evt->DeleteHistograms();
     }
 
     delete gain;
-
-    for(auto &evt: evts_ )
-    {
-         evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
-         evt->DeleteHistograms();
-    }
 
     std::cout << "\033[32;1mRun::Signal tagging:\033[0m done!       " << std::endl;
 };
@@ -1086,10 +1104,10 @@ void CalibrationRun::WaveformDecomposition()
     }
 
     //Get the histograms and prepare them
-	for(auto &evt: evts_ )
-	{
-	     evt->LoadFiles(EVENTSTATE_TAGGED);
-	}
+	// for(auto &evt: evts_ )
+	// {
+	//      evt->LoadFiles(EVENTSTATE_TAGGED);
+	// }
 
     // Load the histograms & .ini file. If the event
     // did not pass the pd subtraction, throw it away
@@ -1111,49 +1129,64 @@ void CalibrationRun::WaveformDecomposition()
     //     }
     // }
 
-    Gain* gain = new Gain(path_, GAINSTATE_EXTENDED);
+    // Gain* gain = new Gain(path_, GAINSTATE_EXTENDED);
 
-    int nthreads   = GS->GetParameter<int>("General.nthreads");
-    bool parallelize = GS->GetParameter<bool>("General.parallelize");
-
+    // int nthreads   = GS->GetParameter<int>("General.nthreads");
+    // bool parallelize = GS->GetParameter<bool>("General.parallelize");
     //
-    // for(auto evt = evts_.begin(); evt != evts_.end(); evt++ )
-    //for(auto evt: evts_ )
-    // #pragma omp parallel for if(parallelize) num_threads(nthreads)
-    //for(std::vector<PhysicsEvent*>::iterator evt = evts_.begin(); evt != evts_.end(); ++evt)
-
-    // Creating the mip and reco wavforsm because Clone is not threadsafe
-    for(auto &evt: evts_)
-    {
-        evt->PrepareDecomposition();
-    }
-
-    #pragma omp parallel for if(parallelize) num_threads(nthreads)
-    for(int i = 0; i < evts_.size(); ++i)
-    {
-        // Here the actual waveform decomposition is done, the rest is just
-        // getting the info out.
-        //auto channels = evt->WaveformDecomposition(gain);
-        evts_.at(i)->WaveformDecomposition(gain);
-    }
-
-    // std::string fname = overshoot.string() + "/run_"+std::to_string(nr_)+"_pedestal"+"_"+ GS->GetParameter<std::string>("General.CalibrationVersion")+".root";
-    // TFile *rfile = new TFile(fname.c_str(), "RECREATE");
-    // for(auto &channel : graphs)
+    // //
+    // // for(auto evt = evts_.begin(); evt != evts_.end(); evt++ )
+    // //for(auto evt: evts_ )
+    // // #pragma omp parallel for if(parallelize) num_threads(nthreads)
+    // //for(std::vector<PhysicsEvent*>::iterator evt = evts_.begin(); evt != evts_.end(); ++evt)
+    //
+    // // Creating the mip and reco wavforsm because Clone is not threadsafe
+    // for(auto &evt: evts_)
     // {
-    //     for(auto & graph : channel)
-    //     {
-    //         graph->Write();
-    //         delete graph;
-    //     }
+    //     evt->PrepareDecomposition();
     // }
     //
-    // rfile->Close("R");
+    // #pragma omp parallel for if(parallelize) num_threads(nthreads)
+    // for(int i = 0; i < evts_.size(); ++i)
+    // {
+    //     // Here the actual waveform decomposition is done, the rest is just
+    //     // getting the info out.
+    //     //auto channels = evt->WaveformDecomposition(gain);
+    //     evts_.at(i)->WaveformDecomposition(gain);
+    // }
     //
+    // // std::string fname = overshoot.string() + "/run_"+std::to_string(nr_)+"_pedestal"+"_"+ GS->GetParameter<std::string>("General.CalibrationVersion")+".root";
+    // // TFile *rfile = new TFile(fname.c_str(), "RECREATE");
+    // // for(auto &channel : graphs)
+    // // {
+    // //     for(auto & graph : channel)
+    // //     {
+    // //         graph->Write();
+    // //         delete graph;
+    // //     }
+    // // }
+    // //
+    // // rfile->Close("R");
+    // //
+    // for(auto &evt: evts_ )
+    // {
+    //     evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
+    //     evt->DeleteHistograms();
+    // }
+
+    Gain* gain = new Gain(path_, GAINSTATE_EXTENDED);
+
     for(auto &evt: evts_ )
     {
-        evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
-        evt->DeleteHistograms();
+         evt->LoadFiles(EVENTSTATE_TAGGED);
+
+         evt->PrepareDecomposition();
+
+         evt->WaveformDecomposition(gain);
+
+         evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
+         
+         evt->DeleteHistograms();
     }
 
     delete gain;
@@ -1177,13 +1210,10 @@ void CalibrationRun::WaveformReconstruction()
     }
 
     //Get the histograms and prepare them
-    for(auto &evt: evts_ )
-    {
-         evt->LoadFiles(EVENTSTATE_WFDECOMPOSED);
-    }
-
-
-
+    // for(auto &evt: evts_ )
+    // {
+    //      evt->LoadFiles(EVENTSTATE_WFDECOMPOSED);
+    // }
 
     // Load the histograms & .ini file. If the event
     // did not pass the pd subtraction, throw it away
@@ -1210,13 +1240,17 @@ void CalibrationRun::WaveformReconstruction()
     int nthreads   = GS->GetParameter<int>("General.nthreads");
     bool parallelize = GS->GetParameter<bool>("General.parallelize");
     //
-    #pragma omp parallel for if(parallelize) num_threads(nthreads)
-    for(int i = 0; i < evts_.size(); ++i)
+    // #pragma omp parallel for if(parallelize) num_threads(nthreads)
+    // for(int i = 0; i < evts_.size(); ++i)
+    for( auto evt : evts_)
     {
         // Here the actual waveform decomposition is done, the rest is just
         // getting the info out.
         //auto channels = evt->WaveformDecomposition(gain);
-        evts_.at(i)->WaveformReconstruction(gain);
+        evt->LoadFiles(EVENTSTATE_WFDECOMPOSED);
+        evt->WaveformReconstruction(gain);
+        evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
+        evt->DeleteHistograms();
     }
 
     std::vector<std::vector<TGraph*>> graphs;
@@ -1282,12 +1316,12 @@ void CalibrationRun::WaveformReconstruction()
     rfile->Close("R");
 
 
-
-    for(auto &evt: evts_ )
-    {
-        evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
-        evt->DeleteHistograms();
-    }
+    //
+    // for(auto &evt: evts_ )
+    // {
+    //     evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
+    //     evt->DeleteHistograms();
+    // }
 
     delete gain;
 
@@ -1320,26 +1354,32 @@ void CalibrationRun::MipTimeRetrieval()
     }
 
     //Get the histograms and prepare them
-    for(auto &evt: evts_ )
-    {
-         evt->LoadFiles(EVENTSTATE_WFRECONSTRUCTED);
-    }
-
-    for(auto &evt: evts_ )
-    {
-         evt->PrepareRetrieval();
-    }
+    // for(auto &evt: evts_ )
+    // {
+    //      evt->LoadFiles(EVENTSTATE_WFRECONSTRUCTED);
+    // }
+    //
+    // for(auto &evt: evts_ )
+    // {
+    //      evt->PrepareRetrieval();
+    // }
 
     int nthreads   = GS->GetParameter<int>("General.nthreads");
     bool parallelize = GS->GetParameter<bool>("General.parallelize");
     //
-    #pragma omp parallel for if(parallelize) num_threads(nthreads)
-    for(int i = 0; i < evts_.size(); ++i)
+    // #pragma omp parallel for if(parallelize) num_threads(nthreads)
+    // for(int i = 0; i < evts_.size(); ++i)
+    for( auto evt : evts_)
     {
         // Here the actual waveform decomposition is done, the rest is just
         // getting the info out.
-        //auto channels = evt->WaveformDecomposition(gain);
-        evts_.at(i)->MipTimeRetrieval();
+
+        evt->LoadFiles(EVENTSTATE_WFRECONSTRUCTED);
+        evt->PrepareRetrieval();
+        evt->MipTimeRetrieval();
+
+        evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
+        evt->DeleteHistograms();
     }
 
     std::vector<std::vector<TGraph*>> graphs;
@@ -1421,13 +1461,13 @@ void CalibrationRun::MipTimeRetrieval()
 
     rfile->Close("R");
 
-
-
-    for(auto &evt: evts_ )
-    {
-         evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
-         evt->DeleteHistograms();
-    }
+    //
+    //
+    // for(auto &evt: evts_ )
+    // {
+    //      evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
+    //      evt->DeleteHistograms();
+    // }
 
     std::cout << "\033[32;1mRun::MIP time retrieval:\033[0m done!       " << std::endl;
 };

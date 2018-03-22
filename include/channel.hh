@@ -148,6 +148,7 @@ class PhysicsChannel : public Channel
         virtual ~PhysicsChannel();
 
         virtual void LoadHistogram(TFile* rfile, std::vector<std::string> types = {"wf"});
+        virtual     void        DeleteHistogram();
 
         virtual void PrepareHistogram( double range, double offset = 0.);
         virtual void FillPedestal();
@@ -165,6 +166,7 @@ class PhysicsChannel : public Channel
 
         virtual void PrepareRetrieval();
         virtual void MipTimeRetrieval(double unixtime = -1.);
+
 
         virtual double*                 GetOS();
         virtual TH1*                    GetHistogram(std::string type);

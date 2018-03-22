@@ -257,6 +257,11 @@ void CalibrationChannel::FillPedestal()
 		else 			pdhist_ = new TH1I(title.c_str(), title.c_str(), 255, -127.5, 127.5);
 		pdhist_->SetDirectory(0);
 
+        pdhist_->GetXaxis()->SetTitle("Pedestal [mV]");
+
+        string vperbit = to_string(range/127.);
+        pdhist_->GetYaxis()->SetTitle( ("Entries [1/" + vperbit + " mv]").c_str() );
+
         for(int i = 1; i <= wf_->GetNbinsX(); ++i)
         {
             pdhist_->Fill( wf_->GetBinContent(i) );
@@ -495,7 +500,7 @@ void PhysicsChannel::LoadHistogram(TFile* rfile, vector<string> types)
         if( type == "wf")
         {
             // Get the normal waveform
-            Channel::LoadHistogram( rfile );
+            this->Channel::LoadHistogram( rfile );
         }
 
         else if( type == "reco load" )
@@ -594,6 +599,31 @@ void PhysicsChannel::LoadHistogram(TFile* rfile, vector<string> types)
     //     }
     // }
 };
+
+void PhysicsChannel::DeleteHistogram()
+{
+    this->Channel::DeleteHistogram();
+
+    if(recowf_ != NULL)
+    {
+        delete recowf_;
+        recowf_ = NULL;
+    }
+
+    if( pewf_ != NULL)
+    {
+        delete pewf_;
+        pewf_ = NULL;
+    }
+
+    if( mipwf_ != NULL)
+    {
+        delete mipwf_;
+        mipwf_ = NULL;
+    }
+
+};
+
 
 void PhysicsChannel::PrepareHistogram( double range, double offset)
 {
