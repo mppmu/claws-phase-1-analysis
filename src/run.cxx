@@ -1071,7 +1071,7 @@ void CalibrationRun::SignalTagging()
     {
         evt->LoadFiles(EVENTSTATE_OSCORRECTED);
 
-        if( !evt->GetState() == EVENTSTATE_OSFAILED )
+        if( !(evt->GetState() == EVENTSTATE_OSFAILED) )
         {
             evt->PrepareTagging();
             evt->SignalTagging();
@@ -1185,7 +1185,7 @@ void CalibrationRun::WaveformDecomposition()
          evt->WaveformDecomposition(gain);
 
          evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
-         
+
          evt->DeleteHistograms();
     }
 

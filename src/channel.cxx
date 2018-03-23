@@ -259,7 +259,7 @@ void CalibrationChannel::FillPedestal()
 
         pdhist_->GetXaxis()->SetTitle("Pedestal [mV]");
 
-        string vperbit = to_string(range/127.);
+        string vperbit = to_string( range_/127. );
         pdhist_->GetYaxis()->SetTitle( ("Entries [1/" + vperbit + " mv]").c_str() );
 
         for(int i = 1; i <= wf_->GetNbinsX(); ++i)
@@ -868,7 +868,7 @@ void PhysicsChannel::PrepareTagging()
 void PhysicsChannel::SignalTagging()
 {
     int bins_over_threshold 	= GS->GetParameter<int>("SignalTagging.bins_over_threshold");
-    double threshold 		= GS->GetParameter<double>("SignalTagging.threshold");
+    double threshold 		    = GS->GetParameter<double>("SignalTagging.threshold");
     int signal_length 			= GS->GetParameter<int>("SignalTagging.signal_length");
 
     unsigned i=1;
@@ -879,19 +879,20 @@ void PhysicsChannel::SignalTagging()
 
         if( i <= recowf_->GetNbinsX() - bins_over_threshold)
         {
-            if( bin_content < threshold )
+            if( bin_content >= threshold )
             {
-                  recowf_->SetBinContent(i, 0);
-            }
-            else if( bin_content >= threshold )
-            {
-                bool above_threshold = true;
+                // bool above_threshold = true;
+
+                double binavg = 0;
                 for (int j = 0; j < bins_over_threshold; j++)
                 {
-                    if(recowf_->GetBinContent(i+j) < threshold ) above_threshold = false;
+                    binavg += recowf_->GetBinContent(i+j);
+                    // if( recowf_->GetBinContent(i+j) < threshold ) above_threshold = false;
                 }
 
-                if( above_threshold )
+                binavg /= bins_over_threshold;
+
+                if( binavg >= threshold )
                 {
                     i += signal_length;
                 }
@@ -900,8 +901,13 @@ void PhysicsChannel::SignalTagging()
                     recowf_->SetBinContent(i, 0);
                 }
             }
-        }
 
+            else
+            {
+                recowf_->SetBinContent(i, 0);
+            }
+
+        }
         else
         {
             recowf_->SetBinContent(i, 0);
@@ -909,6 +915,43 @@ void PhysicsChannel::SignalTagging()
 
         i++;
     }
+    // while( i <= recowf_->GetNbinsX() )
+    // {
+    //     double bin_content  = recowf_->GetBinContent(i);
+    //
+    //     if( i <= recowf_->GetNbinsX() - bins_over_threshold)
+    //     {
+    //         if( bin_content < threshold )
+    //         {
+    //               recowf_->SetBinContent(i, 0);
+    //         }
+    //         else if( bin_content >= threshold )
+    //         {
+    //             bool above_threshold = true;
+    //
+    //             for (int j = 0; j < bins_over_threshold; j++)
+    //             {
+    //                 if(recowf_->GetBinContent(i+j) < threshold ) above_threshold = false;
+    //             }
+    //
+    //             if( above_threshold )
+    //             {
+    //                 i += signal_length;
+    //             }
+    //             else
+    //             {
+    //                 recowf_->SetBinContent(i, 0);
+    //             }
+    //         }
+    //     }
+    //
+    //     else
+    //     {
+    //         recowf_->SetBinContent(i, 0);
+    //     }
+    //
+    //     i++;
+    // }
 
 };
 
