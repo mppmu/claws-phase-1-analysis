@@ -129,6 +129,38 @@ class CalibrationRun : public Run
     std::vector<PhysicsEvent*>           evts_;
     std::vector<CalibrationEvent*>       cal_evts_;
 
+};
+
+
+// class AnalysisRun : public Run
+// {
+//     public:
+//         AnalysisRun(boost::filesystem::path p);
+//         virtual ~AnalysisRun();
+//
+//         // void SynchronizeFiles();
+//         // void LoadMetaData();
+//         // void LoadPhysicsData();
+//         //
+//         // void DeleteEvent(int nr = -1);
+//         // void EraseElement(std::vector<AnalysisEvent*>::iterator itr_vec);
+//         // void SetCurrentLimit(std::string ring = "none", double low = -1, double high = 10000);
+//         // void SetInjectionLimit( int type = -1);
+//         //
+//         // std::vector<AnalysisEvent*> GetEvents();
+//         //
+//         //     // void FilterRuns();
+//         //     // void LoadEvents();
+//         //
+//         int NEvents();
+//         //
+//         // std::vector<AnalysisEvent*>   events_;
+//         //
+//         // std::map<std::string, Channel*> channels_;
+// };
+
+
+
 //         int BuildOnlineTree();
 //         int BuildOfflineTree();
 //
@@ -312,33 +344,6 @@ class CalibrationRun : public Run
 //         int post_samples_;
 //         int int_pre_samples_;
 //         int int_post_samples_;
-};
 
-// class AnalysisRun : public Run
-// {
-//     public:
-//         AnalysisRun(boost::filesystem::path p);
-//         virtual ~AnalysisRun();
-//
-//         void SynchronizeFiles();
-//         void LoadMetaData();
-//         void LoadPhysicsData();
-//
-//         void DeleteEvent(int nr = -1);
-//         void EraseElement(std::vector<AnalysisEvent*>::iterator itr_vec);
-//         void SetCurrentLimit(std::string ring = "none", double low = -1, double high = 10000);
-//         void SetInjectionLimit( int type = -1);
-//
-//         std::vector<AnalysisEvent*> GetEvents();
-//
-//             // void FilterRuns();
-//             // void LoadEvents();
-//
-//         int NEvents();
-//
-//         std::vector<AnalysisEvent*>   events_;
-//
-//         std::map<std::string, Channel*> channels_;
-// };
 
 #endif /* CLAWS_RUN_H_ */

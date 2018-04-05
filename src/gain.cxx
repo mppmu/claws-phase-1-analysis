@@ -199,7 +199,7 @@ double* GainChannel::FitGain()
 
     // Just using the first peak
     gain_[12] = gaus->GetParameter(1);
-    
+
     return gain_;
 }
 
@@ -376,11 +376,11 @@ void Gain::LoadChannels(GainState state)
 {
     boost::filesystem::path src = path_/boost::filesystem::path("Calibration");
 
-    if(state_ == GAINSTATE_FITTED)
+    if(state == GAINSTATE_FITTED)
     {
         src = src/boost::filesystem::path("GainDetermination");
     }
-    else if(GAINSTATE_EXTENDED)
+    else if( state == GAINSTATE_EXTENDED)
     {
         src = src/boost::filesystem::path("Average1PE");
     }

@@ -173,10 +173,10 @@ void Run::LoadRunSettings()
 //----------------------------------------------------------------------------------------------
 // Definition of the CalibrationRun class.
 //----------------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------------
+
 CalibrationRun::CalibrationRun(boost::filesystem::path p) : Run(p)
 {
-		cal_nr_     = nr_;
+	cal_nr_     = nr_;
 
     if(!boost::filesystem::is_directory(path_/boost::filesystem::path("Calibration")) )
     {
@@ -683,24 +683,24 @@ void CalibrationRun::PDS_Physics()
         boost::filesystem::create_directory( pds_physics/boost::filesystem::path("Waveforms"));
     }
 
-    // Get the histograms and prepare them
-	for(auto &evt: evts_ )
-	{
-	    evt->LoadFiles();
-        evt->PrepareHistograms(settings_);
-	}
-
-    // Just to be sure...
-    for(auto &evt: evts_ )
-    {
-        evt->SaveEvent(pds_physics/boost::filesystem::path("Waveforms"));
-    }
-
-    // Now do the pedestal subtraction
-    for(auto &evt: evts_ )
-    {
-        evt->FillPedestals();
-    }
+    // // Get the histograms and prepare them
+	// for(auto &evt: evts_ )
+	// {
+	//     evt->LoadFiles();
+    //     evt->PrepareHistograms(settings_);
+	// }
+    //
+    // // Just to be sure...
+    // for(auto &evt: evts_ )
+    // {
+    //     evt->SaveEvent(pds_physics/boost::filesystem::path("Waveforms"));
+    // }
+    //
+    // // Now do the pedestal subtraction
+    // for(auto &evt: evts_ )
+    // {
+    //     evt->FillPedestals();
+    // }
 
     // Use the first event to get a dynamic number and name of channels.
     std::vector<TGraph *> fit_status;
@@ -812,35 +812,49 @@ void CalibrationRun::PDS_Physics()
     int evt_counter = 0;
     for(auto &evt: evts_ )
     {
-      double   evt_time = evt->GetParameter<double>("Properties.UnixTime");
-      auto channels = evt->GetChannels();
-      for(unsigned int i = 0; i <channels.size(); i++)
-      {
-          double * pd = channels.at(i)->GetPedestal();
+        evt->LoadFiles();
+        evt->PrepareHistograms(settings_);
 
-          fit_status.at(i)->SetPoint(evt_counter, evt_time, pd[0]);
-          fit_const.at(i)->SetPoint(evt_counter, evt_time, pd[1]);
+        // Just to be sure...
+        evt->SaveEvent(pds_physics/boost::filesystem::path("Waveforms"));
 
-          fit_mean.at(i)->SetPoint(evt_counter, evt_time, pd[2]);
-          fit_mean.at(i)->SetPointError(evt_counter, 0.05, pd[3]);
+        // Now do the pedestal subtraction
+        evt->FillPedestals();
 
-          fit_chi2.at(i)->SetPoint(evt_counter, evt_time, pd[4]);
+        double   evt_time = evt->GetParameter<double>("Properties.UnixTime");
+        auto channels = evt->GetChannels();
 
-          fit_ndf.at(i)->SetPoint(evt_counter, evt_time, pd[5]);
+        for(unsigned int i = 0; i <channels.size(); i++)
+        {
+            double * pd = channels.at(i)->GetPedestal();
 
+            fit_status.at(i)->SetPoint(evt_counter, evt_time, pd[0]);
+            fit_const.at(i)->SetPoint(evt_counter, evt_time, pd[1]);
 
-          if( pd[5] !=0 ) fit_chi2ndf.at(i)->SetPoint(evt_counter, evt_time, pd[4]/pd[5]);
-          else fit_chi2ndf.at(i)->SetPoint(evt_counter, evt_time, -1.);
+            fit_mean.at(i)->SetPoint(evt_counter, evt_time, pd[2]);
+            fit_mean.at(i)->SetPointError(evt_counter, 0.05, pd[3]);
 
-          fit_pval.at(i)->SetPoint(evt_counter, evt_time,pd[6]);
+            fit_chi2.at(i)->SetPoint(evt_counter, evt_time, pd[4]);
 
-          hist_mean.at(i)->SetPoint(evt_counter, evt_time, pd[7]);
-          hist_mean.at(i)->SetPointError(evt_counter, 0.05, pd[8]);
+            fit_ndf.at(i)->SetPoint(evt_counter, evt_time, pd[5]);
 
-          hist_entries.at(i)->SetPoint(evt_counter, evt_time, pd[9]);
-      }
+            if( pd[5] !=0 ) fit_chi2ndf.at(i)->SetPoint(evt_counter, evt_time, pd[4]/pd[5]);
+            else fit_chi2ndf.at(i)->SetPoint(evt_counter, evt_time, -1.);
 
-      evt_counter ++;
+            fit_pval.at(i)->SetPoint(evt_counter, evt_time,pd[6]);
+
+            hist_mean.at(i)->SetPoint(evt_counter, evt_time, pd[7]);
+            hist_mean.at(i)->SetPointError(evt_counter, 0.05, pd[8]);
+
+            hist_entries.at(i)->SetPoint(evt_counter, evt_time, pd[9]);
+        }
+
+        evt->SubtractPedestals();
+
+        evt->SaveEvent(pds_physics/boost::filesystem::path("Waveforms"));
+        evt->DeleteHistograms();
+
+        evt_counter ++;
     }
 
     std::string fname = pds_physics.string() + "/run_"+std::to_string(nr_)+"_pedestal"+"_"+ GS->GetParameter<std::string>("General.CalibrationVersion")+".root";
@@ -848,38 +862,39 @@ void CalibrationRun::PDS_Physics()
 
     for(int i = 0; i < fit_status.size(); i++)
     {
-      fit_status.at(i)->Write();
-      delete fit_status.at(i);
-      fit_const.at(i)->Write();
-      delete fit_const.at(i);
-      fit_mean.at(i)->Write();
-      delete fit_mean.at(i);
-      fit_chi2.at(i)->Write();
-      delete fit_chi2.at(i);
-      fit_ndf.at(i)->Write();
-      delete fit_ndf.at(i);
-      fit_chi2ndf.at(i)->Write();
-      delete fit_chi2ndf.at(i);
-      fit_pval.at(i)->Write();
-      delete fit_pval.at(i);
-      hist_mean.at(i)->Write();
-      delete hist_mean.at(i);
-      hist_entries.at(i)->Write();
-      delete hist_entries.at(i);
+
+        fit_status.at(i)->Write();
+        delete fit_status.at(i);
+        fit_const.at(i)->Write();
+        delete fit_const.at(i);
+        fit_mean.at(i)->Write();
+        delete fit_mean.at(i);
+        fit_chi2.at(i)->Write();
+        delete fit_chi2.at(i);
+        fit_ndf.at(i)->Write();
+        delete fit_ndf.at(i);
+        fit_chi2ndf.at(i)->Write();
+        delete fit_chi2ndf.at(i);
+        fit_pval.at(i)->Write();
+        delete fit_pval.at(i);
+        hist_mean.at(i)->Write();
+        delete hist_mean.at(i);
+        hist_entries.at(i)->Write();
+        delete hist_entries.at(i);
     }
 
     rfile->Close("R");
 
-    for(auto &evt: evts_ )
-    {
-        evt->SubtractPedestals();
-    }
-
-    for(auto &evt: evts_ )
-    {
-        evt->SaveEvent(pds_physics/boost::filesystem::path("Waveforms"));
-        evt->DeleteHistograms();
-    }
+    // for(auto &evt: evts_ )
+    // {
+    //     evt->SubtractPedestals();
+    // }
+    //
+    // for(auto &evt: evts_ )
+    // {
+    //     evt->SaveEvent(pds_physics/boost::filesystem::path("Waveforms"));
+    //     evt->DeleteHistograms();
+    // }
 
     std::cout << "\033[32;1mRun::Subtracting physics pedestal:\033[0m done!       " << std::endl;
 };
@@ -908,23 +923,23 @@ void CalibrationRun::OverShootCorrection()
 
     // Load the histograms & .ini file. If the event
     // did not pass the pd subtraction, throw it away
-    auto evt_itr = evts_.begin();
-
-    while( evt_itr != evts_.end() )
-    {
-        (*evt_itr)->LoadFiles(EVENTSTATE_PDSUBTRACTED);
-
-        if( (*evt_itr)->GetState() == EVENTSTATE_PDFAILED )
-        {
-                delete (*evt_itr);
-                (*evt_itr) = NULL;
-                evts_.erase(evt_itr);
-        }
-        else
-        {
-                evt_itr++;
-        }
-    }
+    // auto evt_itr = evts_.begin();
+    //
+    // while( evt_itr != evts_.end() )
+    // {
+    //     (*evt_itr)->LoadFiles(EVENTSTATE_PDSUBTRACTED);
+    //
+    //     if( (*evt_itr)->GetState() == EVENTSTATE_PDFAILED )
+    //     {
+    //             delete (*evt_itr);
+    //             (*evt_itr) = NULL;
+    //             evts_.erase(evt_itr);
+    //     }
+    //     else
+    //     {
+    //             evt_itr++;
+    //     }
+    // }
 
     std::vector<std::vector<TGraph*>> graphs;
     std::string names[12] = {"_lstart", "_lstop", "_lresult", "_start", "_stop", "_result", "_par0", "_par1", "_par2", "_chi2", "_ndf", +"_pval"};
@@ -952,30 +967,41 @@ void CalibrationRun::OverShootCorrection()
 
     for(auto &evt: evts_ )
     {
-        // Here the actual overshoot correction is done, the rest is just
-        // getting the info out.
-        auto channels = evt->OverShootCorrection();
+        // Load the histograms & .ini file. If the event
+        // did not pass the pd subtraction, just skip it!
+        evt->LoadFiles(EVENTSTATE_PDSUBTRACTED);
 
-        double   evt_time = evt->GetParameter<double>("Properties.UnixTime");
-        for(unsigned int i = 0; i <channels.size(); i++)
+        if( evt->GetState() ==  EVENTSTATE_PDSUBTRACTED )
         {
-            for(int j = 0; j < channels.at(i).size(); ++j)
+            // Here the actual overshoot correction is done, the rest is just
+            // getting the info out.
+            auto channels = evt->OverShootCorrection();
+
+            double   evt_time = evt->GetParameter<double>("Properties.UnixTime");
+            for(unsigned int i = 0; i <channels.size(); i++)
             {
-                OverShootResult result =  channels[i][j];
-                graphs[i][0]->SetPoint(graphs[i][0]->GetN(), evt_time, result.lstart );
-                graphs[i][1]->SetPoint(graphs[i][1]->GetN(), evt_time, result.lstop );
-                graphs[i][2]->SetPoint(graphs[i][2]->GetN(), evt_time, result.lresult );
-                graphs[i][3]->SetPoint(graphs[i][3]->GetN(), evt_time, result.start );
-                graphs[i][4]->SetPoint(graphs[i][4]->GetN(), evt_time, result.stop );
-                graphs[i][5]->SetPoint(graphs[i][5]->GetN(), evt_time, result.result );
-                graphs[i][6]->SetPoint(graphs[i][6]->GetN(), evt_time, result.par0 );
-                graphs[i][7]->SetPoint(graphs[i][7]->GetN(), evt_time, result.par1 );
-                graphs[i][8]->SetPoint(graphs[i][8]->GetN(), evt_time, result.par2 );
-                graphs[i][9]->SetPoint(graphs[i][9]->GetN(), evt_time, result.chi2 );
-                graphs[i][10]->SetPoint(graphs[i][10]->GetN(), evt_time, result.ndf );
-                graphs[i][11]->SetPoint(graphs[i][11]->GetN(), evt_time, result.pval );
+                for(int j = 0; j < channels.at(i).size(); ++j)
+                {
+                    OverShootResult result =  channels[i][j];
+                    graphs[i][0]->SetPoint(graphs[i][0]->GetN(), evt_time, result.lstart );
+                    graphs[i][1]->SetPoint(graphs[i][1]->GetN(), evt_time, result.lstop );
+                    graphs[i][2]->SetPoint(graphs[i][2]->GetN(), evt_time, result.lresult );
+                    graphs[i][3]->SetPoint(graphs[i][3]->GetN(), evt_time, result.start );
+                    graphs[i][4]->SetPoint(graphs[i][4]->GetN(), evt_time, result.stop );
+                    graphs[i][5]->SetPoint(graphs[i][5]->GetN(), evt_time, result.result );
+                    graphs[i][6]->SetPoint(graphs[i][6]->GetN(), evt_time, result.par0 );
+                    graphs[i][7]->SetPoint(graphs[i][7]->GetN(), evt_time, result.par1 );
+                    graphs[i][8]->SetPoint(graphs[i][8]->GetN(), evt_time, result.par2 );
+                    graphs[i][9]->SetPoint(graphs[i][9]->GetN(), evt_time, result.chi2 );
+                    graphs[i][10]->SetPoint(graphs[i][10]->GetN(), evt_time, result.ndf );
+                    graphs[i][11]->SetPoint(graphs[i][11]->GetN(), evt_time, result.pval );
+                }
             }
         }
+
+        evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
+
+        evt->DeleteHistograms();
     }
 
 
@@ -994,11 +1020,11 @@ void CalibrationRun::OverShootCorrection()
 
     rfile->Close("R");
 
-    for(auto &evt: evts_ )
-    {
-        evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
-        evt->DeleteHistograms();
-    }
+    // for(auto &evt: evts_ )
+    // {
+    //     evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
+    //     evt->DeleteHistograms();
+    // }
 
     std::cout << "\033[32;1mRun::Correcting for Amp OverShoot:\033[0m done!       " << std::endl;
 };
@@ -1017,6 +1043,29 @@ void CalibrationRun::SignalTagging()
     {
          boost::filesystem::create_directory( outfolder/boost::filesystem::path("Waveforms"));
     }
+
+    Gain* gain = new Gain(path_, GAINSTATE_EXTENDED);
+
+    for(auto evt : evts_)
+    {
+        evt->LoadFiles(EVENTSTATE_OSCORRECTED);
+
+        if( evt->GetState() == EVENTSTATE_OSCORRECTED )
+        {
+            evt->PrepareTagging();
+            evt->SignalTagging();
+            evt->FastRate( gain );
+
+        }
+
+        evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
+
+        evt->DeleteHistograms();
+    }
+
+    delete gain;
+
+    std::cout << "\033[32;1mRun::Signal tagging:\033[0m done!       " << std::endl;
 
     //Get the histograms and prepare them
     // auto evt_itr = evts_.begin();
@@ -1065,26 +1114,6 @@ void CalibrationRun::SignalTagging()
     //      evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
     //      evt->DeleteHistograms();
     // }
-    Gain* gain = new Gain(path_, GAINSTATE_EXTENDED);
-
-    for(auto evt : evts_)
-    {
-        evt->LoadFiles(EVENTSTATE_OSCORRECTED);
-
-        if( !(evt->GetState() == EVENTSTATE_OSFAILED) )
-        {
-            evt->PrepareTagging();
-            evt->SignalTagging();
-            evt->FastRate( gain );
-            evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
-        }
-
-        evt->DeleteHistograms();
-    }
-
-    delete gain;
-
-    std::cout << "\033[32;1mRun::Signal tagging:\033[0m done!       " << std::endl;
 };
 
 
@@ -1102,6 +1131,28 @@ void CalibrationRun::WaveformDecomposition()
     {
          boost::filesystem::create_directory( outfolder/boost::filesystem::path("Waveforms"));
     }
+
+    Gain* gain = new Gain(path_, GAINSTATE_EXTENDED);
+
+    for(auto &evt: evts_ )
+    {
+        evt->LoadFiles(EVENTSTATE_TAGGED);
+
+        if( evt->GetState() == EVENTSTATE_TAGGED )
+        {
+            evt->PrepareDecomposition();
+
+            evt->WaveformDecomposition(gain);
+        }
+
+        evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
+
+        evt->DeleteHistograms();
+    }
+
+    delete gain;
+
+    std::cout << "\033[32;1mRun::Waveform decomposition:\033[0m done!       " << std::endl;
 
     //Get the histograms and prepare them
 	// for(auto &evt: evts_ )
@@ -1173,25 +1224,6 @@ void CalibrationRun::WaveformDecomposition()
     //     evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
     //     evt->DeleteHistograms();
     // }
-
-    Gain* gain = new Gain(path_, GAINSTATE_EXTENDED);
-
-    for(auto &evt: evts_ )
-    {
-         evt->LoadFiles(EVENTSTATE_TAGGED);
-
-         evt->PrepareDecomposition();
-
-         evt->WaveformDecomposition(gain);
-
-         evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
-
-         evt->DeleteHistograms();
-    }
-
-    delete gain;
-
-    std::cout << "\033[32;1mRun::Waveform decomposition:\033[0m done!       " << std::endl;
 };
 
 void CalibrationRun::WaveformReconstruction()
@@ -1248,7 +1280,12 @@ void CalibrationRun::WaveformReconstruction()
         // getting the info out.
         //auto channels = evt->WaveformDecomposition(gain);
         evt->LoadFiles(EVENTSTATE_WFDECOMPOSED);
-        evt->WaveformReconstruction(gain);
+
+        if( evt->GetState() == EVENTSTATE_WFDECOMPOSED )
+        {
+            evt->WaveformReconstruction(gain);
+        }
+
         evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
         evt->DeleteHistograms();
     }
@@ -1325,7 +1362,6 @@ void CalibrationRun::WaveformReconstruction()
 
     delete gain;
 
-
     std::cout << "\033[32;1mRun::Waveform reconstruction:\033[0m done!       " << std::endl;
 };
 
@@ -1375,8 +1411,12 @@ void CalibrationRun::MipTimeRetrieval()
         // getting the info out.
 
         evt->LoadFiles(EVENTSTATE_WFRECONSTRUCTED);
-        evt->PrepareRetrieval();
-        evt->MipTimeRetrieval();
+
+        if( evt->GetState() == EVENTSTATE_WFRECONSTRUCTED )
+        {
+            evt->PrepareRetrieval();
+            evt->MipTimeRetrieval();
+        }
 
         evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
         evt->DeleteHistograms();
@@ -1483,10 +1523,10 @@ void CalibrationRun::SystematicsStudy()
     }
 
     //Get the histograms and prepare them
-    for(auto &evt: evts_ )
-    {
-         evt->LoadFiles(EVENTSTATE_CALIBRATED);
-    }
+    // for(auto &evt: evts_ )
+    // {
+    //      evt->LoadFiles(EVENTSTATE_CALIBRATED);
+    // }
 
     std::vector<TH1F*> hists;
     std::string names[3] = { "_online_rate", "_fast_rate", "_rate"};
@@ -1520,6 +1560,9 @@ void CalibrationRun::SystematicsStudy()
 
     for(auto & evt: evts_)
     {
+        evt->LoadFiles(EVENTSTATE_CALIBRATED);
+
+
         for(int i = 0; i < evt->GetChannels().size(); ++i)
         {
             TH1I* pewf = dynamic_cast<TH1I*>(evt->GetChannels().at(i)->GetHistogram("pe"));
@@ -1588,7 +1631,11 @@ void CalibrationRun::SystematicsStudy()
                 cout << "Event number: " << evt->GetNumber() << ", t1: " << t1 << "t2: " << t2 << ", diff: " << (t1-t2)/(1e-9) << endl;
             }
         }
+
         else hists.back()->Fill(-625*dt);
+
+
+        evt->DeleteHistograms();
     }
 
     // Now fit the pe hists with a langaus
@@ -1653,13 +1700,323 @@ void CalibrationRun::SystematicsStudy()
     rfile->Close("R");
 
 
-    for(auto &evt: evts_ )
-    {
-         evt->DeleteHistograms();
-    }
+    // for(auto &evt: evts_ )
+    // {
+    //      evt->DeleteHistograms();
+    // }
 
     std::cout << "\033[32;1mRun::Systematics study:\033[0m done!       " << std::endl;
 };
+
+//----------------------------------------------------------------------------------------------
+// Definition of the AnalysisRun class.
+//----------------------------------------------------------------------------------------------
+
+// AnalysisRun::AnalysisRun(boost::filesystem::path p) : Run(p)
+// {
+//      // std::ofstream hendrik_file("/home/iwsatlas1/mgabriel/Plots/forHendyDany.txt", ios::app);
+//      // hendrik_file << run_nr_str_;
+//      // hendrik_file.close();
+// //    claws::print_local_time();
+// };
+//
+// AnalysisRun::~AnalysisRun()
+// {
+//      for(unsigned int i=0; i< events_.size(); i++)
+//      {
+//              delete events_.at(i);
+//              events_.at(i) = NULL;
+//      }
+// };
+//
+// void AnalysisRun::SynchronizeFiles()
+// {
+//      /*
+//         This method uses the path to the run folder to determine the number of events.
+//         Afterwards it checks if all the files for all the events do exist. Finally it
+//         creates one EventClass object for each physics and each intermedieate event with
+//         the paths to all the files as a parameter => SynchronizeFiles().
+//       */
+//
+//      // cout << "-------------------------------------------------------"<< endl;
+//      cout << "\033[33;1mRun::Synchronizing run:\033[0m running" << "\r" << std::flush;
+//
+//      // Check if the converted root, data & intermediate folders are available.
+//      if( !boost::filesystem::is_directory(path_run_) )
+//      {
+//              cout << "Run folder does not exits: " <<  path_run_.string()<< std::endl;
+//              exit(-1);
+//      }
+//
+//      if( !boost::filesystem::is_directory(path_run_/path("Results")) )
+//      {
+//              cout << "Results folder does not exits:" << path_run_/path("Results").string()<< endl;
+//              exit(-1);
+//      }
+//
+//      if( boost::filesystem::is_empty(path_run_/path("Results")) )
+//      {
+//              cout << "Results folder is empty:" << path_run_/path("Results").string()<< endl;
+//              exit(-1);
+//      }
+//
+//      path path_data = path_run_ / path("Results");
+//
+//      vector<path> folder_content;
+//      copy(directory_iterator(path_data), directory_iterator(), back_inserter(folder_content));
+//      std::sort(folder_content.begin(),folder_content.end());
+//
+// //    #pragma omp parallel num_threads(7)
+// //    {
+// //       #pragma omp for ordered schedule(dynamic,1)
+//      for ( unsigned int i=0; i < folder_content.size(); ++i)
+//      {
+//              //     //claws::ProgressBar((itr - folder_content.begin()+1.)/(folder_content.end()-folder_content.begin()));
+//              if(    boost::filesystem::is_regular_file(folder_content.at(i))
+//                     && starts_with(folder_content.at(i).filename().string(), "event_")
+//                     && ends_with(folder_content.at(i).filename().string(), "_mip.root"))
+//              {
+//                      // Get the paths to the .root file of the event.
+//                      path path_file_root = folder_content.at(i);
+//                      // cout << "Loading file: " << path_file_root.string() << endl;
+//                      // Get the path to the .ini file.
+//                      string tmp          = folder_content.at(i).filename().string();
+//                      replace_last( tmp, "_mip.root", ".ini");
+//                      path path_file_ini  = path_data / path(tmp);
+//
+//                      // Check if the .ini & exist for the event.
+//                      if( boost::filesystem::exists( path_file_ini) )
+//                      {
+//                              events_.push_back(new AnalysisEvent(path_file_root, path_file_ini));
+//                      }
+//                      else{
+//                              //TODO put in some mechanism in case the ini or the online rate files do not exist.
+//                      }
+//              }
+//      }
+//
+//      cout << "\033[32;1mRun::Synchronizing run:\033[0m done!   " << "\r" << std::endl;
+//
+// };
+//
+// void AnalysisRun::LoadMetaData()
+// {
+// //	#pragma omp parrallel for num_threads(7)
+//      for(unsigned int i=0; i< events_.size(); i++)
+//      {
+//              events_.at(i)->LoadIniFile();
+//              double ts = events_.at(i)->GetUnixtime();
+//              //#pragma omp critical
+//              {
+//                      if(tsMin > ts ) tsMin = ts;
+//                      if(tsMax < ts ) tsMax = ts;
+//              }
+//      }
+//
+//      this->LoadRunSettings();
+//      if(settings_.get<int>("Scope-1-Acquisition-Settings.preTriggerSamples") != 0 || settings_.get<int>("Scope-2-Acquisition-Settings.preTriggerSamples") != 0 )
+//      {
+//              std::cout << "Warning preTriggerSamples!!!" << std::endl;
+//              assert(1);
+//      }
+// };
+//
+// void AnalysisRun::DeleteEvent(int nr)
+// {
+//      auto itr_vec = std::begin(events_);
+//
+//      while(itr_vec != std::end(events_))
+//      {
+//              if( (*itr_vec)->GetNr() == nr)
+//              {
+//                      delete (*itr_vec);
+//                      (*itr_vec) = NULL;
+//                      events_.erase(itr_vec);
+//              }
+//              else
+//              {
+//                      itr_vec++;
+//              }
+//      }
+// };
+//
+// void AnalysisRun::EraseElement(std::vector<AnalysisEvent*>::iterator itr_vec)
+// {
+//      delete (*itr_vec);
+//      (*itr_vec) = NULL;
+//      events_.erase(itr_vec);
+// };
+//
+// void AnalysisRun::SetCurrentLimit(std::string ring, double low, double high)
+// {
+//      auto itr_vec = std::begin(events_);
+//
+//      while(itr_vec != std::end(events_))
+//      {
+//              auto current = (*itr_vec)->GetCurrent();
+//
+//              if( ring == "LER" )
+//              {
+//                      if(    std::get<0>(current) < low
+//                             || std::get<0>(current) > high )
+//                      {
+//                              delete (*itr_vec);
+//                              (*itr_vec) = NULL;
+//                              events_.erase(itr_vec);
+//                      }
+//                      else
+//                      {
+//                              itr_vec++;
+//                      }
+//              }
+//              else if( ring == "HER" )
+//              {
+//                      if(    std::get<1>(current) < low
+//                             || std::get<1>(current) > high )
+//                      {
+//                              delete (*itr_vec);
+//                              (*itr_vec) = NULL;
+//                              events_.erase(itr_vec);
+//                      }
+//                      else
+//                      {
+//                              itr_vec++;
+//                      }
+//              }
+//      }
+// };
+//
+// void AnalysisRun::SetInjectionLimit(int type)
+// {
+//      if(type == -1 )
+//      {
+//              return;
+//      }
+//
+//      auto itr_vec = events_.begin();
+//
+//      while(itr_vec != events_.end())
+//      {
+//              auto injection = (*itr_vec)->GetInjection();
+//
+//              if(type == 0)
+//              {
+//                      if(    std::get<0>(injection) == true
+//                             || std::get<2>(injection) == true )
+//                      {
+//                              delete (*itr_vec);
+//                              (*itr_vec) = NULL;
+//                              events_.erase(itr_vec);
+//                      }
+//                      else
+//                      {
+//                              itr_vec++;
+//                      }
+//              }
+//              else if(type == 1)
+//              {
+//                      if(    std::get<0>(injection) == false
+//                             && std::get<2>(injection) == false )
+//                      {
+//                              delete (*itr_vec);
+//                              (*itr_vec) = NULL;
+//                              events_.erase(itr_vec);
+//                      }
+//                      else
+//                      {
+//                              itr_vec++;
+//                      }
+//              }
+//              else if(type == 2)
+//              {
+//                      if(    std::get<0>(injection) == false
+//                             || std::get<2>(injection) == true )
+//                      {
+//                              delete (*itr_vec);
+//                              (*itr_vec) = NULL;
+//                              events_.erase(itr_vec);
+//                      }
+//                      else
+//                      {
+//                              itr_vec++;
+//                      }
+//              }
+//              else if(type == 3)
+//              {
+//                      if(    std::get<0>(injection) == true
+//                             || std::get<2>(injection) == false )
+//                      {
+//                              delete (*itr_vec);
+//                              (*itr_vec) = NULL;
+//                              events_.erase(itr_vec);
+//                      }
+//                      else
+//                      {
+//                              itr_vec++;
+//                      }
+//              }
+//              else if(type == 3)
+//              {
+//                      if(    std::get<0>(injection) == false
+//                             || std::get<2>(injection) == false )
+//                      {
+//                              delete (*itr_vec);
+//                              (*itr_vec) = NULL;
+//                              events_.erase(itr_vec);
+//                      }
+//                      else
+//                      {
+//                              itr_vec++;
+//                      }
+//              }
+//              else
+//              {
+//                      itr_vec++;
+//              }
+//      }
+//
+// };
+//
+// void AnalysisRun::LoadPhysicsData()
+// {
+//      // Method to load all the information that is located in the data_root folder with
+//      // following steps:
+//      //      1. Look into the data_root folder and create a PhysicalEvent object for
+//      //         each event.root file & check if file for online particle rate and
+//      //         do exist
+//      //      2. Loop through all objects in events_ and load the raw data from the
+//      //         corresponding root file
+//      //      3. Loop through all objects in events_ and load the oneline monitor
+//      //         pacout << "Loading Raw Data:  " << run_nr_ << endl;
+//      // Look into the data folder of the run and get a list/vector of all the events inside
+//
+//      for(unsigned int i=0; i< events_.size(); i++)
+//      {
+//              events_.at(i)->LoadRootFile();
+//      }
+//
+//      for(unsigned int i=0; i< events_.size(); i++)
+//      {
+//              events_.at(i)->LoadWaveform();
+//              events_.at(i)->DeleteHistograms();
+//      }
+//
+// };
+//
+// std::vector<AnalysisEvent*> AnalysisRun::GetEvents()
+// {
+//      return events_;
+// }
+//
+// int AnalysisRun::NEvents()
+// {
+//      return events_.size();
+// };
+
+
+
+
+
 // void CalibrationRun::LoadData()
 // {
 //      double wall0 = claws::get_wall_time();
@@ -2957,307 +3314,3 @@ void CalibrationRun::SystematicsStudy()
 // };
 //
 //
-// //----------------------------------------------------------------------------------------------
-// // Definition of the AnalysisRun class.
-// //----------------------------------------------------------------------------------------------
-//
-// AnalysisRun::AnalysisRun(boost::filesystem::path p) : Run(p)
-// {
-//      // std::ofstream hendrik_file("/home/iwsatlas1/mgabriel/Plots/forHendyDany.txt", ios::app);
-//      // hendrik_file << run_nr_str_;
-//      // hendrik_file.close();
-// //    claws::print_local_time();
-// };
-//
-// AnalysisRun::~AnalysisRun()
-// {
-//      for(unsigned int i=0; i< events_.size(); i++)
-//      {
-//              delete events_.at(i);
-//              events_.at(i) = NULL;
-//      }
-// };
-//
-// void AnalysisRun::SynchronizeFiles()
-// {
-//      /*
-//         This method uses the path to the run folder to determine the number of events.
-//         Afterwards it checks if all the files for all the events do exist. Finally it
-//         creates one EventClass object for each physics and each intermedieate event with
-//         the paths to all the files as a parameter => SynchronizeFiles().
-//       */
-//
-//      // cout << "-------------------------------------------------------"<< endl;
-//      cout << "\033[33;1mRun::Synchronizing run:\033[0m running" << "\r" << std::flush;
-//
-//      // Check if the converted root, data & intermediate folders are available.
-//      if( !boost::filesystem::is_directory(path_run_) )
-//      {
-//              cout << "Run folder does not exits: " <<  path_run_.string()<< std::endl;
-//              exit(-1);
-//      }
-//
-//      if( !boost::filesystem::is_directory(path_run_/path("Results")) )
-//      {
-//              cout << "Results folder does not exits:" << path_run_/path("Results").string()<< endl;
-//              exit(-1);
-//      }
-//
-//      if( boost::filesystem::is_empty(path_run_/path("Results")) )
-//      {
-//              cout << "Results folder is empty:" << path_run_/path("Results").string()<< endl;
-//              exit(-1);
-//      }
-//
-//      path path_data = path_run_ / path("Results");
-//
-//      vector<path> folder_content;
-//      copy(directory_iterator(path_data), directory_iterator(), back_inserter(folder_content));
-//      std::sort(folder_content.begin(),folder_content.end());
-//
-// //    #pragma omp parallel num_threads(7)
-// //    {
-// //       #pragma omp for ordered schedule(dynamic,1)
-//      for ( unsigned int i=0; i < folder_content.size(); ++i)
-//      {
-//              //     //claws::ProgressBar((itr - folder_content.begin()+1.)/(folder_content.end()-folder_content.begin()));
-//              if(    boost::filesystem::is_regular_file(folder_content.at(i))
-//                     && starts_with(folder_content.at(i).filename().string(), "event_")
-//                     && ends_with(folder_content.at(i).filename().string(), "_mip.root"))
-//              {
-//                      // Get the paths to the .root file of the event.
-//                      path path_file_root = folder_content.at(i);
-//                      // cout << "Loading file: " << path_file_root.string() << endl;
-//                      // Get the path to the .ini file.
-//                      string tmp          = folder_content.at(i).filename().string();
-//                      replace_last( tmp, "_mip.root", ".ini");
-//                      path path_file_ini  = path_data / path(tmp);
-//
-//                      // Check if the .ini & exist for the event.
-//                      if( boost::filesystem::exists( path_file_ini) )
-//                      {
-//                              events_.push_back(new AnalysisEvent(path_file_root, path_file_ini));
-//                      }
-//                      else{
-//                              //TODO put in some mechanism in case the ini or the online rate files do not exist.
-//                      }
-//              }
-//      }
-//
-//      cout << "\033[32;1mRun::Synchronizing run:\033[0m done!   " << "\r" << std::endl;
-//
-// };
-//
-// void AnalysisRun::LoadMetaData()
-// {
-// //	#pragma omp parrallel for num_threads(7)
-//      for(unsigned int i=0; i< events_.size(); i++)
-//      {
-//              events_.at(i)->LoadIniFile();
-//              double ts = events_.at(i)->GetUnixtime();
-//              //#pragma omp critical
-//              {
-//                      if(tsMin > ts ) tsMin = ts;
-//                      if(tsMax < ts ) tsMax = ts;
-//              }
-//      }
-//
-//      this->LoadRunSettings();
-//      if(settings_.get<int>("Scope-1-Acquisition-Settings.preTriggerSamples") != 0 || settings_.get<int>("Scope-2-Acquisition-Settings.preTriggerSamples") != 0 )
-//      {
-//              std::cout << "Warning preTriggerSamples!!!" << std::endl;
-//              assert(1);
-//      }
-// };
-//
-// void AnalysisRun::DeleteEvent(int nr)
-// {
-//      auto itr_vec = std::begin(events_);
-//
-//      while(itr_vec != std::end(events_))
-//      {
-//              if( (*itr_vec)->GetNr() == nr)
-//              {
-//                      delete (*itr_vec);
-//                      (*itr_vec) = NULL;
-//                      events_.erase(itr_vec);
-//              }
-//              else
-//              {
-//                      itr_vec++;
-//              }
-//      }
-// };
-//
-// void AnalysisRun::EraseElement(std::vector<AnalysisEvent*>::iterator itr_vec)
-// {
-//      delete (*itr_vec);
-//      (*itr_vec) = NULL;
-//      events_.erase(itr_vec);
-// };
-//
-// void AnalysisRun::SetCurrentLimit(std::string ring, double low, double high)
-// {
-//      auto itr_vec = std::begin(events_);
-//
-//      while(itr_vec != std::end(events_))
-//      {
-//              auto current = (*itr_vec)->GetCurrent();
-//
-//              if( ring == "LER" )
-//              {
-//                      if(    std::get<0>(current) < low
-//                             || std::get<0>(current) > high )
-//                      {
-//                              delete (*itr_vec);
-//                              (*itr_vec) = NULL;
-//                              events_.erase(itr_vec);
-//                      }
-//                      else
-//                      {
-//                              itr_vec++;
-//                      }
-//              }
-//              else if( ring == "HER" )
-//              {
-//                      if(    std::get<1>(current) < low
-//                             || std::get<1>(current) > high )
-//                      {
-//                              delete (*itr_vec);
-//                              (*itr_vec) = NULL;
-//                              events_.erase(itr_vec);
-//                      }
-//                      else
-//                      {
-//                              itr_vec++;
-//                      }
-//              }
-//      }
-// };
-//
-// void AnalysisRun::SetInjectionLimit(int type)
-// {
-//      if(type == -1 )
-//      {
-//              return;
-//      }
-//
-//      auto itr_vec = events_.begin();
-//
-//      while(itr_vec != events_.end())
-//      {
-//              auto injection = (*itr_vec)->GetInjection();
-//
-//              if(type == 0)
-//              {
-//                      if(    std::get<0>(injection) == true
-//                             || std::get<2>(injection) == true )
-//                      {
-//                              delete (*itr_vec);
-//                              (*itr_vec) = NULL;
-//                              events_.erase(itr_vec);
-//                      }
-//                      else
-//                      {
-//                              itr_vec++;
-//                      }
-//              }
-//              else if(type == 1)
-//              {
-//                      if(    std::get<0>(injection) == false
-//                             && std::get<2>(injection) == false )
-//                      {
-//                              delete (*itr_vec);
-//                              (*itr_vec) = NULL;
-//                              events_.erase(itr_vec);
-//                      }
-//                      else
-//                      {
-//                              itr_vec++;
-//                      }
-//              }
-//              else if(type == 2)
-//              {
-//                      if(    std::get<0>(injection) == false
-//                             || std::get<2>(injection) == true )
-//                      {
-//                              delete (*itr_vec);
-//                              (*itr_vec) = NULL;
-//                              events_.erase(itr_vec);
-//                      }
-//                      else
-//                      {
-//                              itr_vec++;
-//                      }
-//              }
-//              else if(type == 3)
-//              {
-//                      if(    std::get<0>(injection) == true
-//                             || std::get<2>(injection) == false )
-//                      {
-//                              delete (*itr_vec);
-//                              (*itr_vec) = NULL;
-//                              events_.erase(itr_vec);
-//                      }
-//                      else
-//                      {
-//                              itr_vec++;
-//                      }
-//              }
-//              else if(type == 3)
-//              {
-//                      if(    std::get<0>(injection) == false
-//                             || std::get<2>(injection) == false )
-//                      {
-//                              delete (*itr_vec);
-//                              (*itr_vec) = NULL;
-//                              events_.erase(itr_vec);
-//                      }
-//                      else
-//                      {
-//                              itr_vec++;
-//                      }
-//              }
-//              else
-//              {
-//                      itr_vec++;
-//              }
-//      }
-//
-// };
-//
-// void AnalysisRun::LoadPhysicsData()
-// {
-//      // Method to load all the information that is located in the data_root folder with
-//      // following steps:
-//      //      1. Look into the data_root folder and create a PhysicalEvent object for
-//      //         each event.root file & check if file for online particle rate and
-//      //         do exist
-//      //      2. Loop through all objects in events_ and load the raw data from the
-//      //         corresponding root file
-//      //      3. Loop through all objects in events_ and load the oneline monitor
-//      //         pacout << "Loading Raw Data:  " << run_nr_ << endl;
-//      // Look into the data folder of the run and get a list/vector of all the events inside
-//
-//      for(unsigned int i=0; i< events_.size(); i++)
-//      {
-//              events_.at(i)->LoadRootFile();
-//      }
-//
-//      for(unsigned int i=0; i< events_.size(); i++)
-//      {
-//              events_.at(i)->LoadWaveform();
-//              events_.at(i)->DeleteHistograms();
-//      }
-//
-// };
-//
-// std::vector<AnalysisEvent*> AnalysisRun::GetEvents()
-// {
-//      return events_;
-// }
-//
-// int AnalysisRun::NEvents()
-// {
-//      return events_.size();
-// };
