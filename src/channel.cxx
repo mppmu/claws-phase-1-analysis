@@ -116,7 +116,12 @@ void Channel::PrepareHistogram( double range )
 		{
 			double content = wf_->GetBinContent(i)/127 * range;
 			wf_->SetBinContent(i, content);
-			wf_->SetBinError(i, range_error + bin_error );
+
+            // Assumption: the range error is a systematic deviation
+            //             an anyway clibrated out in the pd subtraction
+			//wf_->SetBinError(i, range_error + bin_error );
+
+            wf_->SetBinError(i, bin_error );
 		}
 
 		range_ = range;
@@ -322,12 +327,12 @@ void CalibrationChannel::FillPedestal()
 		{
 		    double bin_contend  = wf_->GetBinContent(i);
 
-				if( i <= wf_->GetNbinsX() - bins_over_threshold)
-				{
-				    if( bin_contend < threshold)
-					  {
-					      pdhist_->Fill( bin_contend );
-					  }
+			if( i <= wf_->GetNbinsX() - bins_over_threshold)
+			{
+			    if( bin_contend < threshold)
+			    {
+				    pdhist_->Fill( bin_contend );
+				}
 						else
 						{
 								bool above_threshold = true;
@@ -870,8 +875,9 @@ void PhysicsChannel::SignalTagging()
     int bins_over_threshold 	= GS->GetParameter<int>("SignalTagging.bins_over_threshold");
     double threshold 		    = GS->GetParameter<double>("SignalTagging.threshold");
     int signal_length 			= GS->GetParameter<int>("SignalTagging.signal_length");
+    int pre_threshold 			= GS->GetParameter<int>("SignalTagging.pre_threshold");
 
-    unsigned i=1;
+    unsigned i=1 + pre_threshold;
 
     while( i <= recowf_->GetNbinsX() )
     {
@@ -894,23 +900,23 @@ void PhysicsChannel::SignalTagging()
 
                 if( binavg >= threshold )
                 {
-                    i += signal_length;
+                    i += signal_length + pre_threshold;
                 }
                 else
                 {
-                    recowf_->SetBinContent(i, 0);
+                    recowf_->SetBinContent(i - pre_threshold, 0);
                 }
             }
 
             else
             {
-                recowf_->SetBinContent(i, 0);
+                recowf_->SetBinContent(i - pre_threshold, 0);
             }
 
         }
         else
         {
-            recowf_->SetBinContent(i, 0);
+            recowf_->SetBinContent(i - pre_threshold, 0);
         }
 
         i++;
@@ -1029,9 +1035,10 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
         * \todo find out why the hell I need to shift the avg by -1
         */
 
-        for( unsigned int i = 2 ; i <= avg_nbins; ++i)
+        //for( unsigned int i = 0 ; i <= avg_nbins-1; ++i)
+        for( unsigned int i = 1 ; i <= avg_nbins; ++i)
         {
-            //double avg_bincont = avg->GetBinContent( i - 1 );
+            //double avg_bincont = avg->GetBinContent( i + 1 );
             double avg_bincont = avg->GetBinContent( i );
             double bincont     = recowf_->GetBinContent( i + maxbin - avg_maxbin );
 
@@ -1042,8 +1049,8 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
         //pewf_->AddBinContent(maxbin);
         pewf_->Fill( recowf_->GetBinCenter(maxbin));
 
-        // // // Because it is very time consuming to search the full waveform with each iteration
-        // // // look only in the vincity of the last maximum first.
+        // Because it is very time consuming to search the full waveform with each iteration
+        // look only in the vincity of the last maximum first.
         if( recowf_->GetBinContent(maxbin) > threshold*2 )
         {
             double tmp_max = 0;

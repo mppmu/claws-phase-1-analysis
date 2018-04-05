@@ -18,6 +18,9 @@
 #include "globalsettings.hh"
 // --- C++ includes ---
 #include <math.h>
+
+using namespace std;
+
 //----------------------------------------------------------------------------------------------
 // Definition of the GainChannel class
 //----------------------------------------------------------------------------------------------
@@ -183,16 +186,20 @@ double* GainChannel::FitGain()
     gain_[11]   = 2;
 //    gain_[12]   = d_gaus->GetParameter(4) - d_gaus->GetParameter(1);
 
-    if( int(result) == 0 && (result->Chi2()/result->Ndf() <= GS->GetParameter<double>("Gain.chi2_bound") ) )
-	{
-        gain_[12]   = d_gaus->GetParameter(4) - d_gaus->GetParameter(1);
-    }
-    else
-    {
-        std::cout << "\033[1;31mFit failing in Gain::FitGain() for ch "<< name_ << ": \033[0m fit DOUBLE GAUS due to status: " << int(result) << "\r" << std::endl;
-    	gain_[12] = gaus->GetParameter(1);
-    }
+    // Using the difference in the two peaks
+    // if( int(result) == 0 && (result->Chi2()/result->Ndf() <= GS->GetParameter<double>("Gain.chi2_bound") ) )
+	// {
+    //     gain_[12]   = d_gaus->GetParameter(4) - d_gaus->GetParameter(1);
+    // }
+    // else
+    // {
+    //     std::cout << "\033[1;31mFit failing in Gain::FitGain() for ch "<< name_ << ": \033[0m fit DOUBLE GAUS due to status: " << int(result) << "\r" << std::endl;
+    // 	gain_[12] = gaus->GetParameter(1);
+    // }
 
+    // Just using the first peak
+    gain_[12] = gaus->GetParameter(1);
+    
     return gain_;
 }
 
@@ -268,7 +275,18 @@ double* GainChannel::FitAvg()
 
 void GainChannel::Normalize()
 {
-    if(n_ != 0 ) avg_->Scale(double(1)/n_);
+    if(n_ != 0 )
+    {
+        avg_->Scale( 1./n_);
+
+        double range = claws::RangeToVoltage(claws::PS6000_50MV);
+        double bin_error = range/127.;
+
+        for( int i = 1; i <= avg_->GetNbinsX(); ++i)
+        {
+            avg_->SetBinError(i, bin_error/sqrt(n_) );
+        }
+    }
 }
 
 // Setter and getter methods

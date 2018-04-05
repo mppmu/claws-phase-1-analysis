@@ -262,7 +262,7 @@ void CalibrationRun::SynchronizePhysicsEvents()
 				                     // string ratefile = "Rate-Run--" + to_string( atoi(tmp.substr(2,4).c_str())) + to_string( atoi(tmp.substr(6,10).c_str())-1 );
 				   boost::filesystem::path onrate_file = path_ / boost::filesystem::path(tmp);
 
-					 evts_.emplace_back( new PhysicsEvent(file, ini_file, onrate_file) );
+				   evts_.emplace_back( new PhysicsEvent(file, ini_file, onrate_file) );
 
 			}
 		}
@@ -1508,20 +1508,51 @@ void CalibrationRun::SystematicsStudy()
 
     double dt = GS->GetParameter<double>("Scope.delta_t");
 
-    double xlow  = -dt*(nbinsx/2 + 0.5);
-    double xup   = dt*(nbinsx/2 + 0.5);
+    double xlow  = -dt * (nbinsx/2 + 0.5);
+    double xup   =  dt * (nbinsx/2 + 0.5);
 
     hists.push_back( new TH1F(title.c_str(), title.c_str(), nbinsx, xlow, xup) );
+
+    double threshold_mpv     = GS->GetParameter<double>("SystematicsStudy.threshold_mpv");
+    double window_length_mpv = GS->GetParameter<double>("SystematicsStudy.window_length_mpv");
+    double start_mpv         = GS->GetParameter<double>("SystematicsStudy.start_mpv");
+    double threshold_tres    = GS->GetParameter<double>("SystematicsStudy.threshold_tres");
 
     for(auto & evt: evts_)
     {
         for(int i = 0; i < evt->GetChannels().size(); ++i)
         {
             TH1I* pewf = dynamic_cast<TH1I*>(evt->GetChannels().at(i)->GetHistogram("pe"));
-            hists.at(i)->Fill( pewf->Integral() );
-        }
 
-        double threshold = GS->GetParameter<double>("SystematicsStudy.threshold_time");
+            double integral = 0;
+
+            for(int j = start_mpv; j <= window_length_mpv + start_mpv; ++j)
+            {
+                if( pewf->GetBinContent(j) >= threshold_mpv )
+                {
+                    // for(int k = j; k <= j + window_length_mpv; ++k )
+                    // {
+                        integral += pewf->GetBinContent(j);
+                    // }
+                    //
+                    // j+= window_length_mpv;
+                }
+            }
+            // for(int j = 1; j <= pewf->GetNbinsX() - window_length_mpv; ++j)
+            // {
+            //     if( pewf->GetBinContent(j) >= threshold_mpv )
+            //     {
+            //         for(int k = j; k <= j + window_length_mpv; ++k )
+            //         {
+            //             integral += pewf->GetBinContent(k);
+            //         }
+            //
+            //         j+= window_length_mpv;
+            //     }
+            // }
+
+            hists.at(i)->Fill( integral );
+        }
 
         TH1F* mipwf_fwd2 = dynamic_cast<TH1F*>(evt->GetChannels().at(1)->GetHistogram("mip"));
 
@@ -1529,7 +1560,7 @@ void CalibrationRun::SystematicsStudy()
 
         for( int i = 1; i <= mipwf_fwd2->GetNbinsX(); ++i)
         {
-            if( mipwf_fwd2->GetBinContent(i) > threshold )
+            if( mipwf_fwd2->GetBinContent(i) >= threshold_tres )
             {
                 t1 = mipwf_fwd2->GetBinCenter(i);
                 break;
@@ -1542,14 +1573,21 @@ void CalibrationRun::SystematicsStudy()
 
         for( int i = 1; i <= mipwf_fwd3->GetNbinsX(); ++i)
         {
-            if( mipwf_fwd3->GetBinContent(i) > threshold )
+            if( mipwf_fwd3->GetBinContent(i) >= threshold_tres )
             {
                 t2 = mipwf_fwd3->GetBinCenter(i);
                 break;
             }
         }
 
-        if( t1 >= 0 && t2 >= 0) hists.back()->Fill(t1-t2);
+        if( t1 >= 0 && t2 >= 0)
+        {
+            hists.back()->Fill(t1-t2);
+            if( fabs(t1-t2) > 2e-9)
+            {
+                cout << "Event number: " << evt->GetNumber() << ", t1: " << t1 << "t2: " << t2 << ", diff: " << (t1-t2)/(1e-9) << endl;
+            }
+        }
         else hists.back()->Fill(-625*dt);
     }
 

@@ -27,7 +27,7 @@
 
 
 using namespace std;
-// using namespace boost;
+using namespace boost;
 
 //----------------------------------------------------------------------------------------------
 // Definition of the Event base class.
@@ -349,7 +349,31 @@ PhysicsEvent::PhysicsEvent(boost::filesystem::path file, boost::filesystem::path
 	// fill_n(rate_, 3, -1);
 
 	// nr_str_ = file_root.filename().string().substr(6,9);
-	nr_     = atoi(file.filename().string().substr(6,9).c_str());
+	// Get the path to the file from the online monitor
+
+	string tmp = file.filename().string();
+  	boost::replace_first(tmp, "Event-","");
+  	boost::replace_last(tmp, ".root", "");
+
+	/** Now the string only contains a number. The first 6 digits
+	* 	digits are the runnumber. Since for the muon runs 4 digit
+	*   and maybe even more event numbers are used, just take the
+	*   last 15 to be sure
+	*/
+	//nr_     = atoi( tmp.substr(6,15).c_str());
+	nr_     = stol( tmp );
+	// if(file.filename().string().size() == 20 )
+	// {
+	// 	nr_     = atoi(file.filename().string().substr(6,9).c_str());
+	// }
+	// else if(file.filename().string().size() == 21)
+	// {
+	// 	nr_     = atoi(file.filename().string().substr(6,10).c_str());
+	// }
+	// else
+	// {
+	// 	assert(0);
+	// }
 
 	for (auto &name : GS->GetChannels("Physics"))
  	{
@@ -468,7 +492,12 @@ void PhysicsEvent::LoadFiles(EventState state)
 	free(realname);
 
 	std::stringstream ss;
-	ss << std::setw(3) << std::setfill('0') << nr_;
+
+	int ndigits = GS->GetParameter<int>("General.event_ndigits");
+
+	ss << std::setw(ndigits) << std::setfill('0') << nr_;
+
+//	ss << std::setw(3) << std::setfill('0') << nr_;
 	fname += "_" + ss.str();
 	fname += "_" + printEventState(state);
 	fname += ".root";
@@ -873,7 +902,11 @@ void PhysicsEvent::SaveEvent(boost::filesystem::path dst)
 		free(realname);
 
 		std::stringstream ss;
-		ss << std::setw(3) << std::setfill('0') << nr_;
+
+		int ndigits = GS->GetParameter<int>("General.event_ndigits");
+
+		ss << std::setw(ndigits) << std::setfill('0') << nr_;
+
 		fname += "_" + ss.str();
 		fname += "_" + printEventState(state_);
 		fname += ".root";
@@ -980,17 +1013,6 @@ vector<vector<double>> PhysicsEvent::GetRates()
 // 		//TODO load the rest that is written in the .ini file.
 // };
 
-
-//
-// // void Event::SubtractPedestal()
-// // {
-// //     /* See "void Channel::Subtract()" for more information
-// //     */
-// //     for(auto &ch : channels_)
-// //     {
-// //         ch.second->Subtract();
-// //     }
-// // };
 //
 // void Event::SubtractPedestal(std::map<std::string, float> ped, bool backup)
 // {
@@ -1075,75 +1097,8 @@ vector<vector<double>> PhysicsEvent::GetRates()
 // 				itr.second->SetBaseline( baseline[itr.first] );
 // 		}
 // };
-//
-//
-// int Event::GetNr()     const
-// {
-// 		return nr_;
-// }
-//
-// std::string Event::GetNrStr()     const
-// {
-// 		return nr_str_;
-// }
-//
-// int Event::getCh(string ch){
-//
-// 		return 0;
-// }
-//
-// // void Event::Draw(){
-// //
-// //     cout << "Drawing PhysicsEvent: "<< nr_ << endl;
-// //
-// //     TCanvas * c = new TCanvas(to_string(nr_).c_str(),to_string(nr_).c_str(), 1600, 1200);
-// //     c->Divide(2, channels_.size()/2);
-// //     unsigned int pad=0;
-// //
-// //     for(auto i : channels_)
-// //     {
-// //         pad+=+2;
-// //         if(pad > channels_.size()) pad =1;
-// //         c->cd(pad);
-// //         i.second->GetWaveformHist()->Draw();
-// //     }
-// //
-// //     string ped_can_name = to_string(nr_) + " Pedestal";
-// //     TCanvas * c_ped = new TCanvas(ped_can_name.c_str(), ped_can_name.c_str(), 1600, 1200);
-// //     c_ped->Divide(2, channels_.size()/2);
-// //     pad=0;
-// //     for(auto i : channels_)
-// //     {
-// //         pad+=+2;
-// //         if(pad > channels_.size() ) pad =1;
-// //         c_ped->cd(pad);
-// //         i.second->GetPedestal()->Draw();
-// //     }
-// //
-// //
-// // }
-//
-// std::map<std::string, TH1I*> Event::GetPedestal()
-// {
-// 		/*
-// 		    TODO description
-// 		 */
-// 		std::map<std::string, TH1I*> rtn;
-// 		for(auto & itr : channels_)
-// 		{
-// 				rtn[itr.first]  =  itr.second->GetPedestal();
-// 		}
-//
-// 		return rtn;
-// };
-//
-// Channel* Event::GetChannel(std::string name)
-// {
-// 		return channels_[name];
-// }
-//
 
-//
+
 // void Event::CalculateIntegral()
 // {
 // 		for(auto & itr : channels_)
@@ -1198,38 +1153,6 @@ vector<vector<double>> PhysicsEvent::GetRates()
 // };
 //
 
-
-
-//
-// // void PhysicsEvent::LoadRootFile()
-// // {
-// //
-// //     // TFile and TTree classes are not thread save, therefore, you have to look them.
-// //     #pragma omp critical
-// //     {
-// //         file = new TFile(path_file_root_.string().c_str(), "open");
-// //
-// //         if(file->IsZombie())
-// //         {
-// //             cout << "Error openning file" << endl;
-// //             exit(-1);
-// //         }
-// //     }
-// //
-// //     for (auto &itr : channels_)
-// //
-// //     #pragma omp critical
-// //     {
-// //         file->Close("R");
-// //     }
-// //
-// //     delete file;
-// //     file = NULL;
-// //     // cout << "Listing gDirectory in PhysicsEvent::LoadRootFile() after closing the file!" << endl;
-// //     // gDirectory->ls();
-// // }
-//
-//
 
 //
 // void PhysicsEvent::LoadOnlineRate(){
@@ -1588,7 +1511,11 @@ vector<vector<double>> PhysicsEvent::GetRates()
 // };
 //
 // void AnalysisEvent::LoadIniFile()
+// {//
+// Rate& AnalysisEvent::GetRates()
 // {
+// 		return rates;
+// }
 // 		property_tree::ini_parser::read_ini(path_file_ini_.string(), pt_);
 // 		unixtime_       = pt_.get<double>("Properties.UnixTime");
 //

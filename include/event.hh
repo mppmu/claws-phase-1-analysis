@@ -191,7 +191,7 @@ class Event{
         };
 
     protected:
-       int nr_;
+       long nr_;
        EventState state_;
     //   EventType type_;
        double unixtime_        = -1;
