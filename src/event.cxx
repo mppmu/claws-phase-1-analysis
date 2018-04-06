@@ -215,7 +215,7 @@ double Event::GetTime()
 		return unixtime_;
 }
 
-int Event::GetNumber()
+long Event::GetNumber()
 {
 		return nr_;
 }
@@ -234,10 +234,13 @@ EventState Event::GetState()
 // Definition of the CalibrationEvent class derived from Event.
 //----------------------------------------------------------------------------------------------
 
-CalibrationEvent::CalibrationEvent(boost::filesystem::path file, boost::filesystem::path ini_file, double unixtime ) : Event(file, ini_file)
+CalibrationEvent::CalibrationEvent(boost::filesystem::path file, boost::filesystem::path ini_file, double unixtime ) : Event(file, ini_file), runnr_(-1)
 {
-		nr_ = std::atoi(file.filename().string().substr(14,3).c_str());
+		nr_       = std::atoi(file.filename().string().substr(14,3).c_str());
+		runnr_ 	  = std::atoi(file.filename().string().substr(4,6).c_str());
+
         unixtime_ = unixtime;
+
 		pt_.put("Properties.UnixTime", unixtime);
 		pt_.put("General.UnixTime", unixtime);
 
@@ -290,7 +293,7 @@ void CalibrationEvent::LoadSubtracted()
 	free(realname);
 
 	std::stringstream ss;
-	ss << std::setw(3) << std::setfill('0') << nr_;
+	ss << runnr_ << "-cal" << std::setw(3) << std::setfill('0') << nr_;
 	fname += "_" + ss.str();
 	fname += "_" + printEventState(EVENTSTATE_PDSUBTRACTED);
 	fname += ".root";
@@ -320,6 +323,46 @@ void CalibrationEvent::LoadSubtracted()
 
 }
 
+void CalibrationEvent::SaveEvent(boost::filesystem::path dst, bool save_pd)
+{
+		/**
+		*  \todo Kill the path parameter and make it state dependet!
+		*/
+
+		std::string fname = dst.string() + "/";
+
+    	int     status;
+		char   *realname;
+		const std::type_info  &ti = typeid(*this);
+		realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
+		fname += std::string(realname);
+		free(realname);
+
+		std::stringstream ss;
+
+		ss << runnr_ << "-cal"<< std::setw(3) << std::setfill('0') << nr_;
+
+		fname += "_" + ss.str();
+		fname += "_" + printEventState(state_);
+		fname += ".root";
+
+		TFile *rfile = new TFile(fname.c_str(), "RECREATE");
+
+		for(auto channel : channels_)
+		{
+			channel->GetHistogram()->Write();
+			if(save_pd) channel->GetHistogram("pedestal")->Write();
+		}
+
+		rfile->Close("R");
+		delete rfile;
+
+		boost::replace_last(fname, "root", "ini");
+		boost::property_tree::write_ini(fname.c_str(), pt_);
+
+		// boost::filesystem::path dest = folder/path_file_ini_.filename();
+		// boost::filesystem::copy_file(path_file_ini_, dest, copy_option::overwrite_if_exists );
+};
 
 void CalibrationEvent::PrepareHistograms()
 {
@@ -500,7 +543,7 @@ void PhysicsEvent::LoadFiles(EventState state)
 //	ss << std::setw(3) << std::setfill('0') << nr_;
 	fname += "_" + ss.str();
 	fname += "_" + printEventState(state);
-	fname += ".root";
+	fname += ".ini";
 
 
 	switch (state)
@@ -540,78 +583,211 @@ void PhysicsEvent::LoadFiles(EventState state)
 
 		case EVENTSTATE_PDSUBTRACTED:
 		{
-			//If the PD failded the file will be saved with a pd_failed in its name
 			if( boost::filesystem::exists(fname) )
 			{
+				boost::property_tree::ini_parser::read_ini(fname, pt_);
+
+				boost::replace_last(fname, "ini","root");
+
 			 	this->LoadHistograms(boost::filesystem::path(fname));
+
+				state_ = static_cast<EventState>( pt_.get<int>("General.State") );
 			}
 			else
 			{
-				boost::replace_last(fname, printEventState(EVENTSTATE_PDSUBTRACTED),printEventState(EVENTSTATE_PDFAILED));
-				if( boost::filesystem::exists(fname) )
-				{
-					this->LoadHistograms(boost::filesystem::path(fname));
-				}
+				state_ = EVENTSTATE_FAILED;
 			}
+			// If the PD failded the file will be saved with a pd_failed in its name
+			// boost::property_tree::ini_parser::read_ini(fname, pt_);
+			//
+			// if( static_cast<EventState>( pt_.get<int>("General.State") ) == EVENTSTATE_PDSUBTRACTED)
+			// {
+			// 	boost::replace_last(fname, "ini","root");
+			// 	this->LoadHistograms(boost::filesystem::path(fname));
+			// }
 
-			boost::replace_last(fname, "root","ini");
-			boost::property_tree::ini_parser::read_ini(fname, pt_);
+			// if( boost::filesystem::exists(fname) )
+			// {
+			//  	this->LoadHistograms(boost::filesystem::path(fname));
+			// }
+			// else
+			// {
+			// 	boost::replace_last(fname, printEventState(EVENTSTATE_PDSUBTRACTED),printEventState(EVENTSTATE_PDFAILED));
+			// 	if( boost::filesystem::exists(fname) )
+			// 	{
+			// 		this->LoadHistograms(boost::filesystem::path(fname));
+			// 	}
+			// }
+
+			// boost::replace_last(fname, "root","ini");
 
 			break;
 		}
 
 		case EVENTSTATE_OSCORRECTED:
 		{
-			this->LoadHistograms(boost::filesystem::path(fname));
+			if( boost::filesystem::exists(fname) )
+			{
+				boost::property_tree::ini_parser::read_ini(fname, pt_);
 
-			boost::replace_last(fname, "root","ini");
-			boost::property_tree::ini_parser::read_ini(fname, pt_);
+				boost::replace_last(fname, "ini","root");
+
+				this->LoadHistograms(boost::filesystem::path(fname));
+
+				state_ = static_cast<EventState>( pt_.get<int>("General.State") );
+			}
+			else
+			{
+				state_ = EVENTSTATE_FAILED;
+			}
+			// this->LoadHistograms(boost::filesystem::path(fname));
+			//
+			// boost::replace_last(fname, "root","ini");
+			//boost::property_tree::ini_parser::read_ini(fname, pt_);
+
+			// boost::property_tree::ini_parser::read_ini(fname, pt_);
+			//
+			// if( static_cast<EventState>( pt_.get<int>("General.State") ) == EVENTSTATE_OSCORRECTED)
+			// {
+			// 	boost::replace_last(fname, "ini","root");
+			// 	this->LoadHistograms(boost::filesystem::path(fname));
+			// }
 
 			break;
 		}
 
 		case EVENTSTATE_TAGGED:
 		{
-			this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"wf", "reco load"}));
+			if( boost::filesystem::exists(fname) )
+			{
+				boost::property_tree::ini_parser::read_ini(fname, pt_);
 
-			boost::replace_last(fname, "root","ini");
-			boost::property_tree::ini_parser::read_ini(fname, pt_);
+				boost::replace_last(fname, "ini","root");
+
+				this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"wf", "reco load"}));
+
+				state_ = static_cast<EventState>( pt_.get<int>("General.State") );
+			}
+			else
+			{
+				state_ = EVENTSTATE_FAILED;
+			}
+
+			// this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"wf", "reco load"}));
+			//
+			// boost::replace_last(fname, "root","ini");
+			// boost::property_tree::ini_parser::read_ini(fname, pt_);
+
+			// boost::property_tree::ini_parser::read_ini(fname, pt_);
+			//
+			// if( static_cast<EventState>( pt_.get<int>("General.State") ) == EVENTSTATE_TAGGED)
+			// {
+			// 	boost::replace_last(fname, "ini","root");
+			// 	this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"wf", "reco load"}));
+			// }
 
 			break;
 		}
 
 		case EVENTSTATE_WFDECOMPOSED:
 		{
-			this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"wf", "reco recreate", "pe"}));
+			if( boost::filesystem::exists(fname) )
+			{
+				boost::property_tree::ini_parser::read_ini(fname, pt_);
 
-			boost::replace_last(fname, "root","ini");
-			boost::property_tree::ini_parser::read_ini(fname, pt_);
+				boost::replace_last(fname, "ini","root");
+
+				this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"wf", "reco recreate", "pe"}));
+
+				state_ = static_cast<EventState>( pt_.get<int>("General.State") );
+			}
+			else
+			{
+				state_ = EVENTSTATE_FAILED;
+			}
+			// this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"wf", "reco recreate", "pe"}));
+			//
+			// boost::replace_last(fname, "root","ini");
+			// boost::property_tree::ini_parser::read_ini(fname, pt_);
+
+			// boost::property_tree::ini_parser::read_ini(fname, pt_);
+			//
+			// if( static_cast<EventState>( pt_.get<int>("General.State") ) == EVENTSTATE_WFDECOMPOSED)
+			// {
+			// 	boost::replace_last(fname, "ini","root");
+			// 	this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"wf", "reco recreate", "pe"}));
+			// }
 
 			break;
 		}
 
 		case EVENTSTATE_WFRECONSTRUCTED:
 		{
-			this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"pe"}) );
+			if( boost::filesystem::exists(fname) )
+			{
+				boost::property_tree::ini_parser::read_ini(fname, pt_);
 
-			boost::replace_last(fname, "root","ini");
-			boost::property_tree::ini_parser::read_ini(fname, pt_);
+				boost::replace_last(fname, "ini","root");
+
+				this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"pe"}) );
+
+				state_ = static_cast<EventState>( pt_.get<int>("General.State") );
+			}
+			else
+			{
+				state_ = EVENTSTATE_FAILED;
+			}
+
+			// this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"pe"}) );
+			//
+			// boost::replace_last(fname, "root","ini");
+			// boost::property_tree::ini_parser::read_ini(fname, pt_);
+
+			// boost::property_tree::ini_parser::read_ini(fname, pt_);
+			//
+			// if( static_cast<EventState>( pt_.get<int>("General.State") ) == EVENTSTATE_WFRECONSTRUCTED)
+			// {
+			// 	boost::replace_last(fname, "ini","root");
+			// 	this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"pe"}) );
+			// }
 
 			break;
 		}
 
 		case EVENTSTATE_CALIBRATED:
 		{
-			this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"pe", "mip"}) );
+			if( boost::filesystem::exists(fname) )
+			{
+				boost::property_tree::ini_parser::read_ini(fname, pt_);
 
-			boost::replace_last(fname, "root","ini");
-			boost::property_tree::ini_parser::read_ini(fname, pt_);
+				boost::replace_last(fname, "ini","root");
+
+				this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"pe", "mip"}) );
+
+				state_ = static_cast<EventState>( pt_.get<int>("General.State") );
+			}
+			else
+			{
+				state_ = EVENTSTATE_FAILED;
+			}
+			// this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"pe", "mip"}) );
+			//
+			// boost::replace_last(fname, "root","ini");
+			// boost::property_tree::ini_parser::read_ini(fname, pt_);
+
+			// boost::property_tree::ini_parser::read_ini(fname, pt_);
+			//
+			// if( static_cast<EventState>( pt_.get<int>("General.State") ) == EVENTSTATE_CALIBRATED)
+			// {
+			// 	boost::replace_last(fname, "ini","root");
+			// 	this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"pe", "mip"}) );
+			// }
 
 			break;
 		}
 	}
 
-    state_ = static_cast<EventState>( pt_.get<int>("General.State") );
+    //state_ = static_cast<EventState>( pt_.get<int>("General.State") );
 };
 
 void PhysicsEvent::LoadHistograms(boost::filesystem::path file, std::vector<std::string> types)

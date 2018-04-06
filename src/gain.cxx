@@ -110,11 +110,11 @@ double* GainChannel::FitGain()
     gaus->SetParameter(1, hist_->GetBinCenter( hist_->GetMaximumBin()));
     gaus->SetParameter(2, GS->GetParameter<double>("Gain.sigma"));
 
-    TFitResultPtr result = hist_->Fit(gaus,"QS","",0 , hist_->GetBinCenter( hist_->GetMaximumBin())*1.5 );
+    TFitResultPtr result = hist_->Fit(gaus,"LQS","", hist_->GetBinCenter( hist_->GetMaximumBin())*0.75, hist_->GetBinCenter( hist_->GetMaximumBin())*1.25 );
 
     if( int(result) != 0)
     {
-        result = hist_->Fit(gaus,"QS","", hist_->GetBinCenter( hist_->GetMaximumBin())*0.75 , hist_->GetBinCenter( hist_->GetMaximumBin())*1.25 );
+        result = hist_->Fit(gaus,"LQS","", hist_->GetBinCenter( hist_->GetMaximumBin())*0.75 , hist_->GetBinCenter( hist_->GetMaximumBin())*1.25 );
     }
 
     gain_[0]    = int(result);
@@ -130,6 +130,7 @@ double* GainChannel::FitGain()
 
    assert( int(result) == 0 );
 
+   // double gaus fit
    if(result->Ndf() != 0 ) assert( result->Chi2()/result->Ndf() < GS->GetParameter<double>("Gain.chi2_bound") );
    else                    assert( result->Chi2()/0.001         < GS->GetParameter<double>("Gain.chi2_bound") );
     // if( int(result) != 0)
@@ -139,52 +140,65 @@ double* GainChannel::FitGain()
     // 				ivec->gain =  ivec->gain_hist->GetMaximumBin();
     // }
 
-    //TF1* d_gaus=new TF1( (name_ + "_d_gaus").c_str(),"gaus(0)+gaus(3)",0,3*gaus->GetParameter(1) );
-    TF1* d_gaus=new TF1( (name_ + "_d_gaus").c_str(),gainfunc, 0, 3*gaus->GetParameter(1), 5);
+//     //TF1* d_gaus=new TF1( (name_ + "_d_gaus").c_str(),"gaus(0)+gaus(3)",0,3*gaus->GetParameter(1) );
+//     TF1* d_gaus=new TF1( (name_ + "_d_gaus").c_str(),gainfunc, 0, 3*gaus->GetParameter(1), 5);
+//
+// 	double mean_bias = GS->GetParameter<double>("Gain.mean_bias");
+//
+//     // A lot of magic number shit to get the double fit working;
+// 	d_gaus->SetParameter(0,gaus->GetParameter(0));
+//     d_gaus->SetParLimits(0,gaus->GetParameter(0)*0.75, gaus->GetParameter(0)*1.25);
+//
+// 	d_gaus->SetParameter(1,gaus->GetParameter(1));
+//     d_gaus->SetParLimits(1,gaus->GetParameter(1)*0.5, gaus->GetParameter(1)*1.5);
+//     //d_gaus->SetParLimits(1,gaus->GetParameter(1)*0.9, gaus->GetParameter(1)*1.1);
+//
+// 	d_gaus->SetParameter(2,gaus->GetParameter(2));
+// 	d_gaus->SetParLimits(2,gaus->GetParameter(2)*0.5, gaus->GetParameter(2)*1.5);
+//
+// 	d_gaus->SetParameter(3,gaus->GetParameter(0)*0.1);
+//
+// 	d_gaus->SetParameter(4,(gaus->GetParameter(1)-mean_bias)*2 + mean_bias);
+//     //d_gaus->SetParLimits(4,(gaus->GetParameter(1)- mean_bias)*1.5 + mean_bias, (gaus->GetParameter(1)-mean_bias)*2.25+mean_bias);
+//     d_gaus->SetParLimits(4,gaus->GetParameter(1), gaus->GetParameter(1)*3);
+//     //d_gaus->SetParLimits(1,gaus->GetParameter(1), gaus->GetParameter(1)*3);
+// //	d_gaus->SetParameter(5,gaus->GetParameter(2));
+//
+// //    d_gaus->FixParameter(5,gaus->GetParameter(2)*1.414);
+//
+//
+//
+//
+//
+//
+// 	//d_gaus->SetParLimits(5,gaus->GetParameter(2)*0.25, gaus->GetParameter(2)*2.5);
+//
+//     //result = hist_->Fit(d_gaus,"SLQ","",(gaus->GetParameter(1)-3*gaus->GetParameter(2)),((gaus->GetParameter(1)-mean_bias)*2+3*gaus->GetParameter(2)+mean_bias));
+//
+//     result = hist_->Fit(d_gaus,"SLQ","",(gaus->GetParameter(1)-10*gaus->GetParameter(2)),gaus->GetParameter(1)*2+10*gaus->GetParameter(2));
+    // gain_[0]    = int(result);
+    // for(int i = 1; i<7; i++ ) gain_[i]    = d_gaus->GetParameter( i-1 );
+    //
+    // gain_[7]    = d_gaus->GetChisquare();
+    // gain_[8]    = d_gaus->GetNDF();
+    // gain_[9]    = result->Prob();
 
-	double mean_bias = GS->GetParameter<double>("Gain.mean_bias");
+    // instead do two gaussians
+    double mean_bias = GS->GetParameter<double>("Gain.mean_bias");
 
-    // A lot of magic number shit to get the double fit working;
-	d_gaus->SetParameter(0,gaus->GetParameter(0));
-    d_gaus->SetParLimits(0,gaus->GetParameter(0)*0.75, gaus->GetParameter(0)*1.25);
+    TF1* gaus2=new TF1( (name_ + "_gaus2").c_str(),"gaus", 2*GS->GetParameter<double>("Gain.xlow"), 2*GS->GetParameter<double>("Gain.xup"));
+    gaus2->SetParameter(0, gaus->GetParameter(0)*0.1);
+    gaus2->SetParameter(1, gaus->GetParameter(1)*2 );
+    gaus2->SetParameter(2, gaus->GetParameter(2)*1.414);
 
-	d_gaus->SetParameter(1,gaus->GetParameter(1));
-    d_gaus->SetParLimits(1,gaus->GetParameter(1)*0.5, gaus->GetParameter(1)*1.5);
-    //d_gaus->SetParLimits(1,gaus->GetParameter(1)*0.9, gaus->GetParameter(1)*1.1);
+    TFitResultPtr result2 = hist_->Fit(gaus2,"LQS+","", gaus->GetParameter(1)*1.75 , gaus->GetParameter(1)*2.25 );
 
-	d_gaus->SetParameter(2,gaus->GetParameter(2));
-	d_gaus->SetParLimits(2,gaus->GetParameter(2)*0.5, gaus->GetParameter(2)*1.5);
+    gain_[4]    = gaus2->GetParameter(0);
+    gain_[5]    = gaus2->GetParameter(1);
+    gain_[6]    = gaus2->GetParameter(2);
 
-	d_gaus->SetParameter(3,gaus->GetParameter(0)*0.1);
-
-	d_gaus->SetParameter(4,(gaus->GetParameter(1)-mean_bias)*2 + mean_bias);
-    //d_gaus->SetParLimits(4,(gaus->GetParameter(1)- mean_bias)*1.5 + mean_bias, (gaus->GetParameter(1)-mean_bias)*2.25+mean_bias);
-    d_gaus->SetParLimits(4,gaus->GetParameter(1), gaus->GetParameter(1)*3);
-    //d_gaus->SetParLimits(1,gaus->GetParameter(1), gaus->GetParameter(1)*3);
-//	d_gaus->SetParameter(5,gaus->GetParameter(2));
-
-//    d_gaus->FixParameter(5,gaus->GetParameter(2)*1.414);
-
-
-
-
-
-
-	//d_gaus->SetParLimits(5,gaus->GetParameter(2)*0.25, gaus->GetParameter(2)*2.5);
-
-    //result = hist_->Fit(d_gaus,"SLQ","",(gaus->GetParameter(1)-3*gaus->GetParameter(2)),((gaus->GetParameter(1)-mean_bias)*2+3*gaus->GetParameter(2)+mean_bias));
-
-    result = hist_->Fit(d_gaus,"SLQ","",(gaus->GetParameter(1)-10*gaus->GetParameter(2)),gaus->GetParameter(1)*2+10*gaus->GetParameter(2));
-
-    gain_[0]    = int(result);
-    for(int i = 1; i<7; i++ ) gain_[i]    = d_gaus->GetParameter( i-1 );
-
-    gain_[7]    = d_gaus->GetChisquare();
-    gain_[8]    = d_gaus->GetNDF();
-    gain_[9]    = result->Prob();
 
     gain_[11]   = 2;
-//    gain_[12]   = d_gaus->GetParameter(4) - d_gaus->GetParameter(1);
 
     // Using the difference in the two peaks
     // if( int(result) == 0 && (result->Chi2()/result->Ndf() <= GS->GetParameter<double>("Gain.chi2_bound") ) )

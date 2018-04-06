@@ -997,9 +997,9 @@ void CalibrationRun::OverShootCorrection()
                     graphs[i][11]->SetPoint(graphs[i][11]->GetN(), evt_time, result.pval );
                 }
             }
-        }
 
-        evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
+            evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
+        }
 
         evt->DeleteHistograms();
     }
@@ -1055,10 +1055,8 @@ void CalibrationRun::SignalTagging()
             evt->PrepareTagging();
             evt->SignalTagging();
             evt->FastRate( gain );
-
+            evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
         }
-
-        evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
 
         evt->DeleteHistograms();
     }
@@ -1143,9 +1141,9 @@ void CalibrationRun::WaveformDecomposition()
             evt->PrepareDecomposition();
 
             evt->WaveformDecomposition(gain);
-        }
 
-        evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
+            evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
+        }
 
         evt->DeleteHistograms();
     }
@@ -1284,9 +1282,9 @@ void CalibrationRun::WaveformReconstruction()
         if( evt->GetState() == EVENTSTATE_WFDECOMPOSED )
         {
             evt->WaveformReconstruction(gain);
+            evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
         }
 
-        evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
         evt->DeleteHistograms();
     }
 
@@ -1400,28 +1398,6 @@ void CalibrationRun::MipTimeRetrieval()
     //      evt->PrepareRetrieval();
     // }
 
-    int nthreads   = GS->GetParameter<int>("General.nthreads");
-    bool parallelize = GS->GetParameter<bool>("General.parallelize");
-    //
-    // #pragma omp parallel for if(parallelize) num_threads(nthreads)
-    // for(int i = 0; i < evts_.size(); ++i)
-    for( auto evt : evts_)
-    {
-        // Here the actual waveform decomposition is done, the rest is just
-        // getting the info out.
-
-        evt->LoadFiles(EVENTSTATE_WFRECONSTRUCTED);
-
-        if( evt->GetState() == EVENTSTATE_WFRECONSTRUCTED )
-        {
-            evt->PrepareRetrieval();
-            evt->MipTimeRetrieval();
-        }
-
-        evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
-        evt->DeleteHistograms();
-    }
-
     std::vector<std::vector<TGraph*>> graphs;
     std::string names[3] = { "_online_rate", "_fast_rate", "_rate"};
 
@@ -1468,24 +1444,57 @@ void CalibrationRun::MipTimeRetrieval()
         graphs.push_back(gch);
     }
 
-
-    for(auto &evt: evts_ )
+    // int nthreads   = GS->GetParameter<int>("General.nthreads");
+    // bool parallelize = GS->GetParameter<bool>("General.parallelize");
+    //
+    // #pragma omp parallel for if(parallelize) num_threads(nthreads)
+    // for(int i = 0; i < evts_.size(); ++i)
+    for( auto evt : evts_)
     {
+        // Here the actual waveform decomposition is done, the rest is just
+        // getting the info out.
 
-        vector<vector<double>> rates = evt->GetRates();
+        evt->LoadFiles(EVENTSTATE_WFRECONSTRUCTED);
 
-        double   evt_time = evt->GetParameter<double>("Properties.UnixTime");
-
-        for(unsigned int i = 0; i < rates.size(); ++i)
+        if( evt->GetState() == EVENTSTATE_WFRECONSTRUCTED )
         {
-            std::vector<double> ch_rate = rates.at(i);
-            for(unsigned int j = 0; j < 3; ++j)
+            evt->PrepareRetrieval();
+            evt->MipTimeRetrieval();
+            evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
+
+            vector<vector<double>> rates = evt->GetRates();
+            double   evt_time = evt->GetParameter<double>("Properties.UnixTime");
+            for(unsigned int i = 0; i < rates.size(); ++i)
             {
-                TGraph* graph = graphs.at(i).at(j);
-                graph->SetPoint( graph->GetN(), evt_time, ch_rate.at(j) );
+                std::vector<double> ch_rate = rates.at(i);
+                for(unsigned int j = 0; j < 3; ++j)
+                {
+                    TGraph* graph = graphs.at(i).at(j);
+                    graph->SetPoint( graph->GetN(), evt_time, ch_rate.at(j) );
+                }
             }
         }
+
+        evt->DeleteHistograms();
     }
+
+    // for(auto &evt: evts_ )
+    // {
+    //
+    //     vector<vector<double>> rates = evt->GetRates();
+    //
+    //     double   evt_time = evt->GetParameter<double>("Properties.UnixTime");
+    //
+    //     for(unsigned int i = 0; i < rates.size(); ++i)
+    //     {
+    //         std::vector<double> ch_rate = rates.at(i);
+    //         for(unsigned int j = 0; j < 3; ++j)
+    //         {
+    //             TGraph* graph = graphs.at(i).at(j);
+    //             graph->SetPoint( graph->GetN(), evt_time, ch_rate.at(j) );
+    //         }
+    //     }
+    // }
 
     std::string fname = outfolder.string() + "/run_"+std::to_string(nr_)+"_rate"+"_"+ GS->GetParameter<std::string>("General.CalibrationVersion")+".root";
     TFile *rfile = new TFile(fname.c_str(), "RECREATE");
@@ -1562,78 +1571,62 @@ void CalibrationRun::SystematicsStudy()
     {
         evt->LoadFiles(EVENTSTATE_CALIBRATED);
 
-
-        for(int i = 0; i < evt->GetChannels().size(); ++i)
+        if( evt->GetState() == EVENTSTATE_CALIBRATED)
         {
-            TH1I* pewf = dynamic_cast<TH1I*>(evt->GetChannels().at(i)->GetHistogram("pe"));
-
-            double integral = 0;
-
-            for(int j = start_mpv; j <= window_length_mpv + start_mpv; ++j)
+            for(int i = 0; i < evt->GetChannels().size(); ++i)
             {
-                if( pewf->GetBinContent(j) >= threshold_mpv )
+                TH1I* pewf = dynamic_cast<TH1I*>(evt->GetChannels().at(i)->GetHistogram("pe"));
+
+                double integral = 0;
+
+                for(int j = start_mpv; j <= window_length_mpv + start_mpv; ++j)
                 {
-                    // for(int k = j; k <= j + window_length_mpv; ++k )
-                    // {
+                    if( pewf->GetBinContent(j) >= threshold_mpv )
+                    {
                         integral += pewf->GetBinContent(j);
-                    // }
-                    //
-                    // j+= window_length_mpv;
+                    }
+                }
+
+                hists.at(i)->Fill( integral );
+            }
+
+            TH1F* mipwf_fwd2 = dynamic_cast<TH1F*>(evt->GetChannels().at(1)->GetHistogram("mip"));
+
+            double t1 = -1;
+
+            for( int i = 1; i <= mipwf_fwd2->GetNbinsX(); ++i)
+            {
+                if( mipwf_fwd2->GetBinContent(i) >= threshold_tres )
+                {
+                    t1 = mipwf_fwd2->GetBinCenter(i);
+                    break;
                 }
             }
-            // for(int j = 1; j <= pewf->GetNbinsX() - window_length_mpv; ++j)
-            // {
-            //     if( pewf->GetBinContent(j) >= threshold_mpv )
-            //     {
-            //         for(int k = j; k <= j + window_length_mpv; ++k )
-            //         {
-            //             integral += pewf->GetBinContent(k);
-            //         }
-            //
-            //         j+= window_length_mpv;
-            //     }
-            // }
 
-            hists.at(i)->Fill( integral );
-        }
+            TH1F* mipwf_fwd3 = dynamic_cast<TH1F*>(evt->GetChannels().at(2)->GetHistogram("mip"));
 
-        TH1F* mipwf_fwd2 = dynamic_cast<TH1F*>(evt->GetChannels().at(1)->GetHistogram("mip"));
+            double t2 = -1;
 
-        double t1 = -1;
-
-        for( int i = 1; i <= mipwf_fwd2->GetNbinsX(); ++i)
-        {
-            if( mipwf_fwd2->GetBinContent(i) >= threshold_tres )
+            for( int i = 1; i <= mipwf_fwd3->GetNbinsX(); ++i)
             {
-                t1 = mipwf_fwd2->GetBinCenter(i);
-                break;
+                if( mipwf_fwd3->GetBinContent(i) >= threshold_tres )
+                {
+                    t2 = mipwf_fwd3->GetBinCenter(i);
+                    break;
+                }
             }
-        }
 
-        TH1F* mipwf_fwd3 = dynamic_cast<TH1F*>(evt->GetChannels().at(2)->GetHistogram("mip"));
-
-        double t2 = -1;
-
-        for( int i = 1; i <= mipwf_fwd3->GetNbinsX(); ++i)
-        {
-            if( mipwf_fwd3->GetBinContent(i) >= threshold_tres )
+            if( t1 >= 0 && t2 >= 0)
             {
-                t2 = mipwf_fwd3->GetBinCenter(i);
-                break;
+                hists.back()->Fill(t1-t2);
+                if( fabs(t1-t2) > 2e-9)
+                {
+                    cout << "Event number: " << evt->GetNumber() << ", t1: " << t1 << "t2: " << t2 << ", diff: " << (t1-t2)/(1e-9) << endl;
+                }
             }
+
+            else hists.back()->Fill(-625*dt);
         }
-
-        if( t1 >= 0 && t2 >= 0)
-        {
-            hists.back()->Fill(t1-t2);
-            if( fabs(t1-t2) > 2e-9)
-            {
-                cout << "Event number: " << evt->GetNumber() << ", t1: " << t1 << "t2: " << t2 << ", diff: " << (t1-t2)/(1e-9) << endl;
-            }
-        }
-
-        else hists.back()->Fill(-625*dt);
-
 
         evt->DeleteHistograms();
     }

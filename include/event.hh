@@ -76,6 +76,7 @@ enum EventState
     EVENTSTATE_WFRECONSTRUCTED,
     EVENTSTATE_WFRFAILED,
     EVENTSTATE_CALIBRATED,
+    EVENTSTATE_FAILED,
     // COLOR_GREEN, // assigned 3
     // COLOR_WHITE, // assigned 4
     // COLOR_CYAN, // assigned 5
@@ -121,6 +122,8 @@ inline std::string printEventState(EventState state)
       return "wfr_failed";
     case EVENTSTATE_CALIBRATED:
       return "calibrated";
+    case EVENTSTATE_FAILED:
+      return "failed";
     default:
       return "Invalid Selection";
   }
@@ -180,7 +183,7 @@ class Event{
 
         virtual void   SetTime(double unixtime);
         virtual double GetTime();
-        virtual int    GetNumber();
+        virtual long    GetNumber();
         virtual std::vector<Channel*> GetChannels();
         virtual EventState GetState();
 
@@ -234,12 +237,14 @@ class CalibrationEvent : public Event{
         virtual void LoadFiles(EventState state = EVENTSTATE_RAW);
             virtual void LoadSubtracted();
 
+        virtual void SaveEvent(boost::filesystem::path dst, bool save_pd = false);
+
         virtual ~CalibrationEvent();
         virtual void PrepareHistograms();
 
 
     protected:
-
+        long runnr_;
     //    std::vector<CalibrationChannel*> channels_;
 //
 //         void                   LoadIniFile();
