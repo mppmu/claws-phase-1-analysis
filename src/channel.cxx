@@ -1011,6 +1011,7 @@ void PhysicsChannel::PrepareDecomposition()
 void PhysicsChannel::WaveformDecomposition(TH1F* avg)
 {
     double  threshold    =  GS->GetParameter<double>("WaveformDecomposition.threshold");
+
     int     search_range =  GS->GetParameter<double>("WaveformDecomposition.search_range");
 
     int     nbins        = recowf_->GetNbinsX();
@@ -1019,6 +1020,8 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
     double  avg_max      = avg->GetMaximum();
     int     avg_maxbin   = avg->GetMaximumBin();
 
+    double  threshold2    =  avg_max*GS->GetParameter<double>("WaveformDecomposition.threshold2");
+    
     // make sure the edges in the histogram are handled properly:
     //double b_low = recowf_->GetBinCenter(avg_maxbin);
     double b_low = recowf_->GetBinCenter(search_range);

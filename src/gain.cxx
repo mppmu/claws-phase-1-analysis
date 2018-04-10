@@ -95,7 +95,7 @@ GainChannel::~GainChannel()
 
 void GainChannel::AddGain(CalibrationChannel * channel, double t)
 {
-    double integral = channel->GetHistogram()->Integral("width");
+    double integral = channel->GetHistogram()->Integral(120, 280,"width");
     hist_->Fill( integral);
     gain_otime_->SetPoint(gain_otime_->GetN(), t, integral);
 }
@@ -193,6 +193,8 @@ double* GainChannel::FitGain()
 
     TFitResultPtr result2 = hist_->Fit(gaus2,"LQS+","", gaus->GetParameter(1)*1.75 , gaus->GetParameter(1)*2.25 );
 
+    gain_[0]    = int(result2);
+
     gain_[4]    = gaus2->GetParameter(0);
     gain_[5]    = gaus2->GetParameter(1);
     gain_[6]    = gaus2->GetParameter(2);
@@ -219,7 +221,8 @@ double* GainChannel::FitGain()
 
 void GainChannel::AddWaveform( CalibrationChannel * channel)
 {
-    double integral = channel->GetHistogram()->Integral("width");
+    double integral = channel->GetHistogram()->Integral(120, 280,"width");
+
     double low      = GS->GetParameter<double>("Average1PE.gain_low");
     double up       = GS->GetParameter<double>("Average1PE.gain_high");
 
@@ -272,15 +275,20 @@ double* GainChannel::FitAvg()
     avg_res_[10]   = result->Prob();
     avg_res_[11]   = expo->GetX(0.005);
 
-    int stop_extend = avg_->FindBin( avg_res_[11] );
 
-    if( stop_extend > avg_->GetNbinsX() ) stop_extend = avg_->GetNbinsX();
-
-    for(int i =  waveform_recorded +1; i <= waveform_size; i++)
+    if( GS->GetParameter<bool>("Average1PE.extend"))
     {
-        double val = expo->Eval( avg_->GetBinCenter(i) );
-    	avg_->SetBinContent(i, val);
+        int stop_extend = avg_->FindBin( avg_res_[11] );
+
+        if( stop_extend > avg_->GetNbinsX() ) stop_extend = avg_->GetNbinsX();
+
+        for(int i =  waveform_recorded +1; i <= waveform_size; i++)
+        {
+            double val = expo->Eval( avg_->GetBinCenter(i) );
+            avg_->SetBinContent(i, val);
+        }
     }
+
 
     avg_res_[12]   = avg_->Integral("width");
 
