@@ -942,15 +942,15 @@ void CalibrationRun::OverShootCorrection()
     // }
 
     std::vector<std::vector<TGraph*>> graphs;
-    std::string names[12] = {"_lstart", "_lstop", "_lresult", "_start", "_stop", "_result", "_par0", "_par1", "_par2", "_chi2", "_ndf", +"_pval"};
-    std::string ytitles[12] = {"Time [s]", "Time [s]", "Fit status","Time [s]", "Time [s]", "Fit status", "Slope [mV/s]", "X-shift [s]", "Y-shift [s]", "Chi2", "Ndf", "P-value"};
+    std::string names[15] = {"_lstart", "_lstop", "_lresult", "_start", "_stop", "_result", "_par0", "_par1", "_par2", "_chi2", "_ndf", +"_pval", "_area1", "area2", "_area_diff"};
+    std::string ytitles[15] = {"Time [s]", "Time [s]", "Fit status","Time [s]", "Time [s]", "Fit status", "Slope [mV/s]", "X-shift [s]", "Y-shift [s]", "Chi2", "Ndf", "P-value", "Area [a.u.]", "Area [a.u.]", "Area [a.u.]"};
 
     for(auto &channel: evts_.at(0)->GetChannels() )
     {
         std::vector<TGraph*> gch;
 
         std::string name = channel->GetName();
-        for(int i =0 ; i < 12; ++i)
+        for(int i =0 ; i < 15; ++i)
         {
             TGraph * g = new TGraph();
             g->SetName( (name+names[i]).c_str() );
@@ -995,6 +995,9 @@ void CalibrationRun::OverShootCorrection()
                     graphs[i][9]->SetPoint(graphs[i][9]->GetN(), evt_time, result.chi2 );
                     graphs[i][10]->SetPoint(graphs[i][10]->GetN(), evt_time, result.ndf );
                     graphs[i][11]->SetPoint(graphs[i][11]->GetN(), evt_time, result.pval );
+                    graphs[i][12]->SetPoint(graphs[i][12]->GetN(), evt_time, result.area1 );
+                    graphs[i][13]->SetPoint(graphs[i][13]->GetN(), evt_time, result.area2 );
+                    graphs[i][14]->SetPoint(graphs[i][14]->GetN(), evt_time, result.area1 + result.area2 );
                 }
             }
 

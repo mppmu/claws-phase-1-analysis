@@ -137,6 +137,8 @@ struct OverShootResult
     int ndf      = -1;
     double pval  = -1;
     int n        =  0;
+    double area1 = 0;
+    double area2 = 0;
 };
 
 

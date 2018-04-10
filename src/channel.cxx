@@ -841,6 +841,9 @@ std::vector<OverShootResult> PhysicsChannel::OverShootCorrection()
                 }
             }
 
+            result.area1 = wf_->Integral(i-3, wf_->GetXaxis()->FindBin(result.start), "width");
+            result.area2 = osfit->Integral(result.start, result.stop);
+
             results.push_back(result);
 
 			delete fit_line;
@@ -1020,8 +1023,12 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
     double  avg_max      = avg->GetMaximum();
     int     avg_maxbin   = avg->GetMaximumBin();
 
+    int avg_fwhm1 = avg->FindFirstBinAbove(avg->GetMaximum()/2);
+    int avg_fwhm2 = avg->FindLastBinAbove(avg->GetMaximum()/2);
+    double avg_fwhm = avg->GetBinCenter(avg_fwhm2) - avg->GetBinCenter(avg_fwhm1);
+
     double  threshold2    =  avg_max*GS->GetParameter<double>("WaveformDecomposition.threshold2");
-    
+
     // make sure the edges in the histogram are handled properly:
     //double b_low = recowf_->GetBinCenter(avg_maxbin);
     double b_low = recowf_->GetBinCenter(search_range);
@@ -1029,61 +1036,146 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
     double b_up  = recowf_->GetBinCenter( nbins - search_range );
     recowf_->GetXaxis()->SetRangeUser(b_low, b_up);
 
-    int maxbin = recowf_->GetMaximumBin();
 
-    while( recowf_->GetBinContent(maxbin) > threshold )
+
+    int maxbin = 0;
+
+    auto get_max_bin = [](TH1F* wf, int first, int last)->int
+                       {
+                           double max = 0;
+                           double maxbin = first;
+
+                           for(int bin = first; bin <= last; ++bin)
+                           {
+                               if( wf->GetBinContent(bin) > max)
+                               {
+                                   maxbin = bin;
+                                   max    = wf->GetBinContent(bin);
+                               }
+                           }
+
+                           return maxbin;
+                       };
+
+
+    auto check_threshold = [](TH1F* wf, int &maxbin, double threshold)->bool
+                           {
+                               maxbin = wf->GetMaximumBin();
+                               return (wf->GetBinContent(maxbin) > threshold);
+                           };
+
+
+    auto go_on = [avg_fwhm1, avg_fwhm2](TH1F* wf, int &maxbin, double threshold)->bool
+                 {
+                     maxbin = wf->GetMaximumBin();
+
+                     int bin1 = maxbin;
+                     while( wf->GetBinContent(bin1) > wf->GetBinContent(maxbin)/2) --bin1;
+                     int bin2 = maxbin;
+                     while( wf->GetBinContent(bin2) > wf->GetBinContent(maxbin)/2) ++bin2;
+
+                     bool larger = wf->GetBinContent(maxbin) > threshold;
+                     bool wider = (bin2-bin1) > 2;
+
+                     // double average = 0;
+                     // int n = 0;
+                     // for(int bin = maxbin -5; bin <= maxbin+5;++bin)
+                     // {
+                     //     average += wf->GetBinContent(bin);
+                     //     ++n;
+                     // }
+                     // average /=n;
+                     // bool positiv = average >= 0;
+
+                     return larger && wider;
+                    };
+    // bool check_in_range = [&maxbin, threshold](TH1F* wf)->bool
+    //                       {
+    //
+    //                       }
+
+    auto subtract = [](TH1F* wf, int maxbin, TH1F* avg, int avg_maxbin)
+                    {
+                        for( int bin = 1; bin <= avg->GetNbinsX(); ++bin)
+                        {
+                            double avg_bin_cont = avg->GetBinContent(bin);
+                            double bin_cont     = wf->GetBinContent(bin + maxbin - avg_maxbin);
+                            wf->SetBinContent(bin + maxbin - avg_maxbin, bin_cont - avg_bin_cont);
+                        }
+                    };
+    while(go_on(recowf_, maxbin, threshold2))
+    // while(check_threshold(recowf_, maxbin, threshold2))
     {
-        /**
-        * \todo Validate
-        * \todo find out why the hell I need to shift the avg by -1
-        */
-
-        //for( unsigned int i = 0 ; i <= avg_nbins-1; ++i)
-        for( unsigned int i = 1 ; i <= avg_nbins; ++i)
-        {
-            //double avg_bincont = avg->GetBinContent( i + 1 );
-            double avg_bincont = avg->GetBinContent( i );
-            double bincont     = recowf_->GetBinContent( i + maxbin - avg_maxbin );
-
-            recowf_->SetBinContent( i + maxbin - avg_maxbin, bincont - avg_bincont);
-        }
-
+        subtract(recowf_, maxbin, avg, avg_maxbin);
         // does ++GetBinContent(maxbin)
         //pewf_->AddBinContent(maxbin);
         pewf_->Fill( recowf_->GetBinCenter(maxbin));
 
-        // Because it is very time consuming to search the full waveform with each iteration
-        // look only in the vincity of the last maximum first.
-        if( recowf_->GetBinContent(maxbin) > threshold*2 )
-        {
-            double tmp_max = 0;
-            int tmp_max_bin = maxbin - search_range;
-
-            for(int j = maxbin - search_range; j< maxbin + search_range; ++j)
-            {
-                if(recowf_->GetBinContent(j) > tmp_max)
-                {
-                    tmp_max = recowf_->GetBinContent(j);
-                    tmp_max_bin = j;
-                }
-            }
-
-            // Make sure we are not in the flank of a large signal at the edge of the search region
-            if( tmp_max_bin > (maxbin - int(search_range*0.9)) && tmp_max_bin < (maxbin + int(0.9*search_range)) )
-            {
-                maxbin = tmp_max_bin;
-            }
-            else
-            {
-                maxbin = recowf_->GetMaximumBin();
-            }
-        }
-        else
-        {
-            maxbin = recowf_->GetMaximumBin();
-        }
-        //maxbin = recowf_->GetMaximumBin();
+        // for(unsigned int i = 1; i <= avg_nbins; ++i)
+        // {
+        //     //double avg_bincont = avg->GetBinContent( i + 1 );
+        //     double avg_bincontent = avg->GetBinContent(i);
+        //     double bincontent     = recowf_->GetBinContent(i + maxbin - avg_maxbin);
+        //
+        //     recowf_->SetBinContent(i + maxbin - avg_maxbin, bincontent - avg_bincontent);
+        // }
     }
+
+    // int maxbin = recowf_->GetMaximumBin();
+    //
+    // while( recowf_->GetBinContent(maxbin) > threshold2 )
+    // {
+    //     /**
+    //     * \todo Validate
+    //     * \todo find out why the hell I need to shift the avg by -1
+    //     */
+    //
+    //     //for( unsigned int i = 0 ; i <= avg_nbins-1; ++i)
+    //     for( unsigned int i = 1 ; i <= avg_nbins; ++i)
+    //     {
+    //         //double avg_bincont = avg->GetBinContent( i + 1 );
+    //         double avg_bincont = avg->GetBinContent( i );
+    //         double bincont     = recowf_->GetBinContent( i + maxbin - avg_maxbin );
+    //
+    //         recowf_->SetBinContent( i + maxbin - avg_maxbin, bincont - avg_bincont);
+    //     }
+    //
+    //     // does ++GetBinContent(maxbin)
+    //     //pewf_->AddBinContent(maxbin);
+    //     pewf_->Fill( recowf_->GetBinCenter(maxbin));
+    //
+    //     // Because it is very time consuming to search the full waveform with each iteration
+    //     // look only in the vincity of the last maximum first.
+    //     if( recowf_->GetBinContent(maxbin) > threshold2*2 )
+    //     {
+    //         double tmp_max = 0;
+    //         int tmp_max_bin = maxbin - search_range;
+    //
+    //         for(int j = maxbin - search_range; j< maxbin + search_range; ++j)
+    //         {
+    //             if(recowf_->GetBinContent(j) > tmp_max)
+    //             {
+    //                 tmp_max = recowf_->GetBinContent(j);
+    //                 tmp_max_bin = j;
+    //             }
+    //         }
+    //
+    //         // Make sure we are not in the flank of a large signal at the edge of the search region
+    //         if( tmp_max_bin > (maxbin - int(search_range*0.9)) && tmp_max_bin < (maxbin + int(0.9*search_range)) )
+    //         {
+    //             maxbin = tmp_max_bin;
+    //         }
+    //         else
+    //         {
+    //             maxbin = recowf_->GetMaximumBin();
+    //         }
+    //     }
+    //     else
+    //     {
+    //         maxbin = recowf_->GetMaximumBin();
+    //     }
+    //     //maxbin = recowf_->GetMaximumBin();
+    // }
 };
 
 std::vector<double> PhysicsChannel::WaveformReconstruction(TH1F* avg)

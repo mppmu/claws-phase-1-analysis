@@ -881,7 +881,7 @@ void PhysicsEvent::PrepareHistograms(boost::property_tree::ptree &settings)
 
 std::vector<std::vector<OverShootResult>> PhysicsEvent::OverShootCorrection()
 {
-	std::string names[12] = {"_LStart", "_LStop", "_LResult", "_Start", "_Stop", "_Result", "_Par0", "_Par1", "_Par2", "_Chi2", "_Ndf", +"_PVal"};
+	std::string names[14] = {"_LStart", "_LStop", "_LResult", "_Start", "_Stop", "_Result", "_Par0", "_Par1", "_Par2", "_Chi2", "_Ndf", +"_PVal", "_Area1", "_Area2"};
 
 	std::vector<std::vector<OverShootResult>> allresults;
 
@@ -905,6 +905,8 @@ std::vector<std::vector<OverShootResult>> PhysicsEvent::OverShootCorrection()
 			pt_.put("OSFIT_" +names[9] +"." + chname + "_" + std::to_string(result.n), result.chi2 );
 			pt_.put("OSFIT_" +names[10] +"." + chname + "_" + std::to_string(result.n), result.ndf );
 			pt_.put("OSFIT_" +names[11] +"." + chname + "_" + std::to_string(result.n), result.pval );
+			pt_.put("OSFIT_" +names[12] +"." + chname + "_" + std::to_string(result.n), result.area1 );
+			pt_.put("OSFIT_" +names[13] +"." + chname + "_" + std::to_string(result.n), result.area2 );
 		}
 
 		allresults.push_back(results);
