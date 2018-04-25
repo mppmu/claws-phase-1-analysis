@@ -152,11 +152,23 @@ void Event::FillPedestals()
 {
 	std::string pdnames[10] = {"PS_Status","PS_FitConstant","PS_FitMean","PS_FitSigma","PS_FitChi2","PS_FitNDF","PS_FitPVal","PS_HistMean","PS_HistError","PS_HistEntries"};
 
-	for(auto channel: channels_ )
+	// int nthreads   = GS->GetParameter<int>("General.nthreads");
+	// bool parallelize = GS->GetParameter<bool>("General.parallelize");
+	//
+	// #pragma omp parallel for if(parallelize) num_threads(nthreads)
+	// for( int i = 0; i < channels_.size(); ++i )
+	// {
+	// 	// First fill and fit the pedestal
+	// 	channels_.at(i)->FillPedestal();
+	// }
+	for(auto &channel: channels_ )
 	{
 		// First fill and fit the pedestal
 		channel->FillPedestal();
+	}
 
+	for(auto &channel: channels_ )
+	{
 		// Than add all the pd info from the
 		// pd hist and the fit to the property
 		// tree/ini file.
@@ -191,13 +203,36 @@ void Event::SubtractPedestals(std::vector<double> pd)
 
 	if( state_ == EVENTSTATE_PDFAILED ) return;
 
+
 	if(pd.size() == channels_.size())
 	{
-	    for(int i = 0 ; i < pd.size(); i++ ) channels_.at(i)->SubtractPedestal(pd.at(i));
+		int nthreads   = GS->GetParameter<int>("General.nthreads");
+		bool parallelize = GS->GetParameter<bool>("General.parallelize");
+
+		#pragma omp parallel for if(parallelize) num_threads(nthreads) private(pd)
+	    for(int i = 0 ; i < pd.size(); i++ )
+		{
+			channels_.at(i)->SubtractPedestal(pd.at(i));
+		}
+		// for(auto &channel : channels_)
+		// {
+		// 	channels_.at(i)->SubtractPedestal(pd.at(i));
+		// }
 	}
 	else
 	{
-		for(auto channel : channels_) channel->SubtractPedestal();
+		int nthreads   = GS->GetParameter<int>("General.nthreads");
+		bool parallelize = GS->GetParameter<bool>("General.parallelize");
+
+		#pragma omp parallel for if(parallelize) num_threads(nthreads)
+		for( int i = 0; i < channels_.size(); ++i )
+		{
+		 	channels_.at(i)->SubtractPedestal();
+		}
+		// for(auto &channel : channels_)
+		// {
+		// 	channel->SubtractPedestal();
+		// }
 	}
 
 	state_ = EVENTSTATE_PDSUBTRACTED;
@@ -350,8 +385,21 @@ void CalibrationEvent::SaveEvent(boost::filesystem::path dst, bool save_pd)
 
 		for(auto channel : channels_)
 		{
+			// string name = channel->GetHistogram()->GetName();
+			// boost::replace_first(name, "-", "_");
+			// channel->GetHistogram()->Write(name.c_str());
+			// if(save_pd)
+			// {
+			// 	string name = channel->GetHistogram()->GetName();
+			// 	boost::replace_first(name, "-", "_");
+			// 	channel->GetHistogram("pedestal")->Write(name.c_str());
+			// }
+
 			channel->GetHistogram()->Write();
-			if(save_pd) channel->GetHistogram("pedestal")->Write();
+			if(save_pd)
+			{
+				channel->GetHistogram("pedestal")->Write();
+			}
 		}
 
 		rfile->Close("R");
@@ -664,7 +712,8 @@ void PhysicsEvent::LoadFiles(EventState state)
 
 				boost::replace_last(fname, "ini","root");
 
-				this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"wf", "reco load"}));
+				//this->LoadHistograms(boost::filesystem::path(fname), vector<string>({"wf", "reco load"}));
+				this->LoadHistograms(boost::filesystem::path(fname));
 
 				state_ = static_cast<EventState>( pt_.get<int>("General.State") );
 			}
@@ -927,9 +976,9 @@ void PhysicsEvent::FastRate( Gain* gain )
 
 		PhysicsChannel *pch = dynamic_cast<PhysicsChannel*>(channels_.at(i));
 
-		double rate = pch->FastRate(gch->GetAvg(), unixtime_);
+		double fast_rate = pch->FastRate(gch->GetAvg(), unixtime_);
 
-		pt_.put("FastRate." + pch->GetName(), rate);
+		pt_.put("FastRate." + pch->GetName(), fast_rate);
 
 		//fast_rates_.at(i) = rate;
 	}

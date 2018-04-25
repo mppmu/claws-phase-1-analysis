@@ -33,6 +33,7 @@
 #include <TFitResult.h>
 #include <TFitResultPtr.h>
 #include <TMinuit.h>
+#include <Math/IntegratorOptions.h>
 
 
 
@@ -157,7 +158,7 @@ void Channel::DeleteHistogram()
 		}
 };
 
-void Channel::SubtractPedestal( double pd)
+void Channel::SubtractPedestal(double pd)
 {
     if(pd != -1000)
 	{
@@ -233,12 +234,19 @@ void CalibrationChannel::LoadHistogram(TFile* file)
 		}
 
 		// Returns nullpty if histo in file not of type TH1F.
-		wf_ = dynamic_cast<TH1F*>(file->Get( (name_.substr(0,4)+"-INT").c_str() ) );
+        string name = name_.substr(0,4)+"-INT";
+
+        if( !file->GetListOfKeys()->Contains(name.c_str()) )
+        {
+            boost::replace_first(name, "-", "_");
+        }
+
+		wf_ = dynamic_cast<TH1F*>(file->Get( name.c_str() ) );
 
 		if( wf_ == nullptr )
 		{
 			// This on the otherhand does some shit and it works.... I think it returns a TH1
-			TH1F *tmp = static_cast<TH1F*>(file->Get( (name_.substr(0,4)+"-INT").c_str() ) );
+			TH1F *tmp = static_cast<TH1F*>(file->Get( name.c_str() ) );
 			wf_ = new TH1F( *tmp);
 		}
 
@@ -333,33 +341,34 @@ void CalibrationChannel::FillPedestal()
 			    {
 				    pdhist_->Fill( bin_contend );
 				}
-						else
-						{
-								bool above_threshold = true;
-								for (int j = 0; j < bins_over_threshold; j++)
-								{
-						 				if(wf_->GetBinContent(i+j) < threshold ) above_threshold = false;
-								}
-
-								if( above_threshold )
-								{
-									  i += signal_length;
-								}
-								else
-								{
-						    		pdhist_->Fill( bin_contend );
-								}
-
-						}
-				}
 				else
 				{
-						if( bin_contend < threshold)
-						{
-								pdhist_->Fill( bin_contend );
-						}
+				    bool above_threshold = true;
+
+                    for (int j = 0; j < bins_over_threshold; j++)
+					{
+				    	if(wf_->GetBinContent(i+j) < threshold ) above_threshold = false;
+					}
+
+					if( above_threshold )
+					{
+					    i += signal_length;
+                    }
+					else
+					{
+						pdhist_->Fill( bin_contend );
+					}
+
 				}
-				i++;
+			}
+			else
+			{
+				if( bin_contend < threshold)
+				{
+					pdhist_->Fill( bin_contend );
+				}
+			}
+			i++;
     }
 
 
@@ -383,7 +392,7 @@ void CalibrationChannel::FillPedestal()
 		// 	return;
 		// }
 
-		TF1* fit=new TF1("gaus","gaus",1,3, TF1::EAddToList::kNo);
+		TF1* fit=new TF1("gaus","[0]*exp(-0.5*((x-[1])/[2])**2)",1,3, TF1::EAddToList::kNo);
 
 		fit->SetParameter(0,50);
 		fit->SetParameter(1,0);
@@ -395,6 +404,12 @@ void CalibrationChannel::FillPedestal()
 		double up  = max + GS->GetParameter<double>("PDS_Calibration.fitrange_up");
 
 		TFitResultPtr result = pdhist_->Fit(fit, "QSL","", low, up);
+
+        if( result->Prob() < 0.06 )
+        {
+            state_ = CHANNELSTATE_PDFAILED;
+            return;
+        }
 
 		pd_[0]    = int(result);
 
@@ -418,7 +433,10 @@ void CalibrationChannel::FillPedestal()
 		pd_[8]    = pdhist_->GetMeanError();
 		pd_[9]    = pdhist_->GetEntries();
 
+
 		delete fit;
+
+
 
 };
 
@@ -727,20 +745,22 @@ void PhysicsChannel::FillPedestal()
 		return;
 	}
 
-	TF1* fit=new TF1("gaus","gaus",1,3, TF1::EAddToList::kNo);
+    double max = pdhist_->GetBinCenter( pdhist_->GetMaximumBin() );
+
+    double low = max + GS->GetParameter<double>("PDS_Physics.fitrange_low");
+    double up  = max + GS->GetParameter<double>("PDS_Physics.fitrange_up");
+
+	TF1* fit=new TF1("gaus","[0]*exp(-0.5*((x-[1])/[2])**2)",low, up, TF1::EAddToList::kNo);
 
 	fit->SetParameter(0, wf_->GetNbinsX() );
 	fit->SetParameter(1,0);
-	//fit->SetParameter(2,1);
-
-	double low = GS->GetParameter<double>("PDS_Physics.fitrange_low");
-	double up  = GS->GetParameter<double>("PDS_Physics.fitrange_up");
+	fit->SetParameter(2,3.5);
 
 	TFitResultPtr result = pdhist_->Fit(fit, "QSL","", low, up);
 
 	pd_[0]    = int(result);
 
-	if( int(result) == 0)
+	if( int(result) == 0 )
 	{
 		pd_[1]    = fit->GetParameter(0);
 		pd_[2]    = fit->GetParameter(1);
@@ -754,6 +774,12 @@ void PhysicsChannel::FillPedestal()
 		state_ = CHANNELSTATE_PDFAILED;
 	}
 
+    if( pd_[1] < 0 || pd_[3] < 0)
+    {
+        pd_[0]    = - 1;
+        state_ = CHANNELSTATE_PDFAILED;
+    }
+
 	pd_[7]    = pdhist_->GetMean();
 	pd_[8]    = pdhist_->GetMeanError();
 	pd_[9]    = pdhist_->GetEntries();
@@ -763,6 +789,9 @@ void PhysicsChannel::FillPedestal()
 
 std::vector<OverShootResult> PhysicsChannel::OverShootCorrection()
 {
+    ROOT::Math::IntegratorOneDimOptions::SetDefaultIntegrator("Gauss");
+    ROOT::Math::IntegratorOneDimOptions::SetDefaultWKSize(10000);
+
 	// int bins_over_threshold 	= GS->GetParameter<int>("PDS_Physics.bins_over_threshold");
 	// double threshold_low 		= GS->GetParameter<double>("PDS_Physics.threshold_low");
 	// double threshold_high 		= GS->GetParameter<double>("PDS_Physics.threshold_high");
@@ -810,15 +839,18 @@ std::vector<OverShootResult> PhysicsChannel::OverShootCorrection()
             result.stop  = result.start + length;
 
 
-            TF1 *osfit = new TF1("osfit", osfunc, 0., 1., 3);
+            TF1 *osfit = new TF1("osfit", osfunc, 0., 1., 3, 1, TF1::EAddToList::kNo);
 
             osfit->SetParameter(0, 0.001);
-            osfit->SetParLimits(0, 0, 100);
+            osfit->SetParLimits(0, 0, 1);
 
             osfit->SetParameter(1, result.start);
             osfit->SetParLimits(1, result.start - 50e-9, result.start + 50e-9);
 
-            osfit->FixParameter(2, 0);
+            osfit->SetParameter(2, 0);
+            osfit->SetParLimits(2, -10, 10);
+            // /ROOT::Math::IntegratorOneDimOptions::SetDefaultIntegrator("Gauss");
+
 
             fresult = 	wf_->Fit(osfit, "QS+","", result.start, result.stop);
 
@@ -839,6 +871,10 @@ std::vector<OverShootResult> PhysicsChannel::OverShootCorrection()
              		double subtract = osfit->Eval(wf_->GetBinCenter(j));
              		wf_->SetBinContent(j, content - subtract);
                 }
+            }
+            else
+            {
+                double bla =0;
             }
 
             result.area1 = wf_->Integral(i-3, wf_->GetXaxis()->FindBin(result.start), "width");
@@ -882,11 +918,11 @@ void PhysicsChannel::SignalTagging()
 
     unsigned i=1 + pre_threshold;
 
-    while( i <= recowf_->GetNbinsX() )
+    while( i <= wf_->GetNbinsX() )
     {
-        double bin_content  = recowf_->GetBinContent(i);
+        double bin_content  = wf_->GetBinContent(i);
 
-        if( i <= recowf_->GetNbinsX() - bins_over_threshold)
+        if( i <= wf_->GetNbinsX() - bins_over_threshold)
         {
             if( bin_content >= threshold )
             {
@@ -895,8 +931,8 @@ void PhysicsChannel::SignalTagging()
                 double binavg = 0;
                 for (int j = 0; j < bins_over_threshold; j++)
                 {
-                    binavg += recowf_->GetBinContent(i+j);
-                    // if( recowf_->GetBinContent(i+j) < threshold ) above_threshold = false;
+                    binavg += wf_->GetBinContent(i+j);
+                    // if( wf_->GetBinContent(i+j) < threshold ) above_threshold = false;
                 }
 
                 binavg /= bins_over_threshold;
@@ -907,56 +943,62 @@ void PhysicsChannel::SignalTagging()
                 }
                 else
                 {
-                    recowf_->SetBinContent(i - pre_threshold, 0);
+                    wf_->SetBinContent(i - pre_threshold, 0);
                 }
             }
 
             else
             {
-                recowf_->SetBinContent(i - pre_threshold, 0);
+                wf_->SetBinContent(i - pre_threshold, 0);
             }
 
         }
         else
         {
-            recowf_->SetBinContent(i - pre_threshold, 0);
+            wf_->SetBinContent(i - pre_threshold, 0);
         }
 
         i++;
     }
+
     // while( i <= recowf_->GetNbinsX() )
     // {
     //     double bin_content  = recowf_->GetBinContent(i);
     //
     //     if( i <= recowf_->GetNbinsX() - bins_over_threshold)
     //     {
-    //         if( bin_content < threshold )
+    //         if( bin_content >= threshold )
     //         {
-    //               recowf_->SetBinContent(i, 0);
-    //         }
-    //         else if( bin_content >= threshold )
-    //         {
-    //             bool above_threshold = true;
+    //             // bool above_threshold = true;
     //
+    //             double binavg = 0;
     //             for (int j = 0; j < bins_over_threshold; j++)
     //             {
-    //                 if(recowf_->GetBinContent(i+j) < threshold ) above_threshold = false;
+    //                 binavg += recowf_->GetBinContent(i+j);
+    //                 // if( recowf_->GetBinContent(i+j) < threshold ) above_threshold = false;
     //             }
     //
-    //             if( above_threshold )
+    //             binavg /= bins_over_threshold;
+    //
+    //             if( binavg >= threshold )
     //             {
-    //                 i += signal_length;
+    //                 i += signal_length + pre_threshold;
     //             }
     //             else
     //             {
-    //                 recowf_->SetBinContent(i, 0);
+    //                 recowf_->SetBinContent(i - pre_threshold, 0);
     //             }
     //         }
-    //     }
     //
+    //         else
+    //         {
+    //             recowf_->SetBinContent(i - pre_threshold, 0);
+    //         }
+    //
+    //     }
     //     else
     //     {
-    //         recowf_->SetBinContent(i, 0);
+    //         recowf_->SetBinContent(i - pre_threshold, 0);
     //     }
     //
     //     i++;
@@ -986,10 +1028,10 @@ double PhysicsChannel::FastRate(TH1F* avg, double unixtime )
 
     double dt = GS->GetParameter<double>("Scope.delta_t");
 
-    fast_rate_ = recowf_->Integral()/avg->Integral();
+    fast_rate_ = wf_->Integral()/avg->Integral();
 
     fast_rate_ = fast_rate_/pe_per_mip;
-    fast_rate_ = fast_rate_/( dt*recowf_->GetNbinsX() );
+    fast_rate_ = fast_rate_/( dt*wf_->GetNbinsX() );
 
     return fast_rate_;
 }
@@ -1036,8 +1078,6 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
     double b_up  = recowf_->GetBinCenter( nbins - search_range );
     recowf_->GetXaxis()->SetRangeUser(b_low, b_up);
 
-
-
     int maxbin = 0;
 
     auto get_max_bin = [](TH1F* wf, int first, int last)->int
@@ -1075,19 +1115,35 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
                      while( wf->GetBinContent(bin2) > wf->GetBinContent(maxbin)/2) ++bin2;
 
                      bool larger = wf->GetBinContent(maxbin) > threshold;
-                     bool wider = (bin2-bin1) > 2;
 
-                     // double average = 0;
-                     // int n = 0;
-                     // for(int bin = maxbin -5; bin <= maxbin+5;++bin)
-                     // {
-                     //     average += wf->GetBinContent(bin);
-                     //     ++n;
-                     // }
-                     // average /=n;
-                     // bool positiv = average >= 0;
+                     bool wider = (bin2-bin1) >= 2;
 
-                     return larger && wider;
+                     double average = 0;
+                     int n = 0;
+                     for(int bin = maxbin -5; bin <= maxbin+5;++bin)
+                     {
+                         average += wf->GetBinContent(bin);
+                         ++n;
+                     }
+                     average /=n;
+                     bool positiv = average >= 0;
+
+                     if(larger)
+                     {
+                         double one =1;
+                     }
+
+                     if(wider)
+                     {
+                         double one =1;
+                     }
+
+                     if(positiv)
+                     {
+                         double one =1;
+                     }
+
+                     return larger && wider && positiv;
                     };
     // bool check_in_range = [&maxbin, threshold](TH1F* wf)->bool
     //                       {
@@ -1223,10 +1279,14 @@ std::vector<double> PhysicsChannel::WaveformReconstruction(TH1F* avg)
 
     for(unsigned int i =1; i<= wf_->GetNbinsX(); ++i)
     {
-        double org = wf_->GetBinContent(i);
-        double reco = recowf_->GetBinContent(i);
+        if( fabs(wf_->GetBinContent(i)) > 1e-5 )
+        {
+            double org = wf_->GetBinContent(i);
+            double reco = recowf_->GetBinContent(i);
 
-        chi2 += (org-reco)*(org-reco)/(bin_error*bin_error);
+            chi2 += (org-reco)*(org-reco)/(bin_error*bin_error);
+        }
+
     }
 
     res[2] = chi2;

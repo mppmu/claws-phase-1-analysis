@@ -95,7 +95,7 @@ GainChannel::~GainChannel()
 
 void GainChannel::AddGain(CalibrationChannel * channel, double t)
 {
-    double integral = channel->GetHistogram()->Integral(120, 280,"width");
+    double integral = channel->GetHistogram()->Integral("width");
     hist_->Fill( integral);
     gain_otime_->SetPoint(gain_otime_->GetN(), t, integral);
 }
@@ -221,7 +221,7 @@ double* GainChannel::FitGain()
 
 void GainChannel::AddWaveform( CalibrationChannel * channel)
 {
-    double integral = channel->GetHistogram()->Integral(120, 280,"width");
+    double integral = channel->GetHistogram()->Integral("width");
 
     double low      = GS->GetParameter<double>("Average1PE.gain_low");
     double up       = GS->GetParameter<double>("Average1PE.gain_high");

@@ -378,9 +378,11 @@ void CalibrationRun::PDS_Calibration()
     std::vector<TGraph *> fit_chi2;
     std::vector<TGraph *> fit_ndf;
     std::vector<TGraph *> fit_chi2ndf;
-    std::vector<TGraph *> fit_pval;
-    std::vector<TGraphErrors *> hist_mean;
-    std::vector<TGraph *> hist_entries;
+    vector<TGraph *> fit_pval;
+    vector<TH1F *> hist_pval;
+    vector<TGraphErrors *> hist_mean;
+    vector<TGraph *> hist_entries;
+
 
     for(auto channel: cal_evts_.at(0)->GetChannels() )
     {
@@ -447,13 +449,19 @@ void CalibrationRun::PDS_Calibration()
     //   TH1D * pval = new TH1D((name+"_fit_pval").c_str(),(name+"_fit_pval").c_str(),100,0,1);
       TGraph * pval = new TGraph();
       pval->SetName((name+"_fit_pval").c_str());
-      chi2ndg->SetMarkerStyle(23);
-      chi2ndg->SetMarkerColor(kRed);
-      chi2ndg->SetMarkerSize(1);
+       pval->SetMarkerStyle(23);
+       pval->SetMarkerColor(kRed);
+       pval->SetMarkerSize(1);
       pval->GetXaxis()->SetTitle("Time [s]");
       pval->GetYaxis()->SetTitle("Fit p-value");
       pval->GetYaxis()->SetRangeUser(-0.05,1.05);
       fit_pval.push_back(pval);
+
+      TH1F * hpval = new TH1F((name+"_hist_pval").c_str(),(name+"_hist_pval").c_str(),101,-0.005,1.005);
+      hpval->SetName((name+"_hist_pval").c_str());
+      hpval->GetXaxis()->SetTitle("P-Val");
+      hpval->GetYaxis()->SetTitle("Entries");
+      hist_pval.push_back(hpval);
 
       TGraphErrors * mng = new TGraphErrors();
       mng->SetName( (name +"_hist_mean").c_str() );
@@ -481,35 +489,41 @@ void CalibrationRun::PDS_Calibration()
     int evt_counter = 0;
     for(auto evt: cal_evts_ )
     {
-      double   evt_time = evt->GetParameter<double>("Properties.UnixTime");
-      auto channels = evt->GetChannels();
-      for(unsigned int i = 0; i <channels.size(); i++)
-      {
-          double * pd = channels.at(i)->GetPedestal();
+        if( evt->GetState() ==  EVENTSTATE_PDFILLED )
+        {
+            double   evt_time = evt->GetParameter<double>("Properties.UnixTime");
+            auto channels = evt->GetChannels();
+            for(unsigned int i = 0; i <channels.size(); i++)
+            {
 
-          fit_status.at(i)->SetPoint(evt_counter, evt_time, pd[0]);
-          fit_const.at(i)->SetPoint(evt_counter, evt_time, pd[1]);
+                double * pd = channels.at(i)->GetPedestal();
 
-          fit_mean.at(i)->SetPoint(evt_counter, evt_time, pd[2]);
-          fit_mean.at(i)->SetPointError(evt_counter, 0.05, pd[3]);
+                fit_status.at(i)->SetPoint(evt_counter, evt_time, pd[0]);
+                fit_const.at(i)->SetPoint(evt_counter, evt_time, pd[1]);
 
-          fit_chi2.at(i)->SetPoint(evt_counter, evt_time, pd[4]);
+                fit_mean.at(i)->SetPoint(evt_counter, evt_time, pd[2]);
+                fit_mean.at(i)->SetPointError(evt_counter, 0.05, pd[3]);
 
-          fit_ndf.at(i)->SetPoint(evt_counter, evt_time, pd[5]);
+                fit_chi2.at(i)->SetPoint(evt_counter, evt_time, pd[4]);
+
+                fit_ndf.at(i)->SetPoint(evt_counter, evt_time, pd[5]);
 
 
-          if( pd[5] !=0 ) fit_chi2ndf.at(i)->SetPoint(evt_counter, evt_time, pd[4]/pd[5]);
-          else fit_chi2ndf.at(i)->SetPoint(evt_counter, evt_time, -1.);
+                if( pd[5] !=0 ) fit_chi2ndf.at(i)->SetPoint(evt_counter, evt_time, pd[4]/pd[5]);
+                else fit_chi2ndf.at(i)->SetPoint(evt_counter, evt_time, -1.);
 
-          fit_pval.at(i)->SetPoint(evt_counter, evt_time,pd[6]);
+                fit_pval.at(i)->SetPoint(evt_counter, evt_time,pd[6]);
 
-          hist_mean.at(i)->SetPoint(evt_counter, evt_time, pd[7]);
-          hist_mean.at(i)->SetPointError(evt_counter, 0.05, pd[8]);
+                hist_pval.at(i)->Fill(pd[6]);
 
-          hist_entries.at(i)->SetPoint(evt_counter, evt_time, pd[9]);
-      }
+                hist_mean.at(i)->SetPoint(evt_counter, evt_time, pd[7]);
+                hist_mean.at(i)->SetPointError(evt_counter, 0.05, pd[8]);
 
-      evt_counter ++;
+                hist_entries.at(i)->SetPoint(evt_counter, evt_time, pd[9]);
+            }
+
+            evt_counter ++;
+        }
     }
 
     std::string fname = pds_calibration.string() + "/run_"+std::to_string(nr_)+"_pedestal"+"_"+ GS->GetParameter<std::string>("General.CalibrationVersion")+".root";
@@ -531,6 +545,8 @@ void CalibrationRun::PDS_Calibration()
       delete fit_chi2ndf.at(i);
       fit_pval.at(i)->Write();
       delete fit_pval.at(i);
+      hist_pval.at(i)->Write();
+      delete hist_pval.at(i);
       hist_mean.at(i)->Write();
       delete hist_mean.at(i);
       hist_entries.at(i)->Write();
@@ -709,9 +725,10 @@ void CalibrationRun::PDS_Physics()
     std::vector<TGraph *> fit_chi2;
     std::vector<TGraph *> fit_ndf;
     std::vector<TGraph *> fit_chi2ndf;
-    std::vector<TGraph *> fit_pval;
-    std::vector<TGraphErrors *> hist_mean;
-    std::vector<TGraph *> hist_entries;
+    vector<TGraph *> fit_pval;
+    vector<TH1F *> hist_pval;
+    vector<TGraphErrors *> hist_mean;
+    vector<TGraph *> hist_entries;
 
     for(auto &channel: evts_.at(0)->GetChannels() )
     {
@@ -778,13 +795,19 @@ void CalibrationRun::PDS_Physics()
     //   TH1D * pval = new TH1D((name+"_fit_pval").c_str(),(name+"_fit_pval").c_str(),100,0,1);
       TGraph * pval = new TGraph();
       pval->SetName((name+"_fit_pval").c_str());
-      chi2ndg->SetMarkerStyle(23);
-      chi2ndg->SetMarkerColor(kRed);
-      chi2ndg->SetMarkerSize(1);
+      pval->SetMarkerStyle(23);
+      pval->SetMarkerColor(kRed);
+      pval->SetMarkerSize(1);
       pval->GetXaxis()->SetTitle("Time [s]");
       pval->GetYaxis()->SetTitle("Fit p-value");
       pval->GetYaxis()->SetRangeUser(-0.05,1.05);
       fit_pval.push_back(pval);
+
+      TH1F * hpval = new TH1F((name+"_hist_pval").c_str(),(name+"_hist_pval").c_str(),101,-0.005,1.005);
+      hpval->SetName((name+"_hist_pval").c_str());
+      hpval->GetXaxis()->SetTitle("P-Val");
+      hpval->GetYaxis()->SetTitle("Entries");
+      hist_pval.push_back(hpval);
 
       TGraphErrors * mng = new TGraphErrors();
       mng->SetName( (name +"_hist_mean").c_str() );
@@ -842,6 +865,7 @@ void CalibrationRun::PDS_Physics()
             else fit_chi2ndf.at(i)->SetPoint(evt_counter, evt_time, -1.);
 
             fit_pval.at(i)->SetPoint(evt_counter, evt_time,pd[6]);
+            hist_pval.at(i)->Fill(pd[6]);
 
             hist_mean.at(i)->SetPoint(evt_counter, evt_time, pd[7]);
             hist_mean.at(i)->SetPointError(evt_counter, 0.05, pd[8]);
@@ -877,6 +901,10 @@ void CalibrationRun::PDS_Physics()
         delete fit_chi2ndf.at(i);
         fit_pval.at(i)->Write();
         delete fit_pval.at(i);
+
+        hist_pval.at(i)->Write();
+        delete hist_pval.at(i);
+
         hist_mean.at(i)->Write();
         delete hist_mean.at(i);
         hist_entries.at(i)->Write();
@@ -1055,7 +1083,7 @@ void CalibrationRun::SignalTagging()
 
         if( evt->GetState() == EVENTSTATE_OSCORRECTED )
         {
-            evt->PrepareTagging();
+    //        evt->PrepareTagging();
             evt->SignalTagging();
             evt->FastRate( gain );
             evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
@@ -1141,6 +1169,7 @@ void CalibrationRun::WaveformDecomposition()
 
         if( evt->GetState() == EVENTSTATE_TAGGED )
         {
+            evt->PrepareTagging();
             evt->PrepareDecomposition();
 
             evt->WaveformDecomposition(gain);
