@@ -40,6 +40,7 @@
  {
      CHANNELSTATE_VALID,
      CHANNELSTATE_PDFAILED,
+     CHANNELSTATE_FAILED,
  };
 
  /** Usually definitions should go into the .cxx file because otherwise
@@ -53,8 +54,10 @@ inline std::string printChannelState(ChannelState state)
      case CHANNELSTATE_VALID:
        return "valid";
      case CHANNELSTATE_PDFAILED:
-       return "valid";
-     default:
+       return "pdfailed";
+     case CHANNELSTATE_FAILED:
+        return "failed";
+    default:
        return "Invalid Selection";
    }
  }

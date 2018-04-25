@@ -180,7 +180,7 @@ void Event::FillPedestals()
 			pt_.put(pdnames[i] + "." + name, pd[i]);
 		}
 
-		if( channel->GetState() == CHANNELSTATE_PDFAILED  )
+		if( channel->GetState() == CHANNELSTATE_FAILED  )
 		{
 			state_ = EVENTSTATE_PDFAILED;
 			pt_.put("General.State", state_);
@@ -335,26 +335,40 @@ void CalibrationEvent::LoadSubtracted()
 
 	// If the PD failded the file will be saved with a pd_failed in its name
 	if( boost::filesystem::exists(fname) )
-    {
+	{
 		this->LoadHistograms(boost::filesystem::path(fname));
+		boost::replace_last(fname, "root","ini");
+		boost::property_tree::ini_parser::read_ini(fname, pt_);
+
+		state_ = static_cast<EventState>( pt_.get<int>("General.State") );
 	}
 	else
 	{
-		boost::replace_last(fname, printEventState(EVENTSTATE_PDSUBTRACTED),printEventState(EVENTSTATE_PDFAILED));
-		if( boost::filesystem::exists(fname) )
-		{
-			this->LoadHistograms(boost::filesystem::path(fname));
-		}
-		else
-		{
-			return;
-		}
+		state_ = EVENTSTATE_FAILED;
 	}
 
-    boost::replace_last(fname, "root","ini");
-    boost::property_tree::ini_parser::read_ini(fname, pt_);
-
-	state_ = static_cast<EventState>( pt_.get<int>("General.State") );
+	// // If the PD failded the file will be saved with a pd_failed in its name
+	// if( boost::filesystem::exists(fname) )
+    // {
+	// 	this->LoadHistograms(boost::filesystem::path(fname));
+	// }
+	// else
+	// {
+	// 	boost::replace_last(fname, printEventState(EVENTSTATE_PDSUBTRACTED),printEventState(EVENTSTATE_PDFAILED));
+	// 	if( boost::filesystem::exists(fname) )
+	// 	{
+	// 		this->LoadHistograms(boost::filesystem::path(fname));
+	// 	}
+	// 	else
+	// 	{
+	// 		return;
+	// 	}
+	// }
+	//
+    // boost::replace_last(fname, "root","ini");
+    // boost::property_tree::ini_parser::read_ini(fname, pt_);
+	//
+	// state_ = static_cast<EventState>( pt_.get<int>("General.State") );
 
 }
 
@@ -860,49 +874,60 @@ void PhysicsEvent::LoadHistograms(boost::filesystem::path file, std::vector<std:
 	rfile = NULL;
 }
 
-// void PhysicsEvent::LoadOSCorrected()
-// {
-//
-// 	// }
-// 	// else
-// 	// {
-// 	// 	boost::replace_last(fname, printEventState(EVENTSTATE_PDSUBTRACTED),printEventState(EVENTSTATE_PDFAILED));
-// 	// 	if( boost::filesystem::exists(fname) )
-// 	// 	{
-// 	// 		this->LoadHistograms(boost::filesystem::path(fname));
-// 	// 	}
-// 	// 	else
-// 	// 	{
-// 	// 		return;
-// 	// 	}
-// 	// }
-// 	//
-//     boost::replace_last(fname, "root","ini");
-//     boost::property_tree::ini_parser::read_ini(fname, pt_);
-//
-// 	state_ = static_cast<EventState>( pt_.get<int>("General.State") );
-//
-// };
-//
-// void PhysicsEvent::LoadWFDecomposed()
-// {
-//
-//
-//     boost::replace_last(fname, "root","ini");
-//     boost::property_tree::ini_parser::read_ini(fname, pt_);
-//
-// 	state_ = static_cast<EventState>( pt_.get<int>("General.State") );
-// };
-//
-// void PhysicsEvent::LoadWFReconstructed()
-// {
-//
-//
-//     boost::replace_last(fname, "root","ini");
-//     boost::property_tree::ini_parser::read_ini(fname, pt_);
-//
-// 	state_ = static_cast<EventState>( pt_.get<int>("General.State") );
-// };
+void PhysicsEvent::SaveEvent(boost::filesystem::path dst)
+{
+		/**
+		*  \todo Kill the path parameter and make it state dependet!
+		*/
+
+		std::string fname = dst.string() + "/";
+
+    	int     status;
+		char   *realname;
+		const std::type_info  &ti = typeid(*this);
+		realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
+		fname += std::string(realname);
+		free(realname);
+
+		std::stringstream ss;
+
+		int ndigits = GS->GetParameter<int>("General.event_ndigits");
+
+		ss << std::setw(ndigits) << std::setfill('0') << nr_;
+
+		fname += "_" + ss.str();
+		fname += "_" + printEventState(state_);
+		fname += ".root";
+
+		TFile *rfile = new TFile(fname.c_str(), "RECREATE");
+
+		for(auto channel : channels_)
+		{
+				auto wf = channel->GetHistogram("waveform");
+				if( wf ) wf->Write();
+
+				auto pdhist = channel->GetHistogram("pedestal");
+				if( pdhist ) pdhist->Write();
+
+				auto reco = channel->GetHistogram("reco");
+				if( reco ) reco->Write();
+
+				auto pe = channel->GetHistogram("pe");
+				if( pe ) pe->Write();
+
+				auto mip = channel->GetHistogram("mip");
+				if( mip ) mip->Write();
+		}
+
+		rfile->Close("R");
+		delete rfile;
+
+		boost::replace_last(fname, "root", "ini");
+		boost::property_tree::write_ini(fname.c_str(), pt_);
+
+		// boost::filesystem::path dest = folder/path_file_ini_.filename();
+		// boost::filesystem::copy_file(path_file_ini_, dest, copy_option::overwrite_if_exists );
+};
 
 void PhysicsEvent::PrepareHistograms(boost::property_tree::ptree &settings)
 {
@@ -959,13 +984,24 @@ std::vector<std::vector<OverShootResult>> PhysicsEvent::OverShootCorrection()
 		}
 
 		allresults.push_back(results);
+
+		// If only one channel fails, the whole event will be dumped
+		if( channel->GetState() == CHANNELSTATE_FAILED  )
+		{
+			state_ = EVENTSTATE_OSFAILED;
+			pt_.put("General.State", state_);
+		}
 	}
 
-	state_ = EVENTSTATE_OSCORRECTED;
-	pt_.put("General.State", state_);
+	if( state_ != EVENTSTATE_OSFAILED )
+	{
+		state_ = EVENTSTATE_OSCORRECTED;
+		pt_.put("General.State", state_);
+	}
 
 	return allresults;
-};
+}
+
 
 void PhysicsEvent::FastRate( Gain* gain )
 {
@@ -1001,6 +1037,7 @@ void PhysicsEvent::SignalTagging()
 	{
 		PhysicsChannel *pch = dynamic_cast<PhysicsChannel*>(channel);
 		pch->SignalTagging();
+
 	}
 
 	state_ = EVENTSTATE_TAGGED;
@@ -1023,6 +1060,11 @@ void PhysicsEvent::WaveformDecomposition(Gain* gain)
 		 * @param  i [description]
 		 * \todo Verify that allways FWD1 is matched to FWD1 etc
 		 */
+
+		 // int nthreads   = GS->GetParameter<int>("General.nthreads");
+		 // bool parallelize = GS->GetParameter<bool>("General.parallelize");
+		 //
+		 // #pragma omp parallel for if(parallelize) num_threads(nthreads)
 
 		for(auto & channel : channels_)
 		{
@@ -1113,60 +1155,7 @@ std::vector<std::vector<double>> PhysicsEvent::GetReconstruction()
 	return reco_;
 }
 
-void PhysicsEvent::SaveEvent(boost::filesystem::path dst)
-{
-		/**
-		*  \todo Kill the path parameter and make it state dependet!
-		*/
 
-		std::string fname = dst.string() + "/";
-
-    	int     status;
-		char   *realname;
-		const std::type_info  &ti = typeid(*this);
-		realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
-		fname += std::string(realname);
-		free(realname);
-
-		std::stringstream ss;
-
-		int ndigits = GS->GetParameter<int>("General.event_ndigits");
-
-		ss << std::setw(ndigits) << std::setfill('0') << nr_;
-
-		fname += "_" + ss.str();
-		fname += "_" + printEventState(state_);
-		fname += ".root";
-
-		TFile *rfile = new TFile(fname.c_str(), "RECREATE");
-
-		for(auto channel : channels_)
-		{
-				auto wf = channel->GetHistogram("waveform");
-				if( wf ) wf->Write();
-
-				auto pdhist = channel->GetHistogram("pedestal");
-				if( pdhist ) pdhist->Write();
-
-				auto reco = channel->GetHistogram("reco");
-				if( reco ) reco->Write();
-
-				auto pe = channel->GetHistogram("pe");
-				if( pe ) pe->Write();
-
-				auto mip = channel->GetHistogram("mip");
-				if( mip ) mip->Write();
-		}
-
-		rfile->Close("R");
-		delete rfile;
-
-		boost::replace_last(fname, "root", "ini");
-		boost::property_tree::write_ini(fname.c_str(), pt_);
-
-		// boost::filesystem::path dest = folder/path_file_ini_.filename();
-		// boost::filesystem::copy_file(path_file_ini_, dest, copy_option::overwrite_if_exists );
-};
 
 // vector<double> PhysicsEvent::GetOnlineRates()
 // {

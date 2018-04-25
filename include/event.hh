@@ -169,23 +169,21 @@ class Event{
 
         virtual void LoadFiles();
             virtual void LoadRaw();
+            virtual void LoadHistograms(boost::filesystem::path file);
 
-                virtual void LoadHistograms(boost::filesystem::path file);
-
-
-        virtual void PrepareHistograms();
         virtual void SaveEvent(boost::filesystem::path dst, bool save_pd = false);
 
         virtual void DeleteHistograms();
 
+        virtual void PrepareHistograms();
         virtual void FillPedestals();
         virtual void SubtractPedestals(std::vector<double> pd = {});
 
-        virtual void   SetTime(double unixtime);
-        virtual double GetTime();
-        virtual long    GetNumber();
-        virtual std::vector<Channel*> GetChannels();
-        virtual EventState GetState();
+        virtual void                    SetTime(double unixtime);
+        virtual double                  GetTime();
+        virtual long                    GetNumber();
+        virtual std::vector<Channel*>   GetChannels();
+        virtual EventState              GetState();
 
         template<typename T>
         T GetParameter(std::string pv)
@@ -308,6 +306,7 @@ class PhysicsEvent : public Event{
         // std::vector<double> GetFastRates();
         std::vector<std::vector<double>> GetRates();
     //    virtual void PrepHistograms();
+    
     private:
         boost::filesystem::path rate_file_;
         std::vector<std::vector<double>> reco_;

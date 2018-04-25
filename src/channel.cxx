@@ -741,7 +741,7 @@ void PhysicsChannel::FillPedestal()
 	*/
 	if( pdhist_->GetEntries() == 0 )
 	{
-		state_ = CHANNELSTATE_PDFAILED;
+		state_ = CHANNELSTATE_FAILED;
 		return;
 	}
 
@@ -771,13 +771,13 @@ void PhysicsChannel::FillPedestal()
 	}
 	else
 	{
-		state_ = CHANNELSTATE_PDFAILED;
+		state_ = CHANNELSTATE_FAILED;
 	}
 
     if( pd_[1] < 0 || pd_[3] < 0)
     {
         pd_[0]    = - 1;
-        state_ = CHANNELSTATE_PDFAILED;
+        state_ = CHANNELSTATE_FAILED;
     }
 
 	pd_[7]    = pdhist_->GetMean();
@@ -874,7 +874,7 @@ std::vector<OverShootResult> PhysicsChannel::OverShootCorrection()
             }
             else
             {
-                double bla =0;
+                state_ = CHANNELSTATE_FAILED;
             }
 
             result.area1 = wf_->Integral(i-3, wf_->GetXaxis()->FindBin(result.start), "width");

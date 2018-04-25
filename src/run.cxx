@@ -592,7 +592,7 @@ void CalibrationRun::GainDetermination()
     {
         (*evt_itr)->LoadFiles(EVENTSTATE_PDSUBTRACTED);
 
-        if( (*evt_itr)->GetState() == EVENTSTATE_PDFAILED )
+        if( (*evt_itr)->GetState() != EVENTSTATE_PDSUBTRACTED )
         {
                 delete (*evt_itr);
                 (*evt_itr) = NULL;
@@ -637,21 +637,43 @@ void CalibrationRun::Average1PE()
          boost::filesystem::create_directory( average_1pe );
      }
 
+     /** Load all the events in a pd subtracted state.
+     *   If the pd subtraction failed for any of them. Erase it.
+     */
+     auto evt_itr = cal_evts_.begin();
+
+     while( evt_itr != cal_evts_.end() )
+     {
+         (*evt_itr)->LoadFiles(EVENTSTATE_PDSUBTRACTED);
+
+         if( (*evt_itr)->GetState() != EVENTSTATE_PDSUBTRACTED )
+         {
+                 delete (*evt_itr);
+                 (*evt_itr) = NULL;
+                 cal_evts_.erase(evt_itr);
+         }
+         else
+         {
+                 evt_itr++;
+         }
+     }
+
+
      Gain* gain = new Gain(path_, GAINSTATE_FITTED);
 
-     for(auto evt: cal_evts_ )
-     {
-         evt->LoadFiles(EVENTSTATE_PDSUBTRACTED);
-     }
+     // for(auto evt: cal_evts_ )
+     // {
+     //     evt->LoadFiles(EVENTSTATE_PDSUBTRACTED);
+     // }
 
-     for(auto evt: cal_evts_ )
-     {
-         gain->AddEvent(evt);
-     }
+    for(auto evt: cal_evts_ )
+    {
+        gain->AddEvent(evt);
+    }
 
-     gain->Normalize();
+    gain->Normalize();
 
-     gain->FitAvg();
+    gain->FitAvg();
 
     this->DeleteCalibrationHistograms();
 
@@ -661,28 +683,6 @@ void CalibrationRun::Average1PE()
 
     std::cout << "\033[32;1mRun::Extracting average 1 pe:\033[0m done!     " << std::endl;
 };
-
-// Gain* CalibrationRun::LoadGain()
-// {
-//
-//     // Load the events into the state of pd subtracted waveforms
-// 	for(auto evt: cal_evts_ )
-// 	{
-// 	    evt->LoadFiles(EVENTSTATE_PDSUBTRACTED);
-// 	}
-//
-//     Gain* gain = new Gain(nr_);
-//     return gain;
-// }
-//
-// void CalibrationRun::FitGain()
-// {
-//
-// 	// for(auto evt: cal_evts_ )
-// 	// {
-// 	//     evt->LoadHistograms(EVENTSTATE_PDSUBTRACTED);
-// 	// }
-// }
 
 void CalibrationRun::PDS_Physics()
 {
@@ -941,33 +941,6 @@ void CalibrationRun::OverShootCorrection()
     {
         boost::filesystem::create_directory( outfolder/boost::filesystem::path("Waveforms"));
     }
-
-    // Get the histograms and prepare them
-	// for(auto &evt: evts_ )
-	// {
-	//     evt->LoadFiles(EVENTSTATE_PDSUBTRACTED);
-	// }
-
-
-    // Load the histograms & .ini file. If the event
-    // did not pass the pd subtraction, throw it away
-    // auto evt_itr = evts_.begin();
-    //
-    // while( evt_itr != evts_.end() )
-    // {
-    //     (*evt_itr)->LoadFiles(EVENTSTATE_PDSUBTRACTED);
-    //
-    //     if( (*evt_itr)->GetState() == EVENTSTATE_PDFAILED )
-    //     {
-    //             delete (*evt_itr);
-    //             (*evt_itr) = NULL;
-    //             evts_.erase(evt_itr);
-    //     }
-    //     else
-    //     {
-    //             evt_itr++;
-    //     }
-    // }
 
     std::vector<std::vector<TGraph*>> graphs;
     std::string names[15] = {"_lstart", "_lstop", "_lresult", "_start", "_stop", "_result", "_par0", "_par1", "_par2", "_chi2", "_ndf", +"_pval", "_area1", "area2", "_area_diff"};
