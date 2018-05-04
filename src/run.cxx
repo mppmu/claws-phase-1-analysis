@@ -1670,11 +1670,17 @@ void CalibrationRun::SystematicsStudy()
     }
 
     // Fit the time resolution with a gaussian
-    TF1* time_res =new TF1("gaus","gaus",1,3, TF1::EAddToList::kNo);
+//    TF1* time_res =new TF1("gaus","gaus",1,3, TF1::EAddToList::kNo);
+    //TF1* time_res =new TF1("gaus","gaus(0)+gaus(3)",1,3, TF1::EAddToList::kNo);
+    TF1* time_res =new TF1("gaus","[0]*exp(-0.5*((x-[1])/[2])**2) + [3]*exp(-0.5*((x-[1])/[4])**2)",1,3, TF1::EAddToList::kNo);
 
-    time_res->SetParameter(0, 50);
+    time_res->SetParameter(0, 500);
     time_res->SetParameter(1, 0);
     time_res->SetParameter(2, dt);
+
+    time_res->SetParameter(3, 50);
+    //time_res->SetParameter(4, 0);
+    time_res->SetParameter(4, dt*4);
 
     double low = -dt*GS->GetParameter<double>("SystematicsStudy.range_time");
     double up  = - low;

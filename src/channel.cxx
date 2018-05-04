@@ -916,7 +916,7 @@ void PhysicsChannel::SignalTagging()
     int signal_length 			= GS->GetParameter<int>("SignalTagging.signal_length");
     int pre_threshold 			= GS->GetParameter<int>("SignalTagging.pre_threshold");
 
-    unsigned i=1 + pre_threshold;
+    unsigned i = 1 + pre_threshold;
 
     while( i <= wf_->GetNbinsX() )
     {
@@ -1055,127 +1055,188 @@ void PhysicsChannel::PrepareDecomposition()
 
 void PhysicsChannel::WaveformDecomposition(TH1F* avg)
 {
-    double  threshold    =  GS->GetParameter<double>("WaveformDecomposition.threshold");
+//    double  threshold    =  GS->GetParameter<double>("WaveformDecomposition.threshold");
 
     int     search_range =  GS->GetParameter<double>("WaveformDecomposition.search_range");
+    int     search_edge =  GS->GetParameter<double>("WaveformDecomposition.search_edge");
+    int     fwhm =  GS->GetParameter<double>("WaveformDecomposition.fwhm");
 
-    int     nbins        = recowf_->GetNbinsX();
-
-    int     avg_nbins    = avg->GetNbinsX();
+    // int     nbins        = recowf_->GetNbinsX();
+    //
+    //int     avg_nbins    = avg->GetNbinsX();
     double  avg_max      = avg->GetMaximum();
     int     avg_maxbin   = avg->GetMaximumBin();
+    //
+    // int avg_fwhm1 = avg->FindFirstBinAbove(avg->GetMaximum()/2);
+    // int avg_fwhm2 = avg->FindLastBinAbove(avg->GetMaximum()/2);
+    // double avg_fwhm = avg->GetBinCenter(avg_fwhm2) - avg->GetBinCenter(avg_fwhm1);
 
-    int avg_fwhm1 = avg->FindFirstBinAbove(avg->GetMaximum()/2);
-    int avg_fwhm2 = avg->FindLastBinAbove(avg->GetMaximum()/2);
-    double avg_fwhm = avg->GetBinCenter(avg_fwhm2) - avg->GetBinCenter(avg_fwhm1);
-
-    double  threshold2    =  avg_max*GS->GetParameter<double>("WaveformDecomposition.threshold2");
-
+    //double  threshold    =  avg_max*GS->GetParameter<double>("WaveformDecomposition.threshold");
+    double  threshold    =  GS->GetParameter<double>("WaveformDecomposition.threshold");
     // make sure the edges in the histogram are handled properly:
     //double b_low = recowf_->GetBinCenter(avg_maxbin);
-    double b_low = recowf_->GetBinCenter(search_range);
-    // double b_up  = recowf_->GetBinCenter( nbins - ( avg->GetNbinsX() - avg_maxbin ) );
-    double b_up  = recowf_->GetBinCenter( nbins - search_range );
-    recowf_->GetXaxis()->SetRangeUser(b_low, b_up);
 
-    int maxbin = 0;
-
-    auto get_max_bin = [](TH1F* wf, int first, int last)->int
-                       {
-                           double max = 0;
-                           double maxbin = first;
-
-                           for(int bin = first; bin <= last; ++bin)
-                           {
-                               if( wf->GetBinContent(bin) > max)
-                               {
-                                   maxbin = bin;
-                                   max    = wf->GetBinContent(bin);
-                               }
-                           }
-
-                           return maxbin;
-                       };
-
-
-    auto check_threshold = [](TH1F* wf, int &maxbin, double threshold)->bool
-                           {
-                               maxbin = wf->GetMaximumBin();
-                               return (wf->GetBinContent(maxbin) > threshold);
-                           };
-
-
-    auto go_on = [avg_fwhm1, avg_fwhm2](TH1F* wf, int &maxbin, double threshold)->bool
-                 {
-                     maxbin = wf->GetMaximumBin();
-
-                     int bin1 = maxbin;
-                     while( wf->GetBinContent(bin1) > wf->GetBinContent(maxbin)/2) --bin1;
-                     int bin2 = maxbin;
-                     while( wf->GetBinContent(bin2) > wf->GetBinContent(maxbin)/2) ++bin2;
-
-                     bool larger = wf->GetBinContent(maxbin) > threshold;
-
-                     bool wider = (bin2-bin1) >= 2;
-
-                     double average = 0;
-                     int n = 0;
-                     for(int bin = maxbin -5; bin <= maxbin+5;++bin)
-                     {
-                         average += wf->GetBinContent(bin);
-                         ++n;
-                     }
-                     average /=n;
-                     bool positiv = average >= 0;
-
-                     if(larger)
-                     {
-                         double one =1;
-                     }
-
-                     if(wider)
-                     {
-                         double one =1;
-                     }
-
-                     if(positiv)
-                     {
-                         double one =1;
-                     }
-
-                     return larger && wider && positiv;
-                    };
+    // double b_low = recowf_->GetBinCenter(search_range);
+    // // double b_up  = recowf_->GetBinCenter( nbins - ( avg->GetNbinsX() - avg_maxbin ) );
+    // double b_up  = recowf_->GetBinCenter( nbins - search_range );
+    // recowf_->GetXaxis()->SetRangeUser(b_low, b_up);
+    //
+    // auto check_threshold = [](TH1F* wf, int &maxbin, double threshold)->bool
+    //                        {
+    //                            maxbin = wf->GetMaximumBin();
+    //                            return (wf->GetBinContent(maxbin) > threshold);
+    //                        };
+    //
+    //
+    // auto go_on = [avg_fwhm1, avg_fwhm2](TH1F* wf, int &maxbin, double threshold)->bool
+    //              {
+    //                  maxbin = wf->GetMaximumBin();
+    //
+    //                  int bin1 = maxbin;
+    //                  while( wf->GetBinContent(bin1) > wf->GetBinContent(maxbin)/2) --bin1;
+    //                  int bin2 = maxbin;
+    //                  while( wf->GetBinContent(bin2) > wf->GetBinContent(maxbin)/2) ++bin2;
+    //
+    //                  bool larger = wf->GetBinContent(maxbin) > threshold;
+    //
+    //                  bool wider = (bin2-bin1) >= 2;
+    //
+    //                  double average = 0;
+    //                  int n = 0;
+    //                  for(int bin = maxbin -5; bin <= maxbin+5;++bin)
+    //                  {
+    //                      average += wf->GetBinContent(bin);
+    //                      ++n;
+    //                  }
+    //                  average /=n;
+    //                  bool positiv = average >= 0;
+    //
+    //                  if(larger)
+    //                  {
+    //                      double one =1;
+    //                  }
+    //
+    //                  if(wider)
+    //                  {
+    //                      double one =1;
+    //                  }
+    //
+    //                  if(positiv)
+    //                  {
+    //                      double one =1;
+    //                  }
+    //
+    //                  return larger && wider && positiv;
+    //                 };
     // bool check_in_range = [&maxbin, threshold](TH1F* wf)->bool
     //                       {
     //
     //                       }
 
-    auto subtract = [](TH1F* wf, int maxbin, TH1F* avg, int avg_maxbin)
-                    {
+    auto check = [](TH1F* wf, int maxbin, double threshold, int fwhm)->bool
+    {
+        // check threshold
+        bool threshold_true = wf->GetBinContent(maxbin) > threshold;
+
+        // check fwhm
+        int bin1 = maxbin;
+        while( wf->GetBinContent(bin1) > wf->GetBinContent(maxbin)/2) --bin1;
+        int bin2 = maxbin;
+        while( wf->GetBinContent(bin2) > wf->GetBinContent(maxbin)/2) ++bin2;
+
+        bool fwhm_true = (bin2-bin1) >= fwhm;
+
+        // check neighborhood > 0
+        double hood = 0;
+
+        for(int bin = maxbin -5; bin <= maxbin+5;++bin)
+        {
+            hood += wf->GetBinContent(bin);
+        }
+
+        bool hood_true = hood >= 0;
+
+        return threshold_true && fwhm_true && hood_true;
+    };
+
+    auto subtract = [](TH1F* wf, int maxbin, TH1F* avg, int avg_maxbin)->void
+    {
                         for( int bin = 1; bin <= avg->GetNbinsX(); ++bin)
                         {
                             double avg_bin_cont = avg->GetBinContent(bin);
                             double bin_cont     = wf->GetBinContent(bin + maxbin - avg_maxbin);
                             wf->SetBinContent(bin + maxbin - avg_maxbin, bin_cont - avg_bin_cont);
                         }
-                    };
-    while(go_on(recowf_, maxbin, threshold2))
-    // while(check_threshold(recowf_, maxbin, threshold2))
-    {
-        subtract(recowf_, maxbin, avg, avg_maxbin);
-        // does ++GetBinContent(maxbin)
-        //pewf_->AddBinContent(maxbin);
-        pewf_->Fill( recowf_->GetBinCenter(maxbin));
+    };
 
-        // for(unsigned int i = 1; i <= avg_nbins; ++i)
-        // {
-        //     //double avg_bincont = avg->GetBinContent( i + 1 );
-        //     double avg_bincontent = avg->GetBinContent(i);
-        //     double bincontent     = recowf_->GetBinContent(i + maxbin - avg_maxbin);
-        //
-        //     recowf_->SetBinContent(i + maxbin - avg_maxbin, bincontent - avg_bincontent);
-        // }
+    auto get_max_bin_in_range = [](TH1F* wf, int first, int last)->int
+    {
+        double max = 0;
+        double maxbintmp = first;
+
+        for(int bin = first; bin <= last; ++bin)
+        {
+            if( wf->GetBinContent(bin) > max)
+            {
+                maxbintmp = bin;
+                max    = wf->GetBinContent(bin);
+            }
+        }
+
+        return maxbintmp;
+    };
+
+    int maxbin = recowf_->GetMaximumBin();
+
+    while( check(recowf_, maxbin, threshold, fwhm) )
+    {
+        if(check(recowf_, maxbin, 2*threshold, fwhm))
+        {
+            while(check(recowf_, maxbin, 2*threshold, fwhm))
+            {
+                subtract(recowf_, maxbin, avg, avg_maxbin);
+                pewf_->Fill( recowf_->GetBinCenter(maxbin));
+
+                // Seach for new max in the hood of the previous and check if
+                // it is located on the borders of the search range.
+                int first = maxbin - search_range;
+                int last  = maxbin + search_range;
+
+                maxbin = get_max_bin_in_range(recowf_, first, last);
+
+                if( maxbin <= first + search_edge || maxbin >= last - search_edge) break;
+            }
+        }
+        else
+        {
+            subtract(recowf_, maxbin, avg, avg_maxbin);
+            pewf_->Fill( recowf_->GetBinCenter(maxbin));
+        }
+
+        maxbin = recowf_->GetMaximumBin();
     }
+
+    // while(go_on(recowf_, maxbin, threshold2))
+    // // while(check_threshold(recowf_, maxbin, threshold2))
+    // {
+    //     subtract(recowf_, maxbin, avg, avg_maxbin);
+    //     // does ++GetBinContent(maxbin)
+    //     //pewf_->AddBinContent(maxbin);
+    //     pewf_->Fill( recowf_->GetBinCenter(maxbin));
+    //
+    //     // for(unsigned int i = 1; i <= avg_nbins; ++i)
+    //     // {
+    //     //     //double avg_bincont = avg->GetBinContent( i + 1 );
+    //     //     double avg_bincontent = avg->GetBinContent(i);
+    //     //     double bincontent     = recowf_->GetBinContent(i + maxbin - avg_maxbin);
+    //     //
+    //     //     recowf_->SetBinContent(i + maxbin - avg_maxbin, bincontent - avg_bincontent);
+    //     // }
+    // }
+    //
+    //
+
+
 
     // int maxbin = recowf_->GetMaximumBin();
     //

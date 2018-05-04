@@ -1061,18 +1061,23 @@ void PhysicsEvent::WaveformDecomposition(Gain* gain)
 		 * \todo Verify that allways FWD1 is matched to FWD1 etc
 		 */
 
-		 // int nthreads   = GS->GetParameter<int>("General.nthreads");
-		 // bool parallelize = GS->GetParameter<bool>("General.parallelize");
-		 //
-		 // #pragma omp parallel for if(parallelize) num_threads(nthreads)
+		 int nthreads   = GS->GetParameter<int>("General.nthreads");
+		 bool parallelize = GS->GetParameter<bool>("General.parallelize");
 
-		for(auto & channel : channels_)
-		{
-			GainChannel * gch = gain->GetChannel(channel->GetName());
-
-			PhysicsChannel *pch = dynamic_cast<PhysicsChannel*>(channel);
-			pch->WaveformDecomposition(gch->GetAvg());
-		}
+		 #pragma omp parallel for if(parallelize) num_threads(nthreads)  firstprivate(gain)
+		 for( int i = 0; i < channels_.size(); ++i)
+		 {
+			 GainChannel * gch = gain->GetChannel(channels_.at(i)->GetName());
+			 PhysicsChannel *pch = dynamic_cast<PhysicsChannel*>(channels_.at(i));
+			 pch->WaveformDecomposition(gch->GetAvg());
+		 }
+		// for(auto & channel : channels_)
+		// {
+		// 	GainChannel * gch = gain->GetChannel(channel->GetName());
+		//
+		// 	PhysicsChannel *pch = dynamic_cast<PhysicsChannel*>(channel);
+		// 	pch->WaveformDecomposition(gch->GetAvg());
+		// }
 
 		 state_ = EVENTSTATE_WFDECOMPOSED;
 		 pt_.put("General.State", state_);
