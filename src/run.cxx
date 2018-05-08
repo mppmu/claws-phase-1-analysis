@@ -66,7 +66,7 @@
 
 
 using namespace std;
-
+using namespace boost;
 
 Double_t langaufun(Double_t *x, Double_t *par) {
 
@@ -149,12 +149,23 @@ Run::~Run()
 
 void Run::LoadRunSettings()
 {
-     boost::filesystem::path settings_file  = path_ / ("Run-" + std::to_string(nr_) + "-Settings.ini");
+    int phase = GS->GetParameter<int>("General.Phase");
 
-     if( boost::filesystem::is_regular_file(settings_file) && exists(settings_file) )
-     {
-             boost::property_tree::ini_parser::read_ini(settings_file.string(), settings_);
-     }
+    boost::filesystem::path settings_file;
+
+    if(phase == 1)
+    {
+        settings_file = path_ / ("Run-" + std::to_string(nr_) + "-Settings.ini");
+    }
+    else if(phase == 2)
+    {
+        settings_file = path_ / ("config-" + std::to_string(nr_) + ".ini");
+    }
+
+    if( boost::filesystem::is_regular_file(settings_file) && exists(settings_file) )
+    {
+         boost::property_tree::ini_parser::read_ini(settings_file.string(), settings_);
+    }
 };
 //
 // std::tuple<double, double> Run::GetTime()
@@ -212,21 +223,40 @@ void CalibrationRun::SynchronizePhysicsEvents()
 
      cout << "\033[33;1mRun::Synchronizing physics run:\033[0m running" << "\r" << std::flush;
 
+     int phase = GS->GetParameter<int>("General.Phase");
+
+     filesystem::path p_physics_dir = path_;
+     filesystem::path p_cal_dir = path_;
+     string file_start = "";
+
+     if(phase == 1)
+     {
+         p_physics_dir /= boost::filesystem::path("data_root");
+         p_cal_dir /= boost::filesystem::path("int_root");
+         file_start = "Event-";
+     }
+     else if(phase == 1)
+     {
+         p_physics_dir /= filesystem::path("raw")/filesystem::path("physics");
+         p_cal_dir /= filesystem::path("raw")/filesystem::path("intermediate");
+         file_start = "physics-";
+     }
+
      // Check if the converted root, data & folder for calibration events are available.
-     if( !boost::filesystem::is_directory(path_/boost::filesystem::path("data_root"))  )
+     if( !boost::filesystem::is_directory(p_physics_dir)  )
      {
              cout << "Run folder does not exits!" << endl;
              exit(-1);
      }
 
-     if( !boost::filesystem::is_directory(path_/boost::filesystem::path("data_root"))
-         || boost::filesystem::is_empty(path_/boost::filesystem::path("data_root"))    )
+     if( !boost::filesystem::is_directory(p_physics_dir)
+         || boost::filesystem::is_empty(p_physics_dir)  )
      {
              cout << "data_root folder does not exits!" << endl;
              exit(-1);
      }
 
-     if( !boost::filesystem::is_directory(path_/boost::filesystem::path("int_root")))
+     if( !boost::filesystem::is_directory(p_cal_dir) )
      {
              cout << "int_root folder does not exits!" << endl;
              exit(-1);
@@ -235,7 +265,8 @@ void CalibrationRun::SynchronizePhysicsEvents()
 		 // Create the physics events based on the existing root files in the Run/data_root folder
 
     std::vector<boost::filesystem::path> physics_files;
-    copy( boost::filesystem::directory_iterator(path_/ boost::filesystem::path("data_root")), boost::filesystem::directory_iterator(), back_inserter(physics_files));
+
+    copy( boost::filesystem::directory_iterator(p_physics_dir), boost::filesystem::directory_iterator(), back_inserter(physics_files)   );
 
     std::sort( physics_files.begin(), physics_files.end());
 
@@ -244,13 +275,19 @@ void CalibrationRun::SynchronizePhysicsEvents()
 				std::string file_name = file.filename().string();
 
 		    if(    boost::filesystem::is_regular_file(file)
-			      && boost::starts_with( file_name, "Event-")
-			      && boost::ends_with( file_name, ".root"))
+			      && boost::starts_with( file_name, file_start)
+			      && boost::ends_with( file_name, ".root")   )
 			  {
 				   // Get path to ini file
 				   std::string tmp = file_name;
 				   boost::replace_last( tmp, ".root", ".ini");
-				   boost::filesystem::path ini_file  = path_/ boost::filesystem::path("data_root") / boost::filesystem::path(tmp);
+
+                   if(phase == 2)
+                   {
+                       boost::replace_first( tmp, "physics", "info");
+                   }
+
+				   boost::filesystem::path ini_file  = p_physics_dir/filesystem::path(tmp);
 
 					 // Get the path to the file from the online monitor
 				   boost::replace_first(tmp, "Event-","");

@@ -32,7 +32,13 @@ if __name__ == '__main__':
     plt.savefig('/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/SystematicsStudy/systematics_pair_plot.png')
 
 
-
+    print('MINIMUM TIME RESOLUTION:')
+    print( df.ix[df['TRes'].idxmin()] )
+    print('MINIMUM TIME SHIFT:')
+    print( df.ix[df['TRes_shift'].idxmin()] )
+    for i in range(1,5):
+        print('MAXIMUM MPV'+str(i)+':')
+        print( df.ix[df['MPV_'+str(i)].idxmax()] )
     #print()
     # df[-1] = np.zeros(len(columns))
 

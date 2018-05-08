@@ -20,6 +20,8 @@
 
 #include <TFile.h>
 
+using namespace std;
+
 std::unique_ptr<claws::GlobalSettings>  GS = std::unique_ptr<claws::GlobalSettings>(new claws::GlobalSettings);
 
 namespace claws {
@@ -441,7 +443,12 @@ namespace claws {
             // {
             //     files.push_back(p);
             // }
-            if ( boost::filesystem::is_directory(p) && boost::starts_with(p.filename().string(), "Run-") )
+            int phase = config_calibration_.get<int>( "General.Phase" );
+            string start = "";
+            if(phase == 1) start = "Run-";
+            else if(phase == 2) start = "run-";
+
+            if ( boost::filesystem::is_directory(p) && boost::starts_with(p.filename().string(), start) )
             {
                 std::cout << p.string() <<std::endl;
                 runs.push_back(p);
@@ -461,7 +468,7 @@ namespace claws {
                     {
             			// If it is a file do not do anything!
             		}
-            		else if(boost::filesystem::is_directory(*itr) && boost::starts_with((*itr).filename().string(), "Run-"))
+            		else if(boost::filesystem::is_directory(*itr) && boost::starts_with((*itr).filename().string(), start))
                     {
             			// If it is a directory check if it is a Run folder and proceed.
                         runs.push_back(*itr);

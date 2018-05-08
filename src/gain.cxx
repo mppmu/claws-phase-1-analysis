@@ -105,32 +105,32 @@ double* GainChannel::FitGain()
     gain_[10]    = hist_->GetEntries();
     gain_[11]    = 0;
 
-    TF1* gaus=new TF1( (name_ + "_gaus").c_str(),"gaus", GS->GetParameter<double>("Gain.xlow"), GS->GetParameter<double>("Gain.xup"));
-    gaus->SetParameter(0, hist_->GetMaximum());
-    gaus->SetParameter(1, hist_->GetBinCenter( hist_->GetMaximumBin()));
-    gaus->SetParameter(2, GS->GetParameter<double>("Gain.sigma"));
+    TF1* g1=new TF1( (name_ + "_g1").c_str(),"gaus", hist_->GetBinCenter( hist_->GetMaximumBin())*0.75, hist_->GetBinCenter( hist_->GetMaximumBin())*1.25 );
+    g1->SetParameter(0, hist_->GetMaximum());
+    g1->SetParameter(1, hist_->GetBinCenter( hist_->GetMaximumBin()));
+    g1->SetParameter(2, GS->GetParameter<double>("Gain.sigma"));
 
-    TFitResultPtr result = hist_->Fit(gaus,"LQS","", hist_->GetBinCenter( hist_->GetMaximumBin())*0.75, hist_->GetBinCenter( hist_->GetMaximumBin())*1.25 );
+    TFitResultPtr result = hist_->Fit(g1,"RLQS+");
 
     if( int(result) != 0)
     {
-        result = hist_->Fit(gaus,"LQS","", hist_->GetBinCenter( hist_->GetMaximumBin())*0.75 , hist_->GetBinCenter( hist_->GetMaximumBin())*1.25 );
+        result = hist_->Fit(g1,"RLQS+","", hist_->GetBinCenter( hist_->GetMaximumBin())*0.5 , hist_->GetBinCenter( hist_->GetMaximumBin())*1.5 );
     }
 
     gain_[0]    = int(result);
 
-    for(int i = 1; i<4; i++ ) gain_[i]    = gaus->GetParameter( i-1 );
+    for(int i = 1; i<4; i++ ) gain_[i]    = g1->GetParameter( i-1 );
 
-    gain_[7]    = gaus->GetChisquare();
-    gain_[8]    = gaus->GetNDF();
+    gain_[7]    = g1->GetChisquare();
+    gain_[8]    = g1->GetNDF();
     gain_[9]    = result->Prob();
 
     gain_[11]    = 1;
-    gain_[12]    = gaus->GetParameter(1);
+    gain_[12]    = g1->GetParameter(1);
 
    assert( int(result) == 0 );
 
-   // double gaus fit
+   // double g1 fit
    if(result->Ndf() != 0 ) assert( result->Chi2()/result->Ndf() < GS->GetParameter<double>("Gain.chi2_bound") );
    else                    assert( result->Chi2()/0.001         < GS->GetParameter<double>("Gain.chi2_bound") );
     // if( int(result) != 0)
@@ -186,18 +186,18 @@ double* GainChannel::FitGain()
     // instead do two gaussians
     double mean_bias = GS->GetParameter<double>("Gain.mean_bias");
 
-    TF1* gaus2=new TF1( (name_ + "_gaus2").c_str(),"gaus", 2*GS->GetParameter<double>("Gain.xlow"), 2*GS->GetParameter<double>("Gain.xup"));
-    gaus2->SetParameter(0, gaus->GetParameter(0)*0.1);
-    gaus2->SetParameter(1, gaus->GetParameter(1)*2 );
-    gaus2->SetParameter(2, gaus->GetParameter(2)*1.414);
+    TF1* g2=new TF1( (name_ + "_g2").c_str(),"gaus", g1->GetParameter(1)*1.75, g1->GetParameter(1)*2.25);
+    g2->SetParameter(0, g1->GetParameter(0)*0.1);
+    g2->SetParameter(1, g1->GetParameter(1)*2 );
+    g2->SetParameter(2, g1->GetParameter(2)*1.414);
 
-    TFitResultPtr result2 = hist_->Fit(gaus2,"LQS+","", gaus->GetParameter(1)*1.75 , gaus->GetParameter(1)*2.25 );
+    TFitResultPtr result2 = hist_->Fit(g2,"RLQS+" );
 
     gain_[0]    = int(result2);
 
-    gain_[4]    = gaus2->GetParameter(0);
-    gain_[5]    = gaus2->GetParameter(1);
-    gain_[6]    = gaus2->GetParameter(2);
+    gain_[4]    = g2->GetParameter(0);
+    gain_[5]    = g2->GetParameter(1);
+    gain_[6]    = g2->GetParameter(2);
 
 
     gain_[11]   = 2;
@@ -214,7 +214,7 @@ double* GainChannel::FitGain()
     // }
 
     // Just using the first peak
-    gain_[12] = gaus->GetParameter(1);
+    gain_[12] = g1->GetParameter(1);
 
     return gain_;
 }
