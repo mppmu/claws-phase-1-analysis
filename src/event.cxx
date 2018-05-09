@@ -455,10 +455,24 @@ PhysicsEvent::PhysicsEvent(boost::filesystem::path file, boost::filesystem::path
 
 	// nr_str_ = file_root.filename().string().substr(6,9);
 	// Get the path to the file from the online monitor
+	int phase = GS->GetParameter<int>("General.Phase");
 
-	string tmp = file.filename().string();
-  	boost::replace_first(tmp, "Event-","");
-  	boost::replace_last(tmp, ".root", "");
+	if(phase == 1)
+	{
+		string tmp = file.filename().string();
+		boost::replace_first(tmp, "Event-","");
+		boost::replace_last(tmp, ".root", "");
+		nr_     = stol( tmp );
+	}
+	else if(phase == 2)
+	{
+		string tmp = file.filename().string();
+		boost::replace_first(tmp, "physics-","");
+		boost::replace_last(tmp, ".root", "");
+		tmp.erase(tmp.find("-"),1);
+		nr_     = stol( tmp );
+	}
+
 
 	/** Now the string only contains a number. The first 6 digits
 	* 	digits are the runnumber. Since for the muon runs 4 digit
@@ -466,7 +480,7 @@ PhysicsEvent::PhysicsEvent(boost::filesystem::path file, boost::filesystem::path
 	*   last 15 to be sure
 	*/
 	//nr_     = atoi( tmp.substr(6,15).c_str());
-	nr_     = stol( tmp );
+
 	// if(file.filename().string().size() == 20 )
 	// {
 	// 	nr_     = atoi(file.filename().string().substr(6,9).c_str());

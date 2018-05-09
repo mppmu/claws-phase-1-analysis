@@ -26,6 +26,7 @@ if __name__ == '__main__':
     df = pd.read_csv('/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/SystematicsStudy/systematics_results.csv')
     print(df.tail(10))
 
+    df = df.drop(['Unnamed: 0', 'Unnamed: 0.1', 'Unnamed: 0.1.1'], axis=1)
     plt.figure()
     # sns.pairplot(data=df,hue="Survived", dropna=True)
     sns.pairplot(data=df)
@@ -35,7 +36,7 @@ if __name__ == '__main__':
     print('MINIMUM TIME RESOLUTION:')
     print( df.ix[df['TRes'].idxmin()] )
     print('MINIMUM TIME SHIFT:')
-    print( df.ix[df['TRes_shift'].idxmin()] )
+    print( df.ix[df['TRes_shift'].abs().idxmin()] )
     for i in range(1,5):
         print('MAXIMUM MPV'+str(i)+':')
         print( df.ix[df['MPV_'+str(i)].idxmax()] )

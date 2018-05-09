@@ -235,7 +235,7 @@ void CalibrationRun::SynchronizePhysicsEvents()
          p_cal_dir /= boost::filesystem::path("int_root");
          file_start = "Event-";
      }
-     else if(phase == 1)
+     else if(phase == 2)
      {
          p_physics_dir /= filesystem::path("raw")/filesystem::path("physics");
          p_cal_dir /= filesystem::path("raw")/filesystem::path("intermediate");
@@ -323,14 +323,45 @@ void CalibrationRun::SynchronizeCalibrationEvents()
 		 /** The calibration waveforms where only taken if a run Finished completely, not is it was manually stopped!
 		 *  Die Scheiße hier sauber machen!!!!
 		 */
-	boost::filesystem::path path_int = path_/ boost::filesystem::path("int_root");
-	while( !claws::CheckIntFolder(path_int) )
+
+     int phase = GS->GetParameter<int>("General.Phase");
+
+    // filesystem::path p_physics_dir = path_;
+    filesystem::path p_cal_dir = path_;
+
+    if(phase == 1)
+    {
+        //p_physics_dir /= boost::filesystem::path("data_root");
+        p_cal_dir /= boost::filesystem::path("int_root");
+    }
+    else if(phase == 2)
+    {
+    //         p_physics_dir /= filesystem::path("raw")/filesystem::path("physics");
+        p_cal_dir /= filesystem::path("raw")/filesystem::path("intermediate");
+    }
+
+	//boost::filesystem::path path_int = path_/ boost::filesystem::path("int_root");
+
+	while( !claws::CheckIntFolder(p_cal_dir) )
  	{
- 	    int new_run = atoi( path_int.parent_path().filename().string().substr(4,6).c_str())-1;
- 	    cal_nr_ = new_run;
- 	    path_int = path_.parent_path()/("Run-" + to_string(new_run) );
- 	    path_int /= "int_root";
- 	    std::cout << "\033[1;31mIntermediate Data not valid!!! \n Switching to: "<< path_int << "\033[0m"<< "\r" << std::endl;
+        int new_run = 0;
+        
+        if(phase == 1)
+        {
+            new_run = atoi( p_cal_dir.parent_path().filename().string().substr(4,6).c_str())-1;
+            cal_nr_ = new_run;
+ 	        p_cal_dir = path_.parent_path()/("Run-" + to_string(new_run) );
+ 	        p_cal_dir /= "int_root";
+        }
+        else if(phase == 2)
+        {
+            new_run = atoi( p_cal_dir.parent_path().parent_path().filename().string().substr(4,6).c_str())-1;
+            cal_nr_ = new_run;
+            p_cal_dir = path_.parent_path()/("run-" + to_string(new_run) );
+            p_cal_dir /= filesystem::path("raw/intermediate");
+        }
+
+ 	    std::cout << "\033[1;31mIntermediate Data not valid!!! \n Switching to: "<< p_cal_dir << "\033[0m"<< "\r" << std::endl;
 
         if(cal_nr_ != nr_)
         {
@@ -345,7 +376,7 @@ void CalibrationRun::SynchronizeCalibrationEvents()
 
 
 	std::vector<boost::filesystem::path> cal_files;
-    copy( boost::filesystem::directory_iterator(path_int), boost::filesystem::directory_iterator(), back_inserter(cal_files));
+    copy( boost::filesystem::directory_iterator(p_cal_dir), boost::filesystem::directory_iterator(), back_inserter(cal_files));
 
 	std::sort( cal_files.begin(), cal_files.end());
 
@@ -355,15 +386,32 @@ void CalibrationRun::SynchronizeCalibrationEvents()
 
 	for(auto file : cal_files)
 	{
+        string file_start = "";
+        if(phase == 1)
+        {
+            file_start = "Run-"+ to_string(cal_nr_) +"-Int";
+        }
+        else if(phase == 2)
+        {
+            file_start = "inter-"+ to_string(cal_nr_);
+        }
+
 		std::string file_name = file.filename().string();
+
 		if(    boost::filesystem::is_regular_file(file)
-	        && boost::starts_with(file_name, ("Run-"+ to_string(cal_nr_) +"-Int") )
+	        && boost::starts_with(file_name,  file_start)
 		    && boost::ends_with(file_name, ".root"))
 		{
 		                  // Get the path to the .ini file
 		std::string tmp = file_name;
 		boost::replace_last( tmp, ".root", ".ini");
-		boost::filesystem::path ini_file  = path_int / boost::filesystem::path(tmp);
+
+        if(phase == 2)
+        {
+            tmp = "config_inter-" + to_string(cal_nr_) + ".ini";
+        }
+
+		boost::filesystem::path ini_file  = p_cal_dir / boost::filesystem::path(tmp);
 
 		cal_evts_.emplace_back( new CalibrationEvent(file, ini_file, evt_time) );
 		}

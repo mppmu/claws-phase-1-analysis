@@ -57,8 +57,8 @@ if __name__ == '__main__':
     # print(df.head())
 
     columns = parameters_name + results_name
-    #df = pd.DataFrame(columns=columns)
-    df = pd.read_csv('/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/SystematicsStudy/systematics_results.csv')
+    df = pd.DataFrame(columns=columns)
+    #df = pd.read_csv('/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/SystematicsStudy/systematics_results.csv')
     config = configparser.ConfigParser()
     config.optionxform = str
     config.read(cfile_name)
@@ -68,14 +68,19 @@ if __name__ == '__main__':
     #systematics_study_range_time = config['SystematicsStudy']['range_time']
     #systematics_study_threshold_mpv = config['SystematicsStudy']['threshold_mpv']
     #systematics_study_window_length_mpv = config['SystematicsStudy']['window_length_mpv']
-    systematics_study_start_mpv = config['SystematicsStudy']['start_mpv']
+    #systematics_study_start_mpv = config['SystematicsStudy']['start_mpv']
 
     n = 1
     #nges = len(xrange(14980,15021,10)) + len(xrange(10, 61,10) + len(xrange(4,9)) + len( np.arange(0.2, 0.8, 0.1) )
     nges = 5*6*6*7
-    for systematics_study_start_mpv in range(15010,15021,10):
+    for systematics_study_start_mpv in range(14980,15021,10):
+        change_parameter(cfile_name, 'SystematicsStudy', 'start_mpv', systematics_study_start_mpv)
+
         for systematics_study_window_length_mpv in range(10, 61,10):
+            change_parameter(cfile_name, 'SystematicsStudy', 'window_length_mpv', systematics_study_window_length_mpv)
+
             for systematics_study_range_time in range(4,9):
+                change_parameter(cfile_name, 'SystematicsStudy', 'range_time', systematics_study_range_time)
 
                 thrtes_array = np.arange(0.2, 0.8, 0.1)
                 for systematics_study_threshold_tres in thrtes_array:
