@@ -26,16 +26,18 @@ class GainChannel
     * @param  gain_     [ 0: Fit status
     *                     1: Fit par const1
     *                     2: Fit par mean1
-    *                     3: Fit par sigma1
-    *                     4: Fit par const2
-    *                     5: Fit par mean2
-    *                     6: Fit par sigma2
-    *                     7: Fit Chi2
-    *                     8: Fit NDF
-    *                     9: Fit p-value
-    *                     10: Hist entries
-    *                     11: Stage
-    *                     12: Gain ]
+    *                     3: Fit mean1 err
+    *                     4: Fit par sigma1
+    *                     5: Fit par const2
+    *                     6: Fit par mean2
+    *                     7: Fit mean2 err
+    *                     8: Fit par sigma2
+    *                     9: Fit Chi2
+    *                     10: Fit NDF
+    *                     11: Fit p-value
+    *                     12: Hist entries
+    *                     13: Stage
+    *                     14: Gain ]
     *
     * @param  avg_res_ [ 0: Number of waveforms averaged
     *                    1: Fit start value
@@ -80,7 +82,7 @@ class GainChannel
         TH1F*       avg_;
         // double      gain_;
         int         n_;
-        double      gain_[13];
+        double      gain_[15];
         double      avg_res_[13];
 
         //int         end;

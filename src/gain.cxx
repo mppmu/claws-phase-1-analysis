@@ -119,14 +119,19 @@ double* GainChannel::FitGain()
 
     gain_[0]    = int(result);
 
-    for(int i = 1; i<4; i++ ) gain_[i]    = g1->GetParameter( i-1 );
+    gain_[1]    = g1->GetParameter(0);
+    gain_[2]    = g1->GetParameter(1);
+    gain_[3]    = g1->GetParError(1);
+    gain_[4]    = g1->GetParameter(2);
 
-    gain_[7]    = g1->GetChisquare();
-    gain_[8]    = g1->GetNDF();
-    gain_[9]    = result->Prob();
+    // for(int i = 1; i<4; i++ ) gain_[i]    = g1->GetParameter( i-1 );
 
-    gain_[11]    = 1;
-    gain_[12]    = g1->GetParameter(1);
+    gain_[9]     = g1->GetChisquare();
+    gain_[10]    = g1->GetNDF();
+    gain_[11]    = result->Prob();
+
+    gain_[13]    = 1;
+    gain_[14]    = g1->GetParameter(1);
 
    assert( int(result) == 0 );
 
@@ -195,12 +200,13 @@ double* GainChannel::FitGain()
 
     gain_[0]    = int(result2);
 
-    gain_[4]    = g2->GetParameter(0);
-    gain_[5]    = g2->GetParameter(1);
-    gain_[6]    = g2->GetParameter(2);
+    gain_[5]    = g2->GetParameter(0);
+    gain_[6]    = g2->GetParameter(1);
+    gain_[7]    = g2->GetParError(1);
+    gain_[8]    = g2->GetParameter(2);
 
 
-    gain_[11]   = 2;
+    gain_[13]   = 2;
 
     // Using the difference in the two peaks
     // if( int(result) == 0 && (result->Chi2()/result->Ndf() <= GS->GetParameter<double>("Gain.chi2_bound") ) )
@@ -214,7 +220,7 @@ double* GainChannel::FitGain()
     // }
 
     // Just using the first peak
-    gain_[12] = g1->GetParameter(1);
+    gain_[14] = g1->GetParameter(1);
 
     return gain_;
 }
@@ -472,7 +478,7 @@ void Gain::AddEvent(CalibrationEvent* evt)
 
 void Gain::FitGain()
 {
-    std::string gain_names[13] = {"Gain_FitStatus","Gain_FitConstant1","Gain_FitMean1","Gain_FitSigma1","Gain_FitConstant2","Gain_FitMean2","Gain_FitSigma2","Gain_FitChi2","Gain_FitNDF","Gain_FitPVal","Gain_Entries","Gain_FitStage","Gain_Gain"};
+    std::string gain_names[15] = {"Gain_FitStatus","Gain_FitConstant1","Gain_FitMean1","Gain_FitMean1Error","Gain_FitSigma1","Gain_FitConstant2","Gain_FitMean2","Gain_FitMean2Error","Gain_FitSigma2","Gain_FitChi2","Gain_FitNDF","Gain_FitPVal","Gain_Entries","Gain_FitStage","Gain_Gain"};
 
     //property tree create
 
@@ -480,7 +486,7 @@ void Gain::FitGain()
     {
         double *gain = channel->FitGain();
 
-        for(int i = 0; i < 13; i++)
+        for(int i = 0; i < 15; i++)
         {
             pt_.put( gain_names[i] + "." + channel->GetName(), gain[i] );
         }

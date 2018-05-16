@@ -26,7 +26,13 @@ if __name__ == '__main__':
     df = pd.read_csv('/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/SystematicsStudy/systematics_results.csv')
     print(df.tail(10))
 
-    df = df.drop(['Unnamed: 0', 'Unnamed: 0.1', 'Unnamed: 0.1.1'], axis=1)
+    quant = 0.8
+    quant2 = 0.7
+
+    #df = df[(df['TRes']<df['TRes'].quantile(quant))&(df['MPV_1']>= df['MPV_1'].quantile(quant2))&(df['MPV_2']>= df['MPV_2'].quantile(quant2))&(df['MPV_3']>= df['MPV_3'].quantile(quant2))&(df['MPV_4']>= df['MPV_4'].quantile(quant2))]
+
+    df = df.drop(['Unnamed: 0'], axis=1)
+    df = df.drop(['Unnamed: 0.1'], axis=1)
     plt.figure()
     # sns.pairplot(data=df,hue="Survived", dropna=True)
     sns.pairplot(data=df)
@@ -40,6 +46,9 @@ if __name__ == '__main__':
     for i in range(1,5):
         print('MAXIMUM MPV'+str(i)+':')
         print( df.ix[df['MPV_'+str(i)].idxmax()] )
+
+    print("CORRELATIONS:")
+    print(df.corr())
     #print()
     # df[-1] = np.zeros(len(columns))
 

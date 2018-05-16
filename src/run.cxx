@@ -345,7 +345,7 @@ void CalibrationRun::SynchronizeCalibrationEvents()
 	while( !claws::CheckIntFolder(p_cal_dir) )
  	{
         int new_run = 0;
-        
+
         if(phase == 1)
         {
             new_run = atoi( p_cal_dir.parent_path().filename().string().substr(4,6).c_str())-1;
@@ -1709,10 +1709,10 @@ void CalibrationRun::SystematicsStudy()
             if( t1 >= 0 && t2 >= 0)
             {
                 hists.back()->Fill(t1-t2);
-                if( fabs(t1-t2) > 2e-9)
-                {
-                    cout << "Event number: " << evt->GetNumber() << ", t1: " << t1 << "t2: " << t2 << ", diff: " << (t1-t2)/(1e-9) << endl;
-                }
+                // if( fabs(t1-t2) > 2e-9)
+                // {
+                //     cout << "Event number: " << evt->GetNumber() << ", t1: " << t1 << "t2: " << t2 << ", diff: " << (t1-t2)/(1e-9) << endl;
+                // }
             }
 
             else hists.back()->Fill(-625*dt);
