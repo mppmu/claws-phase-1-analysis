@@ -1060,6 +1060,7 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
     int     search_range =  GS->GetParameter<double>("WaveformDecomposition.search_range");
     int     search_edge =  GS->GetParameter<double>("WaveformDecomposition.search_edge");
     int     fwhm =  GS->GetParameter<double>("WaveformDecomposition.fwhm");
+    int     stop_region =  GS->GetParameter<double>("WaveformDecomposition.stop_region");
 
     // int     nbins        = recowf_->GetNbinsX();
     //
@@ -1149,7 +1150,7 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
         // check neighborhood > 0
         double hood = 0;
 
-        for(int bin = maxbin -5; bin <= maxbin+5;++bin)
+        for(int bin = maxbin -stop_region; bin <= maxbin+stop_region;++bin)
         {
             hood += wf->GetBinContent(bin);
         }
