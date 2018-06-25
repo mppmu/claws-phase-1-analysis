@@ -460,6 +460,7 @@ void CalibrationRun::PDS_Calibration()
     std::vector<TGraph *> fit_status;
     std::vector<TGraph *> fit_const;
     std::vector<TGraphErrors *> fit_mean;
+    std::vector<TGraph *> fit_sig;
     std::vector<TGraph *> fit_chi2;
     std::vector<TGraph *> fit_ndf;
     std::vector<TGraph *> fit_chi2ndf;
@@ -504,6 +505,16 @@ void CalibrationRun::PDS_Calibration()
       pdg->GetYaxis()->SetRangeUser(-128,127);
       fit_mean.push_back(pdg);
 
+      TGraph * sdg = new TGraph();
+      sdg->SetName( (name +"_fit_sig").c_str() );
+      sdg->SetMarkerStyle(23);
+      sdg->SetMarkerColor(kRed);
+      sdg->SetMarkerSize(1);
+      sdg->GetXaxis()->SetTitle("Time [s]");
+      sdg->GetYaxis()->SetTitle("Sigma [mV]");
+      sdg->GetYaxis()->SetRangeUser(0,127);
+      fit_sig.push_back(sdg);
+
       TGraph * chig = new TGraph();
       chig->SetName( (name +"_fit_chi2").c_str() );
       chig->SetMarkerStyle(23);
@@ -534,9 +545,9 @@ void CalibrationRun::PDS_Calibration()
     //   TH1D * pval = new TH1D((name+"_fit_pval").c_str(),(name+"_fit_pval").c_str(),100,0,1);
       TGraph * pval = new TGraph();
       pval->SetName((name+"_fit_pval").c_str());
-       pval->SetMarkerStyle(23);
-       pval->SetMarkerColor(kRed);
-       pval->SetMarkerSize(1);
+      pval->SetMarkerStyle(23);
+      pval->SetMarkerColor(kRed);
+      pval->SetMarkerSize(1);
       pval->GetXaxis()->SetTitle("Time [s]");
       pval->GetYaxis()->SetTitle("Fit p-value");
       pval->GetYaxis()->SetRangeUser(-0.05,1.05);
@@ -589,22 +600,24 @@ void CalibrationRun::PDS_Calibration()
                 fit_mean.at(i)->SetPoint(evt_counter, evt_time, pd[2]);
                 fit_mean.at(i)->SetPointError(evt_counter, 0.05, pd[3]);
 
-                fit_chi2.at(i)->SetPoint(evt_counter, evt_time, pd[4]);
+                fit_sig.at(i)->SetPoint(evt_counter, evt_time, pd[4]);
 
-                fit_ndf.at(i)->SetPoint(evt_counter, evt_time, pd[5]);
+                fit_chi2.at(i)->SetPoint(evt_counter, evt_time, pd[5]);
+
+                fit_ndf.at(i)->SetPoint(evt_counter, evt_time, pd[6]);
 
 
-                if( pd[5] !=0 ) fit_chi2ndf.at(i)->SetPoint(evt_counter, evt_time, pd[4]/pd[5]);
+                if( pd[5] !=0 ) fit_chi2ndf.at(i)->SetPoint(evt_counter, evt_time, pd[5]/pd[6]);
                 else fit_chi2ndf.at(i)->SetPoint(evt_counter, evt_time, -1.);
 
-                fit_pval.at(i)->SetPoint(evt_counter, evt_time,pd[6]);
+                fit_pval.at(i)->SetPoint(evt_counter, evt_time,pd[7]);
 
-                hist_pval.at(i)->Fill(pd[6]);
+                hist_pval.at(i)->Fill(pd[7]);
 
-                hist_mean.at(i)->SetPoint(evt_counter, evt_time, pd[7]);
-                hist_mean.at(i)->SetPointError(evt_counter, 0.05, pd[8]);
+                hist_mean.at(i)->SetPoint(evt_counter, evt_time, pd[8]);
+                hist_mean.at(i)->SetPointError(evt_counter, 0.05, pd[9]);
 
-                hist_entries.at(i)->SetPoint(evt_counter, evt_time, pd[9]);
+                hist_entries.at(i)->SetPoint(evt_counter, evt_time, pd[10]);
             }
 
             evt_counter ++;
@@ -622,6 +635,8 @@ void CalibrationRun::PDS_Calibration()
       delete fit_const.at(i);
       fit_mean.at(i)->Write();
       delete fit_mean.at(i);
+      fit_sig.at(i)->Write();
+      delete fit_sig.at(i);
       fit_chi2.at(i)->Write();
       delete fit_chi2.at(i);
       fit_ndf.at(i)->Write();
@@ -807,6 +822,7 @@ void CalibrationRun::PDS_Physics()
     std::vector<TGraph *> fit_status;
     std::vector<TGraph *> fit_const;
     std::vector<TGraphErrors *> fit_mean;
+    std::vector<TGraph *> fit_sig;
     std::vector<TGraph *> fit_chi2;
     std::vector<TGraph *> fit_ndf;
     std::vector<TGraph *> fit_chi2ndf;
@@ -849,6 +865,16 @@ void CalibrationRun::PDS_Physics()
       pdg->GetYaxis()->SetTitle("Pedestal mean [mV]");
       pdg->GetYaxis()->SetRangeUser(-128,127);
       fit_mean.push_back(pdg);
+
+      TGraph * sdg = new TGraph();
+      sdg->SetName( (name +"_fit_sig").c_str() );
+      sdg->SetMarkerStyle(23);
+      sdg->SetMarkerColor(kRed);
+      sdg->SetMarkerSize(1);
+      sdg->GetXaxis()->SetTitle("Time [s]");
+      sdg->GetYaxis()->SetTitle("Sigma [mV]");
+      sdg->GetYaxis()->SetRangeUser(0,127);
+      fit_sig.push_back(sdg);
 
       TGraph * chig = new TGraph();
       chig->SetName( (name +"_fit_chi2").c_str() );
@@ -942,20 +968,22 @@ void CalibrationRun::PDS_Physics()
             fit_mean.at(i)->SetPoint(evt_counter, evt_time, pd[2]);
             fit_mean.at(i)->SetPointError(evt_counter, 0.05, pd[3]);
 
-            fit_chi2.at(i)->SetPoint(evt_counter, evt_time, pd[4]);
+            fit_sig.at(i)->SetPoint(evt_counter, evt_time, pd[4]);
 
-            fit_ndf.at(i)->SetPoint(evt_counter, evt_time, pd[5]);
+            fit_chi2.at(i)->SetPoint(evt_counter, evt_time, pd[5]);
 
-            if( pd[5] !=0 ) fit_chi2ndf.at(i)->SetPoint(evt_counter, evt_time, pd[4]/pd[5]);
+            fit_ndf.at(i)->SetPoint(evt_counter, evt_time, pd[6]);
+
+            if( pd[5] !=0 ) fit_chi2ndf.at(i)->SetPoint(evt_counter, evt_time, pd[5]/pd[6]);
             else fit_chi2ndf.at(i)->SetPoint(evt_counter, evt_time, -1.);
 
-            fit_pval.at(i)->SetPoint(evt_counter, evt_time,pd[6]);
-            hist_pval.at(i)->Fill(pd[6]);
+            fit_pval.at(i)->SetPoint(evt_counter, evt_time,pd[7]);
+            hist_pval.at(i)->Fill(pd[7]);
 
-            hist_mean.at(i)->SetPoint(evt_counter, evt_time, pd[7]);
-            hist_mean.at(i)->SetPointError(evt_counter, 0.05, pd[8]);
+            hist_mean.at(i)->SetPoint(evt_counter, evt_time, pd[8]);
+            hist_mean.at(i)->SetPointError(evt_counter, 0.05, pd[9]);
 
-            hist_entries.at(i)->SetPoint(evt_counter, evt_time, pd[9]);
+            hist_entries.at(i)->SetPoint(evt_counter, evt_time, pd[10]);
         }
 
         evt->SubtractPedestals();
@@ -978,6 +1006,8 @@ void CalibrationRun::PDS_Physics()
         delete fit_const.at(i);
         fit_mean.at(i)->Write();
         delete fit_mean.at(i);
+        fit_sig.at(i)->Write();
+        delete fit_sig.at(i);
         fit_chi2.at(i)->Write();
         delete fit_chi2.at(i);
         fit_ndf.at(i)->Write();
@@ -1751,14 +1781,16 @@ void CalibrationRun::SystematicsStudy()
 
         hists.at(i)->Fit(langaus, "QRSL");
 
+        cout << hists.at(i)->GetName() << ": " << langaus->GetMaximumX() << endl;
+
         delete langaus;
     }
 
     // Fit the time resolution with a gaussian
 //    TF1* time_res =new TF1("gaus","gaus",1,3, TF1::EAddToList::kNo);
     //TF1* time_res =new TF1("gaus","gaus(0)+gaus(3)",1,3, TF1::EAddToList::kNo);
-    TF1* time_res =new TF1("gaus","[0]*exp(-0.5*((x-[1])/[2])**2) + [3]*exp(-0.5*((x-[1])/[4])**2)",1,3, TF1::EAddToList::kNo);
-
+    TF1* time_res =new TF1("gaus","[0]*exp(-0.5*((x-[1])/[2])**2) + [3]*exp(-0.5*((x-[1])/([2]+[4]))**2)",1,3, TF1::EAddToList::kNo);
+    time_res->SetParNames("Constant", "Mean", "Sigma","Constant2","Sigma2");
     time_res->SetParameter(0, 500);
     time_res->SetParameter(1, 0);
     time_res->SetParameter(2, dt);
@@ -1771,6 +1803,9 @@ void CalibrationRun::SystematicsStudy()
     double up  = - low;
 
     hists.back()->Fit(time_res, "QSL","", low, up);
+
+    cout << "TRes: " << time_res->GetParameter(2) << endl;
+
 
     delete time_res;
 

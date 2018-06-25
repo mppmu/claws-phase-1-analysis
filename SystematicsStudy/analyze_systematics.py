@@ -23,20 +23,21 @@ import seaborn as sns
 
 if __name__ == '__main__':
 
-    df = pd.read_csv('/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/SystematicsStudy/systematics_results.csv')
+    df = pd.read_csv('/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/SystematicsStudy/systematics_results_Run-900120.csv')
     print(df.tail(10))
 
     quant = 0.8
     quant2 = 0.7
 
     #df = df[(df['TRes']<df['TRes'].quantile(quant))&(df['MPV_1']>= df['MPV_1'].quantile(quant2))&(df['MPV_2']>= df['MPV_2'].quantile(quant2))&(df['MPV_3']>= df['MPV_3'].quantile(quant2))&(df['MPV_4']>= df['MPV_4'].quantile(quant2))]
+    df = df[(df['SystematicsStudy.threshold_tres']  < 0.65 )&(df['TRes']<df['TRes'].quantile(quant))&(df['MPV_1']>= df['MPV_1'].quantile(quant2))&(df['MPV_2']>= df['MPV_2'].quantile(quant2))&(df['MPV_3']>= df['MPV_3'].quantile(quant2))&(df['MPV_4']>= df['MPV_4'].quantile(quant2))]
 
-    df = df.drop(['Unnamed: 0'], axis=1)
-    df = df.drop(['Unnamed: 0.1'], axis=1)
+#   df = df.drop(['Unnamed: 0'], axis=1)
+#    df = df.drop(['Unnamed: 0.1'], axis=1)
     plt.figure()
     # sns.pairplot(data=df,hue="Survived", dropna=True)
     sns.pairplot(data=df)
-    plt.savefig('/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/SystematicsStudy/systematics_pair_plot.png')
+    plt.savefig('/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/SystematicsStudy/systematics_results_Run-900120.png')
 
 
     print('MINIMUM TIME RESOLUTION:')

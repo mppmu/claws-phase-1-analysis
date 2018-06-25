@@ -70,13 +70,14 @@ class Channel
     * @param  pd_ [ 0: Fit status
     *               1: Fit par constant
     *               2: Fit par mean
-    *               3: Fit par sigma
-    *               4: Fit chi2
-    *               5: Fit NDF
-    *               6: Fit p-value
-    *               7: Hist mean
-    *               8: Hist mean error
-    *               9: Hist entries ]
+    *               3: Fit mean error
+    *               4: Fit par sigma
+    *               5: Fit chi2
+    *               6: Fit NDF
+    *               7: Fit p-value
+    *               8: Hist mean
+    *               9: Hist mean error
+    *               10: Hist entries ]
     *
     */
 
@@ -105,7 +106,7 @@ class Channel
         ChannelState           state_;
         TH1F*                  wf_;
         TH1I*                  pdhist_;
-        double                 pd_[10];
+        double                 pd_[11];
 
         double                 range_;
         std::string scope_pos_;

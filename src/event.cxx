@@ -150,7 +150,7 @@ void Event::DeleteHistograms()
 
 void Event::FillPedestals()
 {
-	std::string pdnames[10] = {"PS_Status","PS_FitConstant","PS_FitMean","PS_FitSigma","PS_FitChi2","PS_FitNDF","PS_FitPVal","PS_HistMean","PS_HistError","PS_HistEntries"};
+	std::string pdnames[11] = {"PS_Status","PS_FitConstant","PS_FitMean","PS_FitMeanError","PS_FitSigma","PS_FitChi2","PS_FitNDF","PS_FitPVal","PS_HistMean","PS_HistError","PS_HistEntries"};
 
 	// int nthreads   = GS->GetParameter<int>("General.nthreads");
 	// bool parallelize = GS->GetParameter<bool>("General.parallelize");
@@ -175,7 +175,7 @@ void Event::FillPedestals()
 		std::string name = channel->GetName();
 		double * pd = channel->GetPedestal();
 
-		for(int i = 0; i< 10; i++)
+		for(int i = 0; i< 11; i++)
 		{
 			pt_.put(pdnames[i] + "." + name, pd[i]);
 		}

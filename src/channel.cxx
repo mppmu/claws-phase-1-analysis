@@ -405,7 +405,7 @@ void CalibrationChannel::FillPedestal()
 
 		TFitResultPtr result = pdhist_->Fit(fit, "QSL","", low, up);
 
-        if( result->Prob() < 0.06 )
+        if( result->Prob() < 0.05 )
         {
             state_ = CHANNELSTATE_PDFAILED;
             return;
@@ -417,10 +417,11 @@ void CalibrationChannel::FillPedestal()
 		{
 			pd_[1]    = fit->GetParameter(0);
 			pd_[2]    = fit->GetParameter(1);
-			pd_[3]    = fit->GetParameter(2);
-			pd_[4]    = fit->GetChisquare();
-			pd_[5]    = fit->GetNDF();
-			pd_[6]    = result->Prob();
+            pd_[3]    = fit->GetParError(1);
+			pd_[4]    = fit->GetParameter(2);
+			pd_[5]    = fit->GetChisquare();
+			pd_[6]    = fit->GetNDF();
+			pd_[7]    = result->Prob();
 		}
 		else
 		{
@@ -429,15 +430,12 @@ void CalibrationChannel::FillPedestal()
 		//	for(int i = 1; i<7;i++ ) pd_[i] = -1;
 		}
 
-		pd_[7]    = pdhist_->GetMean();
-		pd_[8]    = pdhist_->GetMeanError();
-		pd_[9]    = pdhist_->GetEntries();
+		pd_[8]    = pdhist_->GetMean();
+		pd_[9]    = pdhist_->GetMeanError();
+		pd_[10]    = pdhist_->GetEntries();
 
 
 		delete fit;
-
-
-
 };
 
 
@@ -750,7 +748,7 @@ void PhysicsChannel::FillPedestal()
     double low = max + GS->GetParameter<double>("PDS_Physics.fitrange_low");
     double up  = max + GS->GetParameter<double>("PDS_Physics.fitrange_up");
 
-	TF1* fit=new TF1("gaus","[0]*exp(-0.5*((x-[1])/[2])**2)",low, up, TF1::EAddToList::kNo);
+	TF1* fit=new TF1("gaus","gaus",low, up, TF1::EAddToList::kNo);
 
 	fit->SetParameter(0, wf_->GetNbinsX() );
 	fit->SetParameter(1,0);
@@ -764,25 +762,26 @@ void PhysicsChannel::FillPedestal()
 	{
 		pd_[1]    = fit->GetParameter(0);
 		pd_[2]    = fit->GetParameter(1);
-		pd_[3]    = fit->GetParameter(2);
-		pd_[4]    = fit->GetChisquare();
-		pd_[5]    = fit->GetNDF();
-		pd_[6]    = result->Prob();
+        pd_[3]    = fit->GetParError(1);
+		pd_[4]    = fit->GetParameter(2);
+		pd_[5]    = fit->GetChisquare();
+		pd_[6]    = fit->GetNDF();
+		pd_[7]    = result->Prob();
 	}
 	else
 	{
 		state_ = CHANNELSTATE_FAILED;
 	}
 
-    if( pd_[1] < 0 || pd_[3] < 0)
+    if( pd_[1] < 0 || pd_[4] < 0)
     {
         pd_[0]    = - 1;
         state_ = CHANNELSTATE_FAILED;
     }
 
-	pd_[7]    = pdhist_->GetMean();
-	pd_[8]    = pdhist_->GetMeanError();
-	pd_[9]    = pdhist_->GetEntries();
+	pd_[8]    = pdhist_->GetMean();
+	pd_[9]    = pdhist_->GetMeanError();
+	pd_[10]    = pdhist_->GetEntries();
 
 	delete fit;
 };
@@ -1061,7 +1060,7 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
     int     search_edge =  GS->GetParameter<double>("WaveformDecomposition.search_edge");
     int     fwhm =  GS->GetParameter<double>("WaveformDecomposition.fwhm");
     int     stop_region =  GS->GetParameter<double>("WaveformDecomposition.stop_region");
-
+    int     stop_methode =  GS->GetParameter<int>("WaveformDecomposition.stop_methode");
     // int     nbins        = recowf_->GetNbinsX();
     //
     //int     avg_nbins    = avg->GetNbinsX();
@@ -1134,18 +1133,35 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
     //
     //                       }
 
-    auto check = [stop_region](TH1F* wf, int maxbin, double threshold, int fwhm)->bool
+    auto check = [stop_region, stop_methode](TH1F* wf, int maxbin, double threshold, int fwhm)->bool
     {
         // check threshold
         bool threshold_true = wf->GetBinContent(maxbin) > threshold;
 
-        // check fwhm
-        int bin1 = maxbin;
-        while( wf->GetBinContent(bin1) > wf->GetBinContent(maxbin)/2) --bin1;
-        int bin2 = maxbin;
-        while( wf->GetBinContent(bin2) > wf->GetBinContent(maxbin)/2) ++bin2;
+        bool fwhm_true = false;
 
-        bool fwhm_true = (bin2-bin1) >= fwhm;
+        if(stop_methode == 1)
+        {// Methode 1
+            int bin1 = maxbin;
+            while( wf->GetBinContent(bin1) > wf->GetBinContent(maxbin)/2) --bin1;
+            int bin2 = maxbin;
+            while( wf->GetBinContent(bin2) > wf->GetBinContent(maxbin)/2) ++bin2;
+
+            fwhm_true = (bin2-bin1) >= fwhm;
+        }
+        else if(stop_methode == 2)
+        {// Methode 2
+            double avgtmp = 0;
+            for(int bin=maxbin-int(fwhm/2)+1;bin<=maxbin+int(fwhm/2)-1; ++ bin) avgtmp += wf->GetBinContent(bin);
+
+            avgtmp /= fwhm-1;
+            fwhm_true = avgtmp >= wf->GetBinContent(maxbin)*0.5;
+        }
+        // Methode 3
+        // else if(stop_methode == 3)
+        // {
+        //
+        // }
 
         // check neighborhood > 0
         double hood = 0;
@@ -1162,14 +1178,13 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
 
     auto subtract = [](TH1F* wf, int maxbin, TH1F* avg, int avg_maxbin)->void
     {
-                        for( int bin = 1; bin <= avg->GetNbinsX(); ++bin)
-                        {
-                            double avg_bin_cont = avg->GetBinContent(bin);
-                            double bin_cont     = wf->GetBinContent(bin + maxbin - avg_maxbin);
-                            wf->SetBinContent(bin + maxbin - avg_maxbin, bin_cont - avg_bin_cont);
-                        }
+        for( int bin = 1; bin <= avg->GetNbinsX(); ++bin)
+        {
+            double avg_bin_cont = avg->GetBinContent(bin);
+            double bin_cont     = wf->GetBinContent(bin + maxbin - avg_maxbin);
+            wf->SetBinContent(bin + maxbin - avg_maxbin, bin_cont - avg_bin_cont);
+        }
     };
-
 
     auto get_max_bin = [](TH1F* wf, int first, int last, vector<int>* reject)->int
     {
@@ -1218,10 +1233,10 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
     while(recowf_->GetBinContent(maxbin) >= threshold)
     {
         // maybe here put check(... 4x threshold)
-        if( recowf_->GetBinContent(maxbin) >= 4*threshold)
+        if( recowf_->GetBinContent(maxbin) >= 25.)
         {
             // maybe here put check(... 4x threshold)
-            while( recowf_->GetBinContent(maxbin) >= 4*threshold )
+            while( recowf_->GetBinContent(maxbin) >= 25.)
             {
                 subtract(recowf_, maxbin, avg, avg_maxbin);
                 pewf_->Fill( recowf_->GetBinCenter(maxbin));
@@ -1248,37 +1263,9 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
 
         maxbin = get_max_bin(recowf_, 1, recowf_->GetNbinsX(), reject);
 
-
-        // 
-        //
-        //
-        // if(check(recowf_, maxbin, 2*threshold, fwhm))
-        // {
-        //     while(check(recowf_, maxbin, 2*threshold, fwhm))
-        //     {
-        //         subtract(recowf_, maxbin, avg, avg_maxbin);
-        //         pewf_->Fill( recowf_->GetBinCenter(maxbin));
-        //
-        //         // Seach for new max in the hood of the previous and check if
-        //         // it is located on the borders of the search range.
-        //         int first = maxbin - search_range;
-        //         int last  = maxbin + search_range;
-        //
-        //         maxbin = get_max_bin_in_range(recowf_, first, last);
-        //
-        //         if( maxbin <= first + search_edge || maxbin >= last - search_edge) break;
-        //     }
-        // }
-        // else
-        // {
-        //     subtract(recowf_, maxbin, avg, avg_maxbin);
-        //     pewf_->Fill( recowf_->GetBinCenter(maxbin));
-        // }
-        //
-        // maxbin = recowf_->GetMaximumBin();
     }
 
-
+    delete reject;
     // int maxbin = recowf_->GetMaximumBin();
     //
     // while( check(recowf_, maxbin, threshold, fwhm) )
@@ -1321,7 +1308,7 @@ std::vector<double> PhysicsChannel::WaveformReconstruction(TH1F* avg)
 
     int reco_range =  GS->GetParameter<double>("WaveformReconstruction.reco_range");
 
-    int nbins          = recowf_->GetNbinsX();
+    //int nbins          = recowf_->GetNbinsX();
 
     int avg_nbins      = avg->GetNbinsX();
     int avg_maxbin     = avg->GetMaximumBin();
@@ -1348,12 +1335,9 @@ std::vector<double> PhysicsChannel::WaveformReconstruction(TH1F* avg)
 
     double bin_error = wf_->GetBinError(1);
 
-    std::vector<double> res(4);
-
-    res[0] = nbins;
-    res[1] = bin_error;
 
     double chi2 = 0;
+    int nbins          = 0;
 
     for(unsigned int i =1; i<= wf_->GetNbinsX(); ++i)
     {
@@ -1363,9 +1347,15 @@ std::vector<double> PhysicsChannel::WaveformReconstruction(TH1F* avg)
             double reco = recowf_->GetBinContent(i);
 
             chi2 += (org-reco)*(org-reco)/(bin_error*bin_error);
+            ++nbins;
         }
 
     }
+
+    std::vector<double> res(4);
+
+    res[0] = nbins;
+    res[1] = bin_error;
 
     res[2] = chi2;
     res[3] = TMath::Prob(chi2, nbins);
