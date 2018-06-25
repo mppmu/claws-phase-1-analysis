@@ -1682,10 +1682,14 @@ void CalibrationRun::SystematicsStudy()
 
     hists.push_back( new TH1F(title.c_str(), title.c_str(), nbinsx, xlow, xup) );
 
-    double threshold_mpv     = GS->GetParameter<double>("SystematicsStudy.threshold_mpv");
-    double window_length_mpv = GS->GetParameter<double>("SystematicsStudy.window_length_mpv");
+    //double threshold_mpv     = GS->GetParameter<double>("SystematicsStudy.threshold_mpv");
+    //double window_length_mpv = GS->GetParameter<double>("SystematicsStudy.window_length_mpv");
+
     double start_mpv         = GS->GetParameter<double>("SystematicsStudy.start_mpv");
     double threshold_tres    = GS->GetParameter<double>("SystematicsStudy.threshold_tres");
+
+    int window_length =  GS->GetParameter<int>("MipTimeRetrieval.window_length");
+    int window_threshold =  GS->GetParameter<int>("MipTimeRetrieval.window_threshold");
 
     for(auto & evt: evts_)
     {
@@ -1697,17 +1701,36 @@ void CalibrationRun::SystematicsStudy()
             {
                 TH1I* pewf = dynamic_cast<TH1I*>(evt->GetChannels().at(i)->GetHistogram("pe"));
 
-                double integral = 0;
-
-                for(int j = start_mpv; j <= window_length_mpv + start_mpv; ++j)
+                for(int j = start_mpv; j <= 400 + start_mpv; ++j)
                 {
-                    if( pewf->GetBinContent(j) >= threshold_mpv )
+
+                    if( pewf->GetBinContent(j) > 0 )
                     {
-                        integral += pewf->GetBinContent(j);
+                        double integral = 0;
+
+                        for(int k = j; k <= j+window_length; ++k)
+                        {
+                            integral += pewf->GetBinContent(k);
+                        }
+
+                        if( integral >= window_threshold )
+                        {
+                            hists.at(i)->Fill( integral );
+                            break;
+                        }
                     }
+
                 }
 
-                hists.at(i)->Fill( integral );
+                // for(int j = start_mpv; j <= window_length + start_mpv; ++j)
+                // {
+                //     if( pewf->GetBinContent(j) >= threshold_mpv )
+                //     {
+                //         integral += pewf->GetBinContent(j);
+                //     }
+                // }
+
+            //    hists.at(i)->Fill( integral );
             }
 
             TH1F* mipwf_fwd2 = dynamic_cast<TH1F*>(evt->GetChannels().at(1)->GetHistogram("mip"));

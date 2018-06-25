@@ -23,21 +23,32 @@ import seaborn as sns
 
 if __name__ == '__main__':
 
-    df = pd.read_csv('/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/SystematicsStudy/systematics_results_Run-900120.csv')
+    df = pd.read_csv('/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/SystematicsStudy/systematics_results_Run-900122.csv')
     print(df.tail(10))
 
-    quant = 0.8
-    quant2 = 0.7
+    quant = 0.9
+    quant2 = 0.5
+    low = 10
+    up = 20
+
+    # df = df[df['WaveformDecomposition.stop_region'] == 3]
+    # df.drop(['WaveformDecomposition.stop_region'], axis=1)
+
+    #df = df[(df['TRes']<df['TRes'].quantile(quant))&(df['MPV_1']>= low)&(df['MPV_1']<= up)&(df['MPV_2']>= low)&(df['MPV_2']<= up)&(df['MPV_3']>= low)&(df['MPV_3']<= up)&(df['MPV_4']>= low)& (df['MPV_4'] <= up)]
+    df = df[(df['TRes']<1.5)&(df['MPV_1']>= low)&(df['MPV_1']<= up)&(df['MPV_2']>= low)&(df['MPV_2']<= up)&(df['MPV_3']>= low)&(df['MPV_3']<= up)&(df['MPV_4']>= low)& (df['MPV_4'] <= up)]
 
     #df = df[(df['TRes']<df['TRes'].quantile(quant))&(df['MPV_1']>= df['MPV_1'].quantile(quant2))&(df['MPV_2']>= df['MPV_2'].quantile(quant2))&(df['MPV_3']>= df['MPV_3'].quantile(quant2))&(df['MPV_4']>= df['MPV_4'].quantile(quant2))]
-    df = df[(df['SystematicsStudy.threshold_tres']  < 0.65 )&(df['TRes']<df['TRes'].quantile(quant))&(df['MPV_1']>= df['MPV_1'].quantile(quant2))&(df['MPV_2']>= df['MPV_2'].quantile(quant2))&(df['MPV_3']>= df['MPV_3'].quantile(quant2))&(df['MPV_4']>= df['MPV_4'].quantile(quant2))]
+
+
+    #df = df[(df['SystematicsStudy.threshold_tres']  < 0.65 )&(df['TRes']<df['TRes'].quantile(quant))&(df['MPV_1']>= df['MPV_1'].quantile(quant2))&(df['MPV_2']>= df['MPV_2'].quantile(quant2))&(df['MPV_3']>= df['MPV_3'].quantile(quant2))&(df['MPV_4']>= df['MPV_4'].quantile(quant2))]
+    #df = df[(df['SystematicsStudy.threshold_tres']  < 0.65 )&(df['TRes']<df['TRes'].quantile(quant))&(df['MPV_1']>= df['MPV_1'].quantile(quant2))&(df['MPV_2']>= df['MPV_2'].quantile(quant2))&(df['MPV_3']>= df['MPV_3'].quantile(quant2))&(df['MPV_4']>= df['MPV_4'].quantile(quant2))]
 
 #   df = df.drop(['Unnamed: 0'], axis=1)
 #    df = df.drop(['Unnamed: 0.1'], axis=1)
     plt.figure()
     # sns.pairplot(data=df,hue="Survived", dropna=True)
     sns.pairplot(data=df)
-    plt.savefig('/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/SystematicsStudy/systematics_results_Run-900120.png')
+    plt.savefig('/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/SystematicsStudy/systematics_results_Run-900122.png')
 
 
     print('MINIMUM TIME RESOLUTION:')
