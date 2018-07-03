@@ -44,6 +44,9 @@ release: CFLAGS += -O3 -g
 # release: monkey clean build/calibration build/analysis
 release: monkey clean build/calibration
 
+analysis: CFLAGS += -g -O0 -Wall -fno-inline-functions
+analysis: monkey clean build/analysis
+
 # Link Calibration
 build/calibration: $(CALI_OBJS)
 	@echo 'Linking target: $@ from: $<'
