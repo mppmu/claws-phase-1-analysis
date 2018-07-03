@@ -31,8 +31,14 @@ def change_parameter(cfile_name, par, value):
     config = configparser.ConfigParser()
     config.optionxform = str
     config.read(cfile_name)
-
-    config[par.split('.')[0]][par.split('.')[1]] = str(value)
+    try:
+        config[par.split('.')[0]][par.split('.')[1]] = str(value)
+    except KeyError:
+        print("The following sections are present in config: ")
+        for sec in config.sections():
+            print(sec)
+        print("Parameter not found: " + str(par))
+        sys.exit("KeyErrors!")
 
     with open(cfile_name, 'w') as cfile:
         config.write(cfile)
@@ -136,10 +142,10 @@ if __name__ == '__main__':
     decomp_ranges       = [[2],[3,5,9], [0.5,1.5,2.5,3.5,4.5], [4,6,8], [1000], [200]]
 
     miptime_par_names    = ['MipTimeRetrieval.pe_hit_time','MipTimeRetrieval.window_length','MipTimeRetrieval.window_threshold']
-    miptime_ranges = [[1,2,3],[4,12,36], [1,2,3]]
+    miptime_ranges = [[1,2],[4,12,36], [1,2,3]]
 
     sys_par_names    = ['SystematicsStudy.threshold_tres','SystematicsStudy.range_time']
-    sys_ranges = [np.arange(0.4, 0.7, 0.1), [4,6]]
+    sys_ranges = [np.arange(0.4, 0.7, 0.1), [4,6,8]]
 
     result_par_names = ['MPV_1','MPV_2','MPV_3','MPV_4', 'TRes', 'TRes_shift']
 

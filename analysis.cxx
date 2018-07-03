@@ -22,6 +22,10 @@
 
 int main(int argc, char* argv[]) {
 
+	cout << "---------------------------------------------------------" << endl;
+	cout << "|            CLAWS phase I anaysis                       |" << endl;
+	cout << "---------------------------------------------------------" << endl;
+
 		// Define all
 		boost::program_options::options_description options("Generic options");
 		options.add_options()

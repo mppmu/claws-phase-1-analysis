@@ -7,6 +7,7 @@ ifeq ($(shell uname -s),Linux)
 	CFLAGS += -std=c++11 -fopenmp `root-config --cflags` -c -fmessage-length=0
 	# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
 	LFLAGS += -fopenmp `root-config --libs --glibs` -lboost_system -lboost_filesystem -lboost_program_options -lgsl -lgslcblas
+	#-lgsl -lgslcblas
 	# -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
 	CC = g++
 endif

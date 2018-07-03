@@ -62,7 +62,7 @@ using namespace std;
 int main(int argc, char* argv[]) {
 
 		cout << "---------------------------------------------------------" << endl;
-		cout << "|            CLAWS phase I data calibration             |" << endl;
+		cout << "|            CLAWS phase I anaysis                       |" << endl;
 		cout << "---------------------------------------------------------" << endl;
 
 		boost::program_options::options_description options("Generic options");
