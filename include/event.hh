@@ -306,7 +306,7 @@ class PhysicsEvent : public Event{
         // std::vector<double> GetFastRates();
         std::vector<std::vector<double>> GetRates();
     //    virtual void PrepHistograms();
-    
+
     private:
         boost::filesystem::path rate_file_;
         std::vector<std::vector<double>> reco_;
@@ -315,6 +315,14 @@ class PhysicsEvent : public Event{
         // std::vector<double> fast_rates_;
         // std::vector<double> rates_;
 };
+
+// class AnalysisEvent : public Event{
+//
+//     public:
+//     protected:
+//     private:
+// };
+
 //
 // //        void                   LoadRootFile();
 //         void                   LoadIniFile();
