@@ -79,17 +79,17 @@
 
 class Run
 {
-  public:
-    Run(boost::filesystem::path p);
-    virtual ~Run();
+public:
+Run(boost::filesystem::path p);
+virtual ~Run();
 
-    virtual void LoadRunSettings();
+virtual void LoadRunSettings();
 
-  protected:
-    boost::filesystem::path path_;
-    int nr_;
+protected:
+boost::filesystem::path path_;
+int nr_;
 
-    boost::property_tree::ptree settings_;
+boost::property_tree::ptree settings_;
 
 // virtual void SynchronizeFiles() = 0;
 // // double GetStartTime();
@@ -103,31 +103,34 @@ class Run
 
 class CalibrationRun : public Run
 {
-  public:
-    CalibrationRun(boost::filesystem::path p);
-    virtual ~CalibrationRun();
+public:
+CalibrationRun(boost::filesystem::path p);
+virtual ~CalibrationRun();
 
-    void SynchronizeCalibrationEvents();
-    void PDS_Calibration();
-    void GainDetermination();
-    void Average1PE();
+void SynchronizeCalibrationEvents();
+void PDS_Calibration();
+void GainDetermination();
+void Average1PE();
 
-    void SynchronizePhysicsEvents();
-    void PDS_Physics();
-    void OverShootCorrection();
-    void SignalTagging();
-    void WaveformDecomposition();
-    void WaveformReconstruction();
-    void MipTimeRetrieval();
-    void SystematicsStudy();
-    //void LoadH
-    //void DeleteHistograms();
-    void DeleteCalibrationHistograms();
-  private:
-    int cal_nr_;
+void SynchronizePhysicsEvents();
+void PDS_Physics();
+void OverShootCorrection();
+void SignalTagging();
+void WaveformDecomposition();
+void WaveformReconstruction();
+void MipTimeRetrieval();
+void SystematicsStudy();
+void DeleteCalibrationHistograms();
 
-    std::vector<PhysicsEvent*>           evts_;
-    std::vector<CalibrationEvent*>       cal_evts_;
+void SetInjectionLimit( std::string type = "NULL");
+
+int GetNumber();
+
+private:
+int cal_nr_;
+
+std::vector<PhysicsEvent*>           evts_;
+std::vector<CalibrationEvent*>       cal_evts_;
 
 };
 
