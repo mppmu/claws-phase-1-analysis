@@ -307,7 +307,6 @@ std::vector<std::vector<double> > GetReconstruction();
 std::vector<std::vector<double> > GetRates();
 int GetInjection(std::string ring);
 double GetInjectionRate(std::string ring);
-int GetNEvents();
 
 private:
 boost::filesystem::path rate_file_;

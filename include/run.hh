@@ -125,6 +125,7 @@ void DeleteCalibrationHistograms();
 void SetInjectionLimit( std::string type = "NULL");
 
 int GetNumber();
+int GetNEvents();
 
 private:
 int cal_nr_;

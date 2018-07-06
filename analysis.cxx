@@ -329,7 +329,8 @@ int main(int argc, char* argv[])
 				}
 
 				// Create the runs
-				vector<CalibrationRun*> runs(run_paths.size());
+				vector<CalibrationRun*> runs;
+				runs.reserve(run_paths.size());
 
 				for(auto &run_path : run_paths)
 				{
@@ -341,12 +342,20 @@ int main(int argc, char* argv[])
 						runs.push_back(run);
 				}
 
+
+				cout << "BEFORE META BASED SELECTION"<< endl;
+				for(auto & run : runs )
+				{
+						cout << "Run number: " << run->GetNumber() << ", NEvents: " << run->GetNEvents()<< endl;
+				}
+
+
 				// Do a meta data based event selection
 				auto runs_itr = runs.begin();
 
 				while( runs_itr != runs.end() )
 				{
-						(*runs_itr)->SetInjectionLimit(selection.second.get<string>("parameters.injection"));
+						(*runs_itr)->SetInjectionLimit(selection.second.get<string>("injection"));
 
 						// (*runs_itr)->SetCurrentLimit(   "LER",
 						//                                 config_map["parameters.ler_current_min"].as<double>(),
@@ -355,7 +364,7 @@ int main(int argc, char* argv[])
 						//                                 config_map["parameters.her_current_min"].as<double>(),
 						//                                 config_map["parameters.her_current_max"].as<double>() );
 
-						if( (*runs_itr)->NEvents() == 0 )
+						if( (*runs_itr)->GetNEvents() == 0 )
 						{
 								delete (*runs_itr);
 								(*runs_itr) = NULL;
@@ -368,8 +377,7 @@ int main(int argc, char* argv[])
 				}
 
 
-
-
+				cout << "AFTER META BASED SELECTION"<< endl;
 				for(auto & run : runs )
 				{
 						cout << "Run number: " << run->GetNumber() << ", NEvents: " << run->GetNEvents()<< endl;

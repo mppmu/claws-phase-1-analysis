@@ -1871,7 +1871,7 @@ void CalibrationRun::SetInjectionLimit(string type)
 
 				if(type == "NONE")
 				{
-						if(ler == 0 or her == 0)
+						if(ler == 0 and her == 0)
 						{
 								itr_evts++;
 						}
@@ -1882,7 +1882,20 @@ void CalibrationRun::SetInjectionLimit(string type)
 								evts_.erase(itr_evts);
 						}
 				}
-				if(type == "BOTH")
+				else if(type == "BOTH")
+				{
+						if(ler == 1 and her == 1)
+						{
+								itr_evts++;
+						}
+						else
+						{
+								delete (*itr_evts);
+								(*itr_evts) = NULL;
+								evts_.erase(itr_evts);
+						}
+				}
+				else if(type == "ANY")
 				{
 						if(ler == 1 or her == 1)
 						{
