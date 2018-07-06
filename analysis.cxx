@@ -351,11 +351,38 @@ int main(int argc, char* argv[])
 
 
 				// Do a meta data based event selection
+
+				// Check selection SetParameters
+				cout << "SELECTION: " << selection.first << "\nPARAMETERS REQUIRED: \n";
+				string injection = "";
+				try
+				{
+						injection = selection.second.get<string>("injection");
+						cout << "Injection: " << injection << "\n";
+				}
+				catch(const property_tree::ptree_bad_path &e)
+				{
+						cout << "Injection: NOT SPECIFIED" << "\n";
+				}
+
 				auto runs_itr = runs.begin();
 
-				while( runs_itr != runs.end() )
+				while(runs_itr != runs.end())
 				{
-						(*runs_itr)->SetInjectionLimit(selection.second.get<string>("injection"));
+						if(injection != "") (*runs_itr)->SetInjectionLimit(injection);
+
+						// try
+						// {
+						//      string injection = selection.second.get<string>("injection");
+						//
+						//      run_max = selection.second.get<int>("run_max");
+						// }
+						// catch( const property_tree::ptree_bad_path &e )
+						// {
+						//      cout << "Run number: " << run->GetNumber() << ", NEvents: " << run->GetNEvents()<< endl;
+						// }
+
+
 
 						// (*runs_itr)->SetCurrentLimit(   "LER",
 						//                                 config_map["parameters.ler_current_min"].as<double>(),
