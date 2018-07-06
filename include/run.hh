@@ -123,9 +123,14 @@ void SystematicsStudy();
 void DeleteCalibrationHistograms();
 
 void SetInjectionLimit( std::string type = "NULL");
+void SetInjectionRate( std::string ring, double limit);
+void SetCurrentLimit(std::string ring, double min, double max);
+void SetTSLimit(double min, double max);
+void SetStatus(std::string type, std::string status);
 
 int GetNumber();
 int GetNEvents();
+std::vector<PhysicsEvent*> GetEvents();
 
 private:
 int cal_nr_;

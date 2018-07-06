@@ -40,7 +40,7 @@
 // // root includes
 // #include <TFile.h>
 // #include <TH1D.h>
-// #include <TH1I.h>
+#include <TH1F.h>
 // #include "TApplication.h"
 // #include <TCanvas.h>
 // #include <TF1.h>
@@ -305,8 +305,9 @@ std::vector<std::vector<double> > GetReconstruction();
 // std::vector<double> GetOnlineRates();
 // std::vector<double> GetFastRates();
 std::vector<std::vector<double> > GetRates();
-int GetInjection(std::string ring);
-double GetInjectionRate(std::string ring);
+// int GetInjection(std::string ring);
+// double GetInjectionRate(std::string ring);
+boost::property_tree::ptree GetPT();
 
 private:
 boost::filesystem::path rate_file_;
@@ -317,12 +318,27 @@ std::vector<std::vector<double> > reco_;
 // std::vector<double> rates_;
 };
 
-// class AnalysisEvent : public Event{
-//
-//     public:
-//     protected:
-//     private:
-// };
+class AnalysisEvent {
+
+public:
+AnalysisEvent();
+AnalysisEvent(PhysicsEvent* ph_evt);
+virtual ~AnalysisEvent();
+void AddEvent(PhysicsEvent* ph_evt);
+void Normalize();
+
+template<typename T>
+T GetParameter(std::string pv)
+{
+		return pt_.get<T>( pv );
+};
+protected:
+int n_;
+bool norm_;
+std::vector<TH1F*> channels_;
+boost::property_tree::ptree pt_;
+
+};
 
 //
 // //        void                   LoadRootFile();

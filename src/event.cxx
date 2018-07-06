@@ -13,6 +13,7 @@
 #include <ctype.h>
 #include <cxxabi.h>
 #include <algorithm>
+#include <assert.h>
 // --- BOOST includes ---
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/algorithm/string/replace.hpp>
@@ -24,6 +25,8 @@
 // --- Project includes ---
 #include "event.hh"
 #include "globalsettings.hh"
+
+// ---
 
 
 using namespace std;
@@ -1223,39 +1226,91 @@ vector<vector<double> > PhysicsEvent::GetRates()
 		}
 
 		return rates;
-}
+};
 
-int PhysicsEvent::GetInjection(string ring)
+property_tree::ptree PhysicsEvent::GetPT()
 {
-		if(ring == "LER")
-		{
-				return pt_.get<int>("SuperKEKBData.LERBg");
-		}
-		else if(ring == "HER")
-		{
-				return pt_.get<int>("SuperKEKBData.HERBg");
-		}
-		else
-		{
-				return -1;
-		}
-}
+		return pt_;
+};
 
-double PhysicsEvent::GetInjectionRate(string ring)
+//----------------------------------------------------------------------------------------------
+// Definition of the AnlysisEvent class.
+//----------------------------------------------------------------------------------------------
+
+AnalysisEvent::AnalysisEvent() : n_(0), norm_(true)
 {
-		if(ring == "LER")
+
+		for (auto &name : GS->GetChannels("Physics"))
 		{
-				return pt_.get<double>("SuperKEKBData.LERInj");
+				std::string position = name.second.get_value<std::string>();
+				if( position != "false")
+				{
+						if( isdigit(position[0]) && isalpha(position[1]) )
+						{
+
+								double dt = GS->GetParameter<double>("Scope.delta_t");
+
+								TH1F* tmphist = new TH1F(name.first.c_str(), name.first.c_str(), 1, -dt/2., dt/2.);
+
+								tmphist->GetXaxis()->SetTitle("Time [ns]");
+								tmphist->GetYaxis()->SetTitle("Particles [1/0.8 ns]");
+
+								channels_.emplace_back( tmphist );
+						}
+				}
 		}
-		else if(ring == "HER")
+};
+
+AnalysisEvent::AnalysisEvent(PhysicsEvent* ph_evt) : n_(1), norm_(true)
+{
+		pt_ = ph_evt->GetPT();
+};
+
+AnalysisEvent::~AnalysisEvent()
+{
+		for(auto &ch: channels_)
 		{
-				return pt_.get<double>("SuperKEKBData.LERInj");
+				delete ch;
+				ch = nullptr;
 		}
-		else
+};
+
+void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
+{
+		for(int i = 0; i < channels_.size(); ++i)
 		{
-				return -1;
+				TH1F* ph_hist = dynamic_cast<TH1F*>(ph_evt->GetChannels().at(i)->GetHistogram());
+
+				if(channels_.at(i)->GetNbinsX() < ph_hist->GetNbinsX() )
+				{
+						if( fabs(channels_.at(i)->GetBinLowEdge(0) - ph_hist->GetBinLowEdge(0)) < 1e-12)
+						{
+								assert(false);
+						}
+						int nbins = ph_hist->GetNbinsX();
+						double low = channels_.at(i)->GetBinLowEdge(0);
+						double up = ph_hist->GetBinLowEdge(nbins)+ ph_hist->GetBinWidth(nbins);
+						channels_.at(i)->SetBins(nbins, low, up);
+				}
+
+				for(int j = 1; j<= ph_hist->GetNbinsX(); ++j)
+				{
+						channels_.at(i)->SetBinContent(j, channels_.at(i)->GetBinContent(j) + ph_hist->GetBinContent(j) );
+				}
+
+				n_++;
 		}
-}
+
+};
+
+void AnalysisEvent::Normalize()
+{
+		for(auto &ch: channels_)
+		{
+				ch->Scale(1./n_);
+		}
+		norm_ = true;
+};
 
 // void PhysicsEvent::LoadIniFile(){
 //

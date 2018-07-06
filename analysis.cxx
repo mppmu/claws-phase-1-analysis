@@ -166,12 +166,15 @@ int main(int argc, char* argv[])
 		//################ Part 2: Create and select events ################
 
 		// Create the vector to hold the analysis events:
-		//vector<AnalysisEvent*>  analysis_evts;
+		vector<AnalysisEvent*>  analysis_evts;
 
 		for(auto selection : selections)
 		{
+				if(!starts_with( selection.first, "Selection" )) continue;
+
 				// Select runs based on dates
 				filesystem::path input;
+
 				try
 				{
 						input = selection.second.get<filesystem::path>("input");
@@ -362,34 +365,145 @@ int main(int argc, char* argv[])
 				}
 				catch(const property_tree::ptree_bad_path &e)
 				{
-						cout << "Injection: NOT SPECIFIED" << "\n";
+						cout << "Injection: not specified!" << "\n";
 				}
 
+				double ler_injection_rate = -1;
+				try
+				{
+						ler_injection_rate = selection.second.get<double>("ler_injection_rate");
+						cout << "Ler injection rate: " << ler_injection_rate << "\n";
+				}
+				catch(const property_tree::ptree_bad_path &e)
+				{
+						cout << "Ler injection rate: not specified!" << "\n";
+				}
+
+				double her_injection_rate = -1;
+				try
+				{
+						her_injection_rate = selection.second.get<double>("her_injection_rate");
+						cout << "Her injection rate: " << her_injection_rate << "\n";
+				}
+				catch(const property_tree::ptree_bad_path &e)
+				{
+						cout << "Her injection rate: not specified!" << "\n";
+				}
+
+				double ler_current_min = -10000;
+				try
+				{
+						ler_current_min = selection.second.get<double>("ler_current_min");
+						cout << "her current min: " << ler_current_min << "\n";
+				}
+				catch(const property_tree::ptree_bad_path &e)
+				{
+						cout << "ler current min: not specified!" << "\n";
+				}
+
+				double ler_current_max = 10000;
+				try
+				{
+						ler_current_max = selection.second.get<double>("ler_current_max");
+						cout << "Ler current max: " << ler_current_max << "\n";
+				}
+				catch(const property_tree::ptree_bad_path &e)
+				{
+						cout << "Ler current max: not specified!" << "\n";
+				}
+
+				double her_current_min = -10000;
+				try
+				{
+						her_current_min = selection.second.get<double>("her_current_min");
+						cout << "her current min: " << her_current_min << "\n";
+				}
+				catch(const property_tree::ptree_bad_path &e)
+				{
+						cout << "her current min: not specified!" << "\n";
+				}
+
+				double her_current_max = 10000;
+				try
+				{
+						her_current_max = selection.second.get<double>("her_current_max");
+						cout << "her current max: " << her_current_max << "\n";
+				}
+				catch(const property_tree::ptree_bad_path &e)
+				{
+						cout << "her current max: not specified!" << "\n";
+				}
+
+				double ts_min = -1;
+				try
+				{
+						ts_min = selection.second.get<double>("ts_min");
+						cout << "ts min: " << ts_min << "\n";
+				}
+				catch(const property_tree::ptree_bad_path &e)
+				{
+						cout << "ts min: not specified!" << "\n";
+				}
+
+				double ts_max = 1e10;
+				try
+				{
+						ts_max = selection.second.get<double>("ts_max");
+						cout << "ts max: " << ts_max << "\n";
+				}
+				catch(const property_tree::ptree_bad_path &e)
+				{
+						cout << "ts max: not specified!" << "\n";
+				}
+
+				string ler_status = "";
+				try
+				{
+						ler_status = selection.second.get<double>("ler_status");
+						cout << "ler_status: " << ler_status << "\n";
+				}
+				catch(const property_tree::ptree_bad_path &e)
+				{
+						cout << "ler_status: not specified!" << "\n";
+				}
+
+				string her_status = "";
+				try
+				{
+						her_status = selection.second.get<double>("her_status");
+						cout << "her_status: " << her_status << "\n";
+				}
+				catch(const property_tree::ptree_bad_path &e)
+				{
+						cout << "her_status: not specified!" << "\n";
+				}
+
+				string superkekb_status = "";
+				try
+				{
+						superkekb_status = selection.second.get<double>("superkekb_status");
+						cout << "superkekb_status: " << superkekb_status << "\n";
+				}
+				catch(const property_tree::ptree_bad_path &e)
+				{
+						cout << "superkekb_status: not specified!" << "\n";
+				}
+
+
+				// Select events
 				auto runs_itr = runs.begin();
 
 				while(runs_itr != runs.end())
 				{
 						if(injection != "") (*runs_itr)->SetInjectionLimit(injection);
-
-						// try
-						// {
-						//      string injection = selection.second.get<string>("injection");
-						//
-						//      run_max = selection.second.get<int>("run_max");
-						// }
-						// catch( const property_tree::ptree_bad_path &e )
-						// {
-						//      cout << "Run number: " << run->GetNumber() << ", NEvents: " << run->GetNEvents()<< endl;
-						// }
-
-
-
-						// (*runs_itr)->SetCurrentLimit(   "LER",
-						//                                 config_map["parameters.ler_current_min"].as<double>(),
-						//                                 config_map["parameters.ler_current_max"].as<double>() );
-						// (*runs_itr)->SetCurrentLimit(   "HER",
-						//                                 config_map["parameters.her_current_min"].as<double>(),
-						//                                 config_map["parameters.her_current_max"].as<double>() );
+						if(ler_injection_rate != -1) (*runs_itr)->SetInjectionRate("LER", ler_injection_rate);
+						if(her_injection_rate != -1) (*runs_itr)->SetInjectionRate("LER", ler_injection_rate);
+						if(ler_current_min > -10000 or ler_current_max < 10000) (*runs_itr)->SetCurrentLimit("LER", ler_current_min, ler_current_max);
+						if(her_current_min > -10000 or her_current_max < 10000) (*runs_itr)->SetCurrentLimit("HER", her_current_min, her_current_max);
+						if(ts_min > -1 or ts_max < 1e10) (*runs_itr)->SetTSLimit(ts_min, ts_max);
+						if(superkekb_status != "") (*runs_itr)->SetStatus("SUPERKEKB", superkekb_status);
+						if(ler_status != "") (*runs_itr)->SetStatus("LER", ler_status);
+						if(her_status != "") (*runs_itr)->SetStatus("HER", her_status);
 
 						if( (*runs_itr)->GetNEvents() == 0 )
 						{
@@ -410,35 +524,118 @@ int main(int argc, char* argv[])
 						cout << "Run number: " << run->GetNumber() << ", NEvents: " << run->GetNEvents()<< endl;
 				}
 
-
-
-				// Do parameter based selection of events
-
 				// Build analysis events
+				cout << "BUILDING EVENTS:"<< endl;
+				bool merge_events = false;
+
+				try
+				{
+						merge_events = selection.second.get<bool>("merge_events");
+						cout << "merge_events: " << merge_events << "\n";
+				}
+				catch(const property_tree::ptree_bad_path &e)
+				{
+						cout << "merge_events: not specified!" << "\n";
+				}
+
+				if(merge_events)
+				{
+						AnalysisEvent* analysis_evt = new AnalysisEvent();
+
+						for(auto & run : runs )
+						{
+								for(auto & evt: run->GetEvents())
+								{
+										evt->LoadFiles(EVENTSTATE_CALIBRATED);
+
+										if( evt->GetState() == EVENTSTATE_CALIBRATED)
+										{
+												analysis_evt->AddEvent(evt);
+										}
+										evt->DeleteHistograms();
+								}
+						}
+
+						analysis_evts.push_back(analysis_evt);
+				}
+				else
+				{
+						for(auto & run : runs )
+						{
+								for(auto & evt: run->GetEvents())
+								{
+										analysis_evts.push_back(new AnalysisEvent(evt));
+								}
+						}
+				}
+
+				for(auto & run : runs)
+				{
+						delete run;
+						run = nullptr;
+				}
+
+
+
+
 		}
 
 
 
-		//################ Part 3: Do analysis on events ################
+		//################ Part 3: Do analysis on events and get plots out ################
 
-		// for(auto anaysis_evt:analysis_evts)
-		// {
-		//     anaysis_evt-> do shit like fft
-		// }
+		for(auto &target : selections)
+		{
+				if(!starts_with( selection.first, "Target" )) continue;
 
+
+				for(auto &entry : target)
+				{
+						if(!starts_with( entry.first, "task" )) continue;
+
+				}
+
+				for(auto &entry : target)
+				{
+						if(!starts_with( entry.first, "plot" )) continue;
+
+						typedef vector< string > split_vector_type;
+
+						// split_vector_type SplitVec; // #2: Search for tokens
+						// split( SplitVec, str1, is_any_of("-*"), token_compress_on ); // SplitVec == { "hello abc","ABC","aBc goodbye" }
+
+
+						vector<string> plot_type;
+						split(plot_type, entry.second, is_any_of(".*"), token_compress_on);
+						//      = entry.second;
+
+						if( plot_type.at(0) = "WAVEFORM")
+						{
+								for( auto & analysis_evt: analysis_evts)
+								{
+										// Create and save plot
+								}
+						}
+						else if(plot_type.at(0) = "SCATTER")
+						{
+								// Declare plots
+								for( auto & analysis_evt: analysis_evts)
+								{
+										// Get X Value
+										// Get Y Value
+										// Add X and Y from events to plots
+								}
+								// Save plots
+						}
+				}
+
+		}
 
 
 
 		//################ Part 4: Produce results and plots ################
 
-		// if( plotype == "Waveform")
-		// {
-		//
-		// }
-		// else if( plotype == "Scatter")
-		// {
-		//
-		// }
+
 
 		return 0;
 }

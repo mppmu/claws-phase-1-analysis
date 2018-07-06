@@ -1857,17 +1857,13 @@ void CalibrationRun::SystematicsStudy()
 
 void CalibrationRun::SetInjectionLimit(string type)
 {
-		if(type == -1 )
-		{
-				return;
-		}
 
 		auto itr_evts = evts_.begin();
 
 		while(itr_evts != evts_.end())
 		{
-				int ler = (*itr_evts)->GetInjection("LER");
-				int her = (*itr_evts)->GetInjection("HER");
+				int ler = (*itr_evts)->GetParameter<int>("SuperKEKBData.LERBg");
+				int her = (*itr_evts)->GetParameter<int>("SuperKEKBData.HERBg");
 
 				if(type == "NONE")
 				{
@@ -1944,6 +1940,94 @@ void CalibrationRun::SetInjectionLimit(string type)
 
 };
 
+void CalibrationRun::SetInjectionRate( string ring, double limit)
+{
+		auto itr_evts = std::begin(evts_);
+
+		while(itr_evts != std::end(evts_))
+		{
+				double rate = (*itr_evts)->GetParameter<double>("SuperKEKBData."+ring+"Inj");
+
+				if( fabs(rate - limit) < 1e-3)
+				{
+						itr_evts++;
+				}
+				else
+				{
+						delete (*itr_evts);
+						(*itr_evts) = NULL;
+						evts_.erase(itr_evts);
+				}
+		}
+};
+
+
+void CalibrationRun::SetCurrentLimit(std::string ring, double min, double max)
+{
+		auto itr_evts = std::begin(evts_);
+
+		while(itr_evts != std::end(evts_))
+		{
+				double current = (*itr_evts)->GetParameter<double>("SuperKEKBData."+ring+"Current");
+
+				if(current >= min and current <= max)
+				{
+						itr_evts++;
+				}
+				else
+				{
+						delete (*itr_evts);
+						(*itr_evts) = NULL;
+						evts_.erase(itr_evts);
+				}
+		}
+};
+
+void CalibrationRun::SetTSLimit(double min, double max)
+{
+		auto itr_evts = std::begin(evts_);
+
+		while(itr_evts != std::end(evts_))
+		{
+				double ts = (*itr_evts)->GetParameter<double>("Properties.UnixTime");
+
+				if(ts >= min and ts <= max)
+				{
+						itr_evts++;
+				}
+				else
+				{
+						delete (*itr_evts);
+						(*itr_evts) = NULL;
+						evts_.erase(itr_evts);
+				}
+		}
+};
+
+void CalibrationRun::SetStatus(std::string type, std::string status)
+{
+		auto itr_evts = std::begin(evts_);
+
+		while(itr_evts != std::end(evts_))
+		{
+				string evt_status = "";
+
+				if(type == "SUPERKEKB") evt_status = (*itr_evts)->GetParameter<string>("SuperKEKBData.SuperKEKBStatus");
+				else if(type == "LER") evt_status = (*itr_evts)->GetParameter<string>("SuperKEKBData.LERSTatus");
+				else if(type == "HER") evt_status = (*itr_evts)->GetParameter<string>("SuperKEKBData.HERStatus");
+
+				if(status == evt_status)
+				{
+						itr_evts++;
+				}
+				else
+				{
+						delete (*itr_evts);
+						(*itr_evts) = NULL;
+						evts_.erase(itr_evts);
+				}
+		}
+};
 
 int CalibrationRun::GetNumber()
 {
@@ -1953,6 +2037,11 @@ int CalibrationRun::GetNumber()
 int CalibrationRun::GetNEvents()
 {
 		return evts_.size();
+};
+
+vector<PhysicsEvent*> CalibrationRun::GetEvents()
+{
+		return evts_;
 };
 
 //----------------------------------------------------------------------------------------------
@@ -2093,46 +2182,7 @@ int CalibrationRun::GetNEvents()
 //      (*itr_vec) = NULL;
 //      events_.erase(itr_vec);
 // };
-//
-// void AnalysisRun::SetCurrentLimit(std::string ring, double low, double high)
-// {
-//      auto itr_vec = std::begin(events_);
-//
-//      while(itr_vec != std::end(events_))
-//      {
-//              auto current = (*itr_vec)->GetCurrent();
-//
-//              if( ring == "LER" )
-//              {
-//                      if(    std::get<0>(current) < low
-//                             || std::get<0>(current) > high )
-//                      {
-//                              delete (*itr_vec);
-//                              (*itr_vec) = NULL;
-//                              events_.erase(itr_vec);
-//                      }
-//                      else
-//                      {
-//                              itr_vec++;
-//                      }
-//              }
-//              else if( ring == "HER" )
-//              {
-//                      if(    std::get<1>(current) < low
-//                             || std::get<1>(current) > high )
-//                      {
-//                              delete (*itr_vec);
-//                              (*itr_vec) = NULL;
-//                              events_.erase(itr_vec);
-//                      }
-//                      else
-//                      {
-//                              itr_vec++;
-//                      }
-//              }
-//      }
-// };
-//
+
 
 //
 // void AnalysisRun::LoadPhysicsData()
