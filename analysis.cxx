@@ -575,9 +575,6 @@ int main(int argc, char* argv[])
 						run = nullptr;
 				}
 
-
-
-
 		}
 
 
@@ -592,7 +589,7 @@ int main(int argc, char* argv[])
 				for(auto &entry : target)
 				{
 						if(!starts_with( entry.first, "task" )) continue;
-
+						// DO THE TASKS LIKE FFT
 				}
 
 				for(auto &entry : target)
@@ -633,7 +630,7 @@ int main(int argc, char* argv[])
 
 
 
-		//################ Part 4: Produce results and plots ################
+		//	//################ Part 4: Produce results and plots ################
 
 
 
