@@ -1662,10 +1662,24 @@ void CalibrationRun::SystematicsStudy()
 
 		for(auto &channel: evts_.at(0)->GetChannels() )
 		{
-				string title = channel->GetName() + "_pe_per_event";
-				int nbinsx   = GS->GetParameter<int>("SystematicsStudy.nbinsx_pe");
-				double xlow  = -0.5;
-				double xup   = nbinsx - 0.5;
+				double pe_per_mip = 0;
+				string name = channel->GetName();
+
+				if( GS->GetParameter<string>("PEToMIP." + name) != "false")
+				{
+						pe_per_mip = GS->GetParameter<double>("PEToMIP." + name + "val2");
+				}
+				else
+				{
+						pe_per_mip = GS->GetParameter<double>("PEToMIP." + name + "val");
+				}
+
+				string title = channel->GetName() + "_mip_per_event";
+				//int nbinsx   = GS->GetParameter<int>("SystematicsStudy.nbinsx_pe");
+				double nmip = 5;
+				int nbinsx   = (int)round(nmip*pe_per_mip);
+				double xlow  = -1./(2*pe_per_mip);
+				double xup   = nmip -1./(2*pe_per_mip);
 
 				hists.push_back( new TH1F(title.c_str(), title.c_str(), nbinsx, xlow, xup) );
 		}
@@ -1688,8 +1702,9 @@ void CalibrationRun::SystematicsStudy()
 		double start_mpv         = GS->GetParameter<double>("SystematicsStudy.start_mpv");
 		double threshold_tres    = GS->GetParameter<double>("SystematicsStudy.threshold_tres");
 
-		int window_length =  GS->GetParameter<int>("MipTimeRetrieval.window_length");
-		int window_threshold =  GS->GetParameter<int>("MipTimeRetrieval.window_threshold");
+		// int window_length =  GS->GetParameter<int>("MipTimeRetrieval.window_length");
+		// int window_threshold =  GS->GetParameter<int>("MipTimeRetrieval.window_threshold");
+
 
 		for(auto & evt: evts_)
 		{
@@ -1697,27 +1712,33 @@ void CalibrationRun::SystematicsStudy()
 
 				if( evt->GetState() == EVENTSTATE_CALIBRATED)
 				{
+
+
 						for(int i = 0; i < evt->GetChannels().size(); ++i)
 						{
-								TH1I* pewf = dynamic_cast<TH1I*>(evt->GetChannels().at(i)->GetHistogram("pe"));
 
-								for(int j = start_mpv; j <= 400 + start_mpv; ++j)
+
+
+								TH1F* mipwf = dynamic_cast<TH1F*>(evt->GetChannels().at(i)->GetHistogram("mip"));
+
+								for(int j = start_mpv; j <= 500 + start_mpv; ++j)
 								{
-
-										if( pewf->GetBinContent(j) > 0 )
+										if( mipwf->GetBinContent(j) > 0 )
 										{
-												double integral = 0;
-
-												for(int k = j; k <= j+window_length; ++k)
-												{
-														integral += pewf->GetBinContent(k);
-												}
-
-												if( integral >= window_threshold )
-												{
-														hists.at(i)->Fill( integral );
-														break;
-												}
+												hists.at(i)->Fill( mipwf->GetBinContent(j) );
+												break;
+												// double integral = 0;
+												//
+												// for(int k = j; k <= j+window_length; ++k)
+												// {
+												//      integral += mipwf->GetBinContent(k);
+												// }
+												//
+												// if( integral >= window_threshold )
+												// {
+												//      hists.at(i)->Fill( integral );
+												//      break;
+												// }
 										}
 
 								}
@@ -1781,7 +1802,7 @@ void CalibrationRun::SystematicsStudy()
 				funcname += "langaus";
 				double rlow = hists.at(i)->GetBinLowEdge(2);
 				//double rup = hists.at(i)->GetBinLowEdge( hists.at(i)->GetNbinsX() ) + hists.at(i)->GetBinWidth(2);
-				double rup = hists.at(i)->GetMean()*3.0;
+				double rup = hists.at(i)->GetMean()*4.0;
 
 				// Shit basically stolen from the root example:
 				// https://root.cern.ch/root/html/tutorials/fit/langaus.C.html
@@ -1789,13 +1810,13 @@ void CalibrationRun::SystematicsStudy()
 
 				double par1 = hists.at(i)->GetBinCenter(hists.at(i)->GetMaximumBin());
 
-				langaus->SetParameters(1.25, par1, 225., 3.0);
+				langaus->SetParameters(0.1, par1, 500., 0.1);
 				langaus->SetParNames("Width","MP","Area","GSigma");
 
 				Double_t pllo[4], plhi[4];
 
-				pllo[0]=0.25; pllo[1]=1.0;   pllo[2]=1.0; pllo[3]=0.1;
-				plhi[0]=10.0; plhi[1]=100.0; plhi[2]=1000000.0; plhi[3]=20.0;
+				pllo[0]=0.0; pllo[1]=0.0;   pllo[2]=0; pllo[3]=0;
+				plhi[0]=1.0; plhi[1]=2.0; plhi[2]=1000000.0; plhi[3]=2.0;
 
 				for ( int j = 0; j < 4; ++j)
 				{
@@ -1812,15 +1833,22 @@ void CalibrationRun::SystematicsStudy()
 		// Fit the time resolution with a gaussian
 //    TF1* time_res =new TF1("gaus","gaus",1,3, TF1::EAddToList::kNo);
 		//TF1* time_res =new TF1("gaus","gaus(0)+gaus(3)",1,3, TF1::EAddToList::kNo);
-		TF1* time_res =new TF1("gaus","[0]*exp(-0.5*((x-[1])/[2])**2) + [3]*exp(-0.5*((x-[1])/([2]+[4]))**2)",1,3, TF1::EAddToList::kNo);
-		time_res->SetParNames("Constant", "Mean", "Sigma","Constant2","Sigma2");
+		// TF1* time_res =new TF1("gaus","[0]*exp(-0.5*((x-[1])/[2])**2) + [3]*exp(-0.5*((x-[1])/([2]+[4]))**2)",1,3, TF1::EAddToList::kNo);
+		// time_res->SetParNames("Constant", "Mean", "Sigma","Constant2","Sigma2");
+		// time_res->SetParameter(0, 500);
+		// time_res->SetParameter(1, 0);
+		// time_res->SetParameter(2, dt);
+		//
+		// time_res->SetParameter(3, 50);
+		// //time_res->SetParameter(4, 0);
+		// time_res->SetParameter(4, dt*4);
+
+		TF1* time_res =new TF1("gaus","[0]*exp(-0.5*((x-[1])/[2])**2) ",1,3, TF1::EAddToList::kNo);
+		time_res->SetParNames("Constant", "Mean", "Sigma");
 		time_res->SetParameter(0, 500);
 		time_res->SetParameter(1, 0);
 		time_res->SetParameter(2, dt);
 
-		time_res->SetParameter(3, 50);
-		//time_res->SetParameter(4, 0);
-		time_res->SetParameter(4, dt*4);
 
 		double low = -dt*GS->GetParameter<double>("SystematicsStudy.range_time");
 		double up  = -low;

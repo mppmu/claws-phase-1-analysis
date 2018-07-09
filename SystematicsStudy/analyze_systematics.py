@@ -23,7 +23,7 @@ import seaborn as sns
 
 if __name__ == '__main__':
 
-    df = pd.read_csv('/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/SystematicsStudy/systematics_results_Run-900122.csv')
+    df = pd.read_csv('/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/SystematicsStudy/systematics_results_Run-900122_second_run.csv')
     print(df.tail(10))
 
     quant = 0.9
@@ -34,9 +34,17 @@ if __name__ == '__main__':
     # df = df[df['WaveformDecomposition.stop_region'] == 3]
     # df.drop(['WaveformDecomposition.stop_region'], axis=1)
 
-    #df = df[(df['TRes']<df['TRes'].quantile(quant))&(df['MPV_1']>= low)&(df['MPV_1']<= up)&(df['MPV_2']>= low)&(df['MPV_2']<= up)&(df['MPV_3']>= low)&(df['MPV_3']<= up)&(df['MPV_4']>= low)& (df['MPV_4'] <= up)]
-    df = df[(df['TRes']<1.5)&(df['MPV_1']>= low)&(df['MPV_1']<= up)&(df['MPV_2']>= low)&(df['MPV_2']<= up)&(df['MPV_3']>= low)&(df['MPV_3']<= up)&(df['MPV_4']>= low)& (df['MPV_4'] <= up)]
+    df = df[df['TRes']<1.0]
 
+    #df = df[(df['TRes']<df['TRes'].quantile(quant))&(df['MPV_1']>= low)&(df['MPV_1']<= up)&(df['MPV_2']>= low)&(df['MPV_2']<= up)&(df['MPV_3']>= low)&(df['MPV_3']<= up)&(df['MPV_4']>= low)& (df['MPV_4'] <= up)]
+
+    #df = df[(df['TRes']<1.5)&(df['MPV_1']>= low)&(df['MPV_1']<= up)&(df['MPV_2']>= low)&(df['MPV_2']<= up)&(df['MPV_3']>= low)&(df['MPV_3']<= up)&(df['MPV_4']>= low)& (df['MPV_4'] <= up)]
+
+    #df = df[(df['WaveformDecomposition.threshold']>= 1.0)& (df['WaveformDecomposition.threshold'] <= 4.0)]
+    df = df[(df['MPV_1']>= low)&(df['MPV_1']<= up)&(df['MPV_2']>= low)&(df['MPV_2']<= up)&(df['MPV_3']>= low)&(df['MPV_3']<= up)&(df['MPV_4']>= low)& (df['MPV_4'] <= up)]
+
+    #df = df[df['MipTimeRetrieval.window_length']>10.0]
+#    df = df[df['MipTimeRetrieval.window_length']>10.0]
     #df = df[(df['TRes']<df['TRes'].quantile(quant))&(df['MPV_1']>= df['MPV_1'].quantile(quant2))&(df['MPV_2']>= df['MPV_2'].quantile(quant2))&(df['MPV_3']>= df['MPV_3'].quantile(quant2))&(df['MPV_4']>= df['MPV_4'].quantile(quant2))]
 
 
@@ -48,7 +56,7 @@ if __name__ == '__main__':
     plt.figure()
     # sns.pairplot(data=df,hue="Survived", dropna=True)
     sns.pairplot(data=df)
-    plt.savefig('/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/SystematicsStudy/systematics_results_Run-900122.png')
+    plt.savefig('/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/SystematicsStudy/systematics_results_Run-900122_second_run.png')
 
 
     print('MINIMUM TIME RESOLUTION:')
@@ -61,6 +69,10 @@ if __name__ == '__main__':
 
     print("CORRELATIONS:")
     print(df.corr())
+
+    plt.figure(figsize=(16,16))
+    sns.heatmap(df.corr(), annot=True, fmt=".3f")
+    plt.savefig('/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/SystematicsStudy/systematics_results_Run-900122_second_run_heat_map.png')
     #print()
     # df[-1] = np.zeros(len(columns))
 
