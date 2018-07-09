@@ -327,6 +327,8 @@ virtual ~AnalysisEvent();
 void AddEvent(PhysicsEvent* ph_evt);
 void Normalize();
 
+void SaveEvent(boost::filesystem::path dst);
+
 template<typename T>
 T GetParameter(std::string pv)
 {

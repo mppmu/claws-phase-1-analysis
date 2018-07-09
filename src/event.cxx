@@ -1279,14 +1279,18 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
 {
 		for(int i = 0; i < channels_.size(); ++i)
 		{
-				TH1F* ph_hist = dynamic_cast<TH1F*>(ph_evt->GetChannels().at(i)->GetHistogram());
+				TH1F* ph_hist = dynamic_cast<TH1F*>(ph_evt->GetChannels().at(i)->GetHistogram("mip"));
 
 				if(channels_.at(i)->GetNbinsX() < ph_hist->GetNbinsX() )
 				{
-						if( fabs(channels_.at(i)->GetBinLowEdge(0) - ph_hist->GetBinLowEdge(0)) < 1e-12)
+						double low1 = channels_.at(i)->GetBinLowEdge(0);
+						double low2 = ph_hist->GetBinLowEdge(0);
+
+						if( fabs(channels_.at(i)->GetBinLowEdge(0) - ph_hist->GetBinLowEdge(0)) > 1e-12)
 						{
 								assert(false);
 						}
+
 						int nbins = ph_hist->GetNbinsX();
 						double low = channels_.at(i)->GetBinLowEdge(0);
 						double up = ph_hist->GetBinLowEdge(nbins)+ ph_hist->GetBinWidth(nbins);
@@ -1310,6 +1314,56 @@ void AnalysisEvent::Normalize()
 				ch->Scale(1./n_);
 		}
 		norm_ = true;
+};
+
+void AnalysisEvent::SaveEvent(boost::filesystem::path dst)
+{
+		std::string fname = dst.string() + "/";
+
+		int status;
+		char   *realname;
+		const std::type_info  &ti = typeid(*this);
+		realname = abi::__cxa_demangle(ti.name(), 0, 0, &status);
+		fname += std::string(realname);
+		free(realname);
+
+		// std::stringstream ss;
+		//
+		// int ndigits = GS->GetParameter<int>("General.event_ndigits");
+		//
+		// ss << std::setw(ndigits) << std::setfill('0') << nr_;
+
+		// fname += "_" + ss.str();
+		// fname += "_" + printEventState(state_);
+		fname += ".root";
+
+		TFile *rfile = new TFile(fname.c_str(), "RECREATE");
+
+		for(auto &channel : channels_)
+		{
+				channel->Write();
+				// auto wf = channel->GetHistogram("waveform");
+				// if( wf ) wf->Write();
+				//
+				// auto pdhist = channel->GetHistogram("pedestal");
+				// if( pdhist ) pdhist->Write();
+				//
+				// auto reco = channel->GetHistogram("reco");
+				// if( reco ) reco->Write();
+				//
+				// auto pe = channel->GetHistogram("pe");
+				// if( pe ) pe->Write();
+				//
+				// auto mip = channel->GetHistogram("mip");
+				// if( mip ) mip->Write();
+		}
+
+		rfile->Close("R");
+		delete rfile;
+
+		boost::replace_last(fname, "root", "ini");
+		boost::property_tree::write_ini(fname.c_str(), pt_);
+
 };
 
 // void PhysicsEvent::LoadIniFile(){

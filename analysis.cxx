@@ -36,6 +36,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/property_tree/exceptions.hpp>
+#include <boost/algorithm/string.hpp>
 
 // project includes
 #include "globalsettings.hh"
@@ -166,6 +167,10 @@ int main(int argc, char* argv[])
 		//################ Part 2: Create and select events ################
 
 		// Create the vector to hold the analysis events:
+
+		string first_run = "";
+		string last_run = "";
+
 		vector<AnalysisEvent*>  analysis_evts;
 
 		for(auto selection : selections)
@@ -330,6 +335,31 @@ int main(int argc, char* argv[])
 								run_paths.push_back(run_path);
 						}
 				}
+
+				if(first_run != "" )
+				{
+						int front_tmp = stoi(run_paths.front().filename().string().substr(4));
+						int front_global = stoi(first_run.substr(4));
+						if(front_tmp < front_global) first_run = run_paths.front().filename().string();
+				}
+				else
+				{
+						first_run = run_paths.front().filename().string();
+
+				}
+
+				if(last_run != "" )
+				{
+						int back_tmp = stoi(run_paths.back().filename().string().substr(4));
+						int back_global = stoi(last_run.substr(4));
+						if(back_tmp < back_global) last_run = run_paths.back().filename().string();
+				}
+				else
+				{
+						last_run = run_paths.back().filename().string();
+				}
+
+
 
 				// Create the runs
 				vector<CalibrationRun*> runs;
@@ -580,49 +610,120 @@ int main(int argc, char* argv[])
 
 
 		//################ Part 3: Do analysis on events and get plots out ################
-
 		for(auto &target : selections)
 		{
-				if(!starts_with( selection.first, "Target" )) continue;
+				if(!starts_with( target.first, "Target" )) continue;
 
 
-				for(auto &entry : target)
+				for(auto &entry : target.second)
 				{
 						if(!starts_with( entry.first, "task" )) continue;
 						// DO THE TASKS LIKE FFT
+
+						// /    if(entry.second.get<string>("merge_events"))
 				}
 
-				for(auto &entry : target)
+		}
+
+
+
+		//################ Part 4: Produce results and plots ################
+
+		filesystem::path output = vm["data.output"].as<filesystem::path>();
+
+		if(first_run == last_run) output /= first_run;
+		else output /= (first_run+ "-" + last_run.substr(4));
+
+		if( !boost::filesystem::is_directory(output) )
+		{
+				boost::filesystem::create_directory(output);
+		}
+
+		for(auto &target : selections)
+		{
+				if(!starts_with( target.first, "Target" )) continue;
+
+
+				for(auto &entry : target.second)
 				{
 						if(!starts_with( entry.first, "plot" )) continue;
 
-						typedef vector< string > split_vector_type;
+						// std::string file;
+						// //  _name;
+						//
+						// std::string name = "";
+						// std::string folder = "";
+						//
+						// if( config_map["data.run_min"].as<int>() == config_map["data.run_max"].as<int>() )
+						// {
+						//      /**
+						//       *  If run_min and run_max are the same we do not need to put both in the file and folder name.
+						//       */
+						//      name = std::to_string( config_map["data.run_min"].as<int>() );
+						//      //  file   = "run_out_" + std::to_string( config_map["data.run_min"].as<int>() );
+						//      //  folder = "Run_" + std::to_string( config_map["data.run_min"].as<int>() );
+						// }
+						// else
+						// {
+						//      name = std::to_string( config_map["data.run_min"].as<int>() ) + "_" +
+						//             std::to_string( config_map["data.run_max"].as<int>() );
+						//      //  file   = "run_out_" +
+						//      //        std::to_string( config_map["data.run_min"].as<int>() ) + "_" +
+						//      //         std::to_string( config_map["data.run_max"].as<int>() );
+						//      //
+						//      //  folder = "Run_"
+						//      //   +
+						//      //        std::to_string( config_map["data.run_min"].as<int>() ) + "_" +
+						//      //         std::to_string( config_map["data.run_max"].as<int>() );
+						// }
+
+						//	typedef vector< string > split_vector_type;
 
 						// split_vector_type SplitVec; // #2: Search for tokens
 						// split( SplitVec, str1, is_any_of("-*"), token_compress_on ); // SplitVec == { "hello abc","ABC","aBc goodbye" }
 
 
-						vector<string> plot_type;
-						split(plot_type, entry.second, is_any_of(".*"), token_compress_on);
-						//      = entry.second;
 
-						if( plot_type.at(0) = "WAVEFORM")
+						vector<string> plot_type;
+						split(plot_type, entry.second.data(), is_any_of(".*"), token_compress_on);
+
+
+						if( plot_type.at(0) == "WAVEFORM")
 						{
-								for( auto & analysis_evt: analysis_evts)
+								//for( int i = 0; i < analysis_evts.size(); ++i)
+								for(auto & anaysis_evt: analysis_evts)
 								{
 										// Create and save plot
+										// string foldername = "";
+										// string filename = "";
+										//
+										// if(analysis_evts.size() > 1) foldername = "AnalysisEvent_" + to_string(i+1);
+										// else foldername = "AnalysisEvent";
+										//
+										// if( !boost::filesystem::is_directory(output/foldername) )
+										// {
+										//      boost::filesystem::create_directory(output/foldername);
+										// }
+										//
+										// filename = foldername;
+										anaysis_evt->SaveEvent(output);
 								}
 						}
-						else if(plot_type.at(0) = "SCATTER")
+						else if(plot_type.at(0) == "SCATTER")
 						{
 								// Declare plots
-								for( auto & analysis_evt: analysis_evts)
-								{
-										// Get X Value
-										// Get Y Value
-										// Add X and Y from events to plots
-								}
+								// for( auto & analysis_evt: analysis_evts)
+								// {
+								//      // Get X Value
+								//      // Get Y Value
+								//      // Add X and Y from events to plots
+								// }
 								// Save plots
+
+								if( !filesystem::is_directory(output/entry.second.data() ) )
+								{
+										filesystem::create_directory(output/entry.second.data());
+								}
 						}
 				}
 
@@ -630,7 +731,7 @@ int main(int argc, char* argv[])
 
 
 
-		//	//################ Part 4: Produce results and plots ################
+
 
 
 

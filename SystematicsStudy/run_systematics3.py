@@ -146,7 +146,7 @@ if __name__ == '__main__':
 
     sys_par_names    = ['SystematicsStudy.threshold_tres','SystematicsStudy.range_time']
 #    sys_ranges = [np.arange(0., 0.7, 0.1), [4,6,8]]
-    sys_ranges = [ [0.1, 0.5], [4,6,8]]
+    sys_ranges = [ [0.5], [4,6]]
 
     result_par_names = ['MPV_1','MPV_2','MPV_3','MPV_4', 'TRes', 'TRes_shift']
 
