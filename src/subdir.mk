@@ -1,6 +1,4 @@
 
-
-
 # Add inputs and outputs from these tool invocations to the build variables
 # CALI_CPP_SRCS += ../src/Event.cpp
 # CALI_CPP_SRCS += ../src/GlobalSettings.cxx
@@ -19,6 +17,9 @@ ANA_OBJS += ./build/src/gain.o
 ANA_OBJS += ./build/src/pedestal.o
 ANA_OBJS += ./build/src/run.o
 ANA_OBJS += ./build/src/globalsettings.o
+ANA_OBJS += ./build/src/ntp_handler.o
+
+TEST_OBJS += ./build/src/ntp_handler.o
 # CALI_CPP_DEPS += ./build/src/EVENT.d
 # CALI_CPP_DEPS += ./build/src/Gloablsettings.d
 

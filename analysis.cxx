@@ -42,6 +42,8 @@
 #include "globalsettings.hh"
 #include "run.hh"
 
+// ROOT inlcudes
+#include <TGraphErrors.h>
 
 using namespace boost;
 using namespace std;
@@ -594,7 +596,14 @@ int main(int argc, char* argv[])
 						{
 								for(auto & evt: run->GetEvents())
 								{
-										analysis_evts.push_back(new AnalysisEvent(evt));
+										evt->LoadFiles(EVENTSTATE_CALIBRATED);
+
+										if( evt->GetState() == EVENTSTATE_CALIBRATED)
+										{
+												analysis_evts.push_back(new AnalysisEvent(evt));
+										}
+										evt->DeleteHistograms();
+
 								}
 						}
 				}
@@ -625,8 +634,6 @@ int main(int argc, char* argv[])
 
 		}
 
-
-
 		//################ Part 4: Produce results and plots ################
 
 		filesystem::path output = vm["data.output"].as<filesystem::path>();
@@ -648,44 +655,8 @@ int main(int argc, char* argv[])
 				{
 						if(!starts_with( entry.first, "plot" )) continue;
 
-						// std::string file;
-						// //  _name;
-						//
-						// std::string name = "";
-						// std::string folder = "";
-						//
-						// if( config_map["data.run_min"].as<int>() == config_map["data.run_max"].as<int>() )
-						// {
-						//      /**
-						//       *  If run_min and run_max are the same we do not need to put both in the file and folder name.
-						//       */
-						//      name = std::to_string( config_map["data.run_min"].as<int>() );
-						//      //  file   = "run_out_" + std::to_string( config_map["data.run_min"].as<int>() );
-						//      //  folder = "Run_" + std::to_string( config_map["data.run_min"].as<int>() );
-						// }
-						// else
-						// {
-						//      name = std::to_string( config_map["data.run_min"].as<int>() ) + "_" +
-						//             std::to_string( config_map["data.run_max"].as<int>() );
-						//      //  file   = "run_out_" +
-						//      //        std::to_string( config_map["data.run_min"].as<int>() ) + "_" +
-						//      //         std::to_string( config_map["data.run_max"].as<int>() );
-						//      //
-						//      //  folder = "Run_"
-						//      //   +
-						//      //        std::to_string( config_map["data.run_min"].as<int>() ) + "_" +
-						//      //         std::to_string( config_map["data.run_max"].as<int>() );
-						// }
-
-						//	typedef vector< string > split_vector_type;
-
-						// split_vector_type SplitVec; // #2: Search for tokens
-						// split( SplitVec, str1, is_any_of("-*"), token_compress_on ); // SplitVec == { "hello abc","ABC","aBc goodbye" }
-
-
-
 						vector<string> plot_type;
-						split(plot_type, entry.second.data(), is_any_of(".*"), token_compress_on);
+						split(plot_type, entry.second.data(), is_any_of(":*"), token_compress_on);
 
 
 						if( plot_type.at(0) == "WAVEFORM")
@@ -693,37 +664,49 @@ int main(int argc, char* argv[])
 								//for( int i = 0; i < analysis_evts.size(); ++i)
 								for(auto & anaysis_evt: analysis_evts)
 								{
-										// Create and save plot
-										// string foldername = "";
-										// string filename = "";
-										//
-										// if(analysis_evts.size() > 1) foldername = "AnalysisEvent_" + to_string(i+1);
-										// else foldername = "AnalysisEvent";
-										//
-										// if( !boost::filesystem::is_directory(output/foldername) )
-										// {
-										//      boost::filesystem::create_directory(output/foldername);
-										// }
-										//
-										// filename = foldername;
-										anaysis_evt->SaveEvent(output);
+										if( !filesystem::is_directory(output/entry.second.data() ) )
+										{
+												filesystem::create_directory(output/entry.second.data());
+										}
+										anaysis_evt->SaveEvent(output/entry.second.data());
 								}
 						}
 						else if(plot_type.at(0) == "SCATTER")
 						{
-								// Declare plots
-								// for( auto & analysis_evt: analysis_evts)
-								// {
-								//      // Get X Value
-								//      // Get Y Value
-								//      // Add X and Y from events to plots
-								// }
+
+								string graph_name = plot_type.at(1)+ " over " + plot_type.at(2);
+								TGraphErrors* graph = new TGraphErrors();
+								graph->SetName(graph_name.c_str());
+								graph->SetTitle(graph_name.c_str());
+
+								graph->GetXaxis()->SetTitle(plot_type.at(1).c_str());
+								graph->GetYaxis()->SetTitle(plot_type.at(2).c_str());
+								//Declare plots
+								for( auto & analysis_evt: analysis_evts)
+								{
+										double x = analysis_evt->GetParameter<double>(plot_type.at(1));
+										double y = analysis_evt->GetParameter<double>(plot_type.at(2));
+										// Get X Value
+										// Get Y Value
+										// Add X and Y from events to plots
+										graph->SetPoint(graph->GetN(), x, y);
+								}
 								// Save plots
 
 								if( !filesystem::is_directory(output/entry.second.data() ) )
 								{
 										filesystem::create_directory(output/entry.second.data());
 								}
+
+								string fname = filesystem::path(output/entry.second.data()).string() + "/" + plot_type.at(1)+ ":" + plot_type.at(2)+ ".root";
+								TFile *rfile = new TFile(fname.c_str(), "RECREATE");
+
+								graph->Write();
+
+								rfile->Close();
+
+								delete graph;
+
 						}
 				}
 

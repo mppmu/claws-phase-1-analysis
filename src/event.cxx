@@ -1081,7 +1081,7 @@ void PhysicsEvent::WaveformDecomposition(Gain* gain)
 		int nthreads   = GS->GetParameter<int>("General.nthreads");
 		bool parallelize = GS->GetParameter<bool>("General.parallelize");
 
-		 #pragma omp parallel for if(parallelize) num_threads(nthreads)  firstprivate(gain)
+		#pragma omp parallel for if(parallelize) num_threads(nthreads)  firstprivate(gain)
 		for( int i = 0; i < channels_.size(); ++i)
 		{
 				GainChannel * gch = gain->GetChannel(channels_.at(i)->GetName());
@@ -1230,6 +1230,15 @@ vector<vector<double> > PhysicsEvent::GetRates()
 
 property_tree::ptree PhysicsEvent::GetPT()
 {
+
+		// for(auto p : pt_)
+		// {
+		//      cout << p.first << endl;
+		// }
+		//
+		// auto test = pt_.get<double>("Rate.FWD1");
+		//  cout << test << endl;
+		//
 		return pt_;
 };
 
@@ -1264,6 +1273,8 @@ AnalysisEvent::AnalysisEvent() : n_(0), norm_(true)
 AnalysisEvent::AnalysisEvent(PhysicsEvent* ph_evt) : n_(1), norm_(true)
 {
 		pt_ = ph_evt->GetPT();
+		// auto test = ph_evt->GetPT().get<double>("Rate.FWD1");
+		// cout << test << endl;
 };
 
 AnalysisEvent::~AnalysisEvent()
@@ -1303,6 +1314,7 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
 				}
 
 				n_++;
+				norm_ = false;
 		}
 
 };

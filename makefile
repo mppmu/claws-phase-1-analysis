@@ -32,6 +32,7 @@ INCLUDES  += -I"./include"
 INCLUDES  += -I"./Scripts"
 CALI_OBJS += ./build/calibration.o
 ANA_OBJS += ./build/analysis.o
+TEST_OBJS += ./build/test.o
 
 #all: monkey clean build/calibration build/analysis docs
 all: debug
@@ -46,6 +47,9 @@ release: monkey clean build/calibration
 
 analysis: CFLAGS += -g -O0 -Wall -fno-inline-functions
 analysis: monkey clean build/analysis
+
+test: CFLAGS += -g -O0 -Wall -fno-inline-functions
+test: monkey clean build/test
 
 # Link Calibration
 build/calibration: $(CALI_OBJS)
@@ -62,6 +66,15 @@ build/analysis: $(ANA_OBJS)
 	@mkdir -p './build/src'
 	@echo 'Invoking: GCC C++ Linker'
 	$(CC) -o "build/analysis" $(ANA_OBJS) $(LFLAGS)
+	@echo 'Finished linking: $@ from: $<'
+	@echo ' '
+
+# Link Analysis
+build/test: $(TEST_OBJS)
+	@echo 'Linking target: $@ from: $<'
+	@mkdir -p './build/src'
+	@echo 'Invoking: GCC C++ Linker'
+	$(CC) -o "build/test" $(TEST_OBJS) $(LFLAGS)
 	@echo 'Finished linking: $@ from: $<'
 	@echo ' '
 

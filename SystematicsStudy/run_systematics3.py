@@ -185,9 +185,10 @@ if __name__ == '__main__':
                         for par[-len(result_par_names) - len(sys_par_names) - len(miptime_par_names)- 1] in decomp_ranges[-1]:
                             change_parameter(args.cfile, decomp_par_names[-1],  par[-len(result_par_names)- len(sys_par_names) - len(miptime_par_names)-1])
 
+
                             for i in range(len(par_names)):
                                 print("Name: " + str(par_names[i]) + ' Value: ' + str(par[i]))
-
+                            print('NOW RUNNING 7-8')
                             os.system(cmd + ' --tasks 7-8')
 
                             # for par[-len(result_par_names) - len(sys_par_names)- 3] in miptime_ranges[-3]:
@@ -208,14 +209,16 @@ if __name__ == '__main__':
                                     for par[-len(result_par_names) - len(sys_par_names)- 3] in miptime_ranges[-3]:
                                         change_parameter(args.cfile, miptime_par_names[-3],  par[-len(result_par_names)- len(sys_par_names) -3])
 
-                                        if(miptime_par_names[-3] == 'constant fraction'):
+                                        print('CURRENT MIT TIME TIMING TYPE IS: ' + str(par[-len(result_par_names) - len(sys_par_names)- 3]))
+
+                                        if(par[-len(result_par_names) - len(sys_par_names)- 3] == 'constant fraction'):
 
                                             for par[-len(result_par_names) - len(sys_par_names)- 2] in miptime_ranges[-2]:
                                                 change_parameter(args.cfile, miptime_par_names[-2],  par[-len(result_par_names)- len(sys_par_names) -2])
 
                                                 for i in range(len(par_names)):
                                                     print("Name: " + str(par_names[i]) + ' Value: ' + str(par[i]))
-
+                                                print('NOW RUNNING 9')
                                                 os.system(cmd + ' --tasks 9')
 
                                                 for par[-len(result_par_names) -2] in sys_ranges[-2]:
@@ -229,7 +232,7 @@ if __name__ == '__main__':
                                                             #                 #run cmd
                                                         for i in range(len(par_names)):
                                                             print("Name: " + str(par_names[i]) + ' Value: ' + str(par[i]))
-
+                                                        print('NOW RUNNING 10')
                                                         os.system(cmd + ' --tasks 10')
 
                                                         rfile = TFile( args.input + '/Results/SystematicsStudy/run_'+str(runnr)+'_systematics_ph1v4.root', 'OPEN')
@@ -262,14 +265,14 @@ if __name__ == '__main__':
                                                         df.to_csv(args.output)
                                                         n += 1
 
-                                        elif(miptime_par_names[-3] == 'pe hit time'):
+                                        elif(par[-len(result_par_names) - len(sys_par_names)- 3] == 'pe hit time'):
 
                                             for par[-len(result_par_names) - len(sys_par_names)- 1] in miptime_ranges[-1]:
                                                 change_parameter(args.cfile, miptime_par_names[-1],  par[-len(result_par_names)- len(sys_par_names) -1])
 
                                                 for i in range(len(par_names)):
                                                     print("Name: " + str(par_names[i]) + ' Value: ' + str(par[i]))
-
+                                                print('NOW RUNNING 9')
                                                 os.system(cmd + ' --tasks 9')
 
                                                 for par[-len(result_par_names) -2] in sys_ranges[-2]:
@@ -283,7 +286,7 @@ if __name__ == '__main__':
                                                             #                 #run cmd
                                                         for i in range(len(par_names)):
                                                             print("Name: " + str(par_names[i]) + ' Value: ' + str(par[i]))
-
+                                                        print('NOW RUNNING 10')
                                                         os.system(cmd + ' --tasks 10')
 
                                                         rfile = TFile( args.input + '/Results/SystematicsStudy/run_'+str(runnr)+'_systematics_ph1v4.root', 'OPEN')
