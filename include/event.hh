@@ -334,6 +334,7 @@ T GetParameter(std::string pv)
 {
 		return pt_.get<T>( pv );
 };
+
 protected:
 int n_;
 bool norm_;

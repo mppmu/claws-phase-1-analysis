@@ -20,6 +20,7 @@ ANA_OBJS += ./build/src/globalsettings.o
 ANA_OBJS += ./build/src/ntp_handler.o
 
 TEST_OBJS += ./build/src/ntp_handler.o
+TEST_OBJS += ./build/src/globalsettings.o
 # CALI_CPP_DEPS += ./build/src/EVENT.d
 # CALI_CPP_DEPS += ./build/src/Gloablsettings.d
 
