@@ -1086,7 +1086,7 @@ void PhysicsEvent::WaveformDecomposition(Gain* gain)
 		{
 				GainChannel * gch = gain->GetChannel(channels_.at(i)->GetName());
 				PhysicsChannel *pch = dynamic_cast<PhysicsChannel*>(channels_.at(i));
-				pch->WaveformDecomposition(gch->GetAvg());
+				pch->WaveformDecomposition2(gch->GetAvg());
 		}
 		// for(auto & channel : channels_)
 		// {

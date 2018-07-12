@@ -36,164 +36,170 @@
  * @return      [description]
  */
 
- enum ChannelState
- {
-     CHANNELSTATE_VALID,
-     CHANNELSTATE_PDFAILED,
-     CHANNELSTATE_FAILED,
- };
+enum ChannelState
+{
+		CHANNELSTATE_VALID,
+		CHANNELSTATE_PDFAILED,
+		CHANNELSTATE_FAILED,
+};
 
- /** Usually definitions should go into the .cxx file because otherwise
+/** Usually definitions should go into the .cxx file because otherwise
  *  the complier complains about multiple definitions. To avoid this
  *  the definition is inlined.
  */
 inline std::string printChannelState(ChannelState state)
- {
-   switch(state)
-   {
-     case CHANNELSTATE_VALID:
-       return "valid";
-     case CHANNELSTATE_PDFAILED:
-       return "pdfailed";
-     case CHANNELSTATE_FAILED:
-        return "failed";
-    default:
-       return "Invalid Selection";
-   }
- }
+{
+		switch(state)
+		{
+		case CHANNELSTATE_VALID:
+				return "valid";
+		case CHANNELSTATE_PDFAILED:
+				return "pdfailed";
+		case CHANNELSTATE_FAILED:
+				return "failed";
+		default:
+				return "Invalid Selection";
+		}
+}
 
 
 class Channel
 {
-    /**
-    * [for description]
-    * @param  pd_ [ 0: Fit status
-    *               1: Fit par constant
-    *               2: Fit par mean
-    *               3: Fit mean error
-    *               4: Fit par sigma
-    *               5: Fit chi2
-    *               6: Fit NDF
-    *               7: Fit p-value
-    *               8: Hist mean
-    *               9: Hist mean error
-    *               10: Hist entries ]
-    *
-    */
+/**
+ * [for description]
+ * @param  pd_ [ 0: Fit status
+ *               1: Fit par constant
+ *               2: Fit par mean
+ *               3: Fit mean error
+ *               4: Fit par sigma
+ *               5: Fit chi2
+ *               6: Fit NDF
+ *               7: Fit p-value
+ *               8: Hist mean
+ *               9: Hist mean error
+ *               10: Hist entries ]
+ *
+ */
 
-    public:
+public:
 
-        Channel(std::string name = "");
-        virtual ~Channel();
+Channel(std::string name = "");
+virtual ~Channel();
 
-        virtual     void        LoadHistogram(TFile* file);
-        virtual     void        PrepareHistogram( double range = -1);
-        virtual     void        DeleteHistogram();
+virtual void        LoadHistogram(TFile* file);
+virtual void        PrepareHistogram( double range = -1);
+virtual void        DeleteHistogram();
 
-        virtual     void        FillPedestal() = 0;
-        virtual     void        SubtractPedestal( double pd = -1000 );
+virtual void        FillPedestal() = 0;
+virtual void        SubtractPedestal( double pd = -1000 );
 
-        virtual std::string  GetName();
-        virtual TH1*         GetHistogram(std::string type = "waveform");
-        virtual double*      GetPedestal();
-        virtual ChannelState GetState();
-        virtual std::string  GetScopePos();
+virtual std::string  GetName();
+virtual TH1*         GetHistogram(std::string type = "waveform");
+virtual double*      GetPedestal();
+virtual ChannelState GetState();
+virtual std::string  GetScopePos();
 
-        void SetName(std::string name);
+void SetName(std::string name);
 
-    protected:
-        std::string            name_;
-        ChannelState           state_;
-        TH1F*                  wf_;
-        TH1I*                  pdhist_;
-        double                 pd_[11];
+protected:
+std::string name_;
+ChannelState state_;
+TH1F*                  wf_;
+TH1I*                  pdhist_;
+double pd_[11];
 
-        double                 range_;
-        std::string scope_pos_;
+double range_;
+std::string scope_pos_;
 };
 
 class CalibrationChannel : public Channel
 {
-    public:
+public:
 
-        CalibrationChannel(std::string name, std::string scope_pos);
-        virtual ~CalibrationChannel();
+CalibrationChannel(std::string name, std::string scope_pos);
+virtual ~CalibrationChannel();
 
-        virtual void LoadHistogram(TFile* file);
-        virtual     void        FillPedestal();
-    protected:
-        int scope_;
-        std::string channel_;
+virtual void LoadHistogram(TFile* file);
+virtual void        FillPedestal();
+protected:
+int scope_;
+std::string channel_;
 };
 
 struct OverShootResult
 {
-    double lstart = -1;
-    double lstop  = -1;
-    double lresult = -1;
-    double start   = -1;
-    double stop   = -1;
-    int result   = -1;
-    double par0  = -1;
-    double par1  = -1;
-    double par2  = -1;
-    double chi2  = -1;
-    int ndf      = -1;
-    double pval  = -1;
-    int n        =  0;
-    double area1 = 0;
-    double area2 = 0;
+		double lstart = -1;
+		double lstop  = -1;
+		double lresult = -1;
+		double start   = -1;
+		double stop   = -1;
+		int result   = -1;
+		double par0  = -1;
+		double par1  = -1;
+		double par2  = -1;
+		double chi2  = -1;
+		int ndf      = -1;
+		double pval  = -1;
+		int n        =  0;
+		double area1 = 0;
+		double area2 = 0;
 };
 
 
 class PhysicsChannel : public Channel
 {
-    public:
+public:
 
-        PhysicsChannel(std::string ch_name, std::string scope_pos);
-        virtual ~PhysicsChannel();
+PhysicsChannel(std::string ch_name, std::string scope_pos);
+virtual ~PhysicsChannel();
 
-        virtual void LoadHistogram(TFile* rfile, std::vector<std::string> types = {"wf"});
-        virtual     void        DeleteHistogram();
+virtual void LoadHistogram(TFile* rfile, std::vector<std::string> types = {"wf"});
+virtual void        DeleteHistogram();
 
-        virtual void PrepareHistogram( double range, double offset = 0.);
-        virtual void FillPedestal();
+virtual void PrepareHistogram( double range, double offset = 0.);
+virtual void FillPedestal();
 
-        virtual std::vector<OverShootResult> OverShootCorrection();
+virtual std::vector<OverShootResult> OverShootCorrection();
 
-        virtual double FastRate(TH1F* avg, double unixtime);
+virtual double FastRate(TH1F* avg, double unixtime);
 
-        virtual void PrepareTagging();
-        virtual void SignalTagging();
+virtual void PrepareTagging();
+virtual void SignalTagging();
 
-        virtual void PrepareDecomposition();
-        virtual void WaveformDecomposition(TH1F* avg);
-        virtual std::vector<double> WaveformReconstruction(TH1F* avg);
+virtual void PrepareDecomposition();
+virtual void WaveformDecomposition(TH1F* avg);
+virtual void SubtractWaveform(int start, TH1F* avg);
+int GetMaximumBin(double threshold, int methode, double fwhm, int stop_region, int first = 1, int last = -1);
+bool FWHM(int bin, int methode, double fwhm);
+bool Hood(int bin, int stop_region);
+void WaveformDecomposition2(TH1F* avg);
 
-        virtual void PrepareRetrieval();
-        virtual void MipTimeRetrieval(double unixtime = -1.);
+virtual std::vector<double> WaveformReconstruction(TH1F* avg);
+
+virtual void PrepareRetrieval();
+virtual void MipTimeRetrieval(double unixtime = -1.);
 
 
-        virtual double*                 GetOS();
-        virtual TH1*                    GetHistogram(std::string type);
+virtual double*                 GetOS();
+virtual TH1*                    GetHistogram(std::string type);
 
-        virtual double     GetFastRate();
-        virtual double     GetRate();
+virtual double     GetFastRate();
+virtual double     GetRate();
 
-    //    virtual double*     GetReco();
-    private:
-        double    os_[10];
-        TH1F*                  recowf_;
-        TH1I*                  pewf_;
-        TH1F*                  mipwf_;
+//    virtual double*     GetReco();
+private:
+double os_[10];
+TH1F*                  recowf_;
+TH1I*                  pewf_;
+TH1F*                  mipwf_;
 
-        /** [0] == online rate
-        *   [1] == fast offline
-        *   [2] == foll reco
-        */
-        double         fast_rate_;
-        double         rate_;
-    //     double              reco_res_[4];
+/** [0] == online rate
+ *   [1] == fast offline
+ *   [2] == foll reco
+ */
+double fast_rate_;
+double rate_;
+//     double              reco_res_[4];
 
 
 

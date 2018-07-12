@@ -1231,6 +1231,7 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
 		//     return maxbintmp;
 		// };
 		vector<int>* reject = new vector<int>;
+		reject->reserve(10000);
 
 		int maxbin = get_max_bin(recowf_, 1, recowf_->GetNbinsX(), reject);
 
@@ -1301,6 +1302,177 @@ void PhysicsChannel::WaveformDecomposition(TH1F* avg)
 		//     maxbin = recowf_->GetMaximumBin();
 		// }
 
+};
+
+// auto subtract = [](TH1F* wf, int maxbin, TH1F* avg, int avg_maxbin) -> void
+//              {
+//                      for( int bin = 1; bin <= avg->GetNbinsX(); ++bin)
+//                      {
+//                              double avg_bin_cont = avg->GetBinContent(bin);
+//                              double bin_cont     = wf->GetBinContent(bin + maxbin - avg_maxbin);
+//                              wf->SetBinContent(bin + maxbin - avg_maxbin, bin_cont - avg_bin_cont);
+//                      }
+//              };
+//
+
+
+void PhysicsChannel::SubtractWaveform(int start, TH1F* avg)
+{
+		for( int bin = 1; bin <= avg->GetNbinsX(); ++bin)
+		{
+				double avg_bin_cont = avg->GetBinContent(bin);
+				double bin_cont     = recowf_->GetBinContent(bin + start);
+				recowf_->SetBinContent(bin + start, bin_cont - avg_bin_cont);
+		}
+}
+
+int PhysicsChannel::GetMaximumBin(double threshold, int methode, double fwhm, int stop_region, int first, int last )
+{
+		if(last == -1) last = recowf_->GetNbinsX();
+
+		int maxbin = 1;
+		double max = 0;
+
+		for(int bin = first; bin <= last; ++bin)
+		{
+				if(recowf_->GetBinContent(bin) > max)
+				{
+						if(recowf_->GetBinContent(bin) > threshold)
+						{
+								if( this->FWHM(bin, methode, fwhm) )
+								{
+										if( this->Hood(bin, stop_region) )
+										{
+												maxbin = bin;
+												max = recowf_->GetBinContent(bin);
+										}
+								}
+						}
+				}
+		}
+
+		return maxbin;
+};
+
+bool PhysicsChannel::FWHM(int bin, int methode, double fwhm)
+{
+		if( methode == 1)
+		{// Methode 1
+				int pre = bin;
+				while( recowf_->GetBinContent(pre) > recowf_->GetBinContent(bin)/2) --pre;
+				int post = bin;
+				while( recowf_->GetBinContent(post) > recowf_->GetBinContent(bin)/2) ++post;
+
+				// fwhm_true = (bin2-bin1) >= fwhm;
+				return (post-pre) >= fwhm;
+
+		}
+		else if( methode == 2)
+		{// Methode 2
+				double avg = 0;
+				for(int i=bin-int(fwhm/2)+1; i<=bin+int(fwhm/2)-1; ++i) avg += recowf_->GetBinContent(bin);
+
+				avg /= fwhm-1;
+				//fwhm_true = avgtmp >= wf->GetBinContent(maxbin)*0.5;
+				return avg >= recowf_->GetBinContent(bin)*0.5;
+		}
+}
+
+bool PhysicsChannel::Hood(int bin, int stop_region)
+{
+		// check neighborhood > 0
+		double hood = 0;
+
+		for(int i = bin - stop_region; i <= bin+stop_region; ++i)
+		{
+				hood += recowf_->GetBinContent(i);
+		}
+
+		return hood >= 0;
+}
+
+void PhysicsChannel::WaveformDecomposition2(TH1F* avg)
+{
+		int search_range =  GS->GetParameter<double>("WaveformDecomposition.search_range");
+		int search_edge =  GS->GetParameter<double>("WaveformDecomposition.search_edge");
+		int fwhm =  GS->GetParameter<double>("WaveformDecomposition.fwhm");
+		int stop_region =  GS->GetParameter<double>("WaveformDecomposition.stop_region");
+		int stop_methode =  GS->GetParameter<int>("WaveformDecomposition.stop_methode");
+
+		double avg_max      = avg->GetMaximum();
+		int avg_maxbin   = avg->GetMaximumBin();
+
+		double threshold    =  avg_max*GS->GetParameter<double>("WaveformDecomposition.threshold");
+
+
+		int maxbin = this->GetMaximumBin(threshold, stop_methode, fwhm, stop_region);
+
+		while(recowf_->GetBinContent(maxbin) > threshold)
+		{
+				if(recowf_->GetBinContent(maxbin) > 25.)
+				{
+						while( recowf_->GetBinContent(maxbin) > 25.)
+						{
+								this->SubtractWaveform(maxbin - avg_maxbin, avg);
+								pewf_->Fill( recowf_->GetBinCenter(maxbin));
+
+								// Seach for new max in the hood of the previous and check if
+								// it is located on the borders of the search range.
+								int first = maxbin - search_range;
+								int last  = maxbin + search_range;
+
+								maxbin = this->GetMaximumBin(25., stop_methode, fwhm, stop_region, first, last);
+
+								if( maxbin <= first + search_edge || maxbin >= last - search_edge) break;
+						}
+				}
+				else
+				{
+						this->SubtractWaveform(maxbin - avg_maxbin, avg);
+						pewf_->Fill( recowf_->GetBinCenter(maxbin));
+				}
+
+				maxbin = this->GetMaximumBin(threshold, stop_methode, fwhm, stop_region);
+		}
+
+
+
+
+		//
+		// while(recowf_->GetBinContent(maxbin) >= threshold)
+		// {
+		//      // maybe here put check(... 4x threshold)
+		//      if( recowf_->GetBinContent(maxbin) >= 25.)
+		//      {
+		//              // maybe here put check(... 4x threshold)
+		//              while( recowf_->GetBinContent(maxbin) >= 25.)
+		//              {
+		//                      subtract(recowf_, maxbin, avg, avg_maxbin);
+		//                      pewf_->Fill( recowf_->GetBinCenter(maxbin));
+		//
+		//                      // Seach for new max in the hood of the previous and check if
+		//                      // it is located on the borders of the search range.
+		//                      int first = maxbin - search_range;
+		//                      int last  = maxbin + search_range;
+		//
+		//                      maxbin = get_max_bin(recowf_, first, last, reject);
+		//
+		//                      if( maxbin <= first + search_edge || maxbin >= last - search_edge) break;
+		//              }
+		//      }
+		//      else if(check(recowf_, maxbin, threshold, fwhm))
+		//      {
+		//              subtract(recowf_, maxbin, avg, avg_maxbin);
+		//              pewf_->Fill( recowf_->GetBinCenter(maxbin));
+		//      }
+		//      else
+		//      {
+		//              reject->push_back(maxbin);
+		//      }
+		//
+		//      maxbin = get_max_bin(recowf_, 1, recowf_->GetNbinsX(), reject);
+		//
+		// }
 };
 
 std::vector<double> PhysicsChannel::WaveformReconstruction(TH1F* avg)

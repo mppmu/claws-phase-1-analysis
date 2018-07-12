@@ -248,8 +248,9 @@ if __name__ == '__main__':
                                                                 fmpv = hmpv.GetFunction('FWD'+str(i) + '_pe_per_eventlangaus')
                                                                 par[-7+i] = fmpv.GetMaximumX()
                                                             except AttributeError:
-                                                                print("i: " + str(i))
-                                                                sys.exit(0)
+                                                                print("AttributeError in i: " + str(i))
+                                                                par[-7+i] = -1
+                                                                #sys.exit(0)
                                                         rfile.Close()
 
                                                         se = pd.Series( np.zeros(len(par)), index=par_names)
@@ -302,8 +303,8 @@ if __name__ == '__main__':
                                                                 fmpv = hmpv.GetFunction('FWD'+str(i) + '_pe_per_eventlangaus')
                                                                 par[-7+i] = fmpv.GetMaximumX()
                                                             except AttributeError:
-                                                                print("i: " + str(i))
-                                                                sys.exit(0)
+                                                                print("AttributeError in i: " + str(i))
+                                                                par[-7+i] = -1
                                                         rfile.Close()
 
                                                         se = pd.Series( np.zeros(len(par)), index=par_names)
