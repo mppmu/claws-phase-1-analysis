@@ -8,9 +8,9 @@
 
 //std includes
 #include <iostream>
-
+#include <stdio.h>
 // boost
-#include <boost/filesystem.hpp>
+//#include <boost/filesystem.hpp>
 
 // Project includes
 #include "ntp_handler.hh"
@@ -24,6 +24,22 @@ using namespace boost;
 //      copy(v.begin(), v.end(), ostream_iterator<T>(cout, " "));
 //      return os;
 // }
+void func2()
+{
+		int count = 0;
+		for(count=0; count < 0XFFFFF; count++) ;
+
+		return;
+}
+
+void func1(void)
+{
+		int count = 0;
+		for(count=0; count < 0XFF; count++)
+				func2();
+
+		return;
+}
 
 int main(int argc, char* argv[])
 {
@@ -33,7 +49,7 @@ int main(int argc, char* argv[])
 		cout << "---------------------------------------------------------" << endl;
 
 		NTP_Handler* ntp_handler = new NTP_Handler(filesystem::path("/remote/ceph/group/ilc/claws/phase1/NTP/BEAST/v2"));
-
+		//
 		double wall0 = claws::get_wall_time();
 		double cpu0  = claws::get_cpu_time();
 
@@ -48,8 +64,14 @@ int main(int argc, char* argv[])
 
 		double wall1 = claws::get_wall_time();
 		double cpu1  = claws::get_cpu_time();
-
 		cout << "Wall Time = " << wall1 - wall0 << endl;
 		cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+		// cout << "Wall Time = " << 0 << endl;
+		// cout << "CPU Time  = " << 0  << endl;
 		//cout << ntp_handler->TestMethode<double>() << endl;
+
+		// printf("\n Hello World! \n");
+		// func1();
+		// func2();
+		return 0;
 }

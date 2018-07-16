@@ -244,8 +244,8 @@ if __name__ == '__main__':
 
                                                         for i in range(1,5):
                                                             try:
-                                                                hmpv = rfile.Get('FWD'+str(i) + '_pe_per_event')
-                                                                fmpv = hmpv.GetFunction('FWD'+str(i) + '_pe_per_eventlangaus')
+                                                                hmpv = rfile.Get('FWD'+str(i) + '_mip_per_event')
+                                                                fmpv = hmpv.GetFunction('FWD'+str(i) + '_mip_per_eventlangaus')
                                                                 par[-7+i] = fmpv.GetMaximumX()
                                                             except AttributeError:
                                                                 print("AttributeError in i: " + str(i))

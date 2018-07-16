@@ -37,18 +37,23 @@ TEST_OBJS += ./build/test.o
 #all: monkey clean build/calibration build/analysis docs
 all: debug
 
-debug: CFLAGS += -g -O0 -Wall -fno-inline-functions
+debug: CFLAGS += -pg -g -O0 -Wall -fno-inline-functions
 #debug: monkey clean build/calibration build/analysis
 debug: monkey clean build/calibration
 
-release: CFLAGS += -O3 -g
+release: CFLAGS += -O3 -g -Wall
+#release: CFLAGS += -pg -Wall
+#release: LFLAGS += -pg
 # release: monkey clean build/calibration build/analysis
 release: monkey clean build/calibration
 
 analysis: CFLAGS += -g -O0 -Wall -fno-inline-functions
 analysis: monkey clean build/analysis
 
-test: CFLAGS += -g -O0 -Wall -fno-inline-functions
+#test: CFLAGS += -pg -g -O0 -Wall -fno-inline-functions
+#test: CFLAGS += -pg -g -O0 -Wall
+test: CFLAGS += -pg -Wall
+test: LFLAGS += -pg
 test: monkey clean build/test
 
 # Link Calibration
