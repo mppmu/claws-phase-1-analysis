@@ -145,7 +145,7 @@ if __name__ == '__main__':
     miptime_ranges = [[1,2,3],[4,12,36],['constant fraction','pe hit time'],[0.1,0.3,0.5], [1,2,3]]
 
     sys_par_names    = ['SystematicsStudy.threshold_tres','SystematicsStudy.range_time']
-#    sys_ranges = [np.arange(0., 0.7, 0.1), [4,6,8]]
+
     sys_ranges = [ [0.5], [4,6]]
 
     result_par_names = ['MPV_1','MPV_2','MPV_3','MPV_4', 'TRes', 'TRes_shift']
@@ -248,9 +248,9 @@ if __name__ == '__main__':
                                                                 fmpv = hmpv.GetFunction('FWD'+str(i) + '_mip_per_eventlangaus')
                                                                 par[-7+i] = fmpv.GetMaximumX()
                                                             except AttributeError:
-                                                                print("AttributeError in i: " + str(i))
-                                                                par[-7+i] = -1
-                                                                #sys.exit(0)
+                                                                # print("AttributeError in i: " + str(i))
+                                                                # par[-7+i] = -1
+                                                                sys.exit(0)
                                                         rfile.Close()
 
                                                         se = pd.Series( np.zeros(len(par)), index=par_names)
@@ -299,12 +299,13 @@ if __name__ == '__main__':
 
                                                         for i in range(1,5):
                                                             try:
-                                                                hmpv = rfile.Get('FWD'+str(i) + '_pe_per_event')
-                                                                fmpv = hmpv.GetFunction('FWD'+str(i) + '_pe_per_eventlangaus')
+                                                                hmpv = rfile.Get('FWD'+str(i) + '_mip_per_event')
+                                                                fmpv = hmpv.GetFunction('FWD'+str(i) + '_mip_per_eventlangaus')
                                                                 par[-7+i] = fmpv.GetMaximumX()
                                                             except AttributeError:
-                                                                print("AttributeError in i: " + str(i))
-                                                                par[-7+i] = -1
+                                                                    # print("AttributeError in i: " + str(i))
+                                                                    # par[-7+i] = -1
+                                                                sys.exit(0)
                                                         rfile.Close()
 
                                                         se = pd.Series( np.zeros(len(par)), index=par_names)
