@@ -139,14 +139,14 @@ if __name__ == '__main__':
     #nges = len(xrange(14980,15021,10)) + len(xrange(10, 61,10) + len(xrange(4,9)) + len( np.arange(0.2, 0.8, 0.1) )
 
     decomp_par_names = ['WaveformDecomposition.stop_methode','WaveformDecomposition.stop_region', 'WaveformDecomposition.threshold','WaveformDecomposition.fwhm','WaveformDecomposition.search_range','WaveformDecomposition.search_edge']
-    decomp_ranges       = [[2],[5], [1.5,2.5,3.5], [4,6,8], [1000], [200]]
+    decomp_ranges       = [[2],[5], [0.5,1.5,2.5,3.5,4.5], [4,6,8], [1000], [200]]
 
     miptime_par_names    = ['MipTimeRetrieval.window_threshold','MipTimeRetrieval.window_length','MipTimeRetrieval.timing_type','MipTimeRetrieval.constant_fraction', 'MipTimeRetrieval.pe_hit_time']
     miptime_ranges = [[1,2,3],[4,12,36],['constant fraction','pe hit time'],[0.1,0.3,0.5], [1,2,3]]
 
     sys_par_names    = ['SystematicsStudy.threshold_tres','SystematicsStudy.range_time']
 
-    sys_ranges = [ [0.5], [4,6]]
+    sys_ranges = [ [0.2,0.4,0.6], [4,6,8]]
 
     result_par_names = ['MPV_1','MPV_2','MPV_3','MPV_4', 'TRes', 'TRes_shift']
 
@@ -326,7 +326,8 @@ if __name__ == '__main__':
     print(df)
     print('Finished!!!')
     os.system('spd-say "your program has finished"')
-    os.system('play --no-show-progress --null --channels 1 synth %s sine %f' % (1, 440))
+#    os.system('play --no-show-progress --null --channels 1 synth %s sine %f' % (1, 440))
+
     # nges = 5*6*6*7
     # for systematics_study_start_mpv in systematics_study_start_mpv_range:
     #
