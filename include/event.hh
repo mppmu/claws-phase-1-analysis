@@ -326,6 +326,8 @@ AnalysisEvent(PhysicsEvent* ph_evt);
 virtual ~AnalysisEvent();
 void AddEvent(PhysicsEvent* ph_evt);
 void Normalize();
+void RunFFT();
+void RunPeak();
 
 void SaveEvent(boost::filesystem::path dst);
 
@@ -338,7 +340,20 @@ T GetParameter(std::string pv)
 protected:
 int n_;
 bool norm_;
-std::vector<TH1F*> channels_;
+
+std::vector<AnalysisChannel*> channels_;
+// std::vector<TH1F*> channels_;
+// std::vector<TH1F*> peak_;
+// std::vector<TH1F*> fft_real_h_;
+// std::vector<TH1F*> fft_img_h_;
+// std::vector<TH1F*> fft_mag_h_;
+// std::vector<TH1F*> fft_phase_h_;
+//         TH1D*                   peak_h_         = NULL;
+//         TH1D*                   fft_real_h_     = NULL;
+//         TH1D*                   fft_img_h_      = NULL;
+//         TH1D*                   fft_mag_h_      = NULL;
+//         TH1D*                   fft_phase_h_    = NULL;
+
 boost::property_tree::ptree pt_;
 
 };

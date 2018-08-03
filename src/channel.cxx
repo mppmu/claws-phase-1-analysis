@@ -410,7 +410,6 @@ void CalibrationChannel::FillPedestal()
 		if( result->Prob() < 0.05 )
 		{
 				state_ = CHANNELSTATE_PDFAILED;
-				return;
 		}
 
 		pd_[0]    = int(result);
@@ -434,7 +433,7 @@ void CalibrationChannel::FillPedestal()
 
 		pd_[8]    = pdhist_->GetMean();
 		pd_[9]    = pdhist_->GetMeanError();
-		pd_[10]    = pdhist_->GetEntries();
+		pd_[10]   = pdhist_->GetEntries();
 
 
 		delete fit;
@@ -744,6 +743,7 @@ void PhysicsChannel::FillPedestal()
 		if( pdhist_->GetEntries() == 0 )
 		{
 				state_ = CHANNELSTATE_FAILED;
+				//	delete fit;
 				return;
 		}
 
@@ -785,7 +785,7 @@ void PhysicsChannel::FillPedestal()
 
 		pd_[8]    = pdhist_->GetMean();
 		pd_[9]    = pdhist_->GetMeanError();
-		pd_[10]    = pdhist_->GetEntries();
+		pd_[10]   = pdhist_->GetEntries();
 
 		delete fit;
 };

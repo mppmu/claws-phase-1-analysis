@@ -183,7 +183,7 @@ void Event::FillPedestals()
 						pt_.put(pdnames[i] + "." + name, pd[i]);
 				}
 
-				if( channel->GetState() == CHANNELSTATE_FAILED  )
+				if( channel->GetState() == CHANNELSTATE_FAILED or  channel->GetState() == CHANNELSTATE_PDFAILED )
 				{
 						state_ = EVENTSTATE_PDFAILED;
 						pt_.put("General.State", state_);
@@ -1264,7 +1264,10 @@ AnalysisEvent::AnalysisEvent() : n_(0), norm_(true)
 								tmphist->GetXaxis()->SetTitle("Time [ns]");
 								tmphist->GetYaxis()->SetTitle("Particles [1/0.8 ns]");
 
-								channels_.emplace_back( tmphist );
+								AnalysisChannel* ch = new AnalysisChannel();
+								ch->name = name.first.c_str();
+								ch->wf = tmphist;
+								channels_.emplace_back( ch);
 						}
 				}
 		}
@@ -1292,25 +1295,25 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
 		{
 				TH1F* ph_hist = dynamic_cast<TH1F*>(ph_evt->GetChannels().at(i)->GetHistogram("mip"));
 
-				if(channels_.at(i)->GetNbinsX() < ph_hist->GetNbinsX() )
+				if(channels_.at(i)->wf->GetNbinsX() < ph_hist->GetNbinsX() )
 				{
-						double low1 = channels_.at(i)->GetBinLowEdge(0);
+						double low1 = channels_.at(i)->wf->GetBinLowEdge(0);
 						double low2 = ph_hist->GetBinLowEdge(0);
 
-						if( fabs(channels_.at(i)->GetBinLowEdge(0) - ph_hist->GetBinLowEdge(0)) > 1e-12)
+						if( fabs(channels_.at(i)->wf->GetBinLowEdge(0) - ph_hist->GetBinLowEdge(0)) > 1e-12)
 						{
 								assert(false);
 						}
 
 						int nbins = ph_hist->GetNbinsX();
-						double low = channels_.at(i)->GetBinLowEdge(0);
+						double low = channels_.at(i)->wf->GetBinLowEdge(0);
 						double up = ph_hist->GetBinLowEdge(nbins)+ ph_hist->GetBinWidth(nbins);
-						channels_.at(i)->SetBins(nbins, low, up);
+						channels_.at(i)->wf->SetBins(nbins, low, up);
 				}
 
 				for(int j = 1; j<= ph_hist->GetNbinsX(); ++j)
 				{
-						channels_.at(i)->SetBinContent(j, channels_.at(i)->GetBinContent(j) + ph_hist->GetBinContent(j) );
+						channels_.at(i)->wf->SetBinContent(j, channels_.at(i)->wf->GetBinContent(j) + ph_hist->GetBinContent(j) );
 				}
 
 				n_++;
@@ -1323,10 +1326,191 @@ void AnalysisEvent::Normalize()
 {
 		for(auto &ch: channels_)
 		{
-				ch->Scale(1./n_);
+				ch->wf->Scale(1./n_);
 		}
 		norm_ = true;
 };
+
+void AnalysisEvent::RunPeak()
+{
+
+		for(auto &ch: channels_)
+		{
+				if(ch->peak != nullptr )
+				{
+						delete ch->peak;
+						ch->peak = nullptr;
+				}
+
+				string title = ch->name + "_peak";
+				ch->peak = new TH1F( title.c_str(), title.c_str(), 1, 0.5, 1+0.5);
+				ch->peak->SetXTitle("Peak to Peak Distance [ns]");
+				ch->peak->SetYTitle("amp_{1} #times amp_{2} [MIPs^{2} / 0.8 ns]");
+
+				if( ch->peak->GetNbinsX() < ch->wf->GetNbinsX() )
+				{
+						ch->peak->SetBins(ch->wf->GetNbinsX(), ch->wf->GetBinLowEdge(1), ch->wf->GetBinLowEdge(ch->wf->GetNbinsX())+1.);
+				}
+
+				double amp = 0;
+
+				for (int i = 1; i < ch->wf->GetNbinsX()+1; i++)
+				{
+						if ( ch->wf->GetBinContent(i) > 0)
+						{
+								for (int j = i+1; j < ch->wf->GetNbinsX()+1; j++)
+								{
+										if (ch->wf->GetBinContent(j) > 0)
+										{
+												ch->peak->Fill( ch->wf->GetBinCenter(j) - ch->wf->GetBinCenter(i), ( ch->wf->GetBinContent(i) * ch->wf->GetBinContent(j) ) );
+										}
+
+								}
+						}
+				}
+		}
+}
+
+
+void AnalysisEvent::RunFFT()
+{
+		for(auto &ch: channels_)
+		{
+				// Create the histogram holding the real fft spectrum
+
+				double timestep = 0.8e-9;
+
+				if(ch->fft_real_h != nullptr)
+				{
+						delete ch->fft_real_h;
+						ch->fft_real_h = nullptr;
+				}
+
+				string title = name_ + "_fft_real_h";
+				ch->fft_real_h = new TH1D( title.c_str(), title.c_str(), 2, -1/(2*timestep)/2, 1/(2*timestep)+ 1/(2*timestep)/2 );
+				ch->fft_real_h->SetXTitle("Frequency [Hz]");
+				ch->fft_real_h->SetYTitle("Gute Frage...");
+				// Create the histogram holding the imaginary fft spectrum
+				if(ch->fft_img_h != nullptr)
+				{
+						delete ch->fft_img_h;
+						ch->fft_img_h = nullptr;
+				}
+
+				title = name_ + "_fft_img_h";
+				ch->fft_img_h = new TH1D( title.c_str(), title.c_str(), 2, -1/(2*timestep)/2, 1/(2*timestep)+ 1/(2*timestep)/2 );
+				ch->fft_img_h->SetXTitle("Frequency [Hz]");
+				ch->fft_img_h->SetYTitle("Gute Frage...");
+
+				if(fft_mag_h_ != nullptr)
+				{
+						delete fft_mag_h_;
+						fft_mag_h_ = nullptr;
+				}
+
+				title = name_ + "_fft_mag";
+				fft_mag_h_ = new TH1D( title.c_str(), title.c_str(), 2, -1/(2*timestep)/2, 1/(2*timestep)+ 1/(2*timestep)/2 );
+				fft_mag_h_->SetXTitle("Magnitude [Hz]");
+				fft_mag_h_->SetYTitle("Gute Frage...");
+
+				// Create the histogram holding the phaseshift fft spectrum
+				if(fft_phase_h_ != nullptr)
+				{
+						delete fft_phase_h_;
+						fft_phase_h_ = nullptr;
+				}
+
+				title = name_ + "_fft_phase";
+				fft_phase_h_ = new TH1D( title.c_str(), title.c_str(), 2, -1/(2*timestep)/2, 1/(2*timestep)+ 1/(2*timestep)/2 );
+				fft_phase_h_->SetXTitle("Phaseshift [probably degree]");
+				fft_phase_h_->SetYTitle("Gute Frage...");
+		}
+}
+//      long n = 0;
+//
+//      if( hist_->GetNbinsX() % 2 == 0 ) n = (int)(hist_->GetNbinsX()/10);
+//      else n = (int)(hist_->GetNbinsX()/10) - 1;
+//      n++;
+
+//      if( fft_real_h_->GetNbinsX() < n/2+1 )
+//      {
+//              double xmin = fft_real_h_->GetBinCenter(1);
+//              double xmax = fft_real_h_->GetBinCenter(fft_real_h_->GetNbinsX());
+//              double range = xmax-xmin;
+//              fft_real_h_->SetBins( n/2+1, xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
+//      }
+//
+//      if( fft_img_h_->GetNbinsX() < n/2+1 )
+//      {
+//              double xmin = fft_img_h_->GetBinCenter(1);
+//              double xmax = fft_img_h_->GetBinCenter(fft_img_h_->GetNbinsX());
+//              double range = xmax-xmin;
+//              fft_img_h_->SetBins( n/2+1, xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
+//      }
+//
+//      if( fft_mag_h_->GetNbinsX() < n/2+1 )
+//      {
+//              double xmin = fft_mag_h_->GetBinCenter(1);
+//              double xmax = fft_mag_h_->GetBinCenter(fft_mag_h_->GetNbinsX());
+//              double range = xmax-xmin;
+//              fft_mag_h_->SetBins( n/2+1, xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
+//      }
+//
+//      if( fft_phase_h_->GetNbinsX() < n/2+1 )
+//      {
+//              double xmin = fft_phase_h_->GetBinCenter(1);
+//              double xmax = fft_phase_h_->GetBinCenter(fft_phase_h_->GetNbinsX());
+//              double range = xmax-xmin;
+//              fft_phase_h_->SetBins( n/2+1, xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
+//      }
+//
+//      gsl_fft_real_wavetable *        real;
+//      gsl_fft_real_workspace *        work;
+//
+//      double * data = new double[n];
+//      double * cpacked = new double[2*n];
+//
+//      for (int i = 0; i < n; i++)
+//      {
+//              data[i] = hist_->GetBinContent(i+1);
+//      }
+//
+//      work = gsl_fft_real_workspace_alloc ( n );
+//      real = gsl_fft_real_wavetable_alloc ( n );
+//
+//      gsl_fft_real_transform(data, 1, n, real, work);
+//
+//      gsl_fft_real_wavetable_free(real);
+//
+//      gsl_fft_halfcomplex_unpack( data, cpacked, 1,n );
+//
+//
+//      for (int i = 0; i < n/2+1; i++)
+//      {
+//              fft_real_h_->SetBinContent(i+1,cpacked[2*i]);
+//      }
+//
+//      for (int i = 0; i < n/2+1; i++)
+//      {
+//              fft_img_h_->SetBinContent(i+1,cpacked[2*i+1]);
+//      }
+//
+//      delete work;
+//      delete data;
+//      delete cpacked;
+//
+//      double wall1 = claws::get_wall_time();
+//      double cpu1  = claws::get_cpu_time();
+//
+//      for (int i = 1; i < fft_real_h_->GetNbinsX() + 1; i++)
+//      {
+//              gsl_complex z = gsl_complex_rect(fft_real_h_->GetBinContent(i),fft_img_h_->GetBinContent(i));
+//              fft_mag_h_->SetBinContent(i,gsl_complex_abs(z));
+//              fft_phase_h_->SetBinContent(i,gsl_complex_arg(z));
+//      }
+
+//};
+
 
 void AnalysisEvent::SaveEvent(boost::filesystem::path dst)
 {
@@ -1353,7 +1537,12 @@ void AnalysisEvent::SaveEvent(boost::filesystem::path dst)
 
 		for(auto &channel : channels_)
 		{
-				channel->Write();
+				if(channel->wf) channel->wf->Write();
+				if(channel->peak) channel->peak->Write();
+				if(channel->fft_real_h) channel->fft_real_h->Write();
+				if(channel->fft_img_h) channel->fft_img_h->Write();
+				if(channel->fft_mag_h) channel->fft_mag_h->Write();
+				if(channel->fft_phase_h) channel->fft_phase_h->Write();
 				// auto wf = channel->GetHistogram("waveform");
 				// if( wf ) wf->Write();
 				//

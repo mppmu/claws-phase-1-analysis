@@ -1932,7 +1932,7 @@ void CalibrationRun::SetInjectionLimit(string type)
 								evts_.erase(itr_evts);
 						}
 				}
-				else if(type == "LER")
+				else if(type == "LER ONLY")
 				{
 						if( ler == 1 and her == 0)
 						{
@@ -1946,9 +1946,37 @@ void CalibrationRun::SetInjectionLimit(string type)
 								evts_.erase(itr_evts);
 						}
 				}
-				else if(type == "HER")
+				else if(type == "HER ONLY")
 				{
 						if( ler == 0 and her == 1)
+						{
+								itr_evts++;
+
+						}
+						else
+						{
+								delete (*itr_evts);
+								(*itr_evts) = NULL;
+								evts_.erase(itr_evts);
+						}
+				}
+				else if(type == "LER")
+				{
+						if( ler == 1)
+						{
+								itr_evts++;
+
+						}
+						else
+						{
+								delete (*itr_evts);
+								(*itr_evts) = NULL;
+								evts_.erase(itr_evts);
+						}
+				}
+				else if(type == "HER")
+				{
+						if(her == 1)
 						{
 								itr_evts++;
 

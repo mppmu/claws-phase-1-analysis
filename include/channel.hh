@@ -201,8 +201,26 @@ double fast_rate_;
 double rate_;
 //     double              reco_res_[4];
 
+};
 
+struct AnalysisChannel {
+		~AnalysisChannel(){
+				if(wf) delete wf;
+				if(peak) delete peak;
+				if(fft_real_h) delete fft_real_h;
+				if(fft_img_h) delete fft_img_h;
+				if(fft_mag_h) delete fft_mag_h;
+				if(fft_phase_h) delete fft_phase_h;
+		};
 
+		std::string name ="";
+		TH1F* wf= nullptr;
+		TH1F* peak = nullptr;
+		TH1F* fft_real_h = nullptr;
+		TH1F* fft_img_h = nullptr;
+		TH1F* fft_mag_h = nullptr;
+		TH1F* fft_phase_h = nullptr;
+};
 //
 //         void    WaveformDecomposition();
 //         void    PrintType();
@@ -259,7 +277,7 @@ double rate_;
 //
 //        double                  fast_rate_ = 0;
 //        double                  rate_      = 0;
-};
+
 
 
 //

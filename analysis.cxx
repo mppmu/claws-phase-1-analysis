@@ -73,6 +73,8 @@ int main(int argc, char* argv[])
 						"./config/analysis_config.ini"),
 		        "Config file to get generic options from.")
 
+		        ("profile-timing",  boost::program_options::value<bool>()->default_value(true), "Displays timing info for the individual steps.")
+
 
 		;
 
@@ -147,6 +149,8 @@ int main(int argc, char* argv[])
 				cout << options << "\n";
 				return 0;
 		}
+
+		bool profile_timing   = cmdline_vm["profile-timing"].as<bool>();
 
 		// Now read the event selections from file:
 
@@ -627,9 +631,47 @@ int main(int argc, char* argv[])
 				for(auto &entry : target.second)
 				{
 						if(!starts_with( entry.first, "task" )) continue;
-						// DO THE TASKS LIKE FFT
 
-						// /    if(entry.second.get<string>("merge_events"))
+						// vector<string> task_type;
+						// split(plot_type, entry.second.data(), is_any_of(":*"), token_compress_on);
+						// DO THE TASKS LIKE FFT
+						if(entry.second.data() == "PEAK")
+						{
+								std::cout << "\033[33;1mPeak Algorithm:\033[0m running" << "\r" << std::flush;
+
+								double wall0 = claws::get_wall_time();
+								double cpu0  = claws::get_cpu_time();
+
+								for(auto & anaysis_evt: analysis_evts)
+								{
+										anaysis_evt->RunPeak();
+								}
+
+								std::cout << "\033[32;1mPeak Algorithm:\033[0m done!       " << std::endl;
+								double wall1 = claws::get_wall_time();
+								double cpu1  = claws::get_cpu_time();
+
+								if(profile_timing)
+								{
+										cout << "Wall Time = " << wall1 - wall0 << endl;
+										cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+								}
+
+						}
+						else
+						{
+								cout<< "UNKNOWN TASTK:" << entry.second.data() << endl;
+						}
+//                      switch(entry.second.data())
+//                      {
+//                      case "FFT":
+//                              for(auto & anaysis_evt: analysis_evts)
+//                              {
+//                                      anaysis_evt->RunFFT();
+//                              }
+// defaut:
+//                              cout<< "UNKNOWN TASTK:" << entry.second.data() << endl;
+//                      }
 				}
 
 		}

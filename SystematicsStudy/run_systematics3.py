@@ -142,11 +142,11 @@ if __name__ == '__main__':
     decomp_ranges       = [[2],[5], [0.5,1.5,2.5,3.5,4.5], [4,6,8], [1000], [200]]
 
     miptime_par_names    = ['MipTimeRetrieval.window_threshold','MipTimeRetrieval.window_length','MipTimeRetrieval.timing_type','MipTimeRetrieval.constant_fraction', 'MipTimeRetrieval.pe_hit_time']
-    miptime_ranges = [[1,2,3],[4,12,36],['constant fraction','pe hit time'],[0.1,0.3,0.5], [1,2,3]]
+    miptime_ranges = [[1,2,3],[4, 12, 24 , 36],['constant fraction','pe hit time'],[0.1,0.3,0.5], [1,2,3]]
 
     sys_par_names    = ['SystematicsStudy.threshold_tres','SystematicsStudy.range_time']
 
-    sys_ranges = [ [0.2,0.4,0.6], [4,6,8]]
+    sys_ranges = [ [0.1,0.3,0.5,0.7], [4,6,8,10]]
 
     result_par_names = ['MPV_1','MPV_2','MPV_3','MPV_4', 'TRes', 'TRes_shift']
 
