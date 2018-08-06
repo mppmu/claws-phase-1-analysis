@@ -623,6 +623,9 @@ int main(int argc, char* argv[])
 
 
 		//################ Part 3: Do analysis on events and get plots out ################
+
+		string tasks = "";
+
 		for(auto &target : selections)
 		{
 				if(!starts_with( target.first, "Target" )) continue;
@@ -657,6 +660,33 @@ int main(int argc, char* argv[])
 										cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 								}
 
+								tasks += "_PEAK";
+
+						}
+
+						else if(entry.second.data() == "FFT")
+						{
+								std::cout << "\033[33;1mFFT Algorithm:\033[0m running" << "\r" << std::flush;
+
+								double wall0 = claws::get_wall_time();
+								double cpu0  = claws::get_cpu_time();
+
+								for(auto & anaysis_evt: analysis_evts)
+								{
+										anaysis_evt->RunFFT();
+								}
+
+								std::cout << "\033[32;1mFFT Algorithm:\033[0m done!       " << std::endl;
+								double wall1 = claws::get_wall_time();
+								double cpu1  = claws::get_cpu_time();
+
+								if(profile_timing)
+								{
+										cout << "Wall Time = " << wall1 - wall0 << endl;
+										cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+								}
+
+								tasks += "_FFT";
 						}
 						else
 						{
@@ -706,11 +736,12 @@ int main(int argc, char* argv[])
 								//for( int i = 0; i < analysis_evts.size(); ++i)
 								for(auto & anaysis_evt: analysis_evts)
 								{
-										if( !filesystem::is_directory(output/entry.second.data() ) )
+										string foldername = entry.second.data() + tasks;
+										if( !filesystem::is_directory(output/foldername) )
 										{
-												filesystem::create_directory(output/entry.second.data());
+												filesystem::create_directory(output/foldername);
 										}
-										anaysis_evt->SaveEvent(output/entry.second.data());
+										anaysis_evt->SaveEvent(output/foldername);
 								}
 						}
 						else if(plot_type.at(0) == "SCATTER")
@@ -740,12 +771,19 @@ int main(int argc, char* argv[])
 										filesystem::create_directory(output/entry.second.data());
 								}
 
-								string fname = filesystem::path(output/entry.second.data()).string() + "/" + plot_type.at(1)+ ":" + plot_type.at(2)+ ".root";
+								string fname = filesystem::path(output/entry.second.data()).string() + "/" + plot_type.at(1)+ ":" + plot_type.at(2)+ tasks + ".root";
 								TFile *rfile = new TFile(fname.c_str(), "RECREATE");
 
 								graph->Write();
 
 								rfile->Close();
+
+								replace_last(fname, ".root", "_selections.ini");
+								property_tree::write_ini(fname.c_str(), pt_);
+
+								replace_last(fname, "_selections.ini", "_plot_only.ini");
+								property_tree::write_ini(fname.c_str(), entry);
+
 
 								delete graph;
 
