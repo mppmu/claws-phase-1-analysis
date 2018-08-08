@@ -1251,11 +1251,16 @@ property_tree::ptree PhysicsEvent::GetPT()
 		return pt_;
 };
 
+filesystem::path PhysicsEvent::GetPath()
+{
+		return path_;
+};
+
 //----------------------------------------------------------------------------------------------
 // Definition of the AnlysisEvent class.
 //----------------------------------------------------------------------------------------------
 
-AnalysisEvent::AnalysisEvent() : n_(0), norm_(true)
+AnalysisEvent::AnalysisEvent() : n_(0), norm_(true), first_run_(5000000), last_run_(-1)
 {
 
 		for (auto &name : GS->GetChannels("Physics"))
@@ -1269,24 +1274,61 @@ AnalysisEvent::AnalysisEvent() : n_(0), norm_(true)
 								double dt = GS->GetParameter<double>("Scope.delta_t");
 
 								TH1F* tmphist = new TH1F(name.first.c_str(), name.first.c_str(), 1, -dt/2., dt/2.);
-
+								tmphist->SetDirectory(0);
 								tmphist->GetXaxis()->SetTitle("Time [ns]");
-								tmphist->GetYaxis()->SetTitle("Particles [1/0.8 ns]");
+								tmphist->GetYaxis()->SetTitle("Particles/Event [1/0.8 ns]");
 
 								AnalysisChannel* ch = new AnalysisChannel();
 								ch->name = name.first.c_str();
 								ch->wf = tmphist;
+
+								string title = ch->name + "_hit_energy_spectrum";
+
+								double npe = 0;
+
+								try
+								{
+										npe = GS->GetParameter<double>("PEToMIP." + ch->name +"val2");
+								}
+								catch( const property_tree::ptree_bad_path &e )
+								{
+										npe = GS->GetParameter<double>("PEToMIP." + ch->name +"val");
+								}
+
+								int nmip = 20;
+
+								int nbinsx   = (int)round(nmip*npe);
+
+								double xlow  = +1./(2*npe);
+								double xup   = nmip +1./(2*npe);
+
+								ch->hit_energy = new TH1F( title.c_str(), title.c_str(), nbinsx, xlow, xup );
+								ch->hit_energy->SetDirectory(0);
+								ch->hit_energy->SetXTitle("Hit Energy [MIP]");
+
+								ch->hit_energy->SetYTitle("Entries Normalized to the Number of Events [1/equivalent of one p.e. in MIP]");
+
+								ch->hit_energy_sync = (TH1F*) ch->hit_energy->Clone((title+"_sync").c_str());
+								ch->hit_energy_sync->SetDirectory(0);
+								ch->hit_energy_mip = (TH1F*) ch->hit_energy->Clone((title+"_mip").c_str());
+								ch->hit_energy_mip->SetDirectory(0);
+
 								channels_.emplace_back( ch);
 						}
 				}
 		}
 };
 
-AnalysisEvent::AnalysisEvent(PhysicsEvent* ph_evt) : n_(1), norm_(true)
+AnalysisEvent::AnalysisEvent(PhysicsEvent* ph_evt) : n_(1), norm_(true), first_run_(5000000), last_run_(-1)
 {
 		pt_ = ph_evt->GetPT();
 		// auto test = ph_evt->GetPT().get<double>("Rate.FWD1");
 		// cout << test << endl;
+
+		int phnr =  stoi(ph_evt->GetPath().filename().string().substr(4));
+
+		first_run_ = phnr;
+		last_run_ = phnr;
 };
 
 AnalysisEvent::~AnalysisEvent()
@@ -1323,11 +1365,22 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
 				for(int j = 1; j<= ph_hist->GetNbinsX(); ++j)
 				{
 						channels_.at(i)->wf->SetBinContent(j, channels_.at(i)->wf->GetBinContent(j) + ph_hist->GetBinContent(j) );
+
+						if(ph_hist->GetBinContent(j) > 0)
+						{
+								channels_.at(i)->hit_energy->Fill(ph_hist->GetBinContent(j));
+						}
+
 				}
 
 				n_++;
 				norm_ = false;
 		}
+
+		int phnr =  stoi(ph_evt->GetPath().filename().string().substr(4));
+
+		if(phnr < first_run_) first_run_ = phnr;
+		else if (phnr > last_run_) last_run_ = phnr;
 
 };
 
@@ -1337,6 +1390,25 @@ void AnalysisEvent::Normalize()
 		{
 				ch->wf->Scale(1./n_);
 		}
+
+		for(auto &ch: channels_)
+		{
+				ch->hit_energy->Scale(1./n_);
+				string name = ch->name + "_exp";
+				TF1* expo = new TF1(name.c_str(),"exp([const] -[slope]*x)",-0.01,1.5);
+				ch->hit_energy->Fit(expo,"S+");
+
+				for(int i = 1; i<ch->hit_energy->GetNbinsX(); i++)
+				{
+						double x = ch->hit_energy->GetBinCenter(i);
+						double yf = expo->Eval(x);
+						double yh = ch->hit_energy->GetBinContent(i);
+						ch->hit_energy_sync->SetBinContent(i,yf );
+						ch->hit_energy_mip->SetBinContent(i,yh-yf );
+				}
+				delete expo;
+		}
+
 		norm_ = true;
 };
 
@@ -1345,7 +1417,7 @@ void AnalysisEvent::RunPeak()
 		int nthreads   = GS->GetParameter<int>("General.nthreads");
 		bool parallelize = GS->GetParameter<bool>("General.parallelize");
 
-	#pragma omp parallel for if(parallelize) num_threads(nthreads)
+		#pragma omp parallel for if(parallelize) num_threads(nthreads)
 		for(int i = 0; i < channels_.size(); ++i)
 		{
 				if(channels_.at(i)->peak != nullptr )
@@ -1361,6 +1433,7 @@ void AnalysisEvent::RunPeak()
 				double xup = (channels_.at(i)->wf->GetBinLowEdge(channels_.at(i)->wf->GetNbinsX()) + channels_.at(i)->wf->GetBinWidth(channels_.at(i)->wf->GetNbinsX()))/scale;
 
 				channels_.at(i)->peak = new TH1F( title.c_str(), title.c_str(),nbins, xlow, xup);
+				channels_.at(i)->peak->SetDirectory(0);
 				channels_.at(i)->peak->SetXTitle("Peak to Peak Distance [ns]");
 				channels_.at(i)->peak->SetYTitle("amp_{1} #times amp_{2} [MIPs^{2} / 0.8 ns]");
 
@@ -1369,7 +1442,7 @@ void AnalysisEvent::RunPeak()
 				//      channels_.at(i)->peak->SetBins(channels_.at(i)->wf->GetNbinsX(), channels_.at(i)->wf->GetBinLowEdge(1), channels_.at(i)->wf->GetBinLowEdge(channels_.at(i)->wf->GetNbinsX())+channels_.at(i)->wf->GetBinWidth(channels_.at(i)->wf->GetNbinsX()) );
 				// }
 
-				double amp = 0;
+				//	double amp = 0;
 
 				// Iterate over bins j
 				for (int j = 1; j < channels_.at(i)->wf->GetNbinsX()+1; j++)
@@ -1393,10 +1466,10 @@ void AnalysisEvent::RunPeak()
 
 void AnalysisEvent::RunFFT()
 {
-		int nthreads   = GS->GetParameter<int>("General.nthreads");
-		bool parallelize = GS->GetParameter<bool>("General.parallelize");
-
-	#pragma omp parallel for if(parallelize) num_threads(nthreads)
+		//  int nthreads   = GS->GetParameter<int>("General.nthreads");
+		//  bool parallelize = GS->GetParameter<bool>("General.parallelize");
+		//
+		// #pragma omp parallel for if(parallelize) num_threads(nthreads)
 		for(int i = 0; i < channels_.size(); ++i)
 		{
 				// Create the histogram holding the real fft spectrum
@@ -1411,6 +1484,7 @@ void AnalysisEvent::RunFFT()
 
 				string title = channels_.at(i)->name + "_fft_real_h";
 				channels_.at(i)->fft_real_h = new TH1F( title.c_str(), title.c_str(), 2, -1/(2*timestep)/2, 1/(2*timestep)+ 1/(2*timestep)/2 );
+				channels_.at(i)->fft_real_h->SetDirectory(0);
 				channels_.at(i)->fft_real_h->SetXTitle("Frequency [Hz]");
 				channels_.at(i)->fft_real_h->SetYTitle("Gute Frage...");
 				// Create the histogram holding the imaginary fft spectrum
@@ -1422,6 +1496,7 @@ void AnalysisEvent::RunFFT()
 
 				title = channels_.at(i)->name + "_fft_img_h";
 				channels_.at(i)->fft_img_h = new TH1F( title.c_str(), title.c_str(), 2, -1/(2*timestep)/2, 1/(2*timestep)+ 1/(2*timestep)/2 );
+				channels_.at(i)->fft_img_h->SetDirectory(0);
 				channels_.at(i)->fft_img_h->SetXTitle("Frequency [Hz]");
 				channels_.at(i)->fft_img_h->SetYTitle("Gute Frage...");
 
@@ -1433,6 +1508,7 @@ void AnalysisEvent::RunFFT()
 
 				title = channels_.at(i)->name + "_fft_mag_h";
 				channels_.at(i)->fft_mag_h = new TH1F( title.c_str(), title.c_str(), 2, -1/(2*timestep)/2, 1/(2*timestep)+ 1/(2*timestep)/2 );
+				channels_.at(i)->fft_mag_h->SetDirectory(0);
 				channels_.at(i)->fft_mag_h->SetXTitle("Magnitude [Hz]");
 				channels_.at(i)->fft_mag_h->SetYTitle("Gute Frage...");
 
@@ -1445,6 +1521,7 @@ void AnalysisEvent::RunFFT()
 
 				title = channels_.at(i)->name + "_fft_phase_h";
 				channels_.at(i)->fft_phase_h = new TH1F( title.c_str(), title.c_str(), 2, -1/(2*timestep)/2, 1/(2*timestep)+ 1/(2*timestep)/2 );
+				channels_.at(i)->fft_phase_h->SetDirectory(0);
 				channels_.at(i)->fft_phase_h->SetXTitle("Phaseshift [probably degree]");
 				channels_.at(i)->fft_phase_h->SetYTitle("Gute Frage...");
 
@@ -1528,97 +1605,88 @@ void AnalysisEvent::RunFFT()
 						channels_.at(i)->fft_mag_h->SetBinContent(j,gsl_complex_abs(z));
 						channels_.at(i)->fft_phase_h->SetBinContent(j,gsl_complex_arg(z));
 				}
+
+				// switch axis from Hx to ns
+				//channels_.at(i)->fft_phase_h->SetBins( n/2+1, xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
+
 		}
 }
-//      long n = 0;
-//
-//      if( hist_->GetNbinsX() % 2 == 0 ) n = (int)(hist_->GetNbinsX()/10);
-//      else n = (int)(hist_->GetNbinsX()/10) - 1;
-//      n++;
 
-//      if( fft_real_h_->GetNbinsX() < n/2+1 )
-//      {
-//              double xmin = fft_real_h_->GetBinCenter(1);
-//              double xmax = fft_real_h_->GetBinCenter(fft_real_h_->GetNbinsX());
-//              double range = xmax-xmin;
-//              fft_real_h_->SetBins( n/2+1, xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
-//      }
-//
-//      if( fft_img_h_->GetNbinsX() < n/2+1 )
-//      {
-//              double xmin = fft_img_h_->GetBinCenter(1);
-//              double xmax = fft_img_h_->GetBinCenter(fft_img_h_->GetNbinsX());
-//              double range = xmax-xmin;
-//              fft_img_h_->SetBins( n/2+1, xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
-//      }
-//
-//      if( fft_mag_h_->GetNbinsX() < n/2+1 )
-//      {
-//              double xmin = fft_mag_h_->GetBinCenter(1);
-//              double xmax = fft_mag_h_->GetBinCenter(fft_mag_h_->GetNbinsX());
-//              double range = xmax-xmin;
-//              fft_mag_h_->SetBins( n/2+1, xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
-//      }
-//
-//      if( fft_phase_h_->GetNbinsX() < n/2+1 )
-//      {
-//              double xmin = fft_phase_h_->GetBinCenter(1);
-//              double xmax = fft_phase_h_->GetBinCenter(fft_phase_h_->GetNbinsX());
-//              double range = xmax-xmin;
-//              fft_phase_h_->SetBins( n/2+1, xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
-//      }
-//
-//      gsl_fft_real_wavetable *        real;
-//      gsl_fft_real_workspace *        work;
-//
-//      double * data = new double[n];
-//      double * cpacked = new double[2*n];
-//
-//      for (int i = 0; i < n; i++)
-//      {
-//              data[i] = hist_->GetBinContent(i+1);
-//      }
-//
-//      work = gsl_fft_real_workspace_alloc ( n );
-//      real = gsl_fft_real_wavetable_alloc ( n );
-//
-//      gsl_fft_real_transform(data, 1, n, real, work);
-//
-//      gsl_fft_real_wavetable_free(real);
-//
-//      gsl_fft_halfcomplex_unpack( data, cpacked, 1,n );
-//
-//
-//      for (int i = 0; i < n/2+1; i++)
-//      {
-//              fft_real_h_->SetBinContent(i+1,cpacked[2*i]);
-//      }
-//
-//      for (int i = 0; i < n/2+1; i++)
-//      {
-//              fft_img_h_->SetBinContent(i+1,cpacked[2*i+1]);
-//      }
-//
-//      delete work;
-//      delete data;
-//      delete cpacked;
-//
-//      double wall1 = claws::get_wall_time();
-//      double cpu1  = claws::get_cpu_time();
-//
-//      for (int i = 1; i < fft_real_h_->GetNbinsX() + 1; i++)
-//      {
-//              gsl_complex z = gsl_complex_rect(fft_real_h_->GetBinContent(i),fft_img_h_->GetBinContent(i));
-//              fft_mag_h_->SetBinContent(i,gsl_complex_abs(z));
-//              fft_phase_h_->SetBinContent(i,gsl_complex_arg(z));
-//      }
-
-//};
-
-
-void AnalysisEvent::SaveEvent(boost::filesystem::path dst)
+void AnalysisEvent::HitEnergySpectrum()
 {
-		std::string fname = dst.string() + "/";
+		int nthreads   = GS->GetParameter<int>("General.nthreads");
+		bool parallelize = GS->GetParameter<bool>("General.parallelize");
+
+		for(int i = 0; i < channels_.size(); ++i)
+		{
+				// Create the histogram holding the real fft spectrum
+
+				double timestep = 0.8e-9;
+
+				if(channels_.at(i)->hit_energy != nullptr)
+				{
+						delete channels_.at(i)->hit_energy;
+						channels_.at(i)->hit_energy = nullptr;
+				}
+
+				string title = channels_.at(i)->name + "_hit_energy_spectrum";
+
+				double npe = 0;
+
+				try
+				{
+						npe = GS->GetParameter<double>("PEToMIP." + channels_.at(i)->name +"val2");
+				}
+				catch( const property_tree::ptree_bad_path &e )
+				{
+						npe = GS->GetParameter<double>("PEToMIP." + channels_.at(i)->name +"val");
+				}
+
+				int nmip = 5;
+
+				int nbinsx   = (int)round(nmip*npe);
+
+				double xlow  = +1./(2*npe);
+				double xup   = nmip +1./(2*npe);
+
+				channels_.at(i)->hit_energy = new TH1F( title.c_str(), title.c_str(), nbinsx, xlow, xup );
+				channels_.at(i)->hit_energy->SetXTitle("Hit Energy [MIP]");
+
+				channels_.at(i)->hit_energy->SetYTitle("Entries [1/xxx]");
+
+				for(int j = 1; j < channels_.at(i)->wf->GetNbinsX(); j++)
+				{
+						if(channels_.at(i)->wf->GetBinContent(j) > 0)
+						{
+
+								channels_.at(i)->hit_energy->Fill(channels_.at(i)->wf->GetBinContent(j)*n_);
+						}
+				}
+		}
+};
+
+
+void AnalysisEvent::SaveEvent(boost::filesystem::path dst, string prefix)
+{
+
+		filesystem::path output = dst;
+
+		if(first_run_ == last_run_) output /=  "Run-" + to_string(first_run_);
+		else output /= "Run-" + to_string(first_run_) + "-" + to_string(last_run_);
+
+		if( !boost::filesystem::is_directory(output) )
+		{
+				boost::filesystem::create_directory(output);
+		}
+
+		output /=prefix;
+
+		if( !boost::filesystem::is_directory(output) )
+		{
+				boost::filesystem::create_directory(output);
+		}
+
+		std::string fname = output.string() + "/";
 
 		int status;
 		char   *realname;
@@ -1647,20 +1715,9 @@ void AnalysisEvent::SaveEvent(boost::filesystem::path dst)
 				if(channel->fft_img_h) channel->fft_img_h->Write();
 				if(channel->fft_mag_h) channel->fft_mag_h->Write();
 				if(channel->fft_phase_h) channel->fft_phase_h->Write();
-				// auto wf = channel->GetHistogram("waveform");
-				// if( wf ) wf->Write();
-				//
-				// auto pdhist = channel->GetHistogram("pedestal");
-				// if( pdhist ) pdhist->Write();
-				//
-				// auto reco = channel->GetHistogram("reco");
-				// if( reco ) reco->Write();
-				//
-				// auto pe = channel->GetHistogram("pe");
-				// if( pe ) pe->Write();
-				//
-				// auto mip = channel->GetHistogram("mip");
-				// if( mip ) mip->Write();
+				if(channel->hit_energy) channel->hit_energy->Write();
+				if(channel->hit_energy_sync) channel->hit_energy_sync->Write();
+				if(channel->hit_energy_mip) channel->hit_energy_mip->Write();
 		}
 
 		rfile->Close("R");

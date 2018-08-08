@@ -308,6 +308,7 @@ std::vector<std::vector<double> > GetRates();
 // int GetInjection(std::string ring);
 // double GetInjectionRate(std::string ring);
 boost::property_tree::ptree GetPT();
+boost::filesystem::path GetPath();
 
 private:
 boost::filesystem::path rate_file_;
@@ -328,8 +329,10 @@ void AddEvent(PhysicsEvent* ph_evt);
 void Normalize();
 void RunFFT();
 void RunPeak();
+void HitEnergySpectrum();
+//void GetHitEnergySpectrum();
 
-void SaveEvent(boost::filesystem::path dst);
+void SaveEvent(boost::filesystem::path dst, std::string prefix);
 
 template<typename T>
 T GetParameter(std::string pv)
@@ -355,7 +358,8 @@ std::vector<AnalysisChannel*> channels_;
 //         TH1D*                   fft_phase_h_    = NULL;
 
 boost::property_tree::ptree pt_;
-
+int first_run_;
+int last_run_;
 };
 
 //

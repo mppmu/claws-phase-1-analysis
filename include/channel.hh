@@ -211,6 +211,7 @@ struct AnalysisChannel {
 				if(fft_img_h) delete fft_img_h;
 				if(fft_mag_h) delete fft_mag_h;
 				if(fft_phase_h) delete fft_phase_h;
+				if(hit_energy) delete hit_energy;
 		};
 
 		std::string name ="";
@@ -220,6 +221,9 @@ struct AnalysisChannel {
 		TH1F* fft_img_h = nullptr;
 		TH1F* fft_mag_h = nullptr;
 		TH1F* fft_phase_h = nullptr;
+		TH1F* hit_energy = nullptr;
+		TH1F* hit_energy_sync = nullptr;
+		TH1F* hit_energy_mip = nullptr;
 };
 //
 //         void    WaveformDecomposition();

@@ -174,8 +174,8 @@ int main(int argc, char* argv[])
 
 		// Create the vector to hold the analysis events:
 
-		string first_run = "";
-		string last_run = "";
+		// string first_run = "";
+		// string last_run = "";
 
 		vector<AnalysisEvent*>  analysis_evts;
 
@@ -195,17 +195,18 @@ int main(int argc, char* argv[])
 						input = vm["data.input"].as<filesystem::path>();
 				}
 
-				int run_min;
+				int run_min = -1;
 				try
 				{
 						run_min = selection.second.get<int>("run_min");
 				}
+				//catch( )
 				catch( const property_tree::ptree_bad_path &e )
 				{
 						run_min = vm["data.run_min"].as<int>();
 				}
 
-				int run_max;
+				int run_max = 1000000;
 				try
 				{
 						run_max = selection.second.get<int>("run_max");
@@ -215,9 +216,9 @@ int main(int argc, char* argv[])
 						run_max = vm["data.run_max"].as<int>();
 				}
 
-				int year_min;
-				int month_min;
-				int day_min;
+				int year_min = -1;
+				int month_min = -1;
+				int day_min = -1;
 				try
 				{
 						string date = selection.second.get<string>("date_min");
@@ -234,9 +235,9 @@ int main(int argc, char* argv[])
 						day_min = std::stoi(date.substr(8,2));
 				}
 
-				int year_max;
-				int month_max;
-				int day_max;
+				int year_max = 3000;
+				int month_max = 13;
+				int day_max = 42;
 				try
 				{
 						string date = selection.second.get<string>("date_max");
@@ -342,28 +343,28 @@ int main(int argc, char* argv[])
 						}
 				}
 
-				if(first_run != "" )
-				{
-						int front_tmp = stoi(run_paths.front().filename().string().substr(4));
-						int front_global = stoi(first_run.substr(4));
-						if(front_tmp < front_global) first_run = run_paths.front().filename().string();
-				}
-				else
-				{
-						first_run = run_paths.front().filename().string();
+				// if(first_run != "" )
+				// {
+				//      int front_tmp = stoi(run_paths.front().filename().string().substr(4));
+				//      int front_global = stoi(first_run.substr(4));
+				//      if(front_tmp < front_global) first_run = run_paths.front().filename().string();
+				// }
+				// else
+				// {
+				//      first_run = run_paths.front().filename().string();
+				//
+				// }
 
-				}
-
-				if(last_run != "" )
-				{
-						int back_tmp = stoi(run_paths.back().filename().string().substr(4));
-						int back_global = stoi(last_run.substr(4));
-						if(back_tmp < back_global) last_run = run_paths.back().filename().string();
-				}
-				else
-				{
-						last_run = run_paths.back().filename().string();
-				}
+				// if(last_run != "" )
+				// {
+				//      int back_tmp = stoi(run_paths.back().filename().string().substr(4));
+				//      int back_global = stoi(last_run.substr(4));
+				//      if(back_tmp < back_global) last_run = run_paths.back().filename().string();
+				// }
+				// else
+				// {
+				//      last_run = run_paths.back().filename().string();
+				// }
 
 
 
@@ -591,7 +592,7 @@ int main(int argc, char* argv[])
 										evt->DeleteHistograms();
 								}
 						}
-
+						analysis_evt->Normalize();
 						analysis_evts.push_back(analysis_evt);
 				}
 				else
@@ -663,7 +664,6 @@ int main(int argc, char* argv[])
 								tasks += "_PEAK";
 
 						}
-
 						else if(entry.second.data() == "FFT")
 						{
 								std::cout << "\033[33;1mFFT Algorithm:\033[0m running" << "\r" << std::flush;
@@ -688,20 +688,35 @@ int main(int argc, char* argv[])
 
 								tasks += "_FFT";
 						}
+						// else if(entry.second.data() == "HITENERGY")
+						// {
+						//      std::cout << "\033[33;1mHit Energy Spectrum:\033[0m running" << "\r" << std::flush;
+						//
+						//      double wall0 = claws::get_wall_time();
+						//      double cpu0  = claws::get_cpu_time();
+						//
+						//      for(auto & anaysis_evt: analysis_evts)
+						//      {
+						//              anaysis_evt->HitEnergySpectrum();
+						//      }
+						//
+						//      std::cout << "\033[32;1mHit Energy Spectrum:\033[0m done!       " << std::endl;
+						//      double wall1 = claws::get_wall_time();
+						//      double cpu1  = claws::get_cpu_time();
+						//
+						//      if(profile_timing)
+						//      {
+						//              cout << "Wall Time = " << wall1 - wall0 << endl;
+						//              cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+						//      }
+						//
+						//      tasks += "_HITENERGY";
+						// }
 						else
 						{
 								cout<< "UNKNOWN TASTK:" << entry.second.data() << endl;
 						}
-//                      switch(entry.second.data())
-//                      {
-//                      case "FFT":
-//                              for(auto & anaysis_evt: analysis_evts)
-//                              {
-//                                      anaysis_evt->RunFFT();
-//                              }
-// defaut:
-//                              cout<< "UNKNOWN TASTK:" << entry.second.data() << endl;
-//                      }
+
 				}
 
 		}
@@ -710,13 +725,13 @@ int main(int argc, char* argv[])
 
 		filesystem::path output = vm["data.output"].as<filesystem::path>();
 
-		if(first_run == last_run) output /= first_run;
-		else output /= (first_run+ "-" + last_run.substr(4));
+		// if(first_run == last_run) output /= first_run;
+		// else output /= (first_run+ "-" + last_run.substr(4));
 
-		if( !boost::filesystem::is_directory(output) )
-		{
-				boost::filesystem::create_directory(output);
-		}
+		// if( !boost::filesystem::is_directory(output) )
+		// {
+		//      boost::filesystem::create_directory(output);
+		// }
 
 		for(auto &target : selections)
 		{
@@ -736,12 +751,13 @@ int main(int argc, char* argv[])
 								//for( int i = 0; i < analysis_evts.size(); ++i)
 								for(auto & anaysis_evt: analysis_evts)
 								{
-										string foldername = entry.second.data() + tasks;
-										if( !filesystem::is_directory(output/foldername) )
-										{
-												filesystem::create_directory(output/foldername);
-										}
-										anaysis_evt->SaveEvent(output/foldername);
+										string prefix = entry.second.data() + tasks;
+										//
+										// if( !filesystem::is_directory(output/foldername) )
+										// {
+										//      filesystem::create_directory(output/foldername);
+										// }
+										anaysis_evt->SaveEvent(output, prefix);
 								}
 						}
 						else if(plot_type.at(0) == "SCATTER")
@@ -779,10 +795,10 @@ int main(int argc, char* argv[])
 								rfile->Close();
 
 								replace_last(fname, ".root", "_selections.ini");
-								property_tree::write_ini(fname.c_str(), pt_);
+								property_tree::write_ini(fname.c_str(), selections);
 
 								replace_last(fname, "_selections.ini", "_plot_only.ini");
-								property_tree::write_ini(fname.c_str(), entry);
+								property_tree::write_ini(fname.c_str(), target.second);
 
 
 								delete graph;
@@ -791,9 +807,6 @@ int main(int argc, char* argv[])
 				}
 
 		}
-
-
-
 
 
 
