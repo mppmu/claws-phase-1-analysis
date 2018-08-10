@@ -304,7 +304,7 @@ virtual void MipTimeRetrieval();
 std::vector<std::vector<double> > GetReconstruction();
 // std::vector<double> GetOnlineRates();
 // std::vector<double> GetFastRates();
-std::vector<std::vector<double> > GetRates();
+std::vector<Rate > GetRates();
 // int GetInjection(std::string ring);
 // double GetInjectionRate(std::string ring);
 boost::property_tree::ptree GetPT();

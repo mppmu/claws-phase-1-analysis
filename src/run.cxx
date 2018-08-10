@@ -1519,7 +1519,7 @@ void CalibrationRun::MipTimeRetrieval()
 		// }
 
 		std::vector<std::vector<TGraph*> > graphs;
-		std::string names[3] = { "_online_rate", "_fast_rate", "_rate"};
+		std::string names[6] = { "_online_rate", "_fast_rate", "_rate", "_staterr", "_syserr", "_err"};
 
 		for(auto &channel: evts_.at(0)->GetChannels() )
 		{
@@ -1532,6 +1532,18 @@ void CalibrationRun::MipTimeRetrieval()
 						TGraph * g = new TGraph();
 						g->SetName( (name+names[i]).c_str() );
 						g->GetYaxis()->SetTitle( "Particle rate [MIPs/s]");
+						g->GetXaxis()->SetTitle("Time [s]");
+						g->SetMarkerStyle(23);
+						g->SetMarkerColor(kRed);
+						g->SetMarkerSize(1);
+						gch.push_back(g);
+				}
+
+				for(int i = 3; i < 6; ++i)
+				{
+						TGraph * g = new TGraph();
+						g->SetName( (name+names[i]).c_str() );
+						g->GetYaxis()->SetTitle( "Particle rate error [MIPs/s]");
 						g->GetXaxis()->SetTitle("Time [s]");
 						g->SetMarkerStyle(23);
 						g->SetMarkerColor(kRed);
@@ -1561,6 +1573,18 @@ void CalibrationRun::MipTimeRetrieval()
 						gch.push_back(g);
 				}
 
+				for(int i = 3; i < 6; ++i)
+				{
+						TGraph * g = new TGraph();
+						g->SetName( (channel+names[i]).c_str() );
+						g->GetYaxis()->SetTitle( "Particle rate error [MIPs/s]");
+						g->GetXaxis()->SetTitle("Time [s]");
+						g->SetMarkerStyle(23);
+						g->SetMarkerColor(kRed);
+						g->SetMarkerSize(1);
+						gch.push_back(g);
+				}
+
 				graphs.push_back(gch);
 		}
 
@@ -1582,16 +1606,27 @@ void CalibrationRun::MipTimeRetrieval()
 						evt->MipTimeRetrieval();
 						evt->SaveEvent( outfolder/boost::filesystem::path("Waveforms") );
 
-						vector<vector<double> > rates = evt->GetRates();
+						vector< Rate > rates = evt->GetRates();
 						double evt_time = evt->GetParameter<double>("Properties.UnixTime");
 						for(unsigned int i = 0; i < rates.size(); ++i)
 						{
-								std::vector<double> ch_rate = rates.at(i);
-								for(unsigned int j = 0; j < 3; ++j)
-								{
-										TGraph* graph = graphs.at(i).at(j);
-										graph->SetPoint( graph->GetN(), evt_time, ch_rate.at(j) );
-								}
+								Rate ch_rate = rates.at(i);
+
+								int n = graphs.at(i).at(0)->GetN();
+								graphs.at(i).at(0)->SetPoint( n, evt_time, ch_rate.online );
+								graphs.at(i).at(1)->SetPoint( n, evt_time, ch_rate.fast );
+								graphs.at(i).at(2)->SetPoint( n, evt_time, ch_rate.rate);
+								graphs.at(i).at(3)->SetPoint( n, evt_time, ch_rate.staterr );
+								graphs.at(i).at(4)->SetPoint( n, evt_time, ch_rate.syserr );
+								graphs.at(i).at(5)->SetPoint( n, evt_time, ch_rate.err );
+
+								// graph->SetPoint( graph->GetN(), evt_time, ch_rate.at(j) );
+
+								// for(unsigned int j = 0; j < 3; ++j)
+								// {
+								//      TGraph* graph = graphs.at(i).at(j);
+								//      graph->SetPoint( graph->GetN(), evt_time, ch_rate.at(j) );
+								// }
 						}
 				}
 
@@ -1800,9 +1835,9 @@ void CalibrationRun::SystematicsStudy()
 		{
 				string funcname = hists.at(i)->GetName();
 				funcname += "langaus";
-				double rlow = hists.at(i)->GetBinLowEdge(2);
+				double rlow = hists.at(i)->GetBinLowEdge(5);
 				//double rup = hists.at(i)->GetBinLowEdge( hists.at(i)->GetNbinsX() ) + hists.at(i)->GetBinWidth(2);
-				double rup = hists.at(i)->GetMean()*4.0;
+				double rup = hists.at(i)->GetBinCenter(hists.at(i)->GetMaximumBin())*4.0;
 
 				// Shit basically stolen from the root example:
 				// https://root.cern.ch/root/html/tutorials/fit/langaus.C.html

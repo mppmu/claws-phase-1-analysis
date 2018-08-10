@@ -12,6 +12,8 @@
 // --- C++ includes ---
 #include <typeinfo>
 #include <algorithm>
+#include <math.h>
+#include <cmath>
 // --- OpenMP includes ---
 // #include <omp.h>
 // --- BOOST includes ---
@@ -493,9 +495,10 @@ void CalibrationChannel::FillPedestal()
 
 PhysicsChannel::PhysicsChannel(std::string ch_name, std::string scope_pos) : Channel(ch_name), os_({
 		-1
-}), recowf_(nullptr), pewf_(nullptr), mipwf_(nullptr), fast_rate_(-1), rate_(-1)
+}), recowf_(nullptr), pewf_(nullptr), mipwf_(nullptr), rate_(Rate())
 {
 		scope_pos_ = scope_pos;
+		rate_.name = ch_name;
 };
 
 PhysicsChannel::~PhysicsChannel() {
@@ -1031,12 +1034,19 @@ double PhysicsChannel::FastRate(TH1F* avg, double unixtime )
 
 		double dt = GS->GetParameter<double>("Scope.delta_t");
 
-		fast_rate_ = wf_->Integral()/avg->Integral();
+		double fastrate = wf_->Integral()/avg->Integral();
+		fastrate /= pe_per_mip;
+		fastrate /= ( dt*wf_->GetNbinsX() );
 
-		fast_rate_ = fast_rate_/pe_per_mip;
-		fast_rate_ = fast_rate_/( dt*wf_->GetNbinsX() );
+		rate_.fast = fastrate;
 
-		return fast_rate_;
+		// fast_rate_ = wf_->Integral()/avg->Integral();
+		//
+		// fast_rate_ = fast_rate_/pe_per_mip;
+		// fast_rate_ = fast_rate_/( dt*wf_->GetNbinsX() );
+
+
+		return fastrate;
 }
 
 void PhysicsChannel::PrepareDecomposition()
@@ -1565,24 +1575,39 @@ void PhysicsChannel::MipTimeRetrieval(double unixtime)
 		string timing_type =  GS->GetParameter<string>("MipTimeRetrieval.timing_type");
 		double constant_fraction =  GS->GetParameter<double>("MipTimeRetrieval.constant_fraction");
 
+		double sigma_correction =  GS->GetParameter<double>("MipTimeRetrieval.sigma_correction");
 
 		double pe_per_mip = -1.;
+		double sigma_pe_per_mip = -1.;
+		double correction_factor = -1;
 
 		if( GS->GetParameter<string>("PEToMIP." + name_) != "false")
 		{
 				if( GS->GetParameter<double>("PEToMIP." + name_) > unixtime )
 				{
 						pe_per_mip = GS->GetParameter<double>("PEToMIP." + name_ + "val2");
+						sigma_pe_per_mip = GS->GetParameter<double>("PEToMIP." + name_ + "err2");
+						correction_factor = GS->GetParameter<double>("PEToMIP." + name_ + "corr2");
 				}
 				else
 				{
 						pe_per_mip = GS->GetParameter<double>("PEToMIP." + name_ + "val");
+						sigma_pe_per_mip = GS->GetParameter<double>("PEToMIP." + name_ + "err");
+						correction_factor = GS->GetParameter<double>("PEToMIP." + name_ + "corr");
 				}
 		}
 		else
 		{
 				pe_per_mip = GS->GetParameter<double>("PEToMIP." + name_ + "val");
+				sigma_pe_per_mip = GS->GetParameter<double>("PEToMIP." + name_ + "err");
+				correction_factor = GS->GetParameter<double>("PEToMIP." + name_ + "corr");
+
 		}
+
+		// rate_ = 0;
+		// rate_err_ = 0;
+		// rate_staterr_ = 0;
+		// rate_syserr_ = 0;
 
 		for(int i = 1; i<=pewf_->GetNbinsX(); ++i)
 		{
@@ -1591,50 +1616,73 @@ void PhysicsChannel::MipTimeRetrieval(double unixtime)
 
 						// First check how many pes are in the
 						// integration window
-						int pes_in_window = 0;
+						int npe = 0;
 						for( int j = i; j < i + window_length; ++j)
 						{
-								pes_in_window += pewf_->GetBinContent(j);
+								npe += pewf_->GetBinContent(j);
 						}
 
-						if( pes_in_window >= window_threshold )
+						if( npe >= window_threshold )
 						{
+
+								int j = i-1;
+								int time_pe = 0;
+
 								if(timing_type == "pe hit time")
 								{
-										int j = i-1;
-										int pe = 0;
-										while( pe < npe_hit_time && (j - i) <= window_length )
+										while( time_pe < npe_hit_time && (j - i) <= window_length )
 										{
 												++j;
-												pe += pewf_->GetBinContent(j);
+												time_pe += pewf_->GetBinContent(j);
 										}
 
-										for( int k = 0; k < pes_in_window; ++k)
-										{
-												mipwf_->Fill(pewf_->GetBinCenter(j), 1./pe_per_mip);
-										}
+										// for( int k = 0; k < npe; ++k)
+										// {
+										//      mipwf_->Fill(pewf_->GetBinCenter(j), 1./pe_per_mip);
+										// }
 
-										i += window_length-1;
+
 								}
 								else if(timing_type == "constant fraction")
 								{
-										int time_pe = (int)round(constant_fraction*pes_in_window);
+										int thres_pe = (int)round(constant_fraction*npe);
 
-										int j = i-1;
-										int pe = 0;
-										while( pe < time_pe && (j - i) <= window_length )
+										if(thres_pe == 0) thres_pe = 1;
+
+										//	int j = i-1;
+										//	int pe = 0;
+										while( time_pe < thres_pe && (j - i) <= window_length )
 										{
 												++j;
-												pe += pewf_->GetBinContent(j);
+												time_pe += pewf_->GetBinContent(j);
 										}
 
-										for( int k = 0; k < pes_in_window; ++k)
-										{
-												mipwf_->Fill(pewf_->GetBinCenter(j), 1./pe_per_mip);
-										}
+										// for( int k = 0; k < npe; ++k)
+										// {
+										//      mipwf_->Fill(pewf_->GetBinCenter(j), 1./pe_per_mip);
+										// }
 
-										i += window_length-1;
+										//i += window_length-1;
 								}
+
+								double alpha = double(npe)/pe_per_mip + correction_factor;
+
+								mipwf_->SetBinContent(j, alpha);
+
+								double staterr = sqrt(npe)/pe_per_mip;
+
+								double syserr  = npe*sigma_pe_per_mip/pow(pe_per_mip, 2) + sigma_correction;
+
+								double err = sqrt(pow(staterr,2) + pow(syserr,2));
+
+								mipwf_->SetBinError(j, err);
+
+								rate_.rate += alpha;
+
+								rate_.staterr += pow(staterr,2);
+								rate_.syserr += syserr;
+
+								i += window_length-1;
 						}
 
 
@@ -1642,7 +1690,16 @@ void PhysicsChannel::MipTimeRetrieval(double unixtime)
 		}
 
 		double dt = GS->GetParameter<double>("Scope.delta_t");
-		rate_ = mipwf_->Integral()/(dt*mipwf_->GetNbinsX());
+		double t = dt*mipwf_->GetNbinsX();
+
+		rate_.rate /=t;
+
+		rate_.staterr = sqrt(rate_.staterr)/t;
+		rate_.syserr = rate_.syserr/t;
+
+		rate_.err = sqrt(pow(rate_.staterr,2) + pow(rate_.syserr,2));
+
+		//	rate_ = mipwf_->Integral()/(dt*mipwf_->GetNbinsX());
 };
 
 
@@ -1661,12 +1718,12 @@ TH1* PhysicsChannel::GetHistogram(std::string type)
 		else exit(1);
 };
 
-double PhysicsChannel::GetFastRate()
-{
-		return fast_rate_;
-}
+// double PhysicsChannel::GetFastRate()
+// {
+//      return fast_rate_;
+// }
 
-double PhysicsChannel::GetRate()
+Rate PhysicsChannel::GetRate()
 {
 		return rate_;
 }

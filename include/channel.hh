@@ -145,6 +145,25 @@ struct OverShootResult
 		double area2 = 0;
 };
 
+struct Rate {
+		Rate()
+		{
+				name = "";
+				online = 0;
+				fast= 0;
+				rate = 0;
+				staterr = 0;
+				syserr = 0;
+				err = 0;
+		};
+		std::string name;
+		double online;
+		double fast;
+		double rate;
+		double staterr;
+		double syserr;
+		double err;
+};
 
 class PhysicsChannel : public Channel
 {
@@ -183,8 +202,8 @@ virtual void MipTimeRetrieval(double unixtime = -1.);
 virtual double*                 GetOS();
 virtual TH1*                    GetHistogram(std::string type);
 
-virtual double     GetFastRate();
-virtual double     GetRate();
+//virtual double     GetFastRate();
+virtual Rate     GetRate();
 
 //    virtual double*     GetReco();
 private:
@@ -197,8 +216,8 @@ TH1F*                  mipwf_;
  *   [1] == fast offline
  *   [2] == foll reco
  */
-double fast_rate_;
-double rate_;
+//double fast_rate_;
+Rate rate_;
 //     double              reco_res_[4];
 
 };

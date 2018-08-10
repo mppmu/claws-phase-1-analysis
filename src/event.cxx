@@ -1169,11 +1169,14 @@ void PhysicsEvent::MipTimeRetrieval()
 
 				std::string chname = pch->GetName();
 
-				double rate   = pch->GetRate();
+				Rate rate   = pch->GetRate();
 
 				//rates_.at(i) = rate;
 
-				pt_.put("Rate." + chname, rate );
+				pt_.put("Rate." + chname, rate.rate );
+				pt_.put("RateSysErr." + chname, rate.staterr );
+				pt_.put("RateStatErr." + chname, rate.syserr );
+				pt_.put("RateErr." + chname, rate.err );
 
 		}
 
@@ -1200,38 +1203,71 @@ std::vector<std::vector<double> > PhysicsEvent::GetReconstruction()
 //  return fast_rates_;
 // }
 
-vector<vector<double> > PhysicsEvent::GetRates()
+vector<Rate > PhysicsEvent::GetRates()
 {
-		vector<double> init(3,-1);
-		vector<vector<double> > rates(6,init);
+		// vector<double> init(3,-1);
+		// vector<vector<double> > rates(6,init);
+		//
+		//
+		//
+		// boost::property_tree::ptree childpt = pt_.get_child("OnlineRate");
+		//
+		// int i = 0;
+		//
+		// for(auto iter = childpt.begin(); iter != childpt.end(); iter++)
+		// {
+		//      rates.at(i).at(0) = stod(iter->second.data());
+		//      ++i;
+		// }
+		//
+		// childpt = pt_.get_child("FastRate");
+		//
+		// i = 0;
+		//
+		// for(auto iter = childpt.begin(); iter != childpt.end(); iter++)
+		// {
+		//      rates.at(i).at(1) = stod(iter->second.data());
+		//      ++i;
+		// }
+		//
+		// childpt = pt_.get_child("Rate");
+		//
+		// i = 0;
+		// for(auto iter = childpt.begin(); iter != childpt.end(); iter++)
+		// {
+		//      rates.at(i).at(2) = stod(iter->second.data());
+		//      ++i;
+		// }
 
-		boost::property_tree::ptree childpt = pt_.get_child("OnlineRate");
+		vector<Rate> rates;
 
-		int i = 0;
+		// boost::property_tree::ptree childpt = pt_.get_child("OnlineRate");
+		// pt_.get<string>("SuperKEKBData.HERStatus");
 
-		for(auto iter = childpt.begin(); iter != childpt.end(); iter++)
+		for(auto & ch : channels_)
 		{
-				rates.at(i).at(0) = stod(iter->second.data());
-				++i;
-		}
+				PhysicsChannel* tmp = dynamic_cast<PhysicsChannel*>(ch);
+				Rate rate = tmp->GetRate();
+				try
+				{
+						rate.online = pt_.get<double>("OnlineRate."+ch->GetName());
+				}
+				catch(const property_tree::ptree_bad_path &e)
+				{
+						rate.online = -1;
+				}
 
-		childpt = pt_.get_child("FastRate");
+				try
+				{
+						rate.fast = pt_.get<double>("FastRate."+ch->GetName());
+				}
+				catch(const property_tree::ptree_bad_path &e)
+				{
+						rate.fast = -1;
+				}
 
-		i = 0;
 
-		for(auto iter = childpt.begin(); iter != childpt.end(); iter++)
-		{
-				rates.at(i).at(1) = stod(iter->second.data());
-				++i;
-		}
-
-		childpt = pt_.get_child("Rate");
-
-		i = 0;
-		for(auto iter = childpt.begin(); iter != childpt.end(); iter++)
-		{
-				rates.at(i).at(2) = stod(iter->second.data());
-				++i;
+				rates.push_back(rate);
 		}
 
 		return rates;
