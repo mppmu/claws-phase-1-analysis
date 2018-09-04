@@ -52,7 +52,7 @@ analysis: monkey clean build/analysis
 
 #test: CFLAGS += -pg -g -O0 -Wall -fno-inline-functions
 #test: CFLAGS += -pg -g -O0 -Wall
-test: CFLAGS += -pg -Wall
+test: CFLAGS += -pg -g -O0 -Wall -fno-inline-functions
 test: LFLAGS += -pg
 test: monkey clean build/test
 

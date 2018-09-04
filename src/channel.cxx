@@ -495,7 +495,7 @@ void CalibrationChannel::FillPedestal()
 
 PhysicsChannel::PhysicsChannel(std::string ch_name, std::string scope_pos) : Channel(ch_name), os_({
 		-1
-}), recowf_(nullptr), pewf_(nullptr), mipwf_(nullptr), rate_(Rate())
+}), recowf_(nullptr), pewf_(nullptr), mipwf_(nullptr),mipwf_stat_(nullptr),mipwf_sys_(nullptr), rate_(Rate())
 {
 		scope_pos_ = scope_pos;
 		rate_.name = ch_name;
@@ -517,6 +517,16 @@ PhysicsChannel::~PhysicsChannel() {
 		{
 				delete mipwf_;
 				mipwf_ = nullptr;
+		}
+		if( mipwf_stat_ != nullptr )
+		{
+				delete mipwf_stat_;
+				mipwf_stat_ = nullptr;
+		}
+		if( mipwf_sys_ != nullptr )
+		{
+				delete mipwf_sys_;
+				mipwf_sys_ = nullptr;
 		}
 };
 
@@ -563,6 +573,12 @@ void PhysicsChannel::LoadHistogram(TFile* rfile, vector<string> types)
 				{
 						mipwf_ = (TH1F*) rfile->Get((name_+"_mip").c_str());
 						mipwf_->SetDirectory(0);
+
+						mipwf_stat_ = (TH1F*) rfile->Get((name_+"_mip_stat").c_str());
+						mipwf_stat_->SetDirectory(0);
+
+						mipwf_sys_ = (TH1F*) rfile->Get((name_+"_mip_sys").c_str());
+						mipwf_sys_->SetDirectory(0);
 				}
 
 				else
@@ -647,6 +663,18 @@ void PhysicsChannel::DeleteHistogram()
 		{
 				delete mipwf_;
 				mipwf_ = NULL;
+		}
+
+		if( mipwf_stat_ != NULL)
+		{
+				delete mipwf_stat_;
+				mipwf_stat_ = NULL;
+		}
+
+		if( mipwf_sys_ != NULL)
+		{
+				delete mipwf_sys_;
+				mipwf_sys_ = NULL;
 		}
 
 };
@@ -1380,7 +1408,7 @@ bool PhysicsChannel::FWHM(int bin, int methode, double fwhm)
 		else if( methode == 2)
 		{// Methode 2
 				double avg = 0;
-				for(int i=bin-int(fwhm/2)+1; i<=bin+int(fwhm/2)-1; ++i) avg += recowf_->GetBinContent(bin);
+				for(int i=bin-int(fwhm/2)+1; i<=bin+int(fwhm/2)-1; ++i) avg += recowf_->GetBinContent(i);
 
 				avg /= fwhm-1;
 				//fwhm_true = avgtmp >= wf->GetBinContent(maxbin)*0.5;
@@ -1565,6 +1593,23 @@ void PhysicsChannel::PrepareRetrieval()
 
 		mipwf_       = new TH1F(title.c_str(), title.c_str(), nbinsx, xlow, xup);
 		mipwf_->SetDirectory(0);
+
+		if( mipwf_sys_ != nullptr )
+		{
+				delete mipwf_sys_;
+				mipwf_sys_ = nullptr;
+		}
+
+		mipwf_sys_ = (TH1F*) mipwf_->Clone((name_ + "_mip_sys").c_str());
+
+		if( mipwf_stat_ != nullptr )
+		{
+				delete mipwf_stat_;
+				mipwf_stat_ = nullptr;
+		}
+
+		mipwf_stat_ = (TH1F*) mipwf_->Clone((name_ + "_mip_stat").c_str());
+
 };
 
 void PhysicsChannel::MipTimeRetrieval(double unixtime)
@@ -1604,10 +1649,10 @@ void PhysicsChannel::MipTimeRetrieval(double unixtime)
 
 		}
 
-		// rate_ = 0;
-		// rate_err_ = 0;
-		// rate_staterr_ = 0;
-		// rate_syserr_ = 0;
+		rate_.rate = 0;
+		rate_.staterr = 0;
+		rate_.syserr = 0;
+		rate_.err = 0;
 
 		for(int i = 1; i<=pewf_->GetNbinsX(); ++i)
 		{
@@ -1668,6 +1713,8 @@ void PhysicsChannel::MipTimeRetrieval(double unixtime)
 								double alpha = double(npe)/pe_per_mip + correction_factor;
 
 								mipwf_->SetBinContent(j, alpha);
+								mipwf_stat_->SetBinContent(j, alpha);
+								mipwf_sys_->SetBinContent(j, alpha);
 
 								double staterr = sqrt(npe)/pe_per_mip;
 
@@ -1676,6 +1723,8 @@ void PhysicsChannel::MipTimeRetrieval(double unixtime)
 								double err = sqrt(pow(staterr,2) + pow(syserr,2));
 
 								mipwf_->SetBinError(j, err);
+								mipwf_stat_->SetBinError(j, staterr);
+								mipwf_sys_->SetBinError(j, syserr);
 
 								rate_.rate += alpha;
 
@@ -1715,6 +1764,8 @@ TH1* PhysicsChannel::GetHistogram(std::string type)
 		else if (type == "reco") return recowf_;
 		else if (type == "pe") return pewf_;
 		else if (type == "mip") return mipwf_;
+		else if (type == "mip_sys") return mipwf_sys_;
+		else if (type == "mip_stat") return mipwf_stat_;
 		else exit(1);
 };
 

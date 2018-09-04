@@ -46,10 +46,14 @@ NTP_Handler::NTP_Handler(filesystem::path search_path) : rfile_(nullptr), ttree_
 
 		while( itr != ntp_files.end() )
 		{
-				if( ends_with((*itr).filename().string(), ".root" ))
+				if( ends_with((*itr).filename().string(), ".root" ) && ((*itr).filename().string().find("BEAST_2016-05-") != std::string::npos || (*itr).filename().string().find("BEAST_2016-06-") != std::string::npos) )
 				{
 						itr++;
 				}
+				// if( ends_with((*itr).filename().string(), ".root" ) && (*itr).filename().string().find("BEAST_2016-05-28") != std::string::npos )
+				// {
+				//      itr++;
+				// }
 				else
 				{
 						// delete (*itr);

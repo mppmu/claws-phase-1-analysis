@@ -14,6 +14,7 @@
 #include <cxxabi.h>
 #include <algorithm>
 #include <assert.h>
+#include <algorithm>    // std::sort
 // --- BOOST includes ---
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/algorithm/string/replace.hpp>
@@ -276,6 +277,14 @@ EventState Event::GetState()
 {
 		return state_;
 }
+
+filesystem::path Event::GetPath(string type)
+{
+		if(type == "path") return path_;
+		else if(type == "file") return file_;
+		else if(type == "ini_file") return ini_file_;
+		else return boost::filesystem::path("");
+};
 
 //----------------------------------------------------------------------------------------------
 // Definition of the CalibrationEvent class derived from Event.
@@ -943,6 +952,12 @@ void PhysicsEvent::SaveEvent(boost::filesystem::path dst)
 
 				auto mip = channel->GetHistogram("mip");
 				if( mip ) mip->Write();
+
+				auto mip_sys = channel->GetHistogram("mip_sys");
+				if( mip_sys ) mip_sys->Write();
+
+				auto mip_stat = channel->GetHistogram("mip_stat");
+				if( mip_stat ) mip_stat->Write();
 		}
 
 		rfile->Close("R");
@@ -1184,6 +1199,32 @@ void PhysicsEvent::MipTimeRetrieval()
 		pt_.put("General.State", state_);
 };
 
+bool PhysicsEvent::CheckInjection()
+{
+		// return true if injection, false else
+		//	vector<int> maxbins;
+		vector<double> maxima;
+
+		for(auto& ch : channels_)
+		{
+				PhysicsChannel *pch = dynamic_cast<PhysicsChannel*>(ch);
+				maxima.push_back(pch->GetHistogram("mip")->GetMaximum());
+				//		maxbins.push_back(pch->mipwf_->GetMaximumBin());
+		}
+
+		// sort(maxbins.begin(), maxbins.end());
+		sort(maxima.begin(), maxima.end());
+
+		if(maxima.front()>7.)
+		{
+				cout<< "CheckInjection for evt " << nr_ << "found Injection despite INJECTION Flag." << endl;
+				for(auto &max: maxima) cout<< "Max: " << max<< endl;
+				return true;
+		}
+
+		else return false;
+};
+
 std::vector<std::vector<double> > PhysicsEvent::GetReconstruction()
 {
 		return reco_;
@@ -1270,6 +1311,43 @@ vector<Rate > PhysicsEvent::GetRates()
 				rates.push_back(rate);
 		}
 
+		Rate bwd1;
+		bwd1.name = "BWD1";
+		try
+		{
+				bwd1.online = pt_.get<double>("OnlineRate.BWD1");
+		}
+		catch(const property_tree::ptree_bad_path &e)
+		{
+				bwd1.online = -1;
+		}
+		rates.push_back(bwd1);
+
+		Rate bwd2;
+		bwd2.name = "BWD2";
+		try
+		{
+				bwd2.online = pt_.get<double>("OnlineRate.BWD2");
+		}
+		catch(const property_tree::ptree_bad_path &e)
+		{
+				bwd2.online = -1;
+		}
+		rates.push_back(bwd2);
+
+		Rate bwd3;
+		bwd3.name = "BWD3";
+
+		try
+		{
+				bwd3.online = pt_.get<double>("OnlineRate.BWD3");
+		}
+		catch(const property_tree::ptree_bad_path &e)
+		{
+				bwd3.online = -1;
+		}
+		rates.push_back(bwd3);
+
 		return rates;
 };
 
@@ -1287,16 +1365,16 @@ property_tree::ptree PhysicsEvent::GetPT()
 		return pt_;
 };
 
-filesystem::path PhysicsEvent::GetPath()
-{
-		return path_;
-};
+// filesystem::path PhysicsEvent::GetPath()
+// {
+//      return path_;
+// };
 
 //----------------------------------------------------------------------------------------------
 // Definition of the AnlysisEvent class.
 //----------------------------------------------------------------------------------------------
 
-AnalysisEvent::AnalysisEvent() : n_(0), norm_(true), first_run_(5000000), last_run_(-1)
+AnalysisEvent::AnalysisEvent(string suffix) : n_(0), norm_(true), suffix_(suffix), first_run_(5000000), last_run_(-1)
 {
 
 		for (auto &name : GS->GetChannels("Physics"))
@@ -1318,7 +1396,18 @@ AnalysisEvent::AnalysisEvent() : n_(0), norm_(true), first_run_(5000000), last_r
 								ch->name = name.first.c_str();
 								ch->wf = tmphist;
 
-								string title = ch->name + "_hit_energy_spectrum";
+								string title = name.first + "_stat";
+								ch->wf_stat = new TH1F(title.c_str(), title.c_str(), 1, -dt/2., dt/2.);
+								ch->wf_stat->SetDirectory(0);
+								ch->wf_stat->GetXaxis()->SetTitle("Time [ns]");
+								ch->wf_stat->GetYaxis()->SetTitle("Particles/Event [1/0.8 ns]");
+
+								title = name.first + "_sys";
+								ch->wf_sys = new TH1F(title.c_str(), title.c_str(), 1, -dt/2., dt/2.);
+								ch->wf_sys->SetDirectory(0);
+								ch->wf_sys->GetXaxis()->SetTitle("Time [ns]");
+								ch->wf_sys->GetYaxis()->SetTitle("Particles/Event [1/0.8 ns]");
+
 
 								double npe = 0;
 
@@ -1331,18 +1420,43 @@ AnalysisEvent::AnalysisEvent() : n_(0), norm_(true), first_run_(5000000), last_r
 										npe = GS->GetParameter<double>("PEToMIP." + ch->name +"val");
 								}
 
-								int nmip = 20;
+								int nmip = 150;
 
 								int nbinsx   = (int)round(nmip*npe);
 
 								double xlow  = +1./(2*npe);
 								double xup   = nmip +1./(2*npe);
 
+								title = ch->name + "_hit_map";
+
+								int nbinsy   = 13125;
+								//int multi    = 10;
+								ch->hit_map = new TH2F(title.c_str(), title.c_str(), nbinsx, xlow, xup, nbinsy, -dt/2., nbinsy*dt -dt/2.);
+								ch->hit_map->SetDirectory(0);
+								ch->hit_map->GetXaxis()->SetTitle("Hit Energy [MIP]");
+								ch->hit_map->GetYaxis()->SetTitle("Time in Turn [ns]");
+
+								title = ch->name + "_time_in_turn";
+
+								ch->time_in_turn = new TH2F(title.c_str(), title.c_str(), 3000000, -dt/2., 3e6*dt -dt/2., nbinsy, -dt/2., nbinsy*dt -dt/2.);
+								ch->time_in_turn->SetDirectory(0);
+								ch->time_in_turn->GetXaxis()->SetTitle("Time [ns]");
+								ch->time_in_turn->GetYaxis()->SetTitle("Time in Turn [ns]");
+
+								title = ch->name + "_rate_in_turn";
+
+								ch->rate_in_turn = new TH1F(title.c_str(), title.c_str(), nbinsy, -dt/2., nbinsy*dt -dt/2.);
+								ch->rate_in_turn->SetDirectory(0);
+								ch->rate_in_turn->GetXaxis()->SetTitle("Time in Turn [ns]");
+								ch->rate_in_turn->GetYaxis()->SetTitle("Rate [MIP/0.8 ns x Length/10 us]");
+
+								title = ch->name + "_hit_energy_spectrum";
+
 								ch->hit_energy = new TH1F( title.c_str(), title.c_str(), nbinsx, xlow, xup );
 								ch->hit_energy->SetDirectory(0);
 								ch->hit_energy->SetXTitle("Hit Energy [MIP]");
 
-								ch->hit_energy->SetYTitle("Entries Normalized to the Number of Events [1/equivalent of one p.e. in MIP]");
+								ch->hit_energy->SetYTitle("Entries per event [1/equivalent of one p.e. in MIP]");
 
 								ch->hit_energy_sync = (TH1F*) ch->hit_energy->Clone((title+"_sync").c_str());
 								ch->hit_energy_sync->SetDirectory(0);
@@ -1355,14 +1469,14 @@ AnalysisEvent::AnalysisEvent() : n_(0), norm_(true), first_run_(5000000), last_r
 		}
 };
 
-AnalysisEvent::AnalysisEvent(PhysicsEvent* ph_evt) : n_(1), norm_(true), first_run_(5000000), last_run_(-1)
+AnalysisEvent::AnalysisEvent(PhysicsEvent* ph_evt, string suffix) : n_(1), norm_(true), suffix_(suffix), first_run_(5000000), last_run_(-1)
 {
 		pt_ = ph_evt->GetPT();
 		// auto test = ph_evt->GetPT().get<double>("Rate.FWD1");
 		// cout << test << endl;
 
 		int phnr =  stoi(ph_evt->GetPath().filename().string().substr(4));
-
+		n_ = stoi(ph_evt->GetPath("file").filename().string().substr(6,9));
 		first_run_ = phnr;
 		last_run_ = phnr;
 };
@@ -1378,9 +1492,17 @@ AnalysisEvent::~AnalysisEvent()
 
 void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
 {
+		// in nanoseconds
+		double t_rev = GS->GetParameter<double>("SuperKEKB.rev_time");
+
+		// in seconds
+		double dt = GS->GetParameter<double>("Scope.delta_t");
+
 		for(int i = 0; i < channels_.size(); ++i)
 		{
 				TH1F* ph_hist = dynamic_cast<TH1F*>(ph_evt->GetChannels().at(i)->GetHistogram("mip"));
+				TH1F* ph_hist_stat = dynamic_cast<TH1F*>(ph_evt->GetChannels().at(i)->GetHistogram("mip_stat"));
+				TH1F* ph_hist_sys = dynamic_cast<TH1F*>(ph_evt->GetChannels().at(i)->GetHistogram("mip_sys"));
 
 				if(channels_.at(i)->wf->GetNbinsX() < ph_hist->GetNbinsX() )
 				{
@@ -1393,18 +1515,48 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
 						}
 
 						int nbins = ph_hist->GetNbinsX();
-						double low = channels_.at(i)->wf->GetBinLowEdge(0);
+						double low = channels_.at(i)->wf->GetBinLowEdge(1);
 						double up = ph_hist->GetBinLowEdge(nbins)+ ph_hist->GetBinWidth(nbins);
+
 						channels_.at(i)->wf->SetBins(nbins, low, up);
+						channels_.at(i)->wf_stat->SetBins(nbins, low, up);
+						channels_.at(i)->wf_sys->SetBins(nbins, low, up);
+
+						// int 2d_nbinsx = channels_.at(i)->hit_map->GetNbinsX();
+						// int 2d_xlow = channels_.at(i)->hit_map->GetBinLowEdge(1);
+						// int 2d_xup = channels_.at(i)->hit_map->GetBinLowEdge(2d_nbinsx) + channels_.at(i)->hit_map->GetBinWidth(2d_nbinsx);
+						// channels_.at(i)->SetBins(nbins, low, up, )
 				}
 
 				for(int j = 1; j<= ph_hist->GetNbinsX(); ++j)
 				{
+
+
 						channels_.at(i)->wf->SetBinContent(j, channels_.at(i)->wf->GetBinContent(j) + ph_hist->GetBinContent(j) );
 
-						if(ph_hist->GetBinContent(j) > 0)
+						channels_.at(i)->wf_stat->SetBinContent(j, channels_.at(i)->wf_stat->GetBinContent(j) + ph_hist->GetBinContent(j) );
+						channels_.at(i)->wf_stat->SetBinError(j, channels_.at(i)->wf_stat->GetBinError(j) + ph_hist_stat->GetBinError(j)*ph_hist_stat->GetBinError(j) );
+
+						channels_.at(i)->wf_sys->SetBinContent(j, channels_.at(i)->wf_sys->GetBinContent(j) + ph_hist->GetBinContent(j) );
+						channels_.at(i)->wf_sys->SetBinError(j, channels_.at(i)->wf_sys->GetBinError(j) + ph_hist_sys->GetBinError(j) );
+
+						// in bins
+						int bin_in_turn = round(fmod(j,t_rev/0.8));
+
+						channels_.at(i)->rate_in_turn->SetBinContent(bin_in_turn, channels_.at(i)->rate_in_turn->GetBinContent(bin_in_turn)+ph_hist_stat->GetBinContent(j));
+
+						if(ph_hist_stat->GetBinContent(j) > 0)
 						{
-								channels_.at(i)->hit_energy->Fill(ph_hist->GetBinContent(j));
+								channels_.at(i)->hit_energy->Fill(ph_hist_stat->GetBinContent(j));
+
+								// in seconds
+								double t_in_turn = fmod((j-1)*dt,t_rev*1e-9);
+
+								channels_.at(i)->hit_map->Fill(ph_hist_stat->GetBinContent(j), t_in_turn);
+
+								channels_.at(i)->time_in_turn->Fill((j-1)*dt, t_in_turn, ph_hist_stat->GetBinContent(j));
+
+								//channels_.at(i)->hit_map->Fill(5, 1e-6);
 						}
 
 				}
@@ -1424,12 +1576,58 @@ void AnalysisEvent::Normalize()
 {
 		for(auto &ch: channels_)
 		{
-				ch->wf->Scale(1./n_);
+				ch->wf->Scale(1./n_, "nosw2");
+				ch->wf_stat->Scale(1./n_, "nosw2");
+				ch->wf_sys->Scale(1./n_, "nosw2");
+
+				double error_limits[6] = {1e5,0,1e5,0,1e5,0};
+
+				for(int i = 1; i < ch->wf->GetNbinsX(); ++i)
+				{
+						// Stat error
+						double stat_err = ch->wf_stat->GetBinError(i);
+						stat_err = sqrt(stat_err)/n_;
+						ch->wf_stat->SetBinError(i, stat_err );
+
+						if(stat_err < error_limits[0] && !(fabs(error_limits[0])<1e-10) ) error_limits[0] = stat_err;
+						if(stat_err > error_limits[1]) error_limits[1] = stat_err;
+
+						// Sys error
+						double sys_err = ch->wf_sys->GetBinError(i);
+						sys_err = sys_err/n_;
+						ch->wf_sys->SetBinError(i, sys_err );
+
+						if(sys_err < error_limits[2] && !(fabs(error_limits[2])<1e-10) ) error_limits[2] = sys_err;
+						if(sys_err > error_limits[3]) error_limits[3] = sys_err;
+
+						// Total error
+						double err = sqrt(pow(stat_err,2)+pow(sys_err,2));
+						ch->wf->SetBinError(i, err );
+
+						if(err < error_limits[4] && !(fabs(error_limits[4])<1e-10) ) error_limits[4] = err;
+						if(err > error_limits[5]) error_limits[5] = err;
+				}
+
+				ch->hit_map->Scale(1./n_, "nosw2");
+				ch->time_in_turn->Scale(1./n_, "nosw2");
+				ch->rate_in_turn->Scale(1./n_, "nosw2");
+
+				pt_.put(ch->name +".NEvents", n_);
+
+				pt_.put(ch->name+".StatErrMin", error_limits[0]);
+				pt_.put(ch->name+".StatErrMax", error_limits[1]);
+				pt_.put(ch->name+".SysErrMin", error_limits[2]);
+				pt_.put(ch->name+".SysErrMax", error_limits[3]);
+				pt_.put(ch->name+".ErrMin", error_limits[4]);
+				pt_.put(ch->name+".ErrMax", error_limits[5]);
 		}
 
 		for(auto &ch: channels_)
 		{
 				ch->hit_energy->Scale(1./n_);
+				// ch->hit_energy_sync->Scale(1./n_);
+				// ch->hit_energy_sync->Scale(1./n_);
+
 				string name = ch->name + "_exp";
 				TF1* expo = new TF1(name.c_str(),"exp([const] -[slope]*x)",-0.01,1.5);
 				ch->hit_energy->Fit(expo,"S+");
@@ -1446,14 +1644,15 @@ void AnalysisEvent::Normalize()
 		}
 
 		norm_ = true;
+
+
+
+
 };
 
 void AnalysisEvent::RunPeak()
 {
-		int nthreads   = GS->GetParameter<int>("General.nthreads");
-		bool parallelize = GS->GetParameter<bool>("General.parallelize");
 
-		#pragma omp parallel for if(parallelize) num_threads(nthreads)
 		for(int i = 0; i < channels_.size(); ++i)
 		{
 				if(channels_.at(i)->peak != nullptr )
@@ -1472,6 +1671,31 @@ void AnalysisEvent::RunPeak()
 				channels_.at(i)->peak->SetDirectory(0);
 				channels_.at(i)->peak->SetXTitle("Peak to Peak Distance [ns]");
 				channels_.at(i)->peak->SetYTitle("amp_{1} #times amp_{2} [MIPs^{2} / 0.8 ns]");
+
+		}
+
+		int nthreads   = GS->GetParameter<int>("General.nthreads");
+		bool parallelize = GS->GetParameter<bool>("General.parallelize");
+
+		#pragma omp parallel for if(parallelize) num_threads(nthreads)
+		for(int i = 0; i < channels_.size(); ++i)
+		{
+				// if(channels_.at(i)->peak != nullptr )
+				// {
+				//      delete channels_.at(i)->peak;
+				//      channels_.at(i)->peak = nullptr;
+				// }
+				//
+				double scale = 1e-9;
+				// string title = channels_.at(i)->name + "_peak";
+				// int nbins = channels_.at(i)->wf->GetNbinsX();
+				// double xlow = channels_.at(i)->wf->GetBinLowEdge(1)/scale;
+				// double xup = (channels_.at(i)->wf->GetBinLowEdge(channels_.at(i)->wf->GetNbinsX()) + channels_.at(i)->wf->GetBinWidth(channels_.at(i)->wf->GetNbinsX()))/scale;
+				//
+				// channels_.at(i)->peak = new TH1F( title.c_str(), title.c_str(),nbins, xlow, xup);
+				// channels_.at(i)->peak->SetDirectory(0);
+				// channels_.at(i)->peak->SetXTitle("Peak to Peak Distance [ns]");
+				// channels_.at(i)->peak->SetYTitle("amp_{1} #times amp_{2} [MIPs^{2} / 0.8 ns]");
 
 				// if( channels_.at(i)->peak->GetNbinsX() < channels_.at(i)->wf->GetNbinsX() )
 				// {
@@ -1715,7 +1939,7 @@ void AnalysisEvent::SaveEvent(boost::filesystem::path dst, string prefix)
 				boost::filesystem::create_directory(output);
 		}
 
-		output /=prefix;
+		output /=prefix+suffix_;
 
 		if( !boost::filesystem::is_directory(output) )
 		{
@@ -1746,14 +1970,19 @@ void AnalysisEvent::SaveEvent(boost::filesystem::path dst, string prefix)
 		for(auto &channel : channels_)
 		{
 				if(channel->wf) channel->wf->Write();
+				if(channel->wf_stat) channel->wf_stat->Write();
+				if(channel->wf_sys) channel->wf_sys->Write();
 				if(channel->peak) channel->peak->Write();
 				if(channel->fft_real_h) channel->fft_real_h->Write();
 				if(channel->fft_img_h) channel->fft_img_h->Write();
 				if(channel->fft_mag_h) channel->fft_mag_h->Write();
 				if(channel->fft_phase_h) channel->fft_phase_h->Write();
+				if(channel->hit_map) channel->hit_map->Write();
 				if(channel->hit_energy) channel->hit_energy->Write();
 				if(channel->hit_energy_sync) channel->hit_energy_sync->Write();
 				if(channel->hit_energy_mip) channel->hit_energy_mip->Write();
+				if(channel->time_in_turn) channel->time_in_turn->Write();
+				if(channel->rate_in_turn) channel->rate_in_turn->Write();
 		}
 
 		rfile->Close("R");
@@ -1762,6 +1991,14 @@ void AnalysisEvent::SaveEvent(boost::filesystem::path dst, string prefix)
 		boost::replace_last(fname, "root", "ini");
 		boost::property_tree::write_ini(fname.c_str(), pt_);
 
+};
+
+int AnalysisEvent::GetRunNr(string type)
+{
+		if(type == "first") return first_run_;
+		else if(type == "last") return last_run_;
+		else if(type == "nevent") return n_;
+		else return -1;
 };
 
 // void PhysicsEvent::LoadIniFile(){

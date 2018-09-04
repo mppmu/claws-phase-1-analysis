@@ -18,6 +18,8 @@
 // --- ROOT includes ---
 #include <TH1.h>
 #include <TH1I.h>
+#include <TH1F.h>
+#include <TH2F.h>
 #include <TFile.h>
 
 // Project includes
@@ -149,12 +151,12 @@ struct Rate {
 		Rate()
 		{
 				name = "";
-				online = 0;
-				fast= 0;
-				rate = 0;
-				staterr = 0;
-				syserr = 0;
-				err = 0;
+				online = -1;
+				fast= -1;
+				rate = -1;
+				staterr = -1;
+				syserr = -1;
+				err = -1;
 		};
 		std::string name;
 		double online;
@@ -211,6 +213,9 @@ double os_[10];
 TH1F*                  recowf_;
 TH1I*                  pewf_;
 TH1F*                  mipwf_;
+TH1F*                  mipwf_stat_;
+TH1F*                  mipwf_sys_;
+
 
 /** [0] == online rate
  *   [1] == fast offline
@@ -225,24 +230,36 @@ Rate rate_;
 struct AnalysisChannel {
 		~AnalysisChannel(){
 				if(wf) delete wf;
+				if(wf_stat) delete wf_stat;
+				if(wf_sys) delete wf_sys;
 				if(peak) delete peak;
 				if(fft_real_h) delete fft_real_h;
 				if(fft_img_h) delete fft_img_h;
 				if(fft_mag_h) delete fft_mag_h;
 				if(fft_phase_h) delete fft_phase_h;
+				if(hit_map) delete hit_map;
 				if(hit_energy) delete hit_energy;
+				if(hit_energy_sync) delete hit_energy_sync;
+				if(hit_energy_mip) delete hit_energy_mip;
+				if(time_in_turn) delete time_in_turn;
+				if(rate_in_turn) delete rate_in_turn;
 		};
 
 		std::string name ="";
-		TH1F* wf= nullptr;
+		TH1F* wf = nullptr;
+		TH1F* wf_stat = nullptr;
+		TH1F* wf_sys = nullptr;
 		TH1F* peak = nullptr;
 		TH1F* fft_real_h = nullptr;
 		TH1F* fft_img_h = nullptr;
 		TH1F* fft_mag_h = nullptr;
 		TH1F* fft_phase_h = nullptr;
+		TH2F* hit_map = nullptr;
 		TH1F* hit_energy = nullptr;
 		TH1F* hit_energy_sync = nullptr;
 		TH1F* hit_energy_mip = nullptr;
+		TH2F* time_in_turn = nullptr;
+		TH1F* rate_in_turn = nullptr;
 };
 //
 //         void    WaveformDecomposition();

@@ -1527,7 +1527,7 @@ void CalibrationRun::MipTimeRetrieval()
 
 				std::string name = channel->GetName();
 
-				for(int i = 0; i < 3; ++i)
+				for(int i = 0; i < 6; ++i)
 				{
 						TGraph * g = new TGraph();
 						g->SetName( (name+names[i]).c_str() );
@@ -1539,17 +1539,17 @@ void CalibrationRun::MipTimeRetrieval()
 						gch.push_back(g);
 				}
 
-				for(int i = 3; i < 6; ++i)
-				{
-						TGraph * g = new TGraph();
-						g->SetName( (name+names[i]).c_str() );
-						g->GetYaxis()->SetTitle( "Particle rate error [MIPs/s]");
-						g->GetXaxis()->SetTitle("Time [s]");
-						g->SetMarkerStyle(23);
-						g->SetMarkerColor(kRed);
-						g->SetMarkerSize(1);
-						gch.push_back(g);
-				}
+				// for(int i = 3; i < 6; ++i)
+				// {
+				//      TGraph * g = new TGraph();
+				//      g->SetName( (name+names[i]).c_str() );
+				//      g->GetYaxis()->SetTitle( "Particle rate error [MIPs/s]");
+				//      g->GetXaxis()->SetTitle("Time [s]");
+				//      g->SetMarkerStyle(23);
+				//      g->SetMarkerColor(kRed);
+				//      g->SetMarkerSize(1);
+				//      gch.push_back(g);
+				// }
 
 				graphs.push_back(gch);
 		}
@@ -1561,7 +1561,7 @@ void CalibrationRun::MipTimeRetrieval()
 		{
 				std::vector<TGraph*> gch;
 
-				for(int i =0; i < 3; ++i)
+				for(int i =0; i < 6; ++i)
 				{
 						TGraph * g = new TGraph();
 						g->SetName( (channel + names[i]).c_str() );
@@ -1573,17 +1573,17 @@ void CalibrationRun::MipTimeRetrieval()
 						gch.push_back(g);
 				}
 
-				for(int i = 3; i < 6; ++i)
-				{
-						TGraph * g = new TGraph();
-						g->SetName( (channel+names[i]).c_str() );
-						g->GetYaxis()->SetTitle( "Particle rate error [MIPs/s]");
-						g->GetXaxis()->SetTitle("Time [s]");
-						g->SetMarkerStyle(23);
-						g->SetMarkerColor(kRed);
-						g->SetMarkerSize(1);
-						gch.push_back(g);
-				}
+				// for(int i = 3; i < 6; ++i)
+				// {
+				//      TGraph * g = new TGraph();
+				//      g->SetName( (channel+names[i]).c_str() );
+				//      g->GetYaxis()->SetTitle( "Particle rate error [MIPs/s]");
+				//      g->GetXaxis()->SetTitle("Time [s]");
+				//      g->SetMarkerStyle(23);
+				//      g->SetMarkerColor(kRed);
+				//      g->SetMarkerSize(1);
+				//      gch.push_back(g);
+				// }
 
 				graphs.push_back(gch);
 		}
@@ -1775,7 +1775,6 @@ void CalibrationRun::SystematicsStudy()
 												//      break;
 												// }
 										}
-
 								}
 
 								// for(int j = start_mpv; j <= window_length + start_mpv; ++j)
@@ -1967,7 +1966,7 @@ void CalibrationRun::SetInjectionLimit(string type)
 								evts_.erase(itr_evts);
 						}
 				}
-				else if(type == "LER ONLY")
+				else if(type == "LERONLY")
 				{
 						if( ler == 1 and her == 0)
 						{
@@ -1981,7 +1980,7 @@ void CalibrationRun::SetInjectionLimit(string type)
 								evts_.erase(itr_evts);
 						}
 				}
-				else if(type == "HER ONLY")
+				else if(type == "HERONLY")
 				{
 						if( ler == 0 and her == 1)
 						{

@@ -185,6 +185,8 @@ virtual long                    GetNumber();
 virtual std::vector<Channel*>   GetChannels();
 virtual EventState              GetState();
 
+virtual boost::filesystem::path GetPath(std::string type = "path");
+
 template<typename T>
 T GetParameter(std::string pv)
 {
@@ -301,6 +303,8 @@ virtual void WaveformReconstruction(Gain* gain);
 virtual void PrepareRetrieval();
 virtual void MipTimeRetrieval();
 
+virtual bool CheckInjection();
+
 std::vector<std::vector<double> > GetReconstruction();
 // std::vector<double> GetOnlineRates();
 // std::vector<double> GetFastRates();
@@ -308,7 +312,7 @@ std::vector<Rate > GetRates();
 // int GetInjection(std::string ring);
 // double GetInjectionRate(std::string ring);
 boost::property_tree::ptree GetPT();
-boost::filesystem::path GetPath();
+// boost::filesystem::path GetPath();
 
 private:
 boost::filesystem::path rate_file_;
@@ -322,8 +326,8 @@ std::vector<std::vector<double> > reco_;
 class AnalysisEvent {
 
 public:
-AnalysisEvent();
-AnalysisEvent(PhysicsEvent* ph_evt);
+AnalysisEvent(std::string suffix="");
+AnalysisEvent(PhysicsEvent* ph_evt,std::string suffix="");
 virtual ~AnalysisEvent();
 void AddEvent(PhysicsEvent* ph_evt);
 void Normalize();
@@ -340,10 +344,12 @@ T GetParameter(std::string pv)
 		return pt_.get<T>( pv );
 };
 
+int GetRunNr(std::string type = "first");
+
 protected:
 int n_;
 bool norm_;
-
+std::string suffix_;
 std::vector<AnalysisChannel*> channels_;
 // std::vector<TH1F*> channels_;
 // std::vector<TH1F*> peak_;
@@ -360,6 +366,7 @@ std::vector<AnalysisChannel*> channels_;
 boost::property_tree::ptree pt_;
 int first_run_;
 int last_run_;
+
 };
 
 //

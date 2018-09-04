@@ -41,6 +41,7 @@
 // project includes
 #include "globalsettings.hh"
 #include "run.hh"
+#include "ntp_handler.hh"
 
 // ROOT inlcudes
 #include <TGraphErrors.h>
@@ -86,6 +87,9 @@ int main(int argc, char* argv[])
 		config_options.add_options()
 
 		        ("general.generic", program_options::value<filesystem::path>()->composing(),
+		        "Magic shit....")
+
+		        ("general.ntp", program_options::value<filesystem::path>()->composing(),
 		        "Magic shit....")
 
 		        ("general.selection,s", program_options::value<filesystem::path>()->composing(),
@@ -169,6 +173,9 @@ int main(int argc, char* argv[])
 
 		// Magic shit, don't ask
 		GS->LoadCalibrationConfig(vm["general.generic"].as<filesystem::path>());
+
+		// Path to the ntps....
+		filesystem::path ntp_path = vm["general.ntp"].as<filesystem::path>();
 
 		//################ Part 2: Create and select events ################
 
@@ -403,6 +410,7 @@ int main(int argc, char* argv[])
 				catch(const property_tree::ptree_bad_path &e)
 				{
 						cout << "Injection: not specified!" << "\n";
+						//		cout << e.what() << endl;
 				}
 
 				double ler_injection_rate = -1;
@@ -414,6 +422,7 @@ int main(int argc, char* argv[])
 				catch(const property_tree::ptree_bad_path &e)
 				{
 						cout << "Ler injection rate: not specified!" << "\n";
+						//		cout << e.what() << endl;
 				}
 
 				double her_injection_rate = -1;
@@ -425,6 +434,7 @@ int main(int argc, char* argv[])
 				catch(const property_tree::ptree_bad_path &e)
 				{
 						cout << "Her injection rate: not specified!" << "\n";
+						//		cout << e.what() << endl;
 				}
 
 				double ler_current_min = -10000;
@@ -436,6 +446,7 @@ int main(int argc, char* argv[])
 				catch(const property_tree::ptree_bad_path &e)
 				{
 						cout << "ler current min: not specified!" << "\n";
+						//		cout << e.what() << endl;
 				}
 
 				double ler_current_max = 10000;
@@ -447,6 +458,7 @@ int main(int argc, char* argv[])
 				catch(const property_tree::ptree_bad_path &e)
 				{
 						cout << "Ler current max: not specified!" << "\n";
+						//		cout << e.what() << endl;
 				}
 
 				double her_current_min = -10000;
@@ -458,6 +470,7 @@ int main(int argc, char* argv[])
 				catch(const property_tree::ptree_bad_path &e)
 				{
 						cout << "her current min: not specified!" << "\n";
+						//		cout << e.what() << endl;
 				}
 
 				double her_current_max = 10000;
@@ -469,6 +482,7 @@ int main(int argc, char* argv[])
 				catch(const property_tree::ptree_bad_path &e)
 				{
 						cout << "her current max: not specified!" << "\n";
+						//		cout << e.what() << endl;
 				}
 
 				double ts_min = -1;
@@ -480,6 +494,7 @@ int main(int argc, char* argv[])
 				catch(const property_tree::ptree_bad_path &e)
 				{
 						cout << "ts min: not specified!" << "\n";
+						//		cout << e.what() << endl;
 				}
 
 				double ts_max = 1e10;
@@ -491,34 +506,37 @@ int main(int argc, char* argv[])
 				catch(const property_tree::ptree_bad_path &e)
 				{
 						cout << "ts max: not specified!" << "\n";
+						//		cout << e.what() << endl;
 				}
 
 				string ler_status = "";
 				try
 				{
-						ler_status = selection.second.get<double>("ler_status");
+						ler_status = selection.second.get<string>("ler_status");
 						cout << "ler_status: " << ler_status << "\n";
 				}
 				catch(const property_tree::ptree_bad_path &e)
 				{
 						cout << "ler_status: not specified!" << "\n";
+						//		cout << e.what() << endl;
 				}
 
 				string her_status = "";
 				try
 				{
-						her_status = selection.second.get<double>("her_status");
+						her_status = selection.second.get<string>("her_status");
 						cout << "her_status: " << her_status << "\n";
 				}
 				catch(const property_tree::ptree_bad_path &e)
 				{
 						cout << "her_status: not specified!" << "\n";
+						//		cout << e.what() << endl;
 				}
 
 				string superkekb_status = "";
 				try
 				{
-						superkekb_status = selection.second.get<double>("superkekb_status");
+						superkekb_status = selection.second.get<string>("superkekb_status");
 						cout << "superkekb_status: " << superkekb_status << "\n";
 				}
 				catch(const property_tree::ptree_bad_path &e)
@@ -577,7 +595,7 @@ int main(int argc, char* argv[])
 
 				if(merge_events)
 				{
-						AnalysisEvent* analysis_evt = new AnalysisEvent();
+						AnalysisEvent* analysis_evt = new AnalysisEvent("_INJ_"+injection);
 
 						for(auto & run : runs )
 						{
@@ -585,9 +603,20 @@ int main(int argc, char* argv[])
 								{
 										evt->LoadFiles(EVENTSTATE_CALIBRATED);
 
+
 										if( evt->GetState() == EVENTSTATE_CALIBRATED)
 										{
-												analysis_evt->AddEvent(evt);
+												if( injection == "NONE" )
+												{
+														if(!evt->CheckInjection())
+														{
+																analysis_evt->AddEvent(evt);
+														}
+												}
+												else
+												{
+														analysis_evt->AddEvent(evt);
+												}
 										}
 										evt->DeleteHistograms();
 								}
@@ -605,7 +634,17 @@ int main(int argc, char* argv[])
 
 										if( evt->GetState() == EVENTSTATE_CALIBRATED)
 										{
-												analysis_evts.push_back(new AnalysisEvent(evt));
+												if( injection == "NONE" )
+												{
+														if(!evt->CheckInjection())
+														{
+																analysis_evts.push_back(new AnalysisEvent(evt, "_INJ_"+injection));
+														}
+												}
+												else
+												{
+														analysis_evts.push_back(new AnalysisEvent(evt, "_INJ_"+injection));
+												}
 										}
 										evt->DeleteHistograms();
 
@@ -763,36 +802,271 @@ int main(int argc, char* argv[])
 						else if(plot_type.at(0) == "SCATTER")
 						{
 
-								string graph_name = plot_type.at(1)+ " over " + plot_type.at(2);
-								TGraphErrors* graph = new TGraphErrors();
-								graph->SetName(graph_name.c_str());
-								graph->SetTitle(graph_name.c_str());
+								NTP_Handler* ntp_handler = new NTP_Handler(ntp_path);
+								vector<TGraphErrors*> graphs;
 
-								graph->GetXaxis()->SetTitle(plot_type.at(1).c_str());
-								graph->GetYaxis()->SetTitle(plot_type.at(2).c_str());
-								//Declare plots
-								for( auto & analysis_evt: analysis_evts)
+								// string graph_name = plot_type.at(1)+ ":" + plot_type.at(2)+":" + plot_type.at(3);
+								//
+								// TGraphErrors* graph = new TGraphErrors();
+								// graph->SetName(graph_name.c_str());
+								// graph->SetTitle(graph_name.c_str());
+								// graph->SetMarkerStyle(4);
+
+								if(plot_type.at(1) == "VACUUMSCRUBBING")
 								{
-										double x = analysis_evt->GetParameter<double>(plot_type.at(1));
-										double y = analysis_evt->GetParameter<double>(plot_type.at(2));
-										// Get X Value
-										// Get Y Value
-										// Add X and Y from events to plots
-										graph->SetPoint(graph->GetN(), x, y);
-								}
-								// Save plots
+										string graph_name = plot_type.at(1)+ ":" + plot_type.at(2)+":" + plot_type.at(3);
 
-								if( !filesystem::is_directory(output/entry.second.data() ) )
+										TGraphErrors* graph = new TGraphErrors();
+										graph->SetName(graph_name.c_str());
+										graph->SetTitle(graph_name.c_str());
+										graph->SetMarkerStyle(4);
+
+										string observable = plot_type.at(3);
+										string error = "";
+										if(starts_with(observable, "Rate.")) error = "RateErr." + observable.substr(5);
+
+										string ring = plot_type.at(2);
+										string pv_current = "SKB_" + ring + "_current";
+										string pv_int_current = "SKB_" + ring + "_integratedCurrent";
+
+										graph->GetXaxis()->SetTitle(("Delivered " + ring + " current [Ah]").c_str());
+										graph->GetYaxis()->SetTitle((observable+"/(beam current)^2").c_str());
+
+										//analysis_evt->GetParameter<double>(plot_type.at(1));
+										//	string graph_name = plot_type.at(1)+ " " + plot_type.at(2);
+
+										for( auto & analysis_evt: analysis_evts)
+										{
+												double ts = analysis_evt->GetParameter<double>("Properties.UnixTime");
+
+												try
+												{
+														auto current = (*ntp_handler->GetPV< vector<double>* >(ts, pv_current));
+														auto int_current = (*ntp_handler->GetPV< vector<double>* >(ts, pv_int_current));
+														auto rate = analysis_evt->GetParameter<double>(observable);
+														// double x = ts;
+														// double y = int_current[0];
+														double x = int_current[0];
+														double y = rate/pow(current[0],2);
+														// Get X Value
+														// Get Y Value
+														// Add X and Y from events to plots
+														int n = graph->GetN();
+														graph->SetPoint(n, x, y);
+
+														if(error != "")
+														{
+																double x_err = 0;
+																double y_err = analysis_evt->GetParameter<double>(error)/pow(current[0],2);
+																graph->SetPointError(n, x_err, y_err);
+														}
+												}
+												catch(int e)
+												{
+
+												}
+
+
+										}
+
+										graphs.push_back(graph);
+								}
+								else if(plot_type.at(1) == "BGTOUSCHEK")
 								{
-										filesystem::create_directory(output/entry.second.data());
+										string graph_name = plot_type.at(1)+ ":" + plot_type.at(2)+":" + plot_type.at(3);
+
+										TGraphErrors* graph = new TGraphErrors();
+										graph->SetName(graph_name.c_str());
+										graph->SetTitle(graph_name.c_str());
+										graph->SetMarkerStyle(4);
+
+										string observable = plot_type.at(3);
+										string error = "";
+										if(starts_with(observable, "Rate.")) error = "RateErr." + observable.substr(5);
+
+										string ring = plot_type.at(2);
+
+										string pv_current = "SKB_" + ring + "_current";
+										string pv_int_current = "SKB_" + ring + "_integratedCurrent";
+
+										graph->GetXaxis()->SetTitle("#frac{I}{PZ_e^2#sigma_y} [mA Pa^{-1}#mum^{-1}]");
+										graph->GetYaxis()->SetTitle(("#frac{" + observable + "}{IPZ_E^2} [a.u.]").c_str());
+
+										for( auto & analysis_evt: analysis_evts)
+										{
+												double ts = analysis_evt->GetParameter<double>("Properties.UnixTime");
+
+												double current = (*ntp_handler->GetPV< vector<double>* >(ts, pv_current))[0];
+												auto beamsize = (*ntp_handler->GetPV< vector<double>* >(ts, pv_current));
+
+												auto int_current = (*ntp_handler->GetPV< vector<double>* >(ts, pv_int_current))[0];
+
+												// double x = ts;
+												// double y = int_current[0];
+												double x = int_current;
+												double y = analysis_evt->GetParameter<double>(observable)/pow(current,2);
+												// Get X Value
+												// Get Y Value
+												// Add X and Y from events to plots
+												int n = graph->GetN();
+												graph->SetPoint(n, x, y);
+
+												// if(!(error == ""))
+												// {
+												//         double x_err = 0;
+												//         double y_err = analysis_evt->GetParameter<double>(error)/pow(current[0],2);
+												//         graph->SetPointError(n, x_err, y_err);
+												// }
+										}
+										graphs.push_back(graph);
+								}
+								else if(plot_type.at(1) == "BEAMDUST")
+								{
+										string graph_name = plot_type.at(1)+ ":" + plot_type.at(2);
+
+										TGraphErrors* graph = new TGraphErrors();
+										graph->SetName(graph_name.c_str());
+										graph->SetTitle(graph_name.c_str());
+										graph->SetMarkerStyle(4);
+
+										TGraphErrors* ler_p_d2 = new TGraphErrors();
+										ler_p_d2->SetName("LER_Preasure_D02");
+										ler_p_d2->SetTitle("LER_Preasure_D02");
+										ler_p_d2->SetMarkerStyle(4);
+
+										TGraphErrors* ler_p_d6 = new TGraphErrors();
+										ler_p_d6->SetName("LER_Preasure_D06");
+										ler_p_d6->SetTitle("LER_Preasure_D06");
+										ler_p_d6->SetMarkerStyle(4);
+
+										TGraphErrors* her_p = new TGraphErrors();
+										her_p->SetName("HER_Preasure");
+										her_p->SetTitle("HER_Preasure");
+										her_p->SetMarkerStyle(4);
+
+										string observable =  plot_type.at(2);
+										string error = "";
+										if(starts_with(observable, "Rate.")) error = "RateErr." + observable.substr(5);
+
+										graph->GetXaxis()->SetTitle("Time [s]");
+										graph->GetYaxis()->SetTitle("Particle Rate [MIP/s]");
+
+										for( auto & analysis_evt: analysis_evts)
+										{
+												double ts = analysis_evt->GetParameter<double>("Properties.UnixTime");
+
+												auto lerp2 = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_partialPressures_D02"));
+												auto lerp6 = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_partialPressures_D06"));
+												// auto int_current = (*ntp_handler->GetPV< vector<double>* >(ts, pv_int_current))[0];
+
+												// double x = ts;
+												// double y = int_current[0];
+												double x = ts;
+												double y = analysis_evt->GetParameter<double>(observable);
+												// Get X Value
+												// Get Y Value
+												// Add X and Y from events to plots
+												int n = graph->GetN();
+												graph->SetPoint(n, x, y);
+
+												if(!(error == ""))
+												{
+														double x_err = 0;
+														double y_err = analysis_evt->GetParameter<double>(error);
+														graph->SetPointError(n, x_err, y_err);
+												}
+										}
+										graphs.push_back(graph);
+										graphs.push_back(ler_p_d2);
+										graphs.push_back(ler_p_d6);
+										graphs.push_back(her_p);
+								}
+								else if(plot_type.at(1) == "VAR")
+								{
+										string graph_name = plot_type.at(1)+ ":" + plot_type.at(2)+":" + plot_type.at(3);
+
+										TGraphErrors* graph = new TGraphErrors();
+										graph->SetName(graph_name.c_str());
+										graph->SetTitle(graph_name.c_str());
+										graph->SetMarkerStyle(4);
+
+										string varname = plot_type.at(2);
+										string observable =  plot_type.at(3);
+										string error = "";
+										if(starts_with(observable, "Rate.")) error = "RateErr." + observable.substr(5);
+
+										graph->GetXaxis()->SetTitle(varname.c_str());
+										graph->GetYaxis()->SetTitle("Particle Rate [MIP/s]");
+
+										for( auto & analysis_evt: analysis_evts)
+										{
+												double ts = analysis_evt->GetParameter<double>("Properties.UnixTime");
+
+												auto var = (*ntp_handler->GetPV< vector<double>* >(ts, varname))[0];
+												// auto int_current = (*ntp_handler->GetPV< vector<double>* >(ts, pv_int_current))[0];
+
+												// double x = ts;
+												// double y = int_current[0];
+												double x = var;
+												double y = analysis_evt->GetParameter<double>(observable);
+												// Get X Value
+												// Get Y Value
+												// Add X and Y from events to plots
+												int n = graph->GetN();
+												graph->SetPoint(n, x, y);
+
+												if(!(error == ""))
+												{
+														double x_err = 0;
+														double y_err = analysis_evt->GetParameter<double>(error);
+														graph->SetPointError(n, x_err, y_err);
+												}
+										}
+										graphs.push_back(graph);
 								}
 
-								string fname = filesystem::path(output/entry.second.data()).string() + "/" + plot_type.at(1)+ ":" + plot_type.at(2)+ tasks + ".root";
+								int first_run_ = analysis_evts.front()->GetRunNr();
+								int last_run_ = analysis_evts.back()->GetRunNr();
+
+								filesystem::path extended_output;
+
+								if(first_run_ == last_run_) extended_output =  output /("Run-" + to_string(first_run_));
+								else extended_output = output / ("Run-" + to_string(first_run_) + "-" + to_string(last_run_));
+
+								// Create the folder with the runs in the name
+								if( !boost::filesystem::is_directory(extended_output) )
+								{
+										boost::filesystem::create_directory(extended_output);
+								}
+
+								// Create the folder with type of output in the name
+								if( !filesystem::is_directory(extended_output/entry.second.data() ) )
+								{
+										filesystem::create_directory(extended_output/entry.second.data());
+								}
+
+								string fname = filesystem::path(extended_output/entry.second.data()).string() + "/" + plot_type.at(1)+ ":" + plot_type.at(2)+ ":" + plot_type.at(3)+tasks + ".root";
 								TFile *rfile = new TFile(fname.c_str(), "RECREATE");
 
-								graph->Write();
+								for(auto & graph: graphs)
+								{
+										graph->Write();
+										selections.put(string(graph->GetName())+".NEvts", analysis_evts.size());
+										selections.put(string(graph->GetName())+".CorrelationFactor", graph->GetCorrelationFactor());
+								}
+
 
 								rfile->Close();
+
+								//	selections.put("Events.NEvts", analysis_evts.size());
+								// Put the number of events and the range of events in the
+								for( auto & analysis_evt: analysis_evts)
+								{
+										string sec = "Events." + to_string(analysis_evt->GetRunNr("nevent"));
+										double ts = analysis_evt->GetParameter<double>("Properties.UnixTime");
+										selections.put(sec, ts );
+								}
+
 
 								replace_last(fname, ".root", "_selections.ini");
 								property_tree::write_ini(fname.c_str(), selections);
@@ -800,16 +1074,17 @@ int main(int argc, char* argv[])
 								replace_last(fname, "_selections.ini", "_plot_only.ini");
 								property_tree::write_ini(fname.c_str(), target.second);
 
+								for(auto & graph: graphs)
+								{
+										delete graph;
+								}
 
-								delete graph;
+								delete ntp_handler;
 
 						}
 				}
 
 		}
-
-
-
 
 		return 0;
 }
