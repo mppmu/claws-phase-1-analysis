@@ -179,6 +179,7 @@ int main(int argc, char* argv[])
 
 		//################ Part 2: Create and select events ################
 
+		NTP_Handler* ntp_handler = new NTP_Handler(ntp_path);
 		// Create the vector to hold the analysis events:
 
 		// string first_run = "";
@@ -545,16 +546,22 @@ int main(int argc, char* argv[])
 				}
 
 
+				std::cout << "\033[33;1mMeta Selection:\033[0m running" << "\r" << std::flush;
+
+				double wall0 = claws::get_wall_time();
+				double cpu0  = claws::get_cpu_time();
+
+
 				// Select events
 				auto runs_itr = runs.begin();
 
 				while(runs_itr != runs.end())
 				{
-						if(injection != "") (*runs_itr)->SetInjectionLimit(injection);
+						if(injection != "") (*runs_itr)->SetInjectionLimit(injection, ntp_handler);
 						if(ler_injection_rate != -1) (*runs_itr)->SetInjectionRate("LER", ler_injection_rate);
 						if(her_injection_rate != -1) (*runs_itr)->SetInjectionRate("LER", ler_injection_rate);
-						if(ler_current_min > -10000 or ler_current_max < 10000) (*runs_itr)->SetCurrentLimit("LER", ler_current_min, ler_current_max);
-						if(her_current_min > -10000 or her_current_max < 10000) (*runs_itr)->SetCurrentLimit("HER", her_current_min, her_current_max);
+						if(ler_current_min > -10000 or ler_current_max < 10000) (*runs_itr)->SetCurrentLimit("LER", ler_current_min, ler_current_max, ntp_handler);
+						if(her_current_min > -10000 or her_current_max < 10000) (*runs_itr)->SetCurrentLimit("HER", her_current_min, her_current_max, ntp_handler);
 						if(ts_min > -1 or ts_max < 1e10) (*runs_itr)->SetTSLimit(ts_min, ts_max);
 						if(superkekb_status != "") (*runs_itr)->SetStatus("SUPERKEKB", superkekb_status);
 						if(ler_status != "") (*runs_itr)->SetStatus("LER", ler_status);
@@ -572,11 +579,26 @@ int main(int argc, char* argv[])
 						}
 				}
 
+				std::cout << "\033[32;1mMeta Selection:\033[0m done!       " << std::endl;
+				double wall1 = claws::get_wall_time();
+				double cpu1  = claws::get_cpu_time();
+
+				if(profile_timing)
+				{
+						cout << "Wall Time = " << wall1 - wall0 << endl;
+						cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+				}
 
 				cout << "AFTER META BASED SELECTION"<< endl;
 				for(auto & run : runs )
 				{
 						cout << "Run number: " << run->GetNumber() << ", NEvents: " << run->GetNEvents()<< endl;
+				}
+
+				if(runs.size() == 0)
+				{
+						cout << "WARNING: no events after meta based selection!" << endl;
+						return -1;
 				}
 
 				// Build analysis events
@@ -592,6 +614,8 @@ int main(int argc, char* argv[])
 				{
 						cout << "merge_events: not specified!" << "\n";
 				}
+
+
 
 				if(merge_events)
 				{
@@ -802,7 +826,7 @@ int main(int argc, char* argv[])
 						else if(plot_type.at(0) == "SCATTER")
 						{
 
-								NTP_Handler* ntp_handler = new NTP_Handler(ntp_path);
+								//	NTP_Handler* ntp_handler = new NTP_Handler(ntp_path);
 								vector<TGraphErrors*> graphs;
 
 								// string graph_name = plot_type.at(1)+ ":" + plot_type.at(2)+":" + plot_type.at(3);
@@ -923,26 +947,32 @@ int main(int argc, char* argv[])
 								else if(plot_type.at(1) == "BEAMDUST")
 								{
 										string graph_name = plot_type.at(1)+ ":" + plot_type.at(2);
+										replace_all(graph_name, ".", "_");
 
 										TGraphErrors* graph = new TGraphErrors();
 										graph->SetName(graph_name.c_str());
 										graph->SetTitle(graph_name.c_str());
 										graph->SetMarkerStyle(4);
 
-										TGraphErrors* ler_p_d2 = new TGraphErrors();
-										ler_p_d2->SetName("LER_Preasure_D02");
-										ler_p_d2->SetTitle("LER_Preasure_D02");
-										ler_p_d2->SetMarkerStyle(4);
+										// TGraphErrors* ler_p_d2 = new TGraphErrors();
+										// ler_p_d2->SetName("LER_Preasure_D02");
+										// ler_p_d2->SetTitle("LER_Preasure_D02");
+										// ler_p_d2->SetMarkerStyle(4);
+										//
+										// TGraphErrors* ler_p_d6 = new TGraphErrors();
+										// ler_p_d6->SetName("LER_Preasure_D06");
+										// ler_p_d6->SetTitle("LER_Preasure_D06");
+										// ler_p_d6->SetMarkerStyle(4);
 
-										TGraphErrors* ler_p_d6 = new TGraphErrors();
-										ler_p_d6->SetName("LER_Preasure_D06");
-										ler_p_d6->SetTitle("LER_Preasure_D06");
-										ler_p_d6->SetMarkerStyle(4);
+										TGraphErrors* her_pavg_corr = new TGraphErrors();
+										her_pavg_corr->SetName("HER average pressure corrected");
+										her_pavg_corr->SetTitle("HER average pressure corrected");
+										her_pavg_corr->SetMarkerStyle(4);
 
-										TGraphErrors* her_p = new TGraphErrors();
-										her_p->SetName("HER_Preasure");
-										her_p->SetTitle("HER_Preasure");
-										her_p->SetMarkerStyle(4);
+										TGraphErrors* ler_pavg_corr = new TGraphErrors();
+										ler_pavg_corr->SetName("LER average pressure corrected");
+										ler_pavg_corr->SetTitle("LER average pressure corrected");
+										ler_pavg_corr->SetMarkerStyle(4);
 
 										string observable =  plot_type.at(2);
 										string error = "";
@@ -953,37 +983,60 @@ int main(int argc, char* argv[])
 
 										for( auto & analysis_evt: analysis_evts)
 										{
+
 												double ts = analysis_evt->GetParameter<double>("Properties.UnixTime");
 
-												auto lerp2 = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_partialPressures_D02"));
-												auto lerp6 = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_partialPressures_D06"));
-												// auto int_current = (*ntp_handler->GetPV< vector<double>* >(ts, pv_int_current))[0];
-
-												// double x = ts;
-												// double y = int_current[0];
-												double x = ts;
-												double y = analysis_evt->GetParameter<double>(observable);
-												// Get X Value
-												// Get Y Value
-												// Add X and Y from events to plots
-												int n = graph->GetN();
-												graph->SetPoint(n, x, y);
-
-												if(!(error == ""))
+												try
 												{
-														double x_err = 0;
-														double y_err = analysis_evt->GetParameter<double>(error);
-														graph->SetPointError(n, x_err, y_err);
+
+														// auto val_ler_p_d2 = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_partialPressures_D02"));
+														// auto val_ler_p_d6 = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_partialPressures_D06"));
+
+														//	auto SKB_LER_pressure_average = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_pressure_average"));
+														auto SKB_LER_pressure_average_corrected = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_pressure_average_corrected"));
+
+														//	auto SKB_HER_pressure_average = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_HER_pressure_average"));
+														auto SKB_HER_pressure_average_corrected = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_HER_pressure_average_corrected"));
+
+														// auto SKB_LER_pressures = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_pressures"));
+														// auto SKB_LER_pressures_corrected = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_pressures_corrected"));
+														//
+														// auto SKB_LER_pressures_local = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_pressures_local"));
+														// auto SKB_LER_pressures_local_corrected = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_pressures_local_corrected"));
+														//
+														double x = ts;
+														double y = analysis_evt->GetParameter<double>(observable);
+
+														int n = graph->GetN();
+														graph->SetPoint(n, x, y);
+
+														her_pavg_corr->SetPoint(her_pavg_corr->GetN(), ts, SKB_HER_pressure_average_corrected[0]);
+														ler_pavg_corr->SetPoint(ler_pavg_corr->GetN(), ts, SKB_LER_pressure_average_corrected[0]);
+
+														//	her_p->SetPoint(her_p->GetN(), ts, val_her_p[0]);
+
+														if(!(error == ""))
+														{
+																double x_err = 0;
+																double y_err = analysis_evt->GetParameter<double>(error);
+																graph->SetPointError(n, x_err, y_err);
+														}
 												}
+												catch(int e)
+												{
+
+												}
+
 										}
 										graphs.push_back(graph);
-										graphs.push_back(ler_p_d2);
-										graphs.push_back(ler_p_d6);
-										graphs.push_back(her_p);
+										graphs.push_back(her_pavg_corr);
+										graphs.push_back(ler_pavg_corr);
+										//		graphs.push_back(ler_pavg_corr);
 								}
 								else if(plot_type.at(1) == "VAR")
 								{
 										string graph_name = plot_type.at(1)+ ":" + plot_type.at(2)+":" + plot_type.at(3);
+										replace_all(graph_name, ".", "_");
 
 										TGraphErrors* graph = new TGraphErrors();
 										graph->SetName(graph_name.c_str());
@@ -1045,7 +1098,10 @@ int main(int argc, char* argv[])
 										filesystem::create_directory(extended_output/entry.second.data());
 								}
 
-								string fname = filesystem::path(extended_output/entry.second.data()).string() + "/" + plot_type.at(1)+ ":" + plot_type.at(2)+ ":" + plot_type.at(3)+tasks + ".root";
+								string fname = filesystem::path(extended_output/entry.second.data()).string() + "/";
+								for(int i = 0; i<plot_type.size(); i++) fname += ":" + plot_type.at(i);
+
+								fname +=tasks + ".root";
 								TFile *rfile = new TFile(fname.c_str(), "RECREATE");
 
 								for(auto & graph: graphs)
@@ -1079,12 +1135,13 @@ int main(int argc, char* argv[])
 										delete graph;
 								}
 
-								delete ntp_handler;
+
 
 						}
 				}
 
 		}
+		delete ntp_handler;
 
 		return 0;
 }

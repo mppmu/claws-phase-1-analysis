@@ -1420,7 +1420,7 @@ AnalysisEvent::AnalysisEvent(string suffix) : n_(0), norm_(true), suffix_(suffix
 										npe = GS->GetParameter<double>("PEToMIP." + ch->name +"val");
 								}
 
-								int nmip = 150;
+								int nmip = 100;
 
 								int nbinsx   = (int)round(nmip*npe);
 
@@ -1429,16 +1429,16 @@ AnalysisEvent::AnalysisEvent(string suffix) : n_(0), norm_(true), suffix_(suffix
 
 								title = ch->name + "_hit_map";
 
-								int nbinsy   = 13125;
+								int nbinsy   = 13000;
 								//int multi    = 10;
-								ch->hit_map = new TH2F(title.c_str(), title.c_str(), nbinsx, xlow, xup, nbinsy, -dt/2., nbinsy*dt -dt/2.);
+								ch->hit_map = new TH2F(title.c_str(), title.c_str(), nbinsx, xlow, xup, nbinsy/10., -dt/2., nbinsy*dt -dt/2.);
 								ch->hit_map->SetDirectory(0);
 								ch->hit_map->GetXaxis()->SetTitle("Hit Energy [MIP]");
 								ch->hit_map->GetYaxis()->SetTitle("Time in Turn [ns]");
 
 								title = ch->name + "_time_in_turn";
 
-								ch->time_in_turn = new TH2F(title.c_str(), title.c_str(), 3000000, -dt/2., 3e6*dt -dt/2., nbinsy, -dt/2., nbinsy*dt -dt/2.);
+								ch->time_in_turn = new TH2F(title.c_str(), title.c_str(), 30000, -dt/2., 3e6*dt -dt/2., nbinsy/100, -dt/2., nbinsy*dt -dt/2.);
 								ch->time_in_turn->SetDirectory(0);
 								ch->time_in_turn->GetXaxis()->SetTitle("Time [ns]");
 								ch->time_in_turn->GetYaxis()->SetTitle("Time in Turn [ns]");
@@ -1469,7 +1469,7 @@ AnalysisEvent::AnalysisEvent(string suffix) : n_(0), norm_(true), suffix_(suffix
 		}
 };
 
-AnalysisEvent::AnalysisEvent(PhysicsEvent* ph_evt, string suffix) : n_(1), norm_(true), suffix_(suffix), first_run_(5000000), last_run_(-1)
+AnalysisEvent::AnalysisEvent(PhysicsEvent* ph_evt, string suffix) : n_(0), norm_(true), suffix_(suffix), first_run_(5000000), last_run_(-1)
 {
 		pt_ = ph_evt->GetPT();
 		// auto test = ph_evt->GetPT().get<double>("Rate.FWD1");
@@ -1504,7 +1504,7 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
 				TH1F* ph_hist_stat = dynamic_cast<TH1F*>(ph_evt->GetChannels().at(i)->GetHistogram("mip_stat"));
 				TH1F* ph_hist_sys = dynamic_cast<TH1F*>(ph_evt->GetChannels().at(i)->GetHistogram("mip_sys"));
 
-				if(channels_.at(i)->wf->GetNbinsX() < ph_hist->GetNbinsX() )
+				if(channels_.at(i)->wf->GetNbinsX() == 1 )
 				{
 						double low1 = channels_.at(i)->wf->GetBinLowEdge(0);
 						double low2 = ph_hist->GetBinLowEdge(0);
@@ -1527,8 +1527,21 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
 						// int 2d_xup = channels_.at(i)->hit_map->GetBinLowEdge(2d_nbinsx) + channels_.at(i)->hit_map->GetBinWidth(2d_nbinsx);
 						// channels_.at(i)->SetBins(nbins, low, up, )
 				}
+				else if(channels_.at(i)->wf->GetNbinsX() > ph_hist->GetNbinsX() )
+				{
+						cout << "WARNING the number of bins of the waveform you are trying to add is SMALLER than the previous ones!!!" << endl;
+						pt_.put("MinWFLength."+channels_.at(i)->name, ph_hist->GetNbinsX());
 
-				for(int j = 1; j<= ph_hist->GetNbinsX(); ++j)
+						channels_.at(i)->wf->GetXaxis()->SetRange(1, ph_hist->GetNbinsX());
+
+				}
+				else if(channels_.at(i)->wf->GetNbinsX() < ph_hist->GetNbinsX() )
+				{
+						cout << "WARNING the number of bins of the waveform you are trying to add is BIGGER than the previous ones!!!" << endl;
+						pt_.put("MaxWFLength."+channels_.at(i)->name, ph_hist->GetNbinsX());
+				}
+
+				for(int j = 1; j<= channels_.at(i)->wf->GetNbinsX(); ++j)
 				{
 
 
@@ -1561,9 +1574,11 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
 
 				}
 
-				n_++;
-				norm_ = false;
+
 		}
+
+		n_++;
+		norm_ = false;
 
 		int phnr =  stoi(ph_evt->GetPath().filename().string().substr(4));
 
@@ -1644,9 +1659,6 @@ void AnalysisEvent::Normalize()
 		}
 
 		norm_ = true;
-
-
-
 
 };
 
@@ -1785,12 +1797,14 @@ void AnalysisEvent::RunFFT()
 				channels_.at(i)->fft_phase_h->SetXTitle("Phaseshift [probably degree]");
 				channels_.at(i)->fft_phase_h->SetYTitle("Gute Frage...");
 
-				long n = 0;
+				//	long n = 0;
 
-				if( channels_.at(i)->wf->GetNbinsX() % 2 == 0 ) n = (int)(channels_.at(i)->wf->GetNbinsX()/10);
-				else n = (int)(channels_.at(i)->wf->GetNbinsX()/10) - 1;
+				if( channels_.at(i)->wf->GetNbinsX() % 2 == 0 ) channels_.at(i)->n = (int)(channels_.at(i)->wf->GetNbinsX()/10);
+				else channels_.at(i)->n = (int)(channels_.at(i)->wf->GetNbinsX()/10) - 1;
 
-				n++;
+				channels_.at(i)->n = channels_.at(i)->n +1;
+
+				long n = channels_.at(i)->n;
 
 				if( channels_.at(i)->fft_real_h->GetNbinsX() < n/2+1 )
 				{
@@ -1823,6 +1837,15 @@ void AnalysisEvent::RunFFT()
 						double range = xmax-xmin;
 						channels_.at(i)->fft_phase_h->SetBins( n/2+1, xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
 				}
+		}
+
+		int nthreads   = GS->GetParameter<int>("General.nthreads");
+		bool parallelize = GS->GetParameter<bool>("General.parallelize");
+		//
+		#pragma omp parallel for if(parallelize) num_threads(nthreads)
+		for(int i = 0; i < channels_.size(); ++i)
+		{
+				long n = channels_.at(i)->n;
 
 				gsl_fft_real_wavetable *        real;
 				gsl_fft_real_workspace *        work;
@@ -1955,6 +1978,10 @@ void AnalysisEvent::SaveEvent(boost::filesystem::path dst, string prefix)
 		fname += std::string(realname);
 		free(realname);
 
+		if(first_run_ == last_run_) fname +=  "_run-" + to_string(first_run_);
+		else fname += "_run-" + to_string(first_run_) + "_" + to_string(last_run_);
+
+		fname += "_" + prefix+suffix_;
 		// std::stringstream ss;
 		//
 		// int ndigits = GS->GetParameter<int>("General.event_ndigits");
@@ -1963,6 +1990,7 @@ void AnalysisEvent::SaveEvent(boost::filesystem::path dst, string prefix)
 
 		// fname += "_" + ss.str();
 		// fname += "_" + printEventState(state_);
+
 		fname += ".root";
 
 		TFile *rfile = new TFile(fname.c_str(), "RECREATE");

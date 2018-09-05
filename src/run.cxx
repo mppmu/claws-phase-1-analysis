@@ -1917,15 +1917,73 @@ void CalibrationRun::SystematicsStudy()
 		std::cout << "\033[32;1mRun::Systematics study:\033[0m done!       " << std::endl;
 };
 
-void CalibrationRun::SetInjectionLimit(string type)
+void CalibrationRun::SetInjectionLimit(string type, NTP_Handler* ntp_handler)
 {
 
 		auto itr_evts = evts_.begin();
 
 		while(itr_evts != evts_.end())
 		{
-				int ler = (*itr_evts)->GetParameter<int>("SuperKEKBData.LERBg");
-				int her = (*itr_evts)->GetParameter<int>("SuperKEKBData.HERBg");
+				double ts = (*itr_evts)->GetParameter<double>("Properties.UnixTime");
+
+				// int ler = (*itr_evts)->GetParameter<int>("SuperKEKBData.LERBg");
+				// int her = (*itr_evts)->GetParameter<int>("SuperKEKBData.HERBg");
+
+				// auto lerflag = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_injectionFlag"));
+				// auto lersafe = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_injectionFlag_safe"));
+				// auto lerverysafe = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_injectionFlag_verySafe"));
+				//
+				// auto lercur = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_current"));
+				// auto hercur = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_HER_current"));
+
+				// auto hertmp = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_injectionFlag_safe"));
+				int ler = -1;
+				try
+				{
+						ler = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_injectionFlag_verySafe"))[0];
+				}
+				catch(int e)
+				{
+						try
+						{
+								ler = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_injectionFlag_safe"))[0];
+						}
+						catch(int e)
+						{
+								delete (*itr_evts);
+								(*itr_evts) = NULL;
+								evts_.erase(itr_evts);
+
+								continue;
+						}
+				}
+
+				int her = -1;
+				try
+				{
+						her = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_HER_injectionFlag_verySafe"))[0];
+
+				}
+				catch(int e)
+				{
+						try
+						{
+								her = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_HER_injectionFlag_safe"))[0];
+						}
+						catch(int e)
+						{
+								delete (*itr_evts);
+								(*itr_evts) = NULL;
+								evts_.erase(itr_evts);
+
+								continue;
+						}
+				}
+
+				//
+				//
+				//
+				// auto her = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_HER_injectionFlag_verySafe"))[0];
 
 				if(type == "NONE")
 				{
@@ -2052,13 +2110,18 @@ void CalibrationRun::SetInjectionRate( string ring, double limit)
 };
 
 
-void CalibrationRun::SetCurrentLimit(std::string ring, double min, double max)
+void CalibrationRun::SetCurrentLimit(std::string ring, double min, double max, NTP_Handler *ntp_handler)
 {
 		auto itr_evts = std::begin(evts_);
 
 		while(itr_evts != std::end(evts_))
 		{
-				double current = (*itr_evts)->GetParameter<double>("SuperKEKBData."+ring+"Current");
+				double ts = (*itr_evts)->GetParameter<double>("Properties.UnixTime");
+				// auto ler = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_injectionFlag_verySafe"))[0];
+				// auto her = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_HER_injectionFlag_verySafe"))[0];
+
+				//	double current = (*itr_evts)->GetParameter<double>("SuperKEKBData."+ring+"Current");
+				double current = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_"+ring+"_current"))[0];
 
 				if(current >= min and current <= max)
 				{
@@ -2105,6 +2168,9 @@ void CalibrationRun::SetStatus(std::string type, std::string status)
 				if(type == "SUPERKEKB") evt_status = (*itr_evts)->GetParameter<string>("SuperKEKBData.SuperKEKBStatus");
 				else if(type == "LER") evt_status = (*itr_evts)->GetParameter<string>("SuperKEKBData.LERSTatus");
 				else if(type == "HER") evt_status = (*itr_evts)->GetParameter<string>("SuperKEKBData.HERStatus");
+
+				// double ts = (*itr_evts)->GetParameter<double>("Properties.UnixTime");
+				// auto ntp_stat = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_Status"));
 
 				if(status == evt_status)
 				{

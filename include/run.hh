@@ -68,6 +68,7 @@
 // #include "pedestal.hh"
 #include "gain.hh"
 #include "event.hh"
+#include "ntp_handler.hh"
 
 // #include "globalsettings.hh"
 
@@ -122,9 +123,9 @@ void MipTimeRetrieval();
 void SystematicsStudy();
 void DeleteCalibrationHistograms();
 
-void SetInjectionLimit( std::string type = "NULL");
+void SetInjectionLimit( std::string type, NTP_Handler* ntp_handler);
 void SetInjectionRate( std::string ring, double limit);
-void SetCurrentLimit(std::string ring, double min, double max);
+void SetCurrentLimit(std::string ring, double min, double max, NTP_Handler *ntp_handler);
 void SetTSLimit(double min, double max);
 void SetStatus(std::string type, std::string status);
 

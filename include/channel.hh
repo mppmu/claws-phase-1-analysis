@@ -254,6 +254,7 @@ struct AnalysisChannel {
 		TH1F* fft_img_h = nullptr;
 		TH1F* fft_mag_h = nullptr;
 		TH1F* fft_phase_h = nullptr;
+		long n = 0;
 		TH2F* hit_map = nullptr;
 		TH1F* hit_energy = nullptr;
 		TH1F* hit_energy_sync = nullptr;

@@ -151,8 +151,45 @@ T GetPVFromTree(double ts, std::string pv, TTree* tree)
 
 		if(t1 <= ts && ts <= t2)
 		{
+				Long64_t start_entry = 0;
+				Long64_t stop_entry = nentries;
+
+				// Do some divide and conquer magic
+				tree->GetEntry(int(stop_entry/2.));
+				if(ts <= ts_tree) stop_entry = int(stop_entry/2.);
+				else start_entry = int(stop_entry/2.);
+
+				tree->GetEntry(int(stop_entry/2.));
+				if(ts <= ts_tree) stop_entry = int(stop_entry/2.);
+				else start_entry = int(stop_entry/2.);
+
+				tree->GetEntry(int(stop_entry/2.));
+				if(ts <= ts_tree) stop_entry = int(stop_entry/2.);
+				else start_entry = int(stop_entry/2.);
+
+				tree->GetEntry(int(stop_entry/2.));
+				if(ts <= ts_tree) stop_entry = int(stop_entry/2.);
+				else start_entry = int(stop_entry/2.);
+
+				tree->GetEntry(int(stop_entry/2.));
+				if(ts <= ts_tree) stop_entry = int(stop_entry/2.);
+				else start_entry = int(stop_entry/2.);
+
+				tree->GetEntry(int(stop_entry/2.));
+				if(ts <= ts_tree) stop_entry = int(stop_entry/2.);
+				else start_entry = int(stop_entry/2.);
+
+				tree->GetEntry(int(stop_entry/2.));
+				if(ts <= ts_tree) stop_entry = int(stop_entry/2.);
+				else start_entry = int(stop_entry/2.);
+
+				tree->GetEntry(int(stop_entry/2.));
+				if(ts <= ts_tree) stop_entry = int(stop_entry/2.);
+				else start_entry = int(stop_entry/2.);
+
+
 				//UInt_t ts_last = 0;
-				for (Long64_t i=0; i<nentries; i++)
+				for (Long64_t i=start_entry; i<stop_entry; i++)
 				{
 						tree->GetEntry(i);
 
