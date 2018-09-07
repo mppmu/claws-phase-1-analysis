@@ -1504,8 +1504,25 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
 				TH1F* ph_hist_stat = dynamic_cast<TH1F*>(ph_evt->GetChannels().at(i)->GetHistogram("mip_stat"));
 				TH1F* ph_hist_sys = dynamic_cast<TH1F*>(ph_evt->GetChannels().at(i)->GetHistogram("mip_sys"));
 
-				if(channels_.at(i)->wf->GetNbinsX() == 1 )
+				if(channels_.at(i)->wf->GetNbinsX() < ph_hist->GetNbinsX() )
 				{
+						if(channels_.at(i)->wf->GetNbinsX() == 1)
+						{
+								string entry = "MinWFLength."+channels_.at(i)->name;
+								pt_.put(entry,ph_hist->GetNbinsX());
+						}
+						else
+						{
+								cout << "WARNING the number of bins of the waveform you are trying to add is BIGGER than the previous ones!!!" << endl;
+								cout << "AnalysisEventWF: " << channels_.at(i)->wf->GetNbinsX() << ", PhysicsEvent: "<< ph_hist->GetNbinsX() <<", Nr: "<<ph_evt->GetNumber()<< endl;
+
+								string entry = "MinWFLength."+channels_.at(i)->name;
+								if(pt_.get<int>(entry) > channels_.at(i)->wf->GetNbinsX())
+								{
+										pt_.put(entry, channels_.at(i)->wf->GetNbinsX());
+								}
+						}
+
 						double low1 = channels_.at(i)->wf->GetBinLowEdge(0);
 						double low2 = ph_hist->GetBinLowEdge(0);
 
@@ -1530,18 +1547,20 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
 				else if(channels_.at(i)->wf->GetNbinsX() > ph_hist->GetNbinsX() )
 				{
 						cout << "WARNING the number of bins of the waveform you are trying to add is SMALLER than the previous ones!!!" << endl;
-						pt_.put("MinWFLength."+channels_.at(i)->name, ph_hist->GetNbinsX());
+						cout << "AnalysisEventWF: " << channels_.at(i)->wf->GetNbinsX() << ", PhysicsEvent: "<< ph_hist->GetNbinsX() <<", Nr: "<<ph_evt->GetNumber()<< endl;
 
-						channels_.at(i)->wf->GetXaxis()->SetRange(1, ph_hist->GetNbinsX());
-
+						string entry = "MinWFLength."+channels_.at(i)->name;
+						if(pt_.get<int>(entry) > ph_hist->GetNbinsX())
+						{
+								pt_.put(entry, ph_hist->GetNbinsX());
+						}
 				}
-				else if(channels_.at(i)->wf->GetNbinsX() < ph_hist->GetNbinsX() )
-				{
-						cout << "WARNING the number of bins of the waveform you are trying to add is BIGGER than the previous ones!!!" << endl;
-						pt_.put("MaxWFLength."+channels_.at(i)->name, ph_hist->GetNbinsX());
-				}
+				// else if(channels_.at(i)->wf->GetNbinsX() < ph_hist->GetNbinsX() )
+				// {
+				//
+				// }
 
-				for(int j = 1; j<= channels_.at(i)->wf->GetNbinsX(); ++j)
+				for(int j = 1; j<= ph_hist->GetNbinsX(); ++j)
 				{
 
 
@@ -1553,6 +1572,37 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
 						channels_.at(i)->wf_sys->SetBinContent(j, channels_.at(i)->wf_sys->GetBinContent(j) + ph_hist->GetBinContent(j) );
 						channels_.at(i)->wf_sys->SetBinError(j, channels_.at(i)->wf_sys->GetBinError(j) + ph_hist_sys->GetBinError(j) );
 
+						// // in bins
+						// int bin_in_turn = round(fmod(j,t_rev/0.8));
+						//
+						// channels_.at(i)->rate_in_turn->SetBinContent(bin_in_turn, channels_.at(i)->rate_in_turn->GetBinContent(bin_in_turn)+ph_hist_stat->GetBinContent(j));
+						//
+						// if(ph_hist_stat->GetBinContent(j) > 0)
+						// {
+						//      channels_.at(i)->hit_energy->Fill(ph_hist_stat->GetBinContent(j));
+						//
+						//      // in seconds
+						//      double t_in_turn = fmod((j-1)*dt,t_rev*1e-9);
+						//
+						//      channels_.at(i)->hit_map->Fill(ph_hist_stat->GetBinContent(j), t_in_turn);
+						//
+						//      channels_.at(i)->time_in_turn->Fill((j-1)*dt, t_in_turn, ph_hist_stat->GetBinContent(j));
+						//
+						//      //channels_.at(i)->hit_map->Fill(5, 1e-6);
+						// }
+
+				}
+
+				int min_nbins = ph_hist->GetNbinsX();
+
+				string entry = "MinWFLength."+channels_.at(i)->name;
+				if(pt_.get<int>(entry) != min_nbins)
+				{
+						min_nbins = pt_.get<int>(entry);
+				}
+
+				for(int j = 1; j<= min_nbins; ++j)
+				{
 						// in bins
 						int bin_in_turn = round(fmod(j,t_rev/0.8));
 
@@ -1573,6 +1623,7 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
 						}
 
 				}
+
 
 
 		}
@@ -1717,12 +1768,16 @@ void AnalysisEvent::RunPeak()
 				//	double amp = 0;
 
 				// Iterate over bins j
-				for (int j = 1; j < channels_.at(i)->wf->GetNbinsX()+1; j++)
+				string entry = "MinWFLength."+channels_.at(i)->name;
+				int length = pt_.get<int>(entry);
+
+				//	for (int j = 1; j < channels_.at(i)->wf->GetNbinsX()+1; j++)
+				for (int j = 1; j <= length; j++)
 				{
 						if ( channels_.at(i)->wf->GetBinContent(j) > 0)
 						{
 								//Iterate over following bins k
-								for (int k = j+1; k < channels_.at(i)->wf->GetNbinsX()+1; k++)
+								for (int k = j+1; k <= length; k++)
 								{
 										if (channels_.at(i)->wf->GetBinContent(j) > 0)
 										{
@@ -1799,8 +1854,12 @@ void AnalysisEvent::RunFFT()
 
 				//	long n = 0;
 
-				if( channels_.at(i)->wf->GetNbinsX() % 2 == 0 ) channels_.at(i)->n = (int)(channels_.at(i)->wf->GetNbinsX()/10);
-				else channels_.at(i)->n = (int)(channels_.at(i)->wf->GetNbinsX()/10) - 1;
+				// Iterate over bins j
+				string entry = "MinWFLength."+channels_.at(i)->name;
+				int length = pt_.get<int>(entry);
+
+				if( length % 2 == 0 ) channels_.at(i)->n = (int)(length/10);
+				else channels_.at(i)->n = (int)(length/10) - 1;
 
 				channels_.at(i)->n = channels_.at(i)->n +1;
 

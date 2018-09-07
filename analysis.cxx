@@ -946,14 +946,57 @@ int main(int argc, char* argv[])
 								}
 								else if(plot_type.at(1) == "BEAMDUST")
 								{
-										string graph_name = plot_type.at(1)+ ":" + plot_type.at(2);
+										string graph_name = plot_type.at(1)+ ":Rare.FWD1";
 										replace_all(graph_name, ".", "_");
 
-										TGraphErrors* graph = new TGraphErrors();
-										graph->SetName(graph_name.c_str());
-										graph->SetTitle(graph_name.c_str());
-										graph->SetMarkerStyle(4);
+										TGraphErrors* fwd1 = new TGraphErrors();
+										fwd1->SetName(graph_name.c_str());
+										fwd1->SetTitle(graph_name.c_str());
+										fwd1->SetMarkerStyle(4);
+										fwd1->GetXaxis()->SetTitle("Time [s]");
+										fwd1->GetYaxis()->SetTitle("Particle Rate [MIP/s]");
 
+										graph_name = plot_type.at(1)+ ":Rare.FWD2";
+										replace_all(graph_name, ".", "_");
+
+										TGraphErrors* fwd2 = new TGraphErrors();
+										fwd2->SetName(graph_name.c_str());
+										fwd2->SetTitle(graph_name.c_str());
+										fwd2->SetMarkerStyle(4);
+										fwd2->GetXaxis()->SetTitle("Time [s]");
+										fwd2->GetYaxis()->SetTitle("Particle Rate [MIP/s]");
+
+										graph_name = plot_type.at(1)+ ":Rare.FWD3";
+										replace_all(graph_name, ".", "_");
+
+										TGraphErrors* fwd3 = new TGraphErrors();
+										fwd3->SetName(graph_name.c_str());
+										fwd3->SetTitle(graph_name.c_str());
+										fwd3->SetMarkerStyle(4);
+										fwd2->GetXaxis()->SetTitle("Time [s]");
+										fwd2->GetYaxis()->SetTitle("Particle Rate [MIP/s]");
+
+										vector<TGraphErrors*> on_fwd;
+										vector<TGraphErrors*> on_bwd;
+
+										for(int i = 0; i<3; ++i)
+										{
+												TGraphErrors* tmp = new TGraphErrors();
+												tmp->SetName(("OnlineRate FWD"+to_string(i+1)).c_str());
+												tmp->SetTitle(("OnlineRate FWD"+to_string(i+1)).c_str());
+												tmp->SetMarkerStyle(4);
+												tmp->GetXaxis()->SetTitle("Time [s]");
+												tmp->GetYaxis()->SetTitle("Particle Rate [MIP/s]");
+												on_fwd.push_back(tmp);
+
+												tmp = new TGraphErrors();
+												tmp->SetName(("OnlineRate BWD"+to_string(i+1)).c_str());
+												tmp->SetTitle(("OnlineRate BWD"+to_string(i+1)).c_str());
+												tmp->SetMarkerStyle(4);
+												tmp->GetXaxis()->SetTitle("Time [s]");
+												tmp->GetYaxis()->SetTitle("Particle Rate [MIP/s]");
+												on_bwd.push_back(tmp);
+										}
 										// TGraphErrors* ler_p_d2 = new TGraphErrors();
 										// ler_p_d2->SetName("LER_Preasure_D02");
 										// ler_p_d2->SetTitle("LER_Preasure_D02");
@@ -963,23 +1006,67 @@ int main(int argc, char* argv[])
 										// ler_p_d6->SetName("LER_Preasure_D06");
 										// ler_p_d6->SetTitle("LER_Preasure_D06");
 										// ler_p_d6->SetMarkerStyle(4);
+										TGraphErrors* her_pavg = new TGraphErrors();
+										her_pavg->SetName("HER average pressure");
+										her_pavg->SetTitle("HER average pressure");
+										her_pavg->SetMarkerStyle(4);
 
-										TGraphErrors* her_pavg_corr = new TGraphErrors();
-										her_pavg_corr->SetName("HER average pressure corrected");
-										her_pavg_corr->SetTitle("HER average pressure corrected");
-										her_pavg_corr->SetMarkerStyle(4);
+										TGraphErrors* ler_pavg = new TGraphErrors();
+										ler_pavg->SetName("LER average pressure");
+										ler_pavg->SetTitle("LER average pressure");
+										ler_pavg->SetMarkerStyle(4);
+
 
 										TGraphErrors* ler_pavg_corr = new TGraphErrors();
 										ler_pavg_corr->SetName("LER average pressure corrected");
 										ler_pavg_corr->SetTitle("LER average pressure corrected");
 										ler_pavg_corr->SetMarkerStyle(4);
 
-										string observable =  plot_type.at(2);
-										string error = "";
-										if(starts_with(observable, "Rate.")) error = "RateErr." + observable.substr(5);
 
-										graph->GetXaxis()->SetTitle("Time [s]");
-										graph->GetYaxis()->SetTitle("Particle Rate [MIP/s]");
+										TGraphErrors* her_pavg_corr = new TGraphErrors();
+										her_pavg_corr->SetName("HER average pressure corrected");
+										her_pavg_corr->SetTitle("HER average pressure corrected");
+										her_pavg_corr->SetMarkerStyle(4);
+										// string observable =  plot_type.at(2);
+										// string error = "";
+										// if(starts_with(observable, "Rate.")) error = "RateErr." + observable.substr(5);
+
+										vector<TGraphErrors*> her_pres;
+										vector<TGraphErrors*> ler_pres;
+
+										for(int i = 0; i<12; ++i)
+										{
+												TGraphErrors* tmp = new TGraphErrors();
+												tmp->SetName(("HER pressures #"+to_string(i)).c_str());
+												tmp->SetTitle(("HER pressures #"+to_string(i)).c_str());
+												tmp->SetMarkerStyle(4);
+												her_pres.push_back(tmp);
+
+												TGraphErrors* tmp2 = new TGraphErrors();
+												tmp2->SetName(("LER pressures #"+to_string(i)).c_str());
+												tmp2->SetTitle(("LER pressures #"+to_string(i)).c_str());
+												tmp2->SetMarkerStyle(4);
+												ler_pres.push_back(tmp2);
+										}
+
+
+										vector<TGraphErrors*> her_pres_local;
+										vector<TGraphErrors*> ler_pres_local;
+
+										for(int i = 0; i<26; ++i)
+										{
+												TGraphErrors* tmp = new TGraphErrors();
+												tmp->SetName(("HER pressures local #"+to_string(i)).c_str());
+												tmp->SetTitle(("HER pressures local #"+to_string(i)).c_str());
+												tmp->SetMarkerStyle(4);
+												her_pres_local.push_back(tmp);
+
+												TGraphErrors* tmp2 = new TGraphErrors();
+												tmp2->SetName(("LER pressures local #"+to_string(i)).c_str());
+												tmp2->SetTitle(("LER pressures local #"+to_string(i)).c_str());
+												tmp2->SetMarkerStyle(4);
+												ler_pres_local.push_back(tmp2);
+										}
 
 										for( auto & analysis_evt: analysis_evts)
 										{
@@ -992,35 +1079,72 @@ int main(int argc, char* argv[])
 														// auto val_ler_p_d2 = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_partialPressures_D02"));
 														// auto val_ler_p_d6 = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_partialPressures_D06"));
 
-														//	auto SKB_LER_pressure_average = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_pressure_average"));
+														auto SKB_LER_pressure_average = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_pressure_average"));
 														auto SKB_LER_pressure_average_corrected = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_pressure_average_corrected"));
 
-														//	auto SKB_HER_pressure_average = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_HER_pressure_average"));
+														auto SKB_HER_pressure_average = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_HER_pressure_average"));
 														auto SKB_HER_pressure_average_corrected = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_HER_pressure_average_corrected"));
 
-														// auto SKB_LER_pressures = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_pressures"));
+														auto SKB_LER_pressures = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_pressures_corrected"));
+														auto SKB_HER_pressures = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_HER_pressures_corrected"));
+
 														// auto SKB_LER_pressures_corrected = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_pressures_corrected"));
-														//
-														// auto SKB_LER_pressures_local = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_pressures_local"));
+
+														auto SKB_LER_pressures_local = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_pressures_local_corrected"));
+														auto SKB_HER_pressures_local = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_HER_pressures_local_corrected"));
 														// auto SKB_LER_pressures_local_corrected = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_pressures_local_corrected"));
 														//
-														double x = ts;
-														double y = analysis_evt->GetParameter<double>(observable);
+														// double x = ts;
+														// double y = analysis_evt->GetParameter<double>(observable);
+														//
+														// int n = graph->GetN();
 
-														int n = graph->GetN();
-														graph->SetPoint(n, x, y);
+														int n1 = fwd1->GetN();
+														fwd1->SetPoint(n1, ts, analysis_evt->GetParameter<double>("Rate.FWD1"));
+														fwd1->SetPointError(n1, 0, analysis_evt->GetParameter<double>("RateErr.FWD1"));
+
+														int n2 = fwd2->GetN();
+														fwd2->SetPoint(n2, ts, analysis_evt->GetParameter<double>("Rate.FWD2"));
+														fwd2->SetPointError(n2, 0, analysis_evt->GetParameter<double>("RateErr.FWD2"));
+
+														int n3 = fwd3->GetN();
+														fwd3->SetPoint(n3, ts, analysis_evt->GetParameter<double>("Rate.FWD3"));
+														fwd3->SetPointError(n3, 0, analysis_evt->GetParameter<double>("RateErr.FWD3"));
+
+														for(int i = 0; i<3; ++i)
+														{
+																on_fwd.at(i)->SetPoint(on_fwd.at(i)->GetN(), ts, analysis_evt->GetParameter<double>("OnlineRate.FWD"+to_string(i+1)));
+																on_bwd.at(i)->SetPoint(on_bwd.at(i)->GetN(), ts, analysis_evt->GetParameter<double>("OnlineRate.BWD"+to_string(i+1)));
+														}
+
+														her_pavg->SetPoint(her_pavg_corr->GetN(), ts, SKB_HER_pressure_average[0]);
+														ler_pavg->SetPoint(ler_pavg_corr->GetN(), ts, SKB_LER_pressure_average[0]);
 
 														her_pavg_corr->SetPoint(her_pavg_corr->GetN(), ts, SKB_HER_pressure_average_corrected[0]);
 														ler_pavg_corr->SetPoint(ler_pavg_corr->GetN(), ts, SKB_LER_pressure_average_corrected[0]);
 
+														for(int i = 0; i<12; ++i)
+														{
+
+																her_pres.at(i)->SetPoint(her_pres.at(i)->GetN(), ts, SKB_HER_pressures[i] );
+																ler_pres.at(i)->SetPoint(ler_pres.at(i)->GetN(), ts, SKB_LER_pressures[i] );
+														}
+
+
+														for(int i = 0; i<26; ++i)
+														{
+
+																her_pres_local.at(i)->SetPoint(her_pres_local.at(i)->GetN(), ts, SKB_HER_pressures_local[i] );
+																ler_pres_local.at(i)->SetPoint(ler_pres_local.at(i)->GetN(), ts, SKB_LER_pressures_local[i] );
+														}
 														//	her_p->SetPoint(her_p->GetN(), ts, val_her_p[0]);
 
-														if(!(error == ""))
-														{
-																double x_err = 0;
-																double y_err = analysis_evt->GetParameter<double>(error);
-																graph->SetPointError(n, x_err, y_err);
-														}
+														// if(!(error == ""))
+														// {
+														//      double x_err = 0;
+														//      double y_err = analysis_evt->GetParameter<double>(error);
+														//      graph->SetPointError(n, x_err, y_err);
+														// }
 												}
 												catch(int e)
 												{
@@ -1028,9 +1152,23 @@ int main(int argc, char* argv[])
 												}
 
 										}
-										graphs.push_back(graph);
+										graphs.push_back(fwd1);
+										graphs.push_back(fwd2);
+										graphs.push_back(fwd3);
+
+										graphs.insert(graphs.end(),on_fwd.begin(), on_fwd.end() );
+										graphs.insert(graphs.end(),on_bwd.begin(), on_bwd.end() );
+
+										graphs.push_back(her_pavg);
+										graphs.push_back(ler_pavg);
 										graphs.push_back(her_pavg_corr);
 										graphs.push_back(ler_pavg_corr);
+
+										graphs.insert(graphs.end(),ler_pres.begin(), ler_pres.end() );
+										graphs.insert(graphs.end(),her_pres.begin(), her_pres.end() );
+
+										graphs.insert(graphs.end(),ler_pres_local.begin(), ler_pres_local.end() );
+										graphs.insert(graphs.end(),her_pres_local.begin(), her_pres_local.end() );
 										//		graphs.push_back(ler_pavg_corr);
 								}
 								else if(plot_type.at(1) == "VAR")
