@@ -822,6 +822,38 @@ int main(int argc, char* argv[])
 										// }
 										anaysis_evt->SaveEvent(output, prefix);
 								}
+
+
+								int first_run_ = analysis_evts.front()->GetRunNr();
+								int last_run_ = analysis_evts.back()->GetRunNr();
+
+								filesystem::path extended_output;
+
+								if(first_run_ == last_run_) extended_output =  output /("Run-" + to_string(first_run_));
+								else extended_output = output / ("Run-" + to_string(first_run_) + "-" + to_string(last_run_));
+
+								// Create the folder with the runs in the name
+								if( !boost::filesystem::is_directory(extended_output) )
+								{
+										boost::filesystem::create_directory(extended_output);
+								}
+
+								string fname = extended_output.string() + "/" + "selections.ini";
+								property_tree::write_ini(fname.c_str(), selections);
+
+
+								// // Create the folder with type of output in the name
+								// if( !filesystem::is_directory(extended_output/entry.second.data() ) )
+								// {
+								//      filesystem::create_directory(extended_output/entry.second.data());
+								// }
+
+
+								//	replace_last(fname, ".root", "_selections.ini");
+								//	property_tree::write_ini(.c_str(), selections);
+
+								// replace_last(fname, "_selections.ini", "_plot_only.ini");
+								// property_tree::write_ini(fname.c_str(), target.second);
 						}
 						else if(plot_type.at(0) == "SCATTER")
 						{
@@ -839,6 +871,8 @@ int main(int argc, char* argv[])
 								if(plot_type.at(1) == "VACUUMSCRUBBING")
 								{
 										string graph_name = plot_type.at(1)+ ":" + plot_type.at(2)+":" + plot_type.at(3);
+
+										replace_all(graph_name, ".", "_");
 
 										TGraphErrors* graph = new TGraphErrors();
 										graph->SetName(graph_name.c_str());
@@ -898,6 +932,8 @@ int main(int argc, char* argv[])
 								else if(plot_type.at(1) == "BGTOUSCHEK")
 								{
 										string graph_name = plot_type.at(1)+ ":" + plot_type.at(2)+":" + plot_type.at(3);
+
+										replace_all(graph_name, ".", "_");
 
 										TGraphErrors* graph = new TGraphErrors();
 										graph->SetName(graph_name.c_str());

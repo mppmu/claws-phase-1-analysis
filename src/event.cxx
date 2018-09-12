@@ -1724,11 +1724,16 @@ void AnalysisEvent::RunPeak()
 						channels_.at(i)->peak = nullptr;
 				}
 
+				string entry = "MinWFLength."+channels_.at(i)->name;
+				int length = pt_.get<int>(entry);
+
 				double scale = 1e-9;
 				string title = channels_.at(i)->name + "_peak";
-				int nbins = channels_.at(i)->wf->GetNbinsX();
+				//	int nbins = channels_.at(i)->wf->GetNbinsX();
+				int nbins = length;
 				double xlow = channels_.at(i)->wf->GetBinLowEdge(1)/scale;
-				double xup = (channels_.at(i)->wf->GetBinLowEdge(channels_.at(i)->wf->GetNbinsX()) + channels_.at(i)->wf->GetBinWidth(channels_.at(i)->wf->GetNbinsX()))/scale;
+				// double xup = (channels_.at(i)->wf->GetBinLowEdge(channels_.at(i)->wf->GetNbinsX()) + channels_.at(i)->wf->GetBinWidth(channels_.at(i)->wf->GetNbinsX()))/scale;
+				double xup = (channels_.at(i)->wf->GetBinLowEdge(nbins) + channels_.at(i)->wf->GetBinWidth(nbins))/scale;
 
 				channels_.at(i)->peak = new TH1F( title.c_str(), title.c_str(),nbins, xlow, xup);
 				channels_.at(i)->peak->SetDirectory(0);
@@ -1797,11 +1802,24 @@ void AnalysisEvent::RunFFT()
 		//  bool parallelize = GS->GetParameter<bool>("General.parallelize");
 		//
 		// #pragma omp parallel for if(parallelize) num_threads(nthreads)
+
+		double dt = 0.8e-9;
+
+		//channels_.at(i)->n = (int)(length/10);
+		//      else channels_.at(i)->n = (int)(length/10) - 1;
+		//
+		//      channels_.at(i)->n = channels_.at(i)->n +1;
+		//
+		//      long n = channels_.at(i)->n;
+		//
+
 		for(int i = 0; i < channels_.size(); ++i)
 		{
-				// Create the histogram holding the real fft spectrum
+				string entry = "MinWFLength."+channels_.at(i)->name;
+				int length = pt_.get<int>(entry);
+				double binwidth = 1./(2*dt)*2./length;
 
-				double timestep = 0.8e-9;
+				if( length % 2 != 0 ) --length;
 
 				if(channels_.at(i)->fft_real_h != nullptr)
 				{
@@ -1810,11 +1828,11 @@ void AnalysisEvent::RunFFT()
 				}
 
 				string title = channels_.at(i)->name + "_fft_real_h";
-				channels_.at(i)->fft_real_h = new TH1F( title.c_str(), title.c_str(), 2, -1/(2*timestep)/2, 1/(2*timestep)+ 1/(2*timestep)/2 );
+				channels_.at(i)->fft_real_h = new TH1F( title.c_str(), title.c_str(), length/2. +1,  -binwidth/2., 1./(2*dt) +binwidth/2.);
 				channels_.at(i)->fft_real_h->SetDirectory(0);
 				channels_.at(i)->fft_real_h->SetXTitle("Frequency [Hz]");
 				channels_.at(i)->fft_real_h->SetYTitle("Gute Frage...");
-				// Create the histogram holding the imaginary fft spectrum
+
 				if(channels_.at(i)->fft_img_h != nullptr)
 				{
 						delete channels_.at(i)->fft_img_h;
@@ -1822,7 +1840,7 @@ void AnalysisEvent::RunFFT()
 				}
 
 				title = channels_.at(i)->name + "_fft_img_h";
-				channels_.at(i)->fft_img_h = new TH1F( title.c_str(), title.c_str(), 2, -1/(2*timestep)/2, 1/(2*timestep)+ 1/(2*timestep)/2 );
+				channels_.at(i)->fft_img_h = new TH1F( title.c_str(), title.c_str(), length/2. +1,  -binwidth/2., 1./(2*dt) +binwidth/2. );
 				channels_.at(i)->fft_img_h->SetDirectory(0);
 				channels_.at(i)->fft_img_h->SetXTitle("Frequency [Hz]");
 				channels_.at(i)->fft_img_h->SetYTitle("Gute Frage...");
@@ -1834,12 +1852,11 @@ void AnalysisEvent::RunFFT()
 				}
 
 				title = channels_.at(i)->name + "_fft_mag_h";
-				channels_.at(i)->fft_mag_h = new TH1F( title.c_str(), title.c_str(), 2, -1/(2*timestep)/2, 1/(2*timestep)+ 1/(2*timestep)/2 );
+				channels_.at(i)->fft_mag_h = new TH1F( title.c_str(), title.c_str(), length/2. +1,  -binwidth/2., 1./(2*dt) +binwidth/2. );
 				channels_.at(i)->fft_mag_h->SetDirectory(0);
 				channels_.at(i)->fft_mag_h->SetXTitle("Magnitude [Hz]");
 				channels_.at(i)->fft_mag_h->SetYTitle("Gute Frage...");
 
-				// Create the histogram holding the phaseshift fft spectrum
 				if(channels_.at(i)->fft_phase_h != nullptr)
 				{
 						delete channels_.at(i)->fft_phase_h;
@@ -1847,60 +1864,17 @@ void AnalysisEvent::RunFFT()
 				}
 
 				title = channels_.at(i)->name + "_fft_phase_h";
-				channels_.at(i)->fft_phase_h = new TH1F( title.c_str(), title.c_str(), 2, -1/(2*timestep)/2, 1/(2*timestep)+ 1/(2*timestep)/2 );
+				channels_.at(i)->fft_phase_h = new TH1F( title.c_str(), title.c_str(), length/2. +1,  -binwidth/2., 1./(2*dt) +binwidth/2. );
 				channels_.at(i)->fft_phase_h->SetDirectory(0);
 				channels_.at(i)->fft_phase_h->SetXTitle("Phaseshift [probably degree]");
 				channels_.at(i)->fft_phase_h->SetYTitle("Gute Frage...");
 
-				//	long n = 0;
-
-				// Iterate over bins j
-				string entry = "MinWFLength."+channels_.at(i)->name;
-				int length = pt_.get<int>(entry);
-
-				if( length % 2 == 0 ) channels_.at(i)->n = (int)(length/10);
-				else channels_.at(i)->n = (int)(length/10) - 1;
-
-				channels_.at(i)->n = channels_.at(i)->n +1;
-
-				long n = channels_.at(i)->n;
-
-				if( channels_.at(i)->fft_real_h->GetNbinsX() < n/2+1 )
-				{
-						double xmin = channels_.at(i)->fft_real_h->GetBinCenter(1);
-						double xmax = channels_.at(i)->fft_real_h->GetBinCenter(channels_.at(i)->fft_real_h->GetNbinsX());
-						double range = xmax-xmin;
-						channels_.at(i)->fft_real_h->SetBins( n/2+1, xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
-				}
-
-				if( channels_.at(i)->fft_img_h->GetNbinsX() < n/2+1 )
-				{
-						double xmin = channels_.at(i)->fft_img_h->GetBinCenter(1);
-						double xmax = channels_.at(i)->fft_img_h->GetBinCenter(channels_.at(i)->fft_img_h->GetNbinsX());
-						double range = xmax-xmin;
-						channels_.at(i)->fft_img_h->SetBins( n/2+1, xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
-				}
-
-				if( channels_.at(i)->fft_mag_h->GetNbinsX() < n/2+1 )
-				{
-						double xmin = channels_.at(i)->fft_mag_h->GetBinCenter(1);
-						double xmax = channels_.at(i)->fft_mag_h->GetBinCenter(channels_.at(i)->fft_mag_h->GetNbinsX());
-						double range = xmax-xmin;
-						channels_.at(i)->fft_mag_h->SetBins( n/2+1, xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
-				}
-
-				if( channels_.at(i)->fft_phase_h->GetNbinsX() < n/2+1 )
-				{
-						double xmin = channels_.at(i)->fft_phase_h->GetBinCenter(1);
-						double xmax = channels_.at(i)->fft_phase_h->GetBinCenter(channels_.at(i)->fft_phase_h->GetNbinsX());
-						double range = xmax-xmin;
-						channels_.at(i)->fft_phase_h->SetBins( n/2+1, xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
-				}
+				channels_.at(i)->n = length;
 		}
 
 		int nthreads   = GS->GetParameter<int>("General.nthreads");
 		bool parallelize = GS->GetParameter<bool>("General.parallelize");
-		//
+
 		#pragma omp parallel for if(parallelize) num_threads(nthreads)
 		for(int i = 0; i < channels_.size(); ++i)
 		{
@@ -1941,17 +1915,170 @@ void AnalysisEvent::RunFFT()
 				delete data;
 				delete cpacked;
 
-				for (int j = 1; j < channels_.at(i)->fft_real_h->GetNbinsX() + 1; j++)
+				for (int j = 1; j <= channels_.at(i)->fft_real_h->GetNbinsX(); j++)
 				{
 						gsl_complex z = gsl_complex_rect(channels_.at(i)->fft_real_h->GetBinContent(j),channels_.at(i)->fft_img_h->GetBinContent(j));
 						channels_.at(i)->fft_mag_h->SetBinContent(j,gsl_complex_abs(z));
 						channels_.at(i)->fft_phase_h->SetBinContent(j,gsl_complex_arg(z));
 				}
-
-				// switch axis from Hx to ns
-				//channels_.at(i)->fft_phase_h->SetBins( n/2+1, xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
-
 		}
+
+
+		// for(int i = 0; i < channels_.size(); ++i)
+		// {
+		//      // Create the histogram holding the real fft spectrum
+		//
+		//      double timestep = 0.8e-9;
+		//
+		//      if(channels_.at(i)->fft_real_h != nullptr)
+		//      {
+		//              delete channels_.at(i)->fft_real_h;
+		//              channels_.at(i)->fft_real_h = nullptr;
+		//      }
+		//
+		//      string title = channels_.at(i)->name + "_fft_real_h";
+		//      channels_.at(i)->fft_real_h = new TH1F( title.c_str(), title.c_str(), 2, -1/(2*timestep)/2, 1/(2*timestep)+ 1/(2*timestep)/2 );
+		//      channels_.at(i)->fft_real_h->SetDirectory(0);
+		//      channels_.at(i)->fft_real_h->SetXTitle("Frequency [Hz]");
+		//      channels_.at(i)->fft_real_h->SetYTitle("Gute Frage...");
+		//      // Create the histogram holding the imaginary fft spectrum
+		//      if(channels_.at(i)->fft_img_h != nullptr)
+		//      {
+		//              delete channels_.at(i)->fft_img_h;
+		//              channels_.at(i)->fft_img_h = nullptr;
+		//      }
+		//
+		//      title = channels_.at(i)->name + "_fft_img_h";
+		//      channels_.at(i)->fft_img_h = new TH1F( title.c_str(), title.c_str(), 2, -1/(2*timestep)/2, 1/(2*timestep)+ 1/(2*timestep)/2 );
+		//      channels_.at(i)->fft_img_h->SetDirectory(0);
+		//      channels_.at(i)->fft_img_h->SetXTitle("Frequency [Hz]");
+		//      channels_.at(i)->fft_img_h->SetYTitle("Gute Frage...");
+		//
+		//      if(channels_.at(i)->fft_mag_h != nullptr)
+		//      {
+		//              delete channels_.at(i)->fft_mag_h;
+		//              channels_.at(i)->fft_mag_h = nullptr;
+		//      }
+		//
+		//      title = channels_.at(i)->name + "_fft_mag_h";
+		//      channels_.at(i)->fft_mag_h = new TH1F( title.c_str(), title.c_str(), 2, -1/(2*timestep)/2, 1/(2*timestep)+ 1/(2*timestep)/2 );
+		//      channels_.at(i)->fft_mag_h->SetDirectory(0);
+		//      channels_.at(i)->fft_mag_h->SetXTitle("Magnitude [Hz]");
+		//      channels_.at(i)->fft_mag_h->SetYTitle("Gute Frage...");
+		//
+		//      // Create the histogram holding the phaseshift fft spectrum
+		//      if(channels_.at(i)->fft_phase_h != nullptr)
+		//      {
+		//              delete channels_.at(i)->fft_phase_h;
+		//              channels_.at(i)->fft_phase_h = nullptr;
+		//      }
+		//
+		//      title = channels_.at(i)->name + "_fft_phase_h";
+		//      channels_.at(i)->fft_phase_h = new TH1F( title.c_str(), title.c_str(), 2, -1/(2*timestep)/2, 1/(2*timestep)+ 1/(2*timestep)/2 );
+		//      channels_.at(i)->fft_phase_h->SetDirectory(0);
+		//      channels_.at(i)->fft_phase_h->SetXTitle("Phaseshift [probably degree]");
+		//      channels_.at(i)->fft_phase_h->SetYTitle("Gute Frage...");
+		//
+		//      //	long n = 0;
+		//
+		//      // Iterate over bins j
+		//      string entry = "MinWFLength."+channels_.at(i)->name;
+		//      int length = pt_.get<int>(entry);
+		//
+		//      if( length % 2 == 0 ) channels_.at(i)->n = (int)(length/10);
+		//      else channels_.at(i)->n = (int)(length/10) - 1;
+		//
+		//      channels_.at(i)->n = channels_.at(i)->n +1;
+		//
+		//      long n = channels_.at(i)->n;
+		//
+		//      if( channels_.at(i)->fft_real_h->GetNbinsX() < n/2+1 )
+		//      {
+		//              double xmin = channels_.at(i)->fft_real_h->GetBinCenter(1);
+		//              double xmax = channels_.at(i)->fft_real_h->GetBinCenter(channels_.at(i)->fft_real_h->GetNbinsX());
+		//              double range = xmax-xmin;
+		//              channels_.at(i)->fft_real_h->SetBins( n/2+1, xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
+		//      }
+		//
+		//      if( channels_.at(i)->fft_img_h->GetNbinsX() < n/2+1 )
+		//      {
+		//              double xmin = channels_.at(i)->fft_img_h->GetBinCenter(1);
+		//              double xmax = channels_.at(i)->fft_img_h->GetBinCenter(channels_.at(i)->fft_img_h->GetNbinsX());
+		//              double range = xmax-xmin;
+		//              channels_.at(i)->fft_img_h->SetBins( n/2+1, xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
+		//      }
+		//
+		//      if( channels_.at(i)->fft_mag_h->GetNbinsX() < n/2+1 )
+		//      {
+		//              double xmin = channels_.at(i)->fft_mag_h->GetBinCenter(1);
+		//              double xmax = channels_.at(i)->fft_mag_h->GetBinCenter(channels_.at(i)->fft_mag_h->GetNbinsX());
+		//              double range = xmax-xmin;
+		//              channels_.at(i)->fft_mag_h->SetBins( n/2+1, xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
+		//      }
+		//
+		//      if( channels_.at(i)->fft_phase_h->GetNbinsX() < n/2+1 )
+		//      {
+		//              double xmin = channels_.at(i)->fft_phase_h->GetBinCenter(1);
+		//              double xmax = channels_.at(i)->fft_phase_h->GetBinCenter(channels_.at(i)->fft_phase_h->GetNbinsX());
+		//              double range = xmax-xmin;
+		//              channels_.at(i)->fft_phase_h->SetBins( n/2+1, xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
+		//      }
+		// }
+		//
+		// int nthreads   = GS->GetParameter<int>("General.nthreads");
+		// bool parallelize = GS->GetParameter<bool>("General.parallelize");
+		// //
+		// #pragma omp parallel for if(parallelize) num_threads(nthreads)
+		// for(int i = 0; i < channels_.size(); ++i)
+		// {
+		//      long n = channels_.at(i)->n;
+		//
+		//      gsl_fft_real_wavetable *        real;
+		//      gsl_fft_real_workspace *        work;
+		//
+		//      double * data = new double[n];
+		//      double * cpacked = new double[2*n];
+		//
+		//      for (int j = 0; j < n; j++)
+		//      {
+		//              data[j] = channels_.at(i)->wf->GetBinContent(j+1);
+		//      }
+		//
+		//      work = gsl_fft_real_workspace_alloc ( n );
+		//      real = gsl_fft_real_wavetable_alloc ( n );
+		//
+		//      gsl_fft_real_transform(data, 1, n, real, work);
+		//
+		//      gsl_fft_real_wavetable_free(real);
+		//
+		//      gsl_fft_halfcomplex_unpack( data, cpacked, 1, n);
+		//
+		//
+		//      for (int j = 0; j < n/2+1; j++)
+		//      {
+		//              channels_.at(i)->fft_real_h->SetBinContent(j+1,cpacked[2*j]);
+		//      }
+		//
+		//      for (int j = 0; j < n/2+1; j++)
+		//      {
+		//              channels_.at(i)->fft_img_h->SetBinContent(j+1,cpacked[2*j+1]);
+		//      }
+		//
+		//      delete work;
+		//      delete data;
+		//      delete cpacked;
+		//
+		//      for (int j = 1; j < channels_.at(i)->fft_real_h->GetNbinsX() + 1; j++)
+		//      {
+		//              gsl_complex z = gsl_complex_rect(channels_.at(i)->fft_real_h->GetBinContent(j),channels_.at(i)->fft_img_h->GetBinContent(j));
+		//              channels_.at(i)->fft_mag_h->SetBinContent(j,gsl_complex_abs(z));
+		//              channels_.at(i)->fft_phase_h->SetBinContent(j,gsl_complex_arg(z));
+		//      }
+		//
+		//      // switch axis from Hx to ns
+		//      //channels_.at(i)->fft_phase_h->SetBins( n/2+1, xmin - range/(2*(n/2+1) - 2), xmax + range/(2*(n/2+1) - 2) );
+
+		//}
 }
 
 void AnalysisEvent::HitEnergySpectrum()
