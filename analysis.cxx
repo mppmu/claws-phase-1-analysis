@@ -185,12 +185,19 @@ int main(int argc, char* argv[])
 		// string first_run = "";
 		// string last_run = "";
 
+		string selections_names = "";
+
 		vector<AnalysisEvent*>  analysis_evts;
 
 		for(auto selection : selections)
 		{
 				if(!starts_with( selection.first, "Selection" )) continue;
 
+				string selections_name = selection.first;
+
+				replace_all(selections_name, "Selection", "");
+
+				selections_names += selections_name;
 				// Select runs based on dates
 				filesystem::path input;
 
@@ -545,6 +552,18 @@ int main(int argc, char* argv[])
 						cout << "superkekb_status: not specified!" << "\n";
 				}
 
+				int min_length = -1;
+				try
+				{
+						min_length = selection.second.get<int>("min_length");
+						cout << "min_length: " << min_length << "\n";
+				}
+				catch(const property_tree::ptree_bad_path &e)
+				{
+						cout << "min_length: not specified!" << "\n";
+				}
+
+
 
 				std::cout << "\033[33;1mMeta Selection:\033[0m running" << "\r" << std::flush;
 
@@ -630,16 +649,19 @@ int main(int argc, char* argv[])
 
 										if( evt->GetState() == EVENTSTATE_CALIBRATED)
 										{
-												if( injection == "NONE" )
+												if( evt->GetChannels().at(0)->GetHistogram("mip")->GetNbinsX() >= min_length)
 												{
-														if(!evt->CheckInjection())
+														if( injection == "NONE" )
+														{
+																if(!evt->CheckInjection())
+																{
+																		analysis_evt->AddEvent(evt);
+																}
+														}
+														else
 														{
 																analysis_evt->AddEvent(evt);
 														}
-												}
-												else
-												{
-														analysis_evt->AddEvent(evt);
 												}
 										}
 										evt->DeleteHistograms();
@@ -689,6 +711,7 @@ int main(int argc, char* argv[])
 		//################ Part 3: Do analysis on events and get plots out ################
 
 		string tasks = "";
+
 
 		for(auto &target : selections)
 		{
@@ -812,6 +835,22 @@ int main(int argc, char* argv[])
 						if( plot_type.at(0) == "WAVEFORM")
 						{
 								//for( int i = 0; i < analysis_evts.size(); ++i)
+
+
+
+								int first_run_ = analysis_evts.front()->GetRunNr();
+								int last_run_ = analysis_evts.back()->GetRunNr();
+
+								filesystem::path extended_output;
+
+								if(first_run_ == last_run_) extended_output =  output /("Run-" + to_string(first_run_)+selections_names);
+								else extended_output = output / ("Run-" + to_string(first_run_) + "-" + to_string(last_run_)+selections_names);
+
+								if( !boost::filesystem::is_directory(extended_output) )
+								{
+										boost::filesystem::create_directory(extended_output);
+								}
+
 								for(auto & anaysis_evt: analysis_evts)
 								{
 										string prefix = entry.second.data() + tasks;
@@ -820,23 +859,10 @@ int main(int argc, char* argv[])
 										// {
 										//      filesystem::create_directory(output/foldername);
 										// }
-										anaysis_evt->SaveEvent(output, prefix);
+										anaysis_evt->SaveEvent(extended_output, prefix);
 								}
-
-
-								int first_run_ = analysis_evts.front()->GetRunNr();
-								int last_run_ = analysis_evts.back()->GetRunNr();
-
-								filesystem::path extended_output;
-
-								if(first_run_ == last_run_) extended_output =  output /("Run-" + to_string(first_run_));
-								else extended_output = output / ("Run-" + to_string(first_run_) + "-" + to_string(last_run_));
-
 								// Create the folder with the runs in the name
-								if( !boost::filesystem::is_directory(extended_output) )
-								{
-										boost::filesystem::create_directory(extended_output);
-								}
+
 
 								string fname = extended_output.string() + "/" + "selections.ini";
 								property_tree::write_ini(fname.c_str(), selections);
@@ -1281,8 +1307,10 @@ int main(int argc, char* argv[])
 								for(auto & graph: graphs)
 								{
 										graph->Write();
-										selections.put(string(graph->GetName())+".NEvts", analysis_evts.size());
-										selections.put(string(graph->GetName())+".CorrelationFactor", graph->GetCorrelationFactor());
+										string graph_name = graph->GetName();
+										replace_all(graph_name, ".", "_");
+										selections.put(graph_name+".NEvts", analysis_evts.size());
+										selections.put(graph_name+".CorrelationFactor", graph->GetCorrelationFactor());
 								}
 
 

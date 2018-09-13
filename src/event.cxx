@@ -1514,7 +1514,7 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
 						else
 						{
 								cout << "WARNING the number of bins of the waveform you are trying to add is BIGGER than the previous ones!!!" << endl;
-								cout << "AnalysisEventWF: " << channels_.at(i)->wf->GetNbinsX() << ", PhysicsEvent: "<< ph_hist->GetNbinsX() <<", Nr: "<<ph_evt->GetNumber()<< endl;
+								cout << "AnalysisEventWF: " << channels_.at(i)->wf->GetNbinsX() << ", PhysicsEvent: "<< ph_hist->GetNbinsX() <<", Nr: "<< ph_evt->GetNumber()<< endl;
 
 								string entry = "MinWFLength."+channels_.at(i)->name;
 								if(pt_.get<int>(entry) > channels_.at(i)->wf->GetNbinsX())
@@ -1555,22 +1555,35 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
 								pt_.put(entry, ph_hist->GetNbinsX());
 						}
 				}
+
+				int bin_first_signal = 0;
+
+				for(int bin = 1; bin <= ph_hist->GetNbinsX(); ++bin )
+				{
+						if(ph_hist->GetBinContent(bin) > 0 )
+						{
+								bin_first_signal = bin;
+								break;
+						}
+				}
+
+				--bin_first_signal;
+
 				// else if(channels_.at(i)->wf->GetNbinsX() < ph_hist->GetNbinsX() )
 				// {
 				//
 				// }
 
-				for(int j = 1; j<= ph_hist->GetNbinsX(); ++j)
+				for(int j = 1; j<= ph_hist->GetNbinsX() - bin_first_signal; ++j)
 				{
 
+						channels_.at(i)->wf->SetBinContent(j, channels_.at(i)->wf->GetBinContent(j) + ph_hist->GetBinContent(j  +bin_first_signal) );
 
-						channels_.at(i)->wf->SetBinContent(j, channels_.at(i)->wf->GetBinContent(j) + ph_hist->GetBinContent(j) );
+						channels_.at(i)->wf_stat->SetBinContent(j, channels_.at(i)->wf_stat->GetBinContent(j) + ph_hist->GetBinContent(j+bin_first_signal) );
+						channels_.at(i)->wf_stat->SetBinError(j, channels_.at(i)->wf_stat->GetBinError(j) + ph_hist_stat->GetBinError(j+bin_first_signal)*ph_hist_stat->GetBinError(j+bin_first_signal) );
 
-						channels_.at(i)->wf_stat->SetBinContent(j, channels_.at(i)->wf_stat->GetBinContent(j) + ph_hist->GetBinContent(j) );
-						channels_.at(i)->wf_stat->SetBinError(j, channels_.at(i)->wf_stat->GetBinError(j) + ph_hist_stat->GetBinError(j)*ph_hist_stat->GetBinError(j) );
-
-						channels_.at(i)->wf_sys->SetBinContent(j, channels_.at(i)->wf_sys->GetBinContent(j) + ph_hist->GetBinContent(j) );
-						channels_.at(i)->wf_sys->SetBinError(j, channels_.at(i)->wf_sys->GetBinError(j) + ph_hist_sys->GetBinError(j) );
+						channels_.at(i)->wf_sys->SetBinContent(j, channels_.at(i)->wf_sys->GetBinContent(j) + ph_hist->GetBinContent(j+bin_first_signal) );
+						channels_.at(i)->wf_sys->SetBinError(j, channels_.at(i)->wf_sys->GetBinError(j) + ph_hist_sys->GetBinError(j+bin_first_signal) );
 
 						// // in bins
 						// int bin_in_turn = round(fmod(j,t_rev/0.8));
@@ -2140,13 +2153,13 @@ void AnalysisEvent::SaveEvent(boost::filesystem::path dst, string prefix)
 
 		filesystem::path output = dst;
 
-		if(first_run_ == last_run_) output /=  "Run-" + to_string(first_run_);
-		else output /= "Run-" + to_string(first_run_) + "-" + to_string(last_run_);
-
-		if( !boost::filesystem::is_directory(output) )
-		{
-				boost::filesystem::create_directory(output);
-		}
+		// if(first_run_ == last_run_) output /=  "Run-" + to_string(first_run_);
+		// else output /= "Run-" + to_string(first_run_) + "-" + to_string(last_run_);
+		//
+		// if( !boost::filesystem::is_directory(output) )
+		// {
+		//      boost::filesystem::create_directory(output);
+		// }
 
 		output /=prefix+suffix_;
 
