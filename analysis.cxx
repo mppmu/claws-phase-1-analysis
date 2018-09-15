@@ -837,14 +837,14 @@ int main(int argc, char* argv[])
 								//for( int i = 0; i < analysis_evts.size(); ++i)
 
 
+								int first_run_ = analysis_evts.front()->GetRunNr("first");
+								int last_run_ = analysis_evts.back()->GetRunNr("last");
 
-								int first_run_ = analysis_evts.front()->GetRunNr();
-								int last_run_ = analysis_evts.back()->GetRunNr();
 
 								filesystem::path extended_output;
 
-								if(first_run_ == last_run_) extended_output =  output /("Run-" + to_string(first_run_)+selections_names);
-								else extended_output = output / ("Run-" + to_string(first_run_) + "-" + to_string(last_run_)+selections_names);
+								if(first_run_ == last_run_) extended_output =  output /("Run_" + to_string(first_run_)+selections_names);
+								else extended_output = output / ("Run_" + to_string(first_run_) + "-" + to_string(last_run_)+selections_names);
 
 								if( !boost::filesystem::is_directory(extended_output) )
 								{

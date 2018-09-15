@@ -1420,7 +1420,7 @@ AnalysisEvent::AnalysisEvent(string suffix) : n_(0), norm_(true), suffix_(suffix
 										npe = GS->GetParameter<double>("PEToMIP." + ch->name +"val");
 								}
 
-								int nmip = 100;
+								int nmip = 140;
 
 								int nbinsx   = (int)round(nmip*npe);
 
@@ -1558,16 +1558,16 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
 
 				int bin_first_signal = 0;
 
-				for(int bin = 1; bin <= ph_hist->GetNbinsX(); ++bin )
-				{
-						if(ph_hist->GetBinContent(bin) > 0 )
-						{
-								bin_first_signal = bin;
-								break;
-						}
-				}
-
-				--bin_first_signal;
+				// for(int bin = 1; bin <= ph_hist->GetNbinsX(); ++bin )
+				// {
+				//      if(ph_hist->GetBinContent(bin) > 0 )
+				//      {
+				//              bin_first_signal = bin;
+				//              break;
+				//      }
+				// }
+				//
+				// --bin_first_signal;
 
 				// else if(channels_.at(i)->wf->GetNbinsX() < ph_hist->GetNbinsX() )
 				// {
