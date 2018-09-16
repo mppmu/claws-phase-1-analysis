@@ -894,7 +894,7 @@ int main(int argc, char* argv[])
 								// graph->SetTitle(graph_name.c_str());
 								// graph->SetMarkerStyle(4);
 
-								if(plot_type.at(1) == "VACUUMSCRUBBING")
+								if(plot_type.at(1) == "VACUUM_SCRUBBING")
 								{
 										string graph_name = plot_type.at(1)+ ":" + plot_type.at(2)+":" + plot_type.at(3);
 
@@ -952,6 +952,11 @@ int main(int argc, char* argv[])
 
 
 										}
+										TF1 *f1 = new TF1("f1", "[0]*pow(x,[1])", 0, 5);
+										f1->SetParNames("intercept", "slope");
+										f1->SetParameters(1,-1 );
+										graph->Fit("fline", "SQL");
+										delete f1;
 
 										graphs.push_back(graph);
 								}
@@ -1006,7 +1011,7 @@ int main(int argc, char* argv[])
 										}
 										graphs.push_back(graph);
 								}
-								else if(plot_type.at(1) == "BEAMDUST")
+								else if(plot_type.at(1) == "VACUUM_BUMP")
 								{
 										string graph_name = plot_type.at(1)+ ":Rare.FWD1";
 										replace_all(graph_name, ".", "_");
@@ -1233,6 +1238,175 @@ int main(int argc, char* argv[])
 										graphs.insert(graphs.end(),her_pres_local.begin(), her_pres_local.end() );
 										//		graphs.push_back(ler_pavg_corr);
 								}
+								else if(plot_type.at(1) == "BEAMSIZE")
+								{
+										string ring = plot_type.at(1);
+
+										vector<TGraphErrors*> fwd_rate;
+
+										vector<TGraphErrors*> on_fwd;
+										vector<TGraphErrors*> on_bwd;
+
+										vector<TGraphErrors*> fwd;
+
+										for(int i = 0; i<3; ++i)
+										{
+												TGraphErrors* tmp = new TGraphErrors();
+												tmp->SetName(("OnlineRate FWD"+to_string(i+1)).c_str());
+												tmp->SetTitle(("OnlineRate FWD"+to_string(i+1)).c_str());
+												tmp->SetMarkerStyle(4);
+												tmp->GetXaxis()->SetTitle("I/PZ_{e}^{2}#sigma_{y} [mA Pa^{-1}#mum^{-1}]");
+												tmp->GetYaxis()->SetTitle("Particle Rate/IPZ_{e}^{2} [a.u.]");
+												on_fwd.push_back(tmp);
+
+												tmp = new TGraphErrors();
+												tmp->SetName(("Rate FWD"+to_string(i+1)).c_str());
+												tmp->SetTitle(("Rate FWD"+to_string(i+1)).c_str());
+												tmp->SetMarkerStyle(4);
+												tmp->GetXaxis()->SetTitle("Unixtime [s]");
+												tmp->GetYaxis()->SetTitle("Particles [MIP/s]");
+												fwd_rate.push_back(tmp);
+
+												tmp = new TGraphErrors();
+												tmp->SetName(("OnlineRate BWD"+to_string(i+1)).c_str());
+												tmp->SetTitle(("OnlineRate BWD"+to_string(i+1)).c_str());
+												tmp->SetMarkerStyle(4);
+												tmp->GetXaxis()->SetTitle("I/PZ_{e}^{2}#sigma_{y} [mA Pa^{-1}#mum^{-1}]");
+												tmp->GetYaxis()->SetTitle("Particle Rate/IPZ_{e}^{2} [a.u.]");
+												on_bwd.push_back(tmp);
+
+
+										}
+										for(int i = 0; i<3; ++i)
+										{
+												for(int j = 0; j<26; ++j)
+												{
+														TGraphErrors* tmp = new TGraphErrors();
+														tmp = new TGraphErrors();
+														tmp->SetName(("BS_Rate_FWD"+to_string(i+1)+"_LP["+to_string(j)+"]").c_str());
+														tmp->SetTitle(("BS_Rate_FWD"+to_string(i+1)+"_LP["+to_string(j)+"]").c_str());
+														tmp->SetMarkerStyle(4);
+														tmp->GetXaxis()->SetTitle("I/PZ_{e}^{2}#sigma_{y} [mA Pa^{-1}#mum^{-1}]");
+														tmp->GetYaxis()->SetTitle("Particle Rate/IPZ_{e}^{2} [a.u.]");
+														fwd.push_back(tmp);
+												}
+										}
+
+										TGraphErrors* gp = new TGraphErrors();
+										gp->SetName("Pressure");
+										gp->SetTitle("Pressure");
+										gp->SetMarkerStyle(4);
+										gp->GetXaxis()->SetTitle("Unixtime [s]");
+										gp->GetYaxis()->SetTitle("Pressure [Pa]");
+
+										TGraphErrors* gi = new TGraphErrors();
+										gi->SetName((ring+"_Current").c_str());
+										gi->SetTitle((ring+"_Current").c_str());
+										gi->SetMarkerStyle(4);
+										gi->GetXaxis()->SetTitle("Unixtime [s]");
+										gi->GetYaxis()->SetTitle((ring+" Current [mA]" ).c_str());
+
+										TGraphErrors* gz = new TGraphErrors();
+										gz->SetName((ring+"_Zeff").c_str());
+										gz->SetTitle((ring+"_Zeff").c_str());
+										gz->SetMarkerStyle(4);
+										gz->GetXaxis()->SetTitle("Unixtime [s]");
+										gz->GetYaxis()->SetTitle((ring+" Z_{eff} [a.u.]" ).c_str());
+
+										TGraphErrors* gsig = new TGraphErrors();
+										gsig->SetName((ring+"_sigmay").c_str());
+										gsig->SetTitle((ring+"_sigmay").c_str());
+										gsig->SetMarkerStyle(4);
+										gsig->GetXaxis()->SetTitle("Unixtime [s]");
+										gsig->GetYaxis()->SetTitle((ring+" #sigma_{y} [#mum]" ).c_str());
+
+										for( auto & analysis_evt: analysis_evts)
+										{
+
+												double ts = analysis_evt->GetParameter<double>("Properties.UnixTime");
+
+												try
+												{
+														auto SKB_LER_pressures_local_corrected = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_pressures_local_corrected"));
+														double p = SKB_LER_pressures_local_corrected[0];
+
+														auto SKB_current = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_"+ring+"_current"));
+														double i_ring = SKB_current[0];
+
+														auto SKB_LER_Zeff_D02 = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_Zeff_D02"));
+														double zeff_d02 = SKB_LER_Zeff_D02[0];
+
+														auto SKB_LER_Zeff_D06 = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_Zeff_D06"));
+														double zeff_d06 = SKB_LER_Zeff_D06[0];
+
+														double zeff = zeff_d02;
+
+														auto SKB_LER_correctedBeamSize_xray_Y = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_correctedBeamSize_xray_Y"));
+														double sigma_y = SKB_LER_correctedBeamSize_xray_Y[0];
+
+														double x = i_ring/(p*zeff*zeff*sigma_y);
+														double y_scale = i_ring*p*zeff*zeff;
+														for(int i = 0; i<3; ++i)
+														{
+																// int n = fwd.at(i)->GetN();
+																// fwd.at(i)->SetPoint(n, x, analysis_evt->GetParameter<double>("Rate.FWD"+to_string(i+1))/y_scale);
+																// fwd.at(i)->SetPointError(n, 0, analysis_evt->GetParameter<double>("RateErr.FWD"+to_string(i+1))/y_scale);
+																on_fwd.at(i)->SetPoint(on_fwd.at(i)->GetN(), x, analysis_evt->GetParameter<double>("OnlineRate.FWD"+to_string(i+1))/y_scale);
+																on_bwd.at(i)->SetPoint(on_bwd.at(i)->GetN(), x, analysis_evt->GetParameter<double>("OnlineRate.BWD"+to_string(i+1))/y_scale);
+
+																int n = fwd_rate.at(i)->GetN();
+																fwd_rate.at(i)->SetPoint(n, ts, analysis_evt->GetParameter<double>("Rate.FWD"+to_string(i+1)));
+																fwd_rate.at(i)->SetPointError(n, 0, analysis_evt->GetParameter<double>("RateErr.FWD"+to_string(i+1)));
+														}
+
+														for(int i = 0; i<3; ++i)
+														{
+																//	auto SKB_LER_pressures_local_corrected = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_pressures_local_corrected"));
+																double rate = analysis_evt->GetParameter<double>("Rate.FWD"+to_string(i+1));
+																double err = analysis_evt->GetParameter<double>("RateErr.FWD"+to_string(i+1));
+																for(int j = 0; j<26; ++j)
+																{
+																		int n = fwd.at(i+j)->GetN();
+																		double pnew = SKB_LER_pressures_local_corrected[j];
+																		double xnew = i_ring/(pnew*zeff*zeff*sigma_y);
+																		double y_scale_new = i_ring*pnew*zeff*zeff;
+																		fwd.at(i+j)->SetPoint(n, xnew, rate/y_scale_new);
+																		fwd.at(i+j)->SetPointError(n, 0, err/y_scale_new);
+																}
+														}
+														gp->SetPoint(gp->GetN(), ts, p);
+														gi->SetPoint(gi->GetN(), ts, i_ring);
+														gz->SetPoint(gz->GetN(), ts, zeff);
+														gsig->SetPoint(gsig->GetN(), ts, sigma_y);
+
+												}
+												catch(int e)
+												{
+
+												}
+
+										}
+
+										for(int i = 0; i<3; ++i)
+										{
+												TF1 *f1 = new TF1("f1", "[0] +[1]*x", 0, 5);
+												f1->SetParNames("intercept", "slope");
+												fwd.at(i)->Fit(f1, "SQL");
+												on_fwd.at(i)->Fit(f1, "SQL");
+												on_bwd.at(i)->Fit(f1, "SQL");
+												delete f1;
+										}
+
+										graphs.insert(graphs.end(),fwd.begin(), fwd.end() );
+										graphs.insert(graphs.end(),on_fwd.begin(), on_fwd.end() );
+										graphs.insert(graphs.end(),on_bwd.begin(), on_bwd.end() );
+										graphs.insert(graphs.end(),fwd_rate.begin(), fwd_rate.end() );
+										graphs.push_back(gp);
+										graphs.push_back(gi);
+										graphs.push_back(gz);
+										graphs.push_back(gsig);
+
+								}
 								else if(plot_type.at(1) == "VAR")
 								{
 										string graph_name = plot_type.at(1)+ ":" + plot_type.at(2)+":" + plot_type.at(3);
@@ -1278,8 +1452,12 @@ int main(int argc, char* argv[])
 										graphs.push_back(graph);
 								}
 
-								int first_run_ = analysis_evts.front()->GetRunNr();
-								int last_run_ = analysis_evts.back()->GetRunNr();
+								// int first_run_ = analysis_evts.front()->GetRunNr();
+								// int last_run_ = analysis_evts.back()->GetRunNr("");
+
+
+								int first_run_ = analysis_evts.front()->GetRunNr("first");
+								int last_run_ = analysis_evts.back()->GetRunNr("last");
 
 								filesystem::path extended_output;
 
