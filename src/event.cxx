@@ -1374,7 +1374,7 @@ property_tree::ptree PhysicsEvent::GetPT()
 // Definition of the AnlysisEvent class.
 //----------------------------------------------------------------------------------------------
 
-AnalysisEvent::AnalysisEvent(string suffix) : n_(0), norm_(true), suffix_(suffix), first_run_(5000000), last_run_(-1)
+AnalysisEvent::AnalysisEvent(string suffix, int min_length) : n_(0), norm_(true), suffix_(suffix), first_run_(5000000), last_run_(-1)
 {
 
 		for (auto &name : GS->GetChannels("Physics"))
@@ -1384,6 +1384,7 @@ AnalysisEvent::AnalysisEvent(string suffix) : n_(0), norm_(true), suffix_(suffix
 				{
 						if( isdigit(position[0]) && isalpha(position[1]) )
 						{
+								pt_.put("MinWFLength."+name.first, min_length);
 
 								double dt = GS->GetParameter<double>("Scope.delta_t");
 
@@ -1431,14 +1432,14 @@ AnalysisEvent::AnalysisEvent(string suffix) : n_(0), norm_(true), suffix_(suffix
 
 								int nbinsy   = 13000;
 								//int multi    = 10;
-								ch->hit_map = new TH2F(title.c_str(), title.c_str(), nbinsx, xlow, xup, nbinsy/10., -dt/2., nbinsy*dt -dt/2.);
+								ch->hit_map = new TH2F(title.c_str(), title.c_str(), nbinsx, xlow, xup, nbinsy, -dt/2., nbinsy*dt - dt/2.);
 								ch->hit_map->SetDirectory(0);
 								ch->hit_map->GetXaxis()->SetTitle("Hit Energy [MIP]");
 								ch->hit_map->GetYaxis()->SetTitle("Time in Turn [ns]");
 
 								title = ch->name + "_time_in_turn";
 
-								ch->time_in_turn = new TH2F(title.c_str(), title.c_str(), 30000, -dt/2., 3e6*dt -dt/2., nbinsy/100, -dt/2., nbinsy*dt -dt/2.);
+								ch->time_in_turn = new TH2F(title.c_str(), title.c_str(), 3e6/50., -dt/2., 3e6*dt - dt/2., nbinsy/50., -dt/2., nbinsy*dt -dt/2.);
 								ch->time_in_turn->SetDirectory(0);
 								ch->time_in_turn->GetXaxis()->SetTitle("Time [ns]");
 								ch->time_in_turn->GetYaxis()->SetTitle("Time in Turn [ns]");
@@ -1467,6 +1468,8 @@ AnalysisEvent::AnalysisEvent(string suffix) : n_(0), norm_(true), suffix_(suffix
 						}
 				}
 		}
+
+
 };
 
 AnalysisEvent::AnalysisEvent(PhysicsEvent* ph_evt, string suffix) : n_(0), norm_(true), suffix_(suffix), first_run_(5000000), last_run_(-1)
@@ -1506,9 +1509,9 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
 
 				if(channels_.at(i)->wf->GetNbinsX() < ph_hist->GetNbinsX() )
 				{
-						if(channels_.at(i)->wf->GetNbinsX() == 1)
+						string entry = "MinWFLength."+channels_.at(i)->name;
+						if(channels_.at(i)->wf->GetNbinsX() == 1 && pt_.get<int>(entry) == -1)
 						{
-								string entry = "MinWFLength."+channels_.at(i)->name;
 								pt_.put(entry,ph_hist->GetNbinsX());
 						}
 						else
@@ -1516,11 +1519,11 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
 								cout << "WARNING the number of bins of the waveform you are trying to add is BIGGER than the previous ones!!!" << endl;
 								cout << "AnalysisEventWF: " << channels_.at(i)->wf->GetNbinsX() << ", PhysicsEvent: "<< ph_hist->GetNbinsX() <<", Nr: "<< ph_evt->GetNumber()<< endl;
 
-								string entry = "MinWFLength."+channels_.at(i)->name;
-								if(pt_.get<int>(entry) > channels_.at(i)->wf->GetNbinsX())
-								{
-										pt_.put(entry, channels_.at(i)->wf->GetNbinsX());
-								}
+								// string entry = "MinWFLength."+channels_.at(i)->name;
+								// if(pt_.get<int>(entry) > channels_.at(i)->wf->GetNbinsX())
+								// {
+								//      pt_.put(entry, channels_.at(i)->wf->GetNbinsX());
+								// }
 						}
 
 						double low1 = channels_.at(i)->wf->GetBinLowEdge(0);
@@ -1539,10 +1542,6 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
 						channels_.at(i)->wf_stat->SetBins(nbins, low, up);
 						channels_.at(i)->wf_sys->SetBins(nbins, low, up);
 
-						// int 2d_nbinsx = channels_.at(i)->hit_map->GetNbinsX();
-						// int 2d_xlow = channels_.at(i)->hit_map->GetBinLowEdge(1);
-						// int 2d_xup = channels_.at(i)->hit_map->GetBinLowEdge(2d_nbinsx) + channels_.at(i)->hit_map->GetBinWidth(2d_nbinsx);
-						// channels_.at(i)->SetBins(nbins, low, up, )
 				}
 				else if(channels_.at(i)->wf->GetNbinsX() > ph_hist->GetNbinsX() )
 				{
@@ -1568,11 +1567,6 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
 				// }
 				//
 				// --bin_first_signal;
-
-				// else if(channels_.at(i)->wf->GetNbinsX() < ph_hist->GetNbinsX() )
-				// {
-				//
-				// }
 
 				for(int j = 1; j<= ph_hist->GetNbinsX() - bin_first_signal; ++j)
 				{

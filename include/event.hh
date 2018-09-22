@@ -326,7 +326,7 @@ std::vector<std::vector<double> > reco_;
 class AnalysisEvent {
 
 public:
-AnalysisEvent(std::string suffix="");
+AnalysisEvent(std::string suffix = "", int min_length = -1);
 AnalysisEvent(PhysicsEvent* ph_evt,std::string suffix="");
 virtual ~AnalysisEvent();
 void AddEvent(PhysicsEvent* ph_evt);

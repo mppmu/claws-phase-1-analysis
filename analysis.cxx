@@ -195,9 +195,9 @@ int main(int argc, char* argv[])
 
 				string selections_name = selection.first;
 
-				replace_all(selections_name, "Selection", "");
+				replace_all(selections_name, "Selection_", "");
 
-				selections_names += selections_name;
+				selections_names += selections_name+"_";
 				// Select runs based on dates
 				filesystem::path input;
 
@@ -638,7 +638,7 @@ int main(int argc, char* argv[])
 
 				if(merge_events)
 				{
-						AnalysisEvent* analysis_evt = new AnalysisEvent("_INJ_"+injection);
+						AnalysisEvent* analysis_evt = new AnalysisEvent("_INJ_"+injection, min_length);
 
 						for(auto & run : runs )
 						{
@@ -843,8 +843,8 @@ int main(int argc, char* argv[])
 
 								filesystem::path extended_output;
 
-								if(first_run_ == last_run_) extended_output =  output /("Run_" + to_string(first_run_)+selections_names);
-								else extended_output = output / ("Run_" + to_string(first_run_) + "-" + to_string(last_run_)+selections_names);
+								if(first_run_ == last_run_) extended_output =  output /(selections_names+"Run_" + to_string(first_run_));
+								else extended_output = output / (selections_names+"Run_" + to_string(first_run_) + "-" + to_string(last_run_));
 
 								if( !boost::filesystem::is_directory(extended_output) )
 								{
@@ -1238,9 +1238,323 @@ int main(int argc, char* argv[])
 										graphs.insert(graphs.end(),her_pres_local.begin(), her_pres_local.end() );
 										//		graphs.push_back(ler_pavg_corr);
 								}
+								else if(plot_type.at(1) == "VACUUM_BUMP2")
+								{
+										string ring = plot_type.at(2);
+										// Preassure Graphs
+										vector<TGraphErrors*> g_skb_pressure_average_corrected;
+
+										TGraphErrors* tmp = new TGraphErrors();
+										tmp->SetName(("I_"+ring+" x SKB_"+ring+"_pressure_average_corrected").c_str());
+										tmp->SetTitle(("I_"+ring+" x SKB_"+ring+"_pressure_average_corrected").c_str());
+										tmp->GetXaxis()->SetTitle("Unixtime [s]");
+										tmp->GetYaxis()->SetTitle(("I_"+ring+" #times SKB_"+ring+"_pressure_average_corrected [mA #times Pa]").c_str());
+										g_skb_pressure_average_corrected.push_back(tmp);
+
+										tmp = new TGraphErrors();
+										tmp->SetName(("I_"+ring+" x SKB_"+ring+"_pressure_average_corrected_w").c_str());
+										tmp->SetTitle(("I_"+ring+" x SKB_"+ring+"_pressure_average_corrected_w").c_str());
+										tmp->GetXaxis()->SetTitle("Unixtime [s]");
+										tmp->GetYaxis()->SetTitle(("I_"+ring+" #times SKB_"+ring+"_pressure_average_corrected #times Z_{e}^{2}/7^{2} [mA #times Pa]").c_str());
+										g_skb_pressure_average_corrected.push_back(tmp);
+
+
+										vector<TGraphErrors*> g_skb_pressures_local_corrected;
+										for(int i = 0; i<26; ++i)
+										{
+												TGraphErrors* tmp = new TGraphErrors();
+												tmp->SetName(("I_"+ring+" x SKB_"+ring+"_pressures_local["+to_string(i)+"]").c_str());
+												tmp->SetTitle(("I_"+ring+" x SKB_"+ring+"_pressures_local["+to_string(i)+"]").c_str());
+												tmp->GetXaxis()->SetTitle("Unixtime [s]");
+												tmp->GetYaxis()->SetTitle(("I_"+ring+" #times SKB_"+ring+"_pressures_local["+to_string(i)+"] [mA #times Pa]").c_str());
+												g_skb_pressures_local_corrected.push_back(tmp);
+										}
+										for(int i = 26; i<2*26; ++i)
+										{
+												TGraphErrors* tmp = new TGraphErrors();
+												tmp->SetName(("I_"+ring+" x SKB_"+ring+"_pressures_local["+to_string(i-26)+"]_w").c_str());
+												tmp->SetTitle(("I_"+ring+" x SKB_"+ring+"_pressures_local["+to_string(i-26)+"]_w").c_str());
+												tmp->GetXaxis()->SetTitle("Unixtime [s]");
+												tmp->GetYaxis()->SetTitle(("I_"+ring+" #times SKB_"+ring+"_pressures_local["+to_string(i)+"] #times Z_{e}^{2}/7^{2} [mA #times Pa]").c_str());
+												g_skb_pressures_local_corrected.push_back(tmp);
+										}
+
+										vector<TGraphErrors*> g_skb_pressures_corrected;
+										for(int i = 0; i<12; ++i)
+										{
+												TGraphErrors* tmp = new TGraphErrors();
+												tmp->SetName(("I_"+ring+" x SKB_"+ring+"_pressures["+to_string(i)+"]").c_str());
+												tmp->SetTitle(("I_"+ring+" x SKB_"+ring+"_pressures["+to_string(i)+"]").c_str());
+												tmp->GetXaxis()->SetTitle("Unixtime [s]");
+												tmp->GetYaxis()->SetTitle(("I_"+ring+" #times SKB_"+ring+"_pressures["+to_string(i)+"] [mA #times Pa]").c_str());
+												g_skb_pressures_corrected.push_back(tmp);
+										}
+										for(int i = 12; i<2*12; ++i)
+										{
+												TGraphErrors* tmp = new TGraphErrors();
+												tmp->SetName(("I_"+ring+" x SKB_"+ring+"_pressures["+to_string(i-12)+"]_w").c_str());
+												tmp->SetTitle(("I_"+ring+" x SKB_"+ring+"_pressures["+to_string(i-12)+"]_w").c_str());
+												tmp->GetXaxis()->SetTitle("Unixtime [s]");
+												tmp->GetYaxis()->SetTitle(("I_"+ring+" #times SKB_"+ring+"_pressures["+to_string(i)+"] #times Z_{e}^{2}/7^{2} [mA #times Pa]").c_str());
+												g_skb_pressures_corrected.push_back(tmp);
+										}
+
+										vector<TGraphErrors*> on_fwd;
+										vector<TGraphErrors*> on_bwd;
+										vector<TGraphErrors*> fwd;
+
+										for(int i = 0; i<3; ++i)
+										{
+												TGraphErrors* tmp = new TGraphErrors();
+												tmp->SetName(("OnlineRate FWD"+to_string(i+1)).c_str());
+												tmp->SetTitle(("OnlineRate FWD"+to_string(i+1)).c_str());
+												tmp->GetXaxis()->SetTitle("Unixtime [s]");
+												tmp->GetYaxis()->SetTitle(("OnlineRate FWD"+to_string(i+1) + "[MIP/s]").c_str());
+												on_fwd.push_back(tmp);
+
+												tmp = new TGraphErrors();
+												tmp->SetName(("Rate FWD"+to_string(i+1)).c_str());
+												tmp->SetTitle(("Rate FWD"+to_string(i+1)).c_str());
+												tmp->GetXaxis()->SetTitle("Unixtime [s]");
+												tmp->GetYaxis()->SetTitle(("Rate FWD"+to_string(i+1) + "[MIP/s]").c_str());
+												fwd.push_back(tmp);
+
+												tmp = new TGraphErrors();
+												tmp->SetName(("OnlineRate BWD"+to_string(i+1)).c_str());
+												tmp->SetTitle(("OnlineRate BWD"+to_string(i+1)).c_str());
+												tmp->GetXaxis()->SetTitle("Unixtime [s]");
+												tmp->GetYaxis()->SetTitle(("OnlineRate BWD"+to_string(i+1) + "[MIP/s]").c_str());
+												on_bwd.push_back(tmp);
+
+										}
+
+
+										TGraphErrors* g_zeff_d02 = new TGraphErrors();
+										g_zeff_d02->SetName("SKB_LER_Zeff_D02");
+										g_zeff_d02->SetTitle("SKB_LER_Zeff_D02");
+										g_zeff_d02->GetXaxis()->SetTitle("Unixtime [s]");
+										g_zeff_d02->GetYaxis()->SetTitle("SKB_LER_Zeff_D02");
+
+										TGraphErrors* g_zeff_d06 = new TGraphErrors();
+										g_zeff_d06->SetName("SKB_LER_Zeff_D06");
+										g_zeff_d06->SetTitle("SKB_LER_Zeff_D06");
+										g_zeff_d06->GetXaxis()->SetTitle("Unixtime [s]");
+										g_zeff_d06->GetYaxis()->SetTitle("SKB_LER_Zeff_D06");
+
+										vector<TGraphErrors*> g_rate_vs_skb_pressures_local_corrected;
+										for(int j = 0; j<3; ++j)
+										{
+												for(int i = 0; i<26; ++i)
+												{
+														TGraphErrors* tmp = new TGraphErrors();
+														tmp->SetName(("Rate FWD"+to_string(j+1)+" vs I_"+ring+" x SKB_"+ring+"_pressures_local["+to_string(i)+"]").c_str());
+														tmp->SetTitle(("Rate FWD"+to_string(j+1)+" vs I_"+ring+" x SKB_"+ring+"_pressures_local["+to_string(i)+"]").c_str());
+														tmp->GetXaxis()->SetTitle(("I_"+ring+" #times SKB_"+ring+"_pressures_local["+to_string(i)+"] [mA #times Pa]").c_str());
+														tmp->GetYaxis()->SetTitle(("Rate FWD"+to_string(j+1) + "[MIP/s]").c_str());
+														g_rate_vs_skb_pressures_local_corrected.push_back(tmp);
+												}
+												for(int i = 26; i<2*26; ++i)
+												{
+														TGraphErrors* tmp = new TGraphErrors();
+														tmp->SetName(("Rate FWD"+to_string(j+1)+" vs I_"+ring+" x SKB_"+ring+"_pressures_local["+to_string(i-26)+"]_w").c_str());
+														tmp->SetTitle((" Rate FWD"+to_string(j+1)+" vsI_"+ring+" x SKB_"+ring+"_pressures_local["+to_string(i-26)+"]_w").c_str());
+														tmp->GetXaxis()->SetTitle(("I_"+ring+" #times SKB_"+ring+"_pressures_local["+to_string(i-26)+"] #times Z_{e}^{2}/7^{2} [mA #times Pa]").c_str());
+														tmp->GetYaxis()->SetTitle(("Rate FWD"+to_string(j+1) + "[MIP/s]").c_str());
+														g_rate_vs_skb_pressures_local_corrected.push_back(tmp);
+												}
+										}
+
+										vector<TGraphErrors*> g_fwd_onlinerate_vs_skb_pressures_local_corrected;
+										for(int j = 0; j<3; ++j)
+										{
+												for(int i = 0; i<26; ++i)
+												{
+														TGraphErrors* tmp = new TGraphErrors();
+														tmp->SetName(("OnlineRate FWD"+to_string(j+1)+" vs I_"+ring+" x SKB_"+ring+"_pressures_local["+to_string(i)+"]").c_str());
+														tmp->SetTitle(("OnlineRate FWD"+to_string(j+1)+" vs I_"+ring+" x SKB_"+ring+"_pressures_local["+to_string(i)+"]").c_str());
+														tmp->GetXaxis()->SetTitle(("I_"+ring+" #times SKB_"+ring+"_pressures_local["+to_string(i)+"] [mA #times Pa]").c_str());
+														tmp->GetYaxis()->SetTitle(("OnlineRate FWD"+to_string(j+1) + "[MIP/s]").c_str());
+														g_fwd_onlinerate_vs_skb_pressures_local_corrected.push_back(tmp);
+												}
+												for(int i = 26; i<2*26; ++i)
+												{
+														TGraphErrors* tmp = new TGraphErrors();
+														tmp->SetName(("OnlineRate FWD"+to_string(j+1)+" vs I_"+ring+" x SKB_"+ring+"_pressures_local["+to_string(i-26)+"]_w").c_str());
+														tmp->SetTitle(("OnlineRate FWD"+to_string(j+1)+" vs I_"+ring+" x SKB_"+ring+"_pressures_local["+to_string(i-26)+"]_w").c_str());
+														tmp->GetXaxis()->SetTitle(("I_"+ring+" #times SKB_"+ring+"_pressures_local["+to_string(i-26)+"] #times Z_{e}^{2}/7^{2} [mA #times Pa]").c_str());
+														tmp->GetYaxis()->SetTitle(("OnlineRate FWD"+to_string(j+1) + "[MIP/s]").c_str());
+														g_fwd_onlinerate_vs_skb_pressures_local_corrected.push_back(tmp);
+												}
+										}
+
+										vector<TGraphErrors*> g_bwd_onlinerate_vs_skb_pressures_local_corrected;
+										for(int j = 0; j<3; ++j)
+										{
+												for(int i = 0; i<26; ++i)
+												{
+														TGraphErrors* tmp = new TGraphErrors();
+														tmp->SetName(("OnlineRate BWD"+to_string(j+1)+" vs I_"+ring+" x SKB_"+ring+"_pressures_local["+to_string(i)+"]").c_str());
+														tmp->SetTitle(("OnlineRate BWD"+to_string(j+1)+" vs I_"+ring+" x SKB_"+ring+"_pressures_local["+to_string(i)+"]").c_str());
+														tmp->GetXaxis()->SetTitle(("I_"+ring+" #times SKB_"+ring+"_pressures_local["+to_string(i)+"] [mA #times Pa]").c_str());
+														tmp->GetYaxis()->SetTitle(("OnlineRate BWD"+to_string(j+1) + "[MIP/s]").c_str());
+														g_bwd_onlinerate_vs_skb_pressures_local_corrected.push_back(tmp);
+												}
+												for(int i = 26; i<2*26; ++i)
+												{
+														TGraphErrors* tmp = new TGraphErrors();
+														tmp->SetName(("OnlineRate BWD"+to_string(j+1)+" vs I_"+ring+" x SKB_"+ring+"_pressures_local["+to_string(i-26)+"]_w").c_str());
+														tmp->SetTitle(("OnlineRate BWD"+to_string(j+1)+" vs I_"+ring+" x SKB_"+ring+"_pressures_local["+to_string(i-26)+"]_w").c_str());
+														tmp->GetXaxis()->SetTitle(("I_"+ring+" #times SKB_"+ring+"_pressures_local["+to_string(i-26)+"] #times Z_{e}^{2}/7^{2} [mA #times Pa]").c_str());
+														tmp->GetYaxis()->SetTitle(("OnlineRate BWD"+to_string(j+1) + "[MIP/s]").c_str());
+														g_bwd_onlinerate_vs_skb_pressures_local_corrected.push_back(tmp);
+												}
+
+										}
+
+										vector<TGraphErrors*> g_rate_vs_skb_pressures_corrected;
+
+										tmp = new TGraphErrors();
+										tmp->SetName(("Rate FWD"+to_string(1)+" vs I_"+ring+" x SKB_"+ring+"_pressures_["+to_string(1)+"]").c_str());
+										tmp->SetTitle((" Rate FWD"+to_string(1)+" vsI_"+ring+" x SKB_"+ring+"_pressures_["+to_string(1)+"]").c_str());
+										tmp->GetXaxis()->SetTitle(("I_"+ring+" #times SKB_"+ring+"_pressures_local["+to_string(1)+"] [mA #times Pa]").c_str());
+										tmp->GetYaxis()->SetTitle(("Rate FWD"+to_string(1) + "[MIP/s]").c_str());
+										g_rate_vs_skb_pressures_corrected.push_back(tmp);
+
+										tmp = new TGraphErrors();
+										tmp->SetName(("Rate FWD"+to_string(1)+" vs I_"+ring+" x SKB_"+ring+"_pressures_["+to_string(1)+"]_w").c_str());
+										tmp->SetTitle((" Rate FWD"+to_string(1)+" vsI_"+ring+" x SKB_"+ring+"_pressures_["+to_string(1)+"]_w").c_str());
+										tmp->GetXaxis()->SetTitle(("I_"+ring+" #times SKB_"+ring+"_pressures_local["+to_string(1)+"] #times Z_{e}^{2}/7^{2} [mA #times Pa]").c_str());
+										tmp->GetYaxis()->SetTitle(("Rate FWD"+to_string(1) + "[MIP/s]").c_str());
+										g_rate_vs_skb_pressures_corrected.push_back(tmp);
+
+
+										for( auto & analysis_evt: analysis_evts)
+										{
+
+												double ts = analysis_evt->GetParameter<double>("Properties.UnixTime");
+
+												try
+												{
+														auto SKB_current = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_"+ring+"_current"));
+														double i_ring = SKB_current[0];
+
+														auto SKB_LER_Zeff_D02 = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_Zeff_D02"));
+														double zeff_d02 = SKB_LER_Zeff_D02[0];
+
+														auto SKB_LER_Zeff_D06 = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_Zeff_D06"));
+														double zeff_d06 = SKB_LER_Zeff_D06[0];
+
+														double zeff = zeff_d02;
+
+														double SKB_pressure_average_corrected = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_"+ring+"_pressure_average_corrected"))[0];
+														auto SKB_pressures_corrected = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_"+ring+"_pressures_corrected"));
+														auto SKB_pressures_local_corrected = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_"+ring+"_pressures_local_corrected"));
+
+
+														g_skb_pressure_average_corrected.at(0)->SetPoint(g_skb_pressure_average_corrected.at(0)->GetN(), ts, i_ring*SKB_pressure_average_corrected);
+														g_skb_pressure_average_corrected.at(1)->SetPoint(g_skb_pressure_average_corrected.at(1)->GetN(), ts, i_ring*SKB_pressure_average_corrected*zeff*zeff/49.);
+
+														for(int i = 0; i<26; ++i)
+														{
+																g_skb_pressures_local_corrected.at(i)->SetPoint(g_skb_pressures_local_corrected.at(i)->GetN(), ts, i_ring*SKB_pressures_local_corrected[i]);
+														}
+														for(int i = 26; i<2*26; ++i)
+														{
+																g_skb_pressures_local_corrected.at(i)->SetPoint(g_skb_pressures_local_corrected.at(i)->GetN(), ts, i_ring*SKB_pressures_local_corrected[i-26]*zeff*zeff/49.);
+														}
+
+														for(int i = 0; i<12; ++i)
+														{
+																if(!isnan(SKB_pressures_corrected[i]))
+																{
+																		g_skb_pressures_corrected.at(i)->SetPoint(g_skb_pressures_corrected.at(i)->GetN(), ts, i_ring*SKB_pressures_corrected[i]);
+																}
+														}
+														for(int i = 12; i<2*12; ++i)
+														{
+																if(!isnan(SKB_pressures_corrected[i-12]))
+																{
+																		g_skb_pressures_corrected.at(i)->SetPoint(g_skb_pressures_corrected.at(i)->GetN(), ts, i_ring*SKB_pressures_corrected[i-12]*zeff*zeff/49.);
+																}
+														}
+
+														for(int i = 0; i<3; ++i)
+														{
+																int n = fwd.at(i)->GetN();
+																fwd.at(i)->SetPoint(n, ts, analysis_evt->GetParameter<double>("Rate.FWD"+to_string(i+1)));
+																fwd.at(i)->SetPointError(n, 0, analysis_evt->GetParameter<double>("RateErr.FWD"+to_string(i+1)));
+																on_fwd.at(i)->SetPoint(on_fwd.at(i)->GetN(), ts, analysis_evt->GetParameter<double>("OnlineRate.FWD"+to_string(i+1)));
+																on_bwd.at(i)->SetPoint(on_bwd.at(i)->GetN(), ts, analysis_evt->GetParameter<double>("OnlineRate.BWD"+to_string(i+1)));
+														}
+
+														g_zeff_d02->SetPoint(g_zeff_d02->GetN(), ts, zeff_d02);
+														g_zeff_d06->SetPoint(g_zeff_d06->GetN(), ts, zeff_d06);
+
+														for(int j = 0; j<3; ++j)
+														{
+																for(int i = 0; i<26; ++i)
+																{
+																		int n = g_rate_vs_skb_pressures_local_corrected.at(26*2*j+i)->GetN();
+
+																		g_rate_vs_skb_pressures_local_corrected.at(26*2*j+i)->SetPoint(n,i_ring*SKB_pressures_local_corrected[i], analysis_evt->GetParameter<double>("Rate.FWD"+to_string(j+1)));
+																		g_rate_vs_skb_pressures_local_corrected.at(26*2*j+i)->SetPointError(n,0, analysis_evt->GetParameter<double>("RateErr.FWD"+to_string(j+1)));
+
+																		g_fwd_onlinerate_vs_skb_pressures_local_corrected.at(26*2*j+i)->SetPoint(g_fwd_onlinerate_vs_skb_pressures_local_corrected.at(26*2*j+i)->GetN(), i_ring*SKB_pressures_local_corrected[i], analysis_evt->GetParameter<double>("OnlineRate.FWD"+to_string(j+1)));
+																		g_bwd_onlinerate_vs_skb_pressures_local_corrected.at(26*2*j+i)->SetPoint(g_bwd_onlinerate_vs_skb_pressures_local_corrected.at(26*2*j+i)->GetN(), i_ring*SKB_pressures_local_corrected[i], analysis_evt->GetParameter<double>("OnlineRate.BWD"+to_string(j+1)));
+																}
+																for(int i = 26; i<2*26; ++i)
+																{
+																		int n = g_rate_vs_skb_pressures_local_corrected.at(26*2*j+i)->GetN();
+																		g_rate_vs_skb_pressures_local_corrected.at(26*2*j+i)->SetPoint(n,i_ring*SKB_pressures_local_corrected[i-26]*zeff*zeff/49., analysis_evt->GetParameter<double>("Rate.FWD"+to_string(j+1)));
+																		g_rate_vs_skb_pressures_local_corrected.at(26*2*j+i)->SetPointError(n,0, analysis_evt->GetParameter<double>("RateErr.FWD"+to_string(j+1)));
+
+																		g_fwd_onlinerate_vs_skb_pressures_local_corrected.at(26*2*j+i)->SetPoint(g_fwd_onlinerate_vs_skb_pressures_local_corrected.at(26*2*j+i)->GetN(), i_ring*SKB_pressures_local_corrected[i-26]*zeff*zeff/49, analysis_evt->GetParameter<double>("OnlineRate.FWD"+to_string(j+1)));
+																		g_bwd_onlinerate_vs_skb_pressures_local_corrected.at(26*2*j+i)->SetPoint(g_bwd_onlinerate_vs_skb_pressures_local_corrected.at(26*2*j+i)->GetN(), i_ring*SKB_pressures_local_corrected[i-26]*zeff*zeff/49, analysis_evt->GetParameter<double>("OnlineRate.BWD"+to_string(j+1)));
+																}
+
+														}
+
+														int n = g_rate_vs_skb_pressures_corrected.at(0)->GetN();
+														g_rate_vs_skb_pressures_corrected.at(0)->SetPoint(n,i_ring*SKB_pressures_corrected[1], analysis_evt->GetParameter<double>("Rate.FWD"+to_string(1)));
+														g_rate_vs_skb_pressures_corrected.at(0)->SetPointError(n,0, analysis_evt->GetParameter<double>("RateErr.FWD"+to_string(1)));
+
+														g_rate_vs_skb_pressures_corrected.at(1)->SetPoint(n,i_ring*SKB_pressures_corrected[1]*zeff*zeff/49., analysis_evt->GetParameter<double>("Rate.FWD"+to_string(1)));
+														g_rate_vs_skb_pressures_corrected.at(1)->SetPointError(n,0, analysis_evt->GetParameter<double>("RateErr.FWD"+to_string(1)));
+
+
+												}
+												catch(int e)
+												{
+
+												}
+
+										}
+
+										graphs.push_back(g_zeff_d02);
+										graphs.push_back(g_zeff_d06);
+										graphs.insert(graphs.end(),g_skb_pressure_average_corrected.begin(), g_skb_pressure_average_corrected.end() );
+										graphs.insert(graphs.end(),g_skb_pressures_local_corrected.begin(), g_skb_pressures_local_corrected.end() );
+										graphs.insert(graphs.end(),g_skb_pressures_corrected.begin(), g_skb_pressures_corrected.end() );
+
+										graphs.insert(graphs.end(),fwd.begin(), fwd.end() );
+
+										graphs.insert(graphs.end(),on_fwd.begin(), on_fwd.end() );
+										graphs.insert(graphs.end(),on_bwd.begin(), on_bwd.end() );
+
+										graphs.insert(graphs.end(),g_rate_vs_skb_pressures_local_corrected.begin(), g_rate_vs_skb_pressures_local_corrected.end() );
+										graphs.insert(graphs.end(),g_fwd_onlinerate_vs_skb_pressures_local_corrected.begin(), g_fwd_onlinerate_vs_skb_pressures_local_corrected.end() );
+										graphs.insert(graphs.end(),g_bwd_onlinerate_vs_skb_pressures_local_corrected.begin(), g_bwd_onlinerate_vs_skb_pressures_local_corrected.end() );
+
+										graphs.insert(graphs.end(), g_rate_vs_skb_pressures_corrected.begin(), g_rate_vs_skb_pressures_corrected.end());
+
+										for(auto &graph:graphs)
+										{
+												graph->SetMarkerStyle(4);
+										}
+								}
 								else if(plot_type.at(1) == "BEAMSIZE")
 								{
-										string ring = plot_type.at(1);
+										string ring = plot_type.at(2);
 
 										vector<TGraphErrors*> fwd_rate;
 
@@ -1327,8 +1641,8 @@ int main(int argc, char* argv[])
 
 												try
 												{
-														auto SKB_LER_pressures_local_corrected = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_pressures_local_corrected"));
-														double p = SKB_LER_pressures_local_corrected[0];
+														auto SKB_pressures_local_corrected = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_"+ring+"_pressures_local_corrected"));
+														double p = SKB_pressures_local_corrected[0];
 
 														auto SKB_current = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_"+ring+"_current"));
 														double i_ring = SKB_current[0];
@@ -1341,8 +1655,8 @@ int main(int argc, char* argv[])
 
 														double zeff = zeff_d02;
 
-														auto SKB_LER_correctedBeamSize_xray_Y = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_correctedBeamSize_xray_Y"));
-														double sigma_y = SKB_LER_correctedBeamSize_xray_Y[0];
+														auto SKB_correctedBeamSize_xray_Y = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_"+ring+"_correctedBeamSize_xray_Y"));
+														double sigma_y = SKB_correctedBeamSize_xray_Y[0];
 
 														double x = i_ring/(p*zeff*zeff*sigma_y);
 														double y_scale = i_ring*p*zeff*zeff;
@@ -1366,12 +1680,12 @@ int main(int argc, char* argv[])
 																double err = analysis_evt->GetParameter<double>("RateErr.FWD"+to_string(i+1));
 																for(int j = 0; j<26; ++j)
 																{
-																		int n = fwd.at(i+j)->GetN();
-																		double pnew = SKB_LER_pressures_local_corrected[j];
+																		int n = fwd.at(i*26+j)->GetN();
+																		double pnew = SKB_pressures_local_corrected[j];
 																		double xnew = i_ring/(pnew*zeff*zeff*sigma_y);
 																		double y_scale_new = i_ring*pnew*zeff*zeff;
-																		fwd.at(i+j)->SetPoint(n, xnew, rate/y_scale_new);
-																		fwd.at(i+j)->SetPointError(n, 0, err/y_scale_new);
+																		fwd.at(26*i+j)->SetPoint(n, xnew, rate/y_scale_new);
+																		fwd.at(26*i+j)->SetPointError(n, 0, err/y_scale_new);
 																}
 														}
 														gp->SetPoint(gp->GetN(), ts, p);
@@ -1387,13 +1701,11 @@ int main(int argc, char* argv[])
 
 										}
 
-										for(int i = 0; i<3; ++i)
+										for(int i = 0; i<3*26; ++i)
 										{
-												TF1 *f1 = new TF1("f1", "[0] +[1]*x", 0, 5);
+												TF1 *f1 = new TF1("f1", "[0] +[1]*x", 0, 1e8);
 												f1->SetParNames("intercept", "slope");
-												fwd.at(i)->Fit(f1, "SQL");
-												on_fwd.at(i)->Fit(f1, "SQL");
-												on_bwd.at(i)->Fit(f1, "SQL");
+												fwd.at(i)->Fit(f1, "SQ");
 												delete f1;
 										}
 
