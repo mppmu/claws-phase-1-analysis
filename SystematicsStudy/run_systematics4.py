@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
     cfile_name = args.cfile
 
-    cmd = '/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/SystematicsStudy/calibration -c ' + args.cfile + ' --profile-timing 1 --data.input ' + args.input
+    cmd = '/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/Executable/calibration_release_sep09 -c ' + args.cfile + ' --profile-timing 1 --data.input ' + args.input
     print('Command: ' + cmd)
     # --tasks 10
     runnr = args.input[-6:]
@@ -144,7 +144,7 @@ if __name__ == '__main__':
     decomp_ranges       = [[0.5,1.5,2.5,3.5,4.5], [4,6,8]]
 
     miptime_par_names    = ['MipTimeRetrieval.window_length','MipTimeRetrieval.timing_type','MipTimeRetrieval.constant_fraction', 'MipTimeRetrieval.pe_hit_time']
-    miptime_ranges = [[24,36,48,60,72,84,96],['constant fraction','pe hit time'],[0.1,0.2,0.3,0.5], [1,2,3]]
+    miptime_ranges = [[24,36,50,66,72,92],['constant fraction','pe hit time'],[0.1,0.2,0.3,0.5], [1,2,3]]
 
 
     result_par_names = ['MPV_1','MPV_2','MPV_3','MPV_4', 'TRes', 'TRes_shift']
@@ -192,7 +192,7 @@ if __name__ == '__main__':
                         for par[-len(result_par_names) - 4] in miptime_ranges[-4]:
                             change_parameter(args.cfile, miptime_par_names[-4],  par[-len(result_par_names) -4])
 
-                            for par[-len(result_par_names) - len(sys_par_names)- 3] in miptime_ranges[-3]:
+                            for par[-len(result_par_names) - 3] in miptime_ranges[-3]:
                                 change_parameter(args.cfile, miptime_par_names[-3],  par[-len(result_par_names) -3])
 
                                 if(par[-len(result_par_names) - 3] == 'constant fraction'):
