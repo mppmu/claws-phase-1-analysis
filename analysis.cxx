@@ -578,7 +578,7 @@ int main(int argc, char* argv[])
 				{
 						if(injection != "") (*runs_itr)->SetInjectionLimit(injection, ntp_handler);
 						if(ler_injection_rate != -1) (*runs_itr)->SetInjectionRate("LER", ler_injection_rate);
-						if(her_injection_rate != -1) (*runs_itr)->SetInjectionRate("LER", ler_injection_rate);
+						if(her_injection_rate != -1) (*runs_itr)->SetInjectionRate("HER", her_injection_rate);
 						if(ler_current_min > -10000 or ler_current_max < 10000) (*runs_itr)->SetCurrentLimit("LER", ler_current_min, ler_current_max, ntp_handler);
 						if(her_current_min > -10000 or her_current_max < 10000) (*runs_itr)->SetCurrentLimit("HER", her_current_min, her_current_max, ntp_handler);
 						if(ts_min > -1 or ts_max < 1e10) (*runs_itr)->SetTSLimit(ts_min, ts_max);
@@ -655,12 +655,12 @@ int main(int argc, char* argv[])
 														{
 																if(!evt->CheckInjection())
 																{
-																		analysis_evt->AddEvent(evt);
+																		analysis_evt->AddEvent(evt, ntp_handler);
 																}
 														}
 														else
 														{
-																analysis_evt->AddEvent(evt);
+																analysis_evt->AddEvent(evt, ntp_handler, injection);
 														}
 												}
 										}
@@ -1747,6 +1747,50 @@ int main(int argc, char* argv[])
 												// double x = ts;
 												// double y = int_current[0];
 												double x = var;
+												double y = analysis_evt->GetParameter<double>(observable);
+												// Get X Value
+												// Get Y Value
+												// Add X and Y from events to plots
+												int n = graph->GetN();
+												graph->SetPoint(n, x, y);
+
+												if(!(error == ""))
+												{
+														double x_err = 0;
+														double y_err = analysis_evt->GetParameter<double>(error);
+														graph->SetPointError(n, x_err, y_err);
+												}
+										}
+										graphs.push_back(graph);
+								}
+								else if(plot_type.at(1) == "RATE")
+								{
+										string graph_name = plot_type.at(1)+ ":" + plot_type.at(2);
+										replace_all(graph_name, ".", "_");
+
+										TGraphErrors* graph = new TGraphErrors();
+										graph->SetName(graph_name.c_str());
+										graph->SetTitle(graph_name.c_str());
+										graph->SetMarkerStyle(4);
+
+
+										string observable =  plot_type.at(2);
+										string error = "";
+										if(starts_with(observable, "Rate.")) error = "RateErr." + observable.substr(5);
+
+										graph->GetXaxis()->SetTitle("Unixtime [s]");
+										graph->GetYaxis()->SetTitle("Particle Rate [MIP/s]");
+
+										for( auto & analysis_evt: analysis_evts)
+										{
+												double ts = analysis_evt->GetParameter<double>("Properties.UnixTime");
+
+												// auto var = (*ntp_handler->GetPV< vector<double>* >(ts, varname))[0];
+												// auto int_current = (*ntp_handler->GetPV< vector<double>* >(ts, pv_int_current))[0];
+
+												// double x = ts;
+												// double y = int_current[0];
+												double x = ts;
 												double y = analysis_evt->GetParameter<double>(observable);
 												// Get X Value
 												// Get Y Value

@@ -1938,45 +1938,98 @@ void CalibrationRun::SetInjectionLimit(string type, NTP_Handler* ntp_handler)
 
 				// auto hertmp = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_injectionFlag_safe"));
 				int ler = -1;
-				try
-				{
-						ler = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_injectionFlag_verySafe"))[0];
-				}
-				catch(int e)
-				{
-						try
-						{
-								ler = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_injectionFlag_safe"))[0];
-						}
-						catch(int e)
-						{
-								delete (*itr_evts);
-								(*itr_evts) = NULL;
-								evts_.erase(itr_evts);
-
-								continue;
-						}
-				}
-
 				int her = -1;
-				try
-				{
-						her = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_HER_injectionFlag_verySafe"))[0];
 
-				}
-				catch(int e)
+				if(type == "NONE")
 				{
 						try
 						{
-								her = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_HER_injectionFlag_safe"))[0];
+								ler = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_injectionFlag_verySafe"))[0];
 						}
 						catch(int e)
 						{
-								delete (*itr_evts);
-								(*itr_evts) = NULL;
-								evts_.erase(itr_evts);
+								try
+								{
+										ler = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_injectionFlag_safe"))[0];
+								}
+								catch(int e)
+								{
+										delete (*itr_evts);
+										(*itr_evts) = NULL;
+										evts_.erase(itr_evts);
 
-								continue;
+										continue;
+								}
+						}
+
+
+						try
+						{
+								her = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_HER_injectionFlag_verySafe"))[0];
+
+						}
+						catch(int e)
+						{
+								try
+								{
+										her = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_HER_injectionFlag_safe"))[0];
+								}
+								catch(int e)
+								{
+										delete (*itr_evts);
+										(*itr_evts) = NULL;
+										evts_.erase(itr_evts);
+
+										continue;
+								}
+						}
+				}
+				else
+				{
+						try
+						{
+								ler = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_injectionFlag"))[0];
+
+						}
+						catch(int e)
+						{
+								cout << "No SKB_LER_injectionFlag! Resorting to safe..." <<endl;
+								try
+								{
+										ler = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_injectionFlag_safe"))[0];
+								}
+								catch(int e)
+								{
+										delete (*itr_evts);
+										(*itr_evts) = NULL;
+										evts_.erase(itr_evts);
+
+										continue;
+								}
+						}
+
+
+						try
+						{
+								her = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_HER_injectionFlag"))[0];
+
+
+						}
+						catch(int e)
+						{
+								cout << "No SKB_HER_injectionFlag! Resorting to safe..." <<endl;
+								try
+								{
+										her = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_HER_injectionFlag_safe"))[0];
+								}
+								catch(int e)
+								{
+										delete (*itr_evts);
+										(*itr_evts) = NULL;
+										evts_.erase(itr_evts);
+
+										continue;
+								}
 						}
 				}
 

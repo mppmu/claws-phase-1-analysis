@@ -31,14 +31,8 @@ def change_parameter(cfile_name, par, value):
     config = configparser.ConfigParser()
     config.optionxform = str
     config.read(cfile_name)
-    try:
-        config[par.split('.')[0]][par.split('.')[1]] = str(value)
-    except KeyError:
-        print("The following sections are present in config: ")
-        for sec in config.sections():
-            print(sec)
-        print("Parameter not found: " + str(par))
-        sys.exit("KeyErrors!")
+
+    config[par.split('.')[0]][par.split('.')[1]] = str(value)
 
     with open(cfile_name, 'w') as cfile:
         config.write(cfile)
@@ -66,7 +60,7 @@ if __name__ == '__main__':
 
     cfile_name = args.cfile
 
-    cmd = '/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/Executable/calibration_release_sep09 -c ' + args.cfile + ' --profile-timing 1 --data.input ' + args.input
+    cmd = '/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/build/calibration -c ' + args.cfile + ' --profile-timing 1 --data.input ' + args.input
     print('Command: ' + cmd)
     # --tasks 10
     runnr = args.input[-6:]
@@ -137,25 +131,26 @@ if __name__ == '__main__':
 
 
     #nges = len(xrange(14980,15021,10)) + len(xrange(10, 61,10) + len(xrange(4,9)) + len( np.arange(0.2, 0.8, 0.1) )
-    tag_par_names = ['SignalTagging.bins_over_threshold', 'SignalTagging.threshold','SignalTagging.signal_length']
-    tag_ranges       = [[1,2,3], [11.7,19.8,27.3], [375]]
 
-    decomp_par_names = [ 'WaveformDecomposition.threshold','WaveformDecomposition.fwhm']
-    decomp_ranges       = [[0.5,1.5,2.5,3.5,4.5], [4,6,8]]
+    decomp_par_names = ['WaveformDecomposition.stop_methode','WaveformDecomposition.stop_region', 'WaveformDecomposition.threshold','WaveformDecomposition.fwhm','WaveformDecomposition.search_range','WaveformDecomposition.search_edge']
+    decomp_ranges       = [[2],[3,5,9], [0.5,1.5,2.5,3.5,4.5], [4,6,8], [1000], [200]]
 
-    miptime_par_names    = ['MipTimeRetrieval.window_length','MipTimeRetrieval.timing_type','MipTimeRetrieval.constant_fraction', 'MipTimeRetrieval.pe_hit_time']
-    miptime_ranges = [[24,36,50,66,72,92],['constant fraction','pe hit time'],[0.1,0.2,0.3,0.5], [1,2,3]]
+    miptime_par_names    = ['MipTimeRetrieval.pe_hit_time','MipTimeRetrieval.window_length','MipTimeRetrieval.window_threshold']
+    miptime_ranges = [[1,2,3],[4,12,36], [1,2,6]]
 
+    sys_par_names    = ['SystematicsStudy.threshold_tres','SystematicsStudy.range_time','SystematicsStudy.start_mpv','SystematicsStudy.window_length_mpv']
+diff    sys_ranges = [np.arange(0.4, 0.7, 0.1), [4,6], range(14980,14981,10),range(275, 276,10) ]
 
     result_par_names = ['MPV_1','MPV_2','MPV_3','MPV_4', 'TRes', 'TRes_shift']
 
 
-    par_names = tag_par_names + decomp_par_names + miptime_par_names + result_par_names
+
+    par_names = decomp_par_names + miptime_par_names + sys_par_names + result_par_names
     par       = [0] * len(par_names)
 
     n = 1
     nges = 1
-    for r in (tag_ranges + decomp_ranges+miptime_ranges):
+    for r in (decomp_ranges+miptime_ranges+sys_ranges):
         nges =  nges*len(r)
 
     df = pd.DataFrame(columns=par_names)
@@ -163,132 +158,100 @@ if __name__ == '__main__':
     print("Parnames: " + str(par_names))
     print("Par: " + str(par))
     print("Niterations: " + str(nges))
+    
 
-    for par[-len(result_par_names) - len(miptime_par_names) -len(decomp_par_names) - 3] in tag_ranges[-3]:
-        change_parameter(args.cfile, tag_par_names[-3],  par[-len(result_par_names) - len(miptime_par_names) -len(decomp_par_names) -3])
+    for par[-len(result_par_names) - len(sys_par_names) - len(miptime_par_names) - 6] in decomp_ranges[-6]:
+        change_parameter(args.cfile, decomp_par_names[-6],  par[-len(result_par_names)- len(sys_par_names) - len(miptime_par_names)-6])
 
-        for par[-len(result_par_names) - len(miptime_par_names) -len(decomp_par_names) - 2] in tag_ranges[-2]:
-            change_parameter(args.cfile, tag_par_names[-2],  par[-len(result_par_names) - len(miptime_par_names) -len(decomp_par_names) -2])
+        for par[-len(result_par_names) - len(sys_par_names) - len(miptime_par_names) - 5] in decomp_ranges[-5]:
+            change_parameter(args.cfile, decomp_par_names[-5],  par[-len(result_par_names)- len(sys_par_names) - len(miptime_par_names)-5])
 
-            for par[-len(result_par_names) - len(miptime_par_names) -len(decomp_par_names) - 1] in tag_ranges[-1]:
-                change_parameter(args.cfile, tag_par_names[-1],  par[-len(result_par_names) - len(miptime_par_names) -len(decomp_par_names) -1])
+            for par[-len(result_par_names) - len(sys_par_names) - len(miptime_par_names) - 4] in decomp_ranges[-4]:
+                change_parameter(args.cfile, decomp_par_names[-4],  par[-len(result_par_names)- len(sys_par_names) - len(miptime_par_names)-4])
 
-                for i in range(len(par_names)):
-                    print("Name: " + str(par_names[i]) + ' Value: ' + str(par[i]))
-                print('NOW RUNNING 6')
-                os.system(cmd + ' --tasks 6')
+                for par[-len(result_par_names) - len(sys_par_names) - len(miptime_par_names)- 3] in decomp_ranges[-3]:
+                    change_parameter(args.cfile, decomp_par_names[-3],  par[-len(result_par_names)- len(sys_par_names) - len(miptime_par_names)-3])
 
-                for par[-len(result_par_names) - len(miptime_par_names)- 2] in decomp_ranges[-2]:
-                    change_parameter(args.cfile, decomp_par_names[-2],  par[-len(result_par_names) - len(miptime_par_names)-2])
+                    for par[-len(result_par_names) - len(sys_par_names) - len(miptime_par_names)- 2] in decomp_ranges[-2]:
+                        change_parameter(args.cfile, decomp_par_names[-2],  par[-len(result_par_names)- len(sys_par_names) - len(miptime_par_names)-2])
 
-                    for par[-len(result_par_names) - len(miptime_par_names)- 1] in decomp_ranges[-1]:
-                        change_parameter(args.cfile, decomp_par_names[-1],  par[-len(result_par_names) - len(miptime_par_names)-1])
+                        for par[-len(result_par_names) - len(sys_par_names) - len(miptime_par_names)- 1] in decomp_ranges[-1]:
+                            change_parameter(args.cfile, decomp_par_names[-1],  par[-len(result_par_names)- len(sys_par_names) - len(miptime_par_names)-1])
 
-                        for i in range(len(par_names)):
-                            print("Name: " + str(par_names[i]) + ' Value: ' + str(par[i]))
-                        print('NOW RUNNING 7-8')
-                        os.system(cmd + ' --tasks 7-8')
+                            for i in range(len(par_names)):
+                                print("Name: " + str(par_names[i]) + ' Value: ' + str(par[i]))
 
-                        for par[-len(result_par_names) - 4] in miptime_ranges[-4]:
-                            change_parameter(args.cfile, miptime_par_names[-4],  par[-len(result_par_names) -4])
+                            os.system(cmd + ' --tasks 7-8')
 
-                            for par[-len(result_par_names) - 3] in miptime_ranges[-3]:
-                                change_parameter(args.cfile, miptime_par_names[-3],  par[-len(result_par_names) -3])
+                            for par[-len(result_par_names) - len(sys_par_names)- 3] in miptime_ranges[-3]:
+                                change_parameter(args.cfile, miptime_par_names[-3],  par[-len(result_par_names)- len(sys_par_names) -3])
 
-                                if(par[-len(result_par_names) - 3] == 'constant fraction'):
+                                for par[-len(result_par_names) - len(sys_par_names)- 2] in miptime_ranges[-2]:
+                                    change_parameter(args.cfile, miptime_par_names[-2],  par[-len(result_par_names)- len(sys_par_names) -2])
 
-                                    for par[-len(result_par_names) -2] in miptime_ranges[-2]:
-
-                                        change_parameter(args.cfile, miptime_par_names[-2],  par[-len(result_par_names) -2])
-
-                                        print('NOW RUNNING 9')
-                                        os.system(cmd + ' --tasks 9')
-
-                                        print('NOW RUNNING 10')
-                                        os.system(cmd + ' --tasks 10')
-
-                                        rfile = TFile( args.input + '/Results/SystematicsStudy/run_'+str(runnr)+'_systematics_ph1v5.root', 'OPEN')
-
-                                        htres = rfile.Get('time_resolution')
-                                        ftres = htres.GetFunction('gaus')
-                                        par[-1] = ftres.GetParameter(1)/1e-9
-                                        par[-2] = ftres.GetParameter(2)/1e-9
-
-                                        for i in range(1,5):
-                                            try:
-                                                hmpv = rfile.Get('FWD'+str(i) + '_mip_per_event')
-                                                fmpv = hmpv.GetFunction('FWD'+str(i) + '_mip_per_eventlangaus')
-                                                par[-7+i] = fmpv.GetMaximumX()
-                                            except AttributeError:
-                                                        # print("AttributeError in i: " + str(i))
-                                                        # par[-7+i] = -1
-                                                sys.exit(0)
-                                        rfile.Close()
-
-                                        se = pd.Series( np.zeros(len(par)), index=par_names)
-
-                                        for i in range(0, len(par)):
-                                            se[par_names[i]] = par[i]
+                                    for par[-len(result_par_names) - len(sys_par_names)- 1] in miptime_ranges[-1]:
+                                        change_parameter(args.cfile, miptime_par_names[-1],  par[-len(result_par_names)- len(sys_par_names) -1])
 
                                         for i in range(len(par_names)):
                                             print("Name: " + str(par_names[i]) + ' Value: ' + str(par[i]))
 
-                                        df = df.append(se,ignore_index=True)
-                                        #print(df.tail(10))
-                                        print('Iteration: ' + str(n) + ' of a total of: ' + str(nges))
-                                        df.to_csv(args.output)
-                                        n += 1
-
-                                elif(par[-len(result_par_names) - 3] == 'pe hit time'):
-
-                                    for par[-len(result_par_names) -1] in miptime_ranges[-1]:
-
-                                        change_parameter(args.cfile, miptime_par_names[-1],  par[-len(result_par_names) -1])
-
-                                        print('NOW RUNNING 9')
                                         os.system(cmd + ' --tasks 9')
 
-                                        print('NOW RUNNING 10')
-                                        os.system(cmd + ' --tasks 10')
+                                        for par[-len(result_par_names) -4] in sys_ranges[-4]:
+                                            change_parameter(args.cfile, sys_par_names[-4],  par[-len(result_par_names) -4])
 
-                                        rfile = TFile( args.input + '/Results/SystematicsStudy/run_'+str(runnr)+'_systematics_ph1v5.root', 'OPEN')
+                                            for par[-len(result_par_names) -3] in sys_ranges[-3]:
+                                                change_parameter(args.cfile, sys_par_names[-3],  par[-len(result_par_names) -3])
 
-                                        htres = rfile.Get('time_resolution')
-                                        ftres = htres.GetFunction('gaus')
-                                        par[-1] = ftres.GetParameter(1)/1e-9
-                                        par[-2] = ftres.GetParameter(2)/1e-9
+                                                for par[-len(result_par_names) -2] in sys_ranges[-2]:
+                                                    change_parameter(args.cfile, sys_par_names[-2],  par[-len(result_par_names) -2])
 
-                                        for i in range(1,5):
-                                            try:
-                                                hmpv = rfile.Get('FWD'+str(i) + '_mip_per_event')
-                                                fmpv = hmpv.GetFunction('FWD'+str(i) + '_mip_per_eventlangaus')
-                                                par[-7+i] = fmpv.GetMaximumX()
-                                            except AttributeError:
-                                                        # print("AttributeError in i: " + str(i))
-                                                        # par[-7+i] = -1
-                                                sys.exit(0)
-                                        rfile.Close()
+                                                    for  par[-len(result_par_names) -1] in sys_ranges[-1]:
 
-                                        se = pd.Series( np.zeros(len(par)), index=par_names)
+                                                        change_parameter(args.cfile, sys_par_names[-1],  par[-len(result_par_names) -1])
+                                                    #                 print('systematics_study_threshold_tres: ' + str(systematics_study_threshold_tres))
+                                                    #
+                                                    #                 #run cmd
+                                                        for i in range(len(par_names)):
+                                                            print("Name: " + str(par_names[i]) + ' Value: ' + str(par[i]))
 
-                                        for i in range(0, len(par)):
-                                            se[par_names[i]] = par[i]
+                                                        os.system(cmd + ' --tasks 10')
 
-                                        for i in range(len(par_names)):
-                                            print("Name: " + str(par_names[i]) + ' Value: ' + str(par[i]))
+                                                        rfile = TFile( args.input + '/Results/SystematicsStudy/run_'+str(runnr)+'_systematics_ph1v4.root', 'OPEN')
 
-                                        df = df.append(se,ignore_index=True)
-                                        #print(df.tail(10))
-                                        print('Iteration: ' + str(n) + ' of a total of: ' + str(nges))
-                                        df.to_csv(args.output)
-                                        n += 1
+                                                        htres = rfile.Get('time_resolution')
+                                                        ftres = htres.GetFunction('gaus')
+                                                        par[-1] = ftres.GetParameter(1)/1e-9
+                                                        par[-2] = ftres.GetParameter(2)/1e-9
+
+                                                        for i in range(1,5):
+                                                            try:
+                                                                hmpv = rfile.Get('FWD'+str(i) + '_pe_per_event')
+                                                                fmpv = hmpv.GetFunction('FWD'+str(i) + '_pe_per_eventlangaus')
+                                                                par[-7+i] = fmpv.GetMaximumX()
+                                                            except AttributeError:
+                                                                print("i: " + str(i))
+                                                                sys.exit(0)
+                                                        rfile.Close()
+
+                                                        se = pd.Series( np.zeros(len(par)), index=par_names)
+                                                        for i in range(0, len(par)):
+                                                            se[par_names[i]] = par[i]
+
+                                                        for i in range(len(par_names)):
+                                                            print("Name: " + str(par_names[i]) + ' Value: ' + str(par[i]))
+
+                                                        df = df.append(se,ignore_index=True)
+                                                        #print(df.tail(10))
+                                                        print('Iteration: ' + str(n) + ' of a total of: ' + str(nges))
+                                                        df.to_csv(args.output)
+                                                        n += 1
 
     df.to_csv(args.output)
     print(df)
     print('Finished!!!')
     os.system('spd-say "your program has finished"')
-#    os.system('play --no-show-progress --null --channels 1 synth %s sine %f' % (1, 440))
-
+    os.system('play --no-show-progress --null --channels 1 synth %s sine %f' % (1, 440))
     # nges = 5*6*6*7
     # for systematics_study_start_mpv in systematics_study_start_mpv_range:
     #

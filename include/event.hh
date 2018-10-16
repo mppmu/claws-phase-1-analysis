@@ -46,6 +46,7 @@
 // #include <TF1.h>
 
 // Project includes
+#include "ntp_handler.hh"
 #include "channel.hh"
 #include "gain.hh"
 
@@ -329,7 +330,7 @@ public:
 AnalysisEvent(std::string suffix = "", int min_length = -1);
 AnalysisEvent(PhysicsEvent* ph_evt,std::string suffix="");
 virtual ~AnalysisEvent();
-void AddEvent(PhysicsEvent* ph_evt);
+void AddEvent(PhysicsEvent* ph_evt, NTP_Handler* ntp_handler, std::string injection = "");
 void Normalize();
 void RunFFT();
 void RunPeak();
@@ -351,6 +352,10 @@ int n_;
 bool norm_;
 std::string suffix_;
 std::vector<AnalysisChannel*> channels_;
+TGraph* inj_eff_her;
+TGraph* inj_eff_ler;
+
+
 // std::vector<TH1F*> channels_;
 // std::vector<TH1F*> peak_;
 // std::vector<TH1F*> fft_real_h_;

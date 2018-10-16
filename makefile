@@ -47,7 +47,7 @@ release: CFLAGS += -O3 -g -Wall
 # release: monkey clean build/calibration build/analysis
 release: monkey clean build/calibration
 
-analysis: CFLAGS += -g -O3 -Wall -fno-inline-functions
+analysis: CFLAGS += -g -O0 -Wall -fno-inline-functions
 analysis: monkey clean build/analysis
 
 #test: CFLAGS += -pg -g -O0 -Wall -fno-inline-functions

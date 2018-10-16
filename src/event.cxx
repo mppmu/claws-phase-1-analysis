@@ -1425,8 +1425,8 @@ AnalysisEvent::AnalysisEvent(string suffix, int min_length) : n_(0), norm_(true)
 
 								int nbinsx   = (int)round(nmip*npe);
 
-								double xlow  = +1./(2*npe);
-								double xup   = nmip +1./(2*npe);
+								double xlow  = -1./(2*npe);
+								double xup   = nmip -1./(2*npe);
 
 								title = ch->name + "_hit_map";
 
@@ -1464,11 +1464,135 @@ AnalysisEvent::AnalysisEvent(string suffix, int min_length) : n_(0), norm_(true)
 								ch->hit_energy_mip = (TH1F*) ch->hit_energy->Clone((title+"_mip").c_str());
 								ch->hit_energy_mip->SetDirectory(0);
 
+								title = ch->name + "_nhits_time";
+								ch->nhits_time = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								title = ch->name + "_nhits_bunch";
+								ch->nhits_bunch = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								title = ch->name + "_e_time";
+								ch->e_time = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								title = ch->name + "_e_bunch";
+								ch->e_bunch = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+
+								title = ch->name + "_t_enery_share";
+								ch->t_enery_share = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_enery_share->SetXTitle("Time [s]");
+
+								title = ch->name + "_t_hits_share";
+								ch->t_hits_share = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_hits_share->SetXTitle("Time [s]");
+
+								title = ch->name + "_t_enery_bunch_share";
+								ch->t_enery_bunch_share = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_enery_bunch_share->SetXTitle("Time [s]");
+
+								title = ch->name + "_t_hits_bunch_share";
+								ch->t_hits_bunch_share = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_hits_bunch_share->SetXTitle("Time [s]");
+
+								title = ch->name + "_t_hits_bunch_belowX";
+								ch->t_hits_bunch_belowX = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_hits_bunch_belowX->SetXTitle("Time [s]");
+
+								title = ch->name + "_t_energy_bunch_belowX";
+								ch->t_energy_bunch_belowX = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_energy_bunch_belowX->SetXTitle("Time [s]");
+
+								title = ch->name + "_nhits_per_bunch";
+								ch->nhits_per_bunch = new TH1F(title.c_str(), title.c_str(),100,-0.5, 100-0.5);
+								ch->nhits_per_bunch->SetXTitle("Hits/Bunch");
+
+								title = ch->name + "_energy_per_bunch";
+								ch->energy_per_bunch = new TH1F(title.c_str(), title.c_str(), nbinsx, xlow, xup );
+								ch->energy_per_bunch->SetXTitle("Energy/Bunch [MIP]");
+
+
+								int markerstyle = 24;
+								double markersize = 0.8;
+
+								title = ch->name + "_rate_vs_injcharge_her";
+								ch->rate_vs_injcharge_her = new TGraphErrors();
+								ch->rate_vs_injcharge_her->SetTitle(title.c_str());
+								ch->rate_vs_injcharge_her->SetName(title.c_str());
+								ch->rate_vs_injcharge_her->SetMarkerStyle(markerstyle);
+								ch->rate_vs_injcharge_her->SetMarkerSize(markersize);
+
+								title = ch->name + "_rate_vs_injcharge_ler";
+								ch->rate_vs_injcharge_ler = new TGraphErrors();
+								ch->rate_vs_injcharge_ler->SetTitle(title.c_str());
+								ch->rate_vs_injcharge_ler->SetName(title.c_str());
+								ch->rate_vs_injcharge_ler->SetMarkerStyle(markerstyle);
+								ch->rate_vs_injcharge_ler->SetMarkerSize(markersize);
+
+								title = ch->name + "_hits_vs_injcharge_her";
+								ch->hits_vs_injcharge_her = new TGraph();
+								ch->hits_vs_injcharge_her->SetTitle(title.c_str());
+								ch->hits_vs_injcharge_her->SetName(title.c_str());
+								ch->hits_vs_injcharge_her->SetMarkerStyle(markerstyle);
+								ch->hits_vs_injcharge_her->SetMarkerSize(markersize);
+
+								title = ch->name + "_hits_vs_injcharge_ler";
+								ch->hits_vs_injcharge_ler = new TGraph();
+								ch->hits_vs_injcharge_ler->SetTitle(title.c_str());
+								ch->hits_vs_injcharge_ler->SetName(title.c_str());
+								ch->hits_vs_injcharge_ler->SetMarkerStyle(markerstyle);
+								ch->hits_vs_injcharge_ler->SetMarkerSize(markersize);
+
+								title = ch->name + "_hitsb_vs_injcharge_her";
+								ch->hitsb_vs_injcharge_her = new TGraph();
+								ch->hitsb_vs_injcharge_her->SetTitle(title.c_str());
+								ch->hitsb_vs_injcharge_her->SetName(title.c_str());
+								ch->hitsb_vs_injcharge_her->SetMarkerStyle(markerstyle);
+								ch->hitsb_vs_injcharge_her->SetMarkerSize(markersize);
+
+								title = ch->name + "_hitsb_vs_injcharge_ler";
+								ch->hitsb_vs_injcharge_ler = new TGraph();
+								ch->hitsb_vs_injcharge_ler->SetTitle(title.c_str());
+								ch->hitsb_vs_injcharge_ler->SetName(title.c_str());
+								ch->hitsb_vs_injcharge_ler->SetMarkerStyle(markerstyle);
+								ch->hitsb_vs_injcharge_ler->SetMarkerSize(markersize);
+
+								title = ch->name + "_energy_vs_injcharge_her";
+								ch->energy_vs_injcharge_her = new TGraph();
+								ch->energy_vs_injcharge_her->SetTitle(title.c_str());
+								ch->energy_vs_injcharge_her->SetName(title.c_str());
+								ch->energy_vs_injcharge_her->SetMarkerStyle(markerstyle);
+								ch->energy_vs_injcharge_her->SetMarkerSize(markersize);
+
+								title = ch->name + "_energy_vs_injcharge_ler";
+								ch->energy_vs_injcharge_ler = new TGraph();
+								ch->energy_vs_injcharge_ler->SetTitle(title.c_str());
+								ch->energy_vs_injcharge_ler->SetName(title.c_str());
+								ch->energy_vs_injcharge_ler->SetMarkerStyle(markerstyle);
+								ch->energy_vs_injcharge_ler->SetMarkerSize(markersize);
+
+								title = ch->name + "_energyb_vs_injcharge_her";
+								ch->energyb_vs_injcharge_her = new TGraph();
+								ch->energyb_vs_injcharge_her->SetTitle(title.c_str());
+								ch->energyb_vs_injcharge_her->SetName(title.c_str());
+								ch->energyb_vs_injcharge_her->SetMarkerStyle(markerstyle);
+								ch->energyb_vs_injcharge_her->SetMarkerSize(markersize);
+
+								title = ch->name + "_energyb_vs_injcharge_ler";
+								ch->energyb_vs_injcharge_ler = new TGraph();
+								ch->energyb_vs_injcharge_ler->SetTitle(title.c_str());
+								ch->energyb_vs_injcharge_ler->SetName(title.c_str());
+								ch->energyb_vs_injcharge_ler->SetMarkerStyle(markerstyle);
+								ch->energyb_vs_injcharge_ler->SetMarkerSize(markersize);
+
 								channels_.emplace_back( ch);
 						}
 				}
 		}
 
+		inj_eff_her = new TGraph();
+		inj_eff_her->SetTitle("SKB_HER_injectionEfficiency");
+		inj_eff_her->SetName("SKB_HER_injectionEfficiency");
+		inj_eff_her->SetMarkerStyle(22);
+
+		inj_eff_ler = new TGraph();
+		inj_eff_ler->SetTitle("SKB_LER_injectionEfficiency");
+		inj_eff_ler->SetName("SKB_LER_injectionEfficiency");
+		inj_eff_ler->SetMarkerStyle(22);
 
 };
 
@@ -1491,10 +1615,24 @@ AnalysisEvent::~AnalysisEvent()
 				delete ch;
 				ch = nullptr;
 		}
+
+		delete inj_eff_her;
+		delete inj_eff_ler;
 };
 
-void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
+void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt, NTP_Handler* ntp_handler, string injection)
 {
+		// Injection efficiency
+		double ts = ph_evt->GetParameter<double>("Properties.UnixTime");
+		double eff_her = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_HER_injectionEfficiency"))[0];
+		double eff_ler = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_injectionEfficiency"))[0];
+
+		double injcharge_her = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_HER_injectionCharge"))[0];
+		double injcharge_ler = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_injectionCharge"))[0];
+
+		inj_eff_her->SetPoint(inj_eff_her->GetN(), ts, eff_her);
+		inj_eff_ler->SetPoint(inj_eff_ler->GetN(), ts, eff_ler);
+
 		// in nanoseconds
 		double t_rev = GS->GetParameter<double>("SuperKEKB.rev_time");
 
@@ -1608,7 +1746,35 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
 						min_nbins = pt_.get<int>(entry);
 				}
 
-				for(int j = 1; j<= min_nbins; ++j)
+				double nhits_time = 0;
+				double nhits_bunch = 0;
+				double nhits = 0;
+
+				double e_time = 0;
+				double e_bunch = 0;
+				double energy = 0;
+
+				double t_delay = 0;
+				double t_turn  = 0;
+
+				if(injection == "HERONLY")
+				{
+						t_delay = GS->GetParameter<double>("SuperKEKB.her_delay");
+						t_turn = GS->GetParameter<double>("SuperKEKB.her_t_turn");
+
+				}
+				else if(injection == "LERONLY")
+				{
+						t_delay = GS->GetParameter<double>("SuperKEKB.ler_delay");
+						t_turn = GS->GetParameter<double>("SuperKEKB.ler_t_turn");
+				}
+
+				double t_decay = GS->GetParameter<double>("SuperKEKB.t_decay");
+				double t_in_turn_width = GS->GetParameter<double>("SuperKEKB.t_in_turn_width");
+
+				int start_bin = ph_hist_stat->FindBin(t_delay) - t_in_turn_width;
+
+				for(int j = start_bin; j<= min_nbins; ++j)
 				{
 						// in bins
 						int bin_in_turn = round(fmod(j,t_rev/0.8));
@@ -1627,12 +1793,360 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt)
 								channels_.at(i)->time_in_turn->Fill((j-1)*dt, t_in_turn, ph_hist_stat->GetBinContent(j));
 
 								//channels_.at(i)->hit_map->Fill(5, 1e-6);
+
+								nhits++;
+								energy += ph_hist_stat->GetBinContent(j);
+								if( fabs(t_in_turn - t_turn) < t_in_turn_width*dt)
+								{
+										nhits_bunch++;
+										e_bunch += ph_hist_stat->GetBinContent(j);
+								}
+								if((j-1)*dt >= t_delay && (j-1)*dt < t_delay+t_decay )
+								{
+										nhits_time++;
+										e_time += ph_hist_stat->GetBinContent(j);
+								}
+						}
+
+				}
+
+				if(nhits > 0)
+				{
+						channels_.at(i)->nhits_time->Fill(nhits_time/nhits);
+						channels_.at(i)->nhits_bunch->Fill(nhits_bunch/nhits);
+				}
+				else
+				{
+						channels_.at(i)->nhits_time->Fill(-1);
+						channels_.at(i)->nhits_bunch->Fill(-1);
+				}
+
+				if(energy > 0)
+				{
+						channels_.at(i)->e_time->Fill(e_time/energy);
+						channels_.at(i)->e_bunch->Fill(e_bunch/energy);
+				}
+				else
+				{
+						channels_.at(i)->e_time->Fill(-1);
+						channels_.at(i)->e_bunch->Fill(-1);
+				}
+				double drop_share = GS->GetParameter<double>("SuperKEKB.drop_share");
+
+				double t_enery_share = 0;
+				double energy_share =0;
+
+				if(energy > 0)
+				{
+						for(int j = start_bin; j<= min_nbins; ++j)
+						{
+								if(ph_hist_stat->GetBinContent(j) > 0)
+								{
+										energy_share += ph_hist_stat->GetBinContent(j);
+
+										if( energy_share>=drop_share*energy)
+										{
+												t_enery_share = (j-1)*dt;
+												break;
+										}
+								}
+						}
+
+						channels_.at(i)->t_enery_share->Fill(t_enery_share);
+				}
+				else
+				{
+						channels_.at(i)->t_enery_share->Fill(-1);
+				}
+
+				double t_hits_share = 0;
+				double hits_share =0;
+
+				if(nhits > 0)
+				{
+						for(int j = start_bin; j<= min_nbins; ++j)
+						{
+								if(ph_hist_stat->GetBinContent(j) > 0)
+								{
+										hits_share++;
+
+										if( hits_share>=drop_share*nhits)
+										{
+												t_hits_share = (j-1)*dt;
+												break;
+										}
+								}
+						}
+
+						channels_.at(i)->t_hits_share->Fill(t_hits_share);
+				}
+				else
+				{
+						channels_.at(i)->t_hits_share->Fill(-1);
+				}
+
+				double t_enery_bunch_share = 0;
+				double energy_bunch_share =0;
+
+				if(e_bunch > 0)
+				{
+						for(int j = start_bin; j<= min_nbins; ++j)
+						{
+								double t_in_turn = fmod((j-1)*dt,t_rev*1e-9);
+
+								if( fabs(t_in_turn - t_turn) < t_in_turn_width*dt)
+								{
+										for(int k = j; k<j + 3*t_in_turn_width; ++k)
+										{
+												t_in_turn = fmod((k-1)*dt,t_rev*1e-9);
+												if(fabs(t_in_turn - t_turn) < t_in_turn_width*dt)
+												{
+														energy_bunch_share += ph_hist_stat->GetBinContent(k);
+												}
+										}
+
+										if(energy_bunch_share >= drop_share*e_bunch)
+										{
+												t_enery_bunch_share = t_rev*1e-9*round((j*dt - t_turn)/(t_rev*1e-9)) + t_turn;
+												break;
+										}
+										else
+										{
+
+												j += 10000;
+										}
+
+								}
+
+						}
+
+						channels_.at(i)->t_enery_bunch_share->Fill(t_enery_bunch_share);
+				}
+				else
+				{
+						channels_.at(i)->t_enery_bunch_share->Fill(-1);
+				}
+
+				double t_hits_bunch_share = 0;
+				int hits_bunch_share =0;
+
+				if(nhits_bunch > 0)
+				{
+						for(int j = start_bin; j<= min_nbins; ++j)
+						{
+								double t_in_turn = fmod((j-1)*dt,t_rev*1e-9);
+
+								if( fabs(t_in_turn - t_turn) < t_in_turn_width*dt)
+								{
+
+										for(int k = j; k<j + 3*t_in_turn_width; ++k)
+										{
+												t_in_turn = fmod((k-1)*dt,t_rev*1e-9);
+												if(fabs(t_in_turn - t_turn) < t_in_turn_width*dt)
+												{
+														if(ph_hist_stat->GetBinContent(k) > 0)
+														{
+																hits_bunch_share++;
+														}
+												}
+										}
+
+										if(hits_bunch_share >= drop_share*nhits_bunch)
+										{
+												t_hits_bunch_share = t_rev*1e-9*round((j*dt - t_turn)/(t_rev*1e-9))+ t_turn;
+												break;
+										}
+										else
+										{
+
+												j += 10000;
+										}
+
+
+								}
+
+						}
+
+
+						channels_.at(i)->t_hits_bunch_share->Fill(t_hits_bunch_share);
+				}
+				else
+				{
+						channels_.at(i)->t_hits_bunch_share->Fill(-1);
+				}
+				// Drop below quantity
+
+				double drop_energy = GS->GetParameter<double>("SuperKEKB.drop_energy");
+				double t_energy_bunch_belowX = 0;
+
+				if(e_bunch > 0)
+				{
+						for(int j = start_bin; j<= min_nbins; ++j)
+						{
+								double t_in_turn = fmod((j-1)*dt,t_rev*1e-9);
+
+								if( fabs(t_in_turn - t_turn) < t_in_turn_width*dt)
+								{
+										double single_turn_energy = 0;
+
+										for(int k = j; k<j + 3*t_in_turn_width; ++k)
+										{
+												t_in_turn = fmod((k-1)*dt,t_rev*1e-9);
+												if(fabs(t_in_turn - t_turn) < t_in_turn_width*dt)
+												{
+														single_turn_energy += ph_hist_stat->GetBinContent(k);
+												}
+										}
+
+										if(single_turn_energy >= drop_energy)
+										{
+												t_energy_bunch_belowX = t_rev*1e-9*round((j*dt - t_turn)/(t_rev*1e-9)) + t_turn;
+
+										}
+										j += 10000;
+										// else
+										// {
+										//      break;
+										// }
+
+
+								}
+
+						}
+
+						channels_.at(i)->t_energy_bunch_belowX->Fill(t_energy_bunch_belowX);
+				}
+				else
+				{
+						channels_.at(i)->t_energy_bunch_belowX->Fill(-1);
+				}
+
+				double drop_hits = GS->GetParameter<double>("SuperKEKB.drop_hits");
+				double t_hits_bunch_belowX = 0;
+
+				if(nhits_bunch > 0)
+				{
+						for(int j = start_bin; j<= min_nbins; ++j)
+						{
+								double t_in_turn = fmod((j-1)*dt,t_rev*1e-9);
+
+								if( fabs(t_in_turn - t_turn) < t_in_turn_width*dt)
+								{
+										int single_turn_hits = 0;
+
+										for(int k = j; k<j + 3*t_in_turn_width; ++k)
+										{
+												t_in_turn = fmod((k-1)*dt,t_rev*dt);
+												if(fabs(t_in_turn - t_turn) < t_in_turn_width*dt)
+												{
+														if(ph_hist_stat->GetBinContent(k)>0)
+														{
+																single_turn_hits++;
+														}
+												}
+										}
+
+										if(single_turn_hits >= drop_hits)
+										{
+												t_hits_bunch_belowX = t_rev*dt*round((j*dt - t_turn)/(t_rev*dt))+ t_turn;
+
+										}
+										// else
+										// {
+										//      break;
+										// }
+										j += 10000;
+
+
+								}
+
+						}
+
+						channels_.at(i)->t_hits_bunch_belowX->Fill(t_hits_bunch_belowX);
+				}
+				else
+				{
+						channels_.at(i)->t_hits_bunch_belowX->Fill(-1);
+				}
+
+				for(int j = start_bin; j<= min_nbins; ++j)
+				{
+						double t_in_turn = fmod((j-1)*dt,t_rev*1e-9);
+
+						if( fabs(t_in_turn - t_turn) < t_in_turn_width*dt)
+						{
+								int single_turn_hits = 0;
+
+								for(int k = j- t_in_turn_width; k<j + 2*t_in_turn_width; ++k)
+								{
+										t_in_turn = fmod((k-1)*dt,t_rev*1e-9);
+										if(fabs(t_in_turn - t_turn) < t_in_turn_width*dt )
+										{
+												if(ph_hist_stat->GetBinContent(k)>0)
+												{
+														single_turn_hits++;
+												}
+										}
+								}
+
+								channels_.at(i)->nhits_per_bunch->Fill(single_turn_hits);
+
+								j += 10000;
+
+						}
+
+				}
+
+
+				for(int j = start_bin; j<= min_nbins; ++j)
+				{
+						double t_in_turn = fmod((j-1)*dt,t_rev*1e-9);
+
+						if( fabs(t_in_turn - t_turn) < t_in_turn_width*dt)
+						{
+								double single_turn_energy = 0;
+
+								for(int k = j- t_in_turn_width; k<j + 2*t_in_turn_width; ++k)
+								{
+										t_in_turn = fmod((k-1)*dt,t_rev*1e-9);
+										if(fabs(t_in_turn - t_turn) < t_in_turn_width*dt)
+										{
+												single_turn_energy += ph_hist_stat->GetBinContent(k);
+										}
+								}
+
+								channels_.at(i)->energy_per_bunch->Fill(single_turn_energy);
+
+								j += 10000;
+
 						}
 
 				}
 
 
 
+				double rate = ph_evt->GetParameter<double>("Rate."+channels_.at(i)->name);
+				double rate_err = ph_evt->GetParameter<double>("RateErr."+channels_.at(i)->name);
+
+				int n = channels_.at(i)->rate_vs_injcharge_her->GetN();
+				channels_.at(i)->rate_vs_injcharge_her->SetPoint(n, injcharge_her, rate);
+				channels_.at(i)->rate_vs_injcharge_her->SetPointError(n, 0, rate_err);
+
+				n = channels_.at(i)->rate_vs_injcharge_ler->GetN();
+				channels_.at(i)->rate_vs_injcharge_ler->SetPoint(n, injcharge_ler, rate);
+				channels_.at(i)->rate_vs_injcharge_ler->SetPointError(n, 0, rate_err);
+
+				channels_.at(i)->hits_vs_injcharge_her->SetPoint(channels_.at(i)->hits_vs_injcharge_her->GetN(),injcharge_her,nhits);
+				channels_.at(i)->hits_vs_injcharge_ler->SetPoint(channels_.at(i)->hits_vs_injcharge_ler->GetN(),injcharge_ler,nhits);
+
+				channels_.at(i)->hitsb_vs_injcharge_her->SetPoint(channels_.at(i)->hitsb_vs_injcharge_her->GetN(),injcharge_her,nhits_bunch);
+				channels_.at(i)->hitsb_vs_injcharge_ler->SetPoint(channels_.at(i)->hitsb_vs_injcharge_ler->GetN(),injcharge_ler,nhits_bunch);
+
+				channels_.at(i)->energy_vs_injcharge_her->SetPoint(channels_.at(i)->energy_vs_injcharge_her->GetN(),injcharge_her,energy);
+				channels_.at(i)->energy_vs_injcharge_ler->SetPoint(channels_.at(i)->energy_vs_injcharge_ler->GetN(),injcharge_ler,energy);
+
+				channels_.at(i)->energyb_vs_injcharge_her->SetPoint(channels_.at(i)->energyb_vs_injcharge_her->GetN(),injcharge_her,e_bunch);
+				channels_.at(i)->energyb_vs_injcharge_ler->SetPoint(channels_.at(i)->energyb_vs_injcharge_ler->GetN(),injcharge_ler,e_bunch);
 		}
 
 		n_++;
@@ -1685,6 +2199,14 @@ void AnalysisEvent::Normalize()
 				ch->time_in_turn->Scale(1./n_, "nosw2");
 				ch->rate_in_turn->Scale(1./n_, "nosw2");
 
+				double rate_in_turn_maxX = ch->rate_in_turn->GetMaximumBin()*0.8e-9;
+				ch->rate_in_turn->Fit("gaus","","",rate_in_turn_maxX-5*0.8e-9, rate_in_turn_maxX+5*0.8e-9);
+				TF1 *gaus = ch->rate_in_turn->GetFunction("gaus");
+				rate_in_turn_maxX = gaus->GetParameter(1);
+				double rate_in_turn_sig = gaus->GetParameter(2);
+
+				ch->rate_in_turn->Fit(gaus,"","",rate_in_turn_maxX-3*rate_in_turn_sig, rate_in_turn_maxX+3*rate_in_turn_sig);
+
 				pt_.put(ch->name +".NEvents", n_);
 
 				pt_.put(ch->name+".StatErrMin", error_limits[0]);
@@ -1714,6 +2236,8 @@ void AnalysisEvent::Normalize()
 						ch->hit_energy_mip->SetBinContent(i,yh-yf );
 				}
 				delete expo;
+
+
 		}
 
 		norm_ = true;
@@ -2204,7 +2728,45 @@ void AnalysisEvent::SaveEvent(boost::filesystem::path dst, string prefix)
 				if(channel->hit_energy_mip) channel->hit_energy_mip->Write();
 				if(channel->time_in_turn) channel->time_in_turn->Write();
 				if(channel->rate_in_turn) channel->rate_in_turn->Write();
+				if(channel->nhits_time) channel->nhits_time->Write();
+				if(channel->nhits_bunch) channel->nhits_bunch->Write();
+				if(channel->nhits_per_bunch) channel->nhits_per_bunch->Write();
+				if(channel->energy_per_bunch) channel->energy_per_bunch->Write();
+
+				if(channel->e_time) channel->e_time->Write();
+				if(channel->e_bunch) channel->e_bunch->Write();
+
+				if(channel->t_enery_share) channel->t_enery_share->Write();
+				if(channel->t_hits_share) channel->t_hits_share->Write();
+
+				if(channel->t_enery_bunch_share) channel->t_enery_bunch_share->Write();
+				if(channel->t_hits_bunch_share) channel->t_hits_bunch_share->Write();
+
+				if(channel->t_hits_bunch_belowX) channel->t_hits_bunch_belowX->Write();
+				if(channel->t_energy_bunch_belowX) channel->t_energy_bunch_belowX->Write();
+
+				if(channel->rate_vs_injcharge_her) channel->rate_vs_injcharge_her->Write();
+				if(channel->rate_vs_injcharge_ler) channel->rate_vs_injcharge_ler->Write();
+				if(channel->hits_vs_injcharge_her) channel->hits_vs_injcharge_her->Write();
+				if(channel->hits_vs_injcharge_ler) channel->hits_vs_injcharge_ler->Write();
+				if(channel->hitsb_vs_injcharge_her) channel->hitsb_vs_injcharge_her->Write();
+				if(channel->hitsb_vs_injcharge_ler) channel->hitsb_vs_injcharge_ler->Write();
+				if(channel->energy_vs_injcharge_her) channel->energy_vs_injcharge_her->Write();
+				if(channel->energy_vs_injcharge_ler) channel->energy_vs_injcharge_ler->Write();
+				if(channel->energyb_vs_injcharge_her) channel->energyb_vs_injcharge_her->Write();
+				if(channel->energyb_vs_injcharge_ler) channel->energyb_vs_injcharge_ler->Write();
 		}
+
+		if(inj_eff_her) inj_eff_her->Write();
+		if(inj_eff_ler) inj_eff_ler->Write();
+		//
+		// if(nhits_time) nhits_time->Write();
+		// if(nhits_bunch) nhits_bunch->Write();
+		//
+		// if(e_time) e_time->Write();
+		// if(e_bunch) e_bunch->Write();
+		//
+		// if(time_ninty) time_ninty->Write();
 
 		rfile->Close("R");
 		delete rfile;

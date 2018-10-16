@@ -21,6 +21,7 @@
 #include <TH1F.h>
 #include <TH2F.h>
 #include <TFile.h>
+#include <TGraphErrors.h>
 
 // Project includes
 // #include "GlobalSettings.hh"
@@ -243,6 +244,33 @@ struct AnalysisChannel {
 				if(hit_energy_mip) delete hit_energy_mip;
 				if(time_in_turn) delete time_in_turn;
 				if(rate_in_turn) delete rate_in_turn;
+				if(nhits_time) delete nhits_time;
+				if(nhits_bunch) delete nhits_bunch;
+				if(e_time) delete e_time;
+				if(e_bunch) delete e_bunch;
+
+				if(nhits_per_bunch) delete nhits_per_bunch;
+				if(energy_per_bunch) delete energy_per_bunch;
+
+				if(t_enery_share) delete t_enery_share;
+				if(t_hits_share) delete t_hits_share;
+
+				if(t_enery_bunch_share) delete t_enery_bunch_share;
+				if(t_hits_bunch_share) delete t_hits_bunch_share;
+
+				if(t_hits_bunch_belowX) delete t_hits_bunch_belowX;
+				if(t_energy_bunch_belowX) delete t_energy_bunch_belowX;
+
+				if(rate_vs_injcharge_her) delete rate_vs_injcharge_her;
+				if(rate_vs_injcharge_ler) delete rate_vs_injcharge_ler;
+				if(hits_vs_injcharge_her) delete hits_vs_injcharge_her;
+				if(hits_vs_injcharge_ler) delete hits_vs_injcharge_ler;
+				if(energy_vs_injcharge_her) delete energy_vs_injcharge_her;
+				if(energy_vs_injcharge_ler) delete energy_vs_injcharge_ler;
+				if(hitsb_vs_injcharge_her) delete hitsb_vs_injcharge_her;
+				if(hitsb_vs_injcharge_ler) delete hitsb_vs_injcharge_ler;
+				if(energyb_vs_injcharge_her) delete energyb_vs_injcharge_her;
+				if(energyb_vs_injcharge_ler) delete energyb_vs_injcharge_ler;
 		};
 
 		std::string name ="";
@@ -261,6 +289,39 @@ struct AnalysisChannel {
 		TH1F* hit_energy_mip = nullptr;
 		TH2F* time_in_turn = nullptr;
 		TH1F* rate_in_turn = nullptr;
+
+		TH1F* nhits_time = nullptr;
+		TH1F* nhits_bunch = nullptr;
+
+		TH1F* nhits_per_bunch = nullptr;
+		TH1F* energy_per_bunch = nullptr;
+
+		TH1F* e_time = nullptr;
+		TH1F* e_bunch = nullptr;
+
+		TH1F* t_enery_share = nullptr;
+		TH1F* t_hits_share = nullptr;
+
+		TH1F* t_enery_bunch_share = nullptr;
+		TH1F* t_hits_bunch_share = nullptr;
+
+		TH1F* t_hits_bunch_belowX = nullptr;
+		TH1F* t_energy_bunch_belowX = nullptr;
+
+		TGraphErrors* rate_vs_injcharge_her = nullptr;
+		TGraphErrors* rate_vs_injcharge_ler = nullptr;
+
+		TGraph* hits_vs_injcharge_her = nullptr;
+		TGraph* hits_vs_injcharge_ler = nullptr;
+
+		TGraph* hitsb_vs_injcharge_her = nullptr;
+		TGraph* hitsb_vs_injcharge_ler = nullptr;
+
+		TGraph* energy_vs_injcharge_her = nullptr;
+		TGraph* energy_vs_injcharge_ler = nullptr;
+
+		TGraph* energyb_vs_injcharge_her = nullptr;
+		TGraph* energyb_vs_injcharge_ler = nullptr;
 };
 //
 //         void    WaveformDecomposition();
