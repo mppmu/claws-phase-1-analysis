@@ -55,7 +55,7 @@ Double_t langaufun(Double_t *x, Double_t *par) {
 
 void extract_correction_factor()
 {
-    TFile* rfile = new TFile("./run_900122_systematics_ph1v4_19.7.root");
+    TFile* rfile = new TFile("/mnt/scratch1/Data/Phase1/Myon/Converted/Run-900140/Results/SystematicsStudy/run_900140_systematics_ph1v5.root");
 
     TH1F* fwd1 = (TH1F*) rfile->Get("FWD1_mip_per_event");
     TH1F* fwd2 = (TH1F*) rfile->Get("FWD2_mip_per_event");

@@ -1456,13 +1456,19 @@ AnalysisEvent::AnalysisEvent(string suffix, int min_length) : n_(0), norm_(true)
 								ch->hit_energy = new TH1F( title.c_str(), title.c_str(), nbinsx, xlow, xup );
 								ch->hit_energy->SetDirectory(0);
 								ch->hit_energy->SetXTitle("Hit Energy [MIP]");
-
 								ch->hit_energy->SetYTitle("Entries per event [1/equivalent of one p.e. in MIP]");
 
 								ch->hit_energy_sync = (TH1F*) ch->hit_energy->Clone((title+"_sync").c_str());
 								ch->hit_energy_sync->SetDirectory(0);
 								ch->hit_energy_mip = (TH1F*) ch->hit_energy->Clone((title+"_mip").c_str());
 								ch->hit_energy_mip->SetDirectory(0);
+
+								title = ch->name + "_bunch_hit_energy_spectrum";
+
+								ch->bunch_hit_energy = new TH1F( title.c_str(), title.c_str(), nbinsx, xlow, xup );
+								ch->bunch_hit_energy->SetDirectory(0);
+								ch->bunch_hit_energy->SetXTitle("Hit Energy [MIP]");
+								ch->bunch_hit_energy->SetYTitle("Entries per event [1/equivalent of one p.e. in MIP]");
 
 								title = ch->name + "_nhits_time";
 								ch->nhits_time = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
@@ -2112,6 +2118,10 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt, NTP_Handler* ntp_handler, str
 										if(fabs(t_in_turn - t_turn) < t_in_turn_width*dt)
 										{
 												single_turn_energy += ph_hist_stat->GetBinContent(k);
+												if(ph_hist_stat->GetBinContent(k) > 0)
+												{
+														channels_.at(i)->bunch_hit_energy->Fill(ph_hist_stat->GetBinContent(k));
+												}
 										}
 								}
 
@@ -2220,6 +2230,7 @@ void AnalysisEvent::Normalize()
 		for(auto &ch: channels_)
 		{
 				ch->hit_energy->Scale(1./n_);
+				ch->bunch_hit_energy->Scale(1./n_);
 				// ch->hit_energy_sync->Scale(1./n_);
 				// ch->hit_energy_sync->Scale(1./n_);
 
@@ -2724,6 +2735,7 @@ void AnalysisEvent::SaveEvent(boost::filesystem::path dst, string prefix)
 				if(channel->fft_phase_h) channel->fft_phase_h->Write();
 				if(channel->hit_map) channel->hit_map->Write();
 				if(channel->hit_energy) channel->hit_energy->Write();
+				if(channel->bunch_hit_energy) channel->bunch_hit_energy->Write();
 				if(channel->hit_energy_sync) channel->hit_energy_sync->Write();
 				if(channel->hit_energy_mip) channel->hit_energy_mip->Write();
 				if(channel->time_in_turn) channel->time_in_turn->Write();

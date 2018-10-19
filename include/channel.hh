@@ -240,6 +240,7 @@ struct AnalysisChannel {
 				if(fft_phase_h) delete fft_phase_h;
 				if(hit_map) delete hit_map;
 				if(hit_energy) delete hit_energy;
+				if(bunch_hit_energy) delete bunch_hit_energy;
 				if(hit_energy_sync) delete hit_energy_sync;
 				if(hit_energy_mip) delete hit_energy_mip;
 				if(time_in_turn) delete time_in_turn;
@@ -285,6 +286,7 @@ struct AnalysisChannel {
 		long n = 0;
 		TH2F* hit_map = nullptr;
 		TH1F* hit_energy = nullptr;
+		TH1F* bunch_hit_energy = nullptr;
 		TH1F* hit_energy_sync = nullptr;
 		TH1F* hit_energy_mip = nullptr;
 		TH2F* time_in_turn = nullptr;
