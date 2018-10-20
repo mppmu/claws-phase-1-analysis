@@ -352,8 +352,21 @@ int n_;
 bool norm_;
 std::string suffix_;
 std::vector<AnalysisChannel*> channels_;
+
 TGraph* inj_eff_her;
 TGraph* inj_eff_ler;
+
+TGraph* g_inj_charge_her;
+TGraph* g_inj_charge_ler;
+
+TGraph* g_current_her;
+TGraph* g_current_ler;
+
+TGraph* g_vertical_steering_1_her;
+TGraph* g_vertical_steering_1_ler;
+
+TGraph* g_vertical_steering_2_her;
+TGraph* g_vertical_steering_2_ler;
 
 
 // std::vector<TH1F*> channels_;
