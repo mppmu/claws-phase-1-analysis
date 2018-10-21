@@ -2174,18 +2174,28 @@ void CalibrationRun::SetCurrentLimit(std::string ring, double min, double max, N
 				// auto her = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_HER_injectionFlag_verySafe"))[0];
 
 				//	double current = (*itr_evts)->GetParameter<double>("SuperKEKBData."+ring+"Current");
-				double current = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_"+ring+"_current"))[0];
-
-				if(current >= min and current <= max)
+				try
 				{
-						itr_evts++;
+						double current = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_"+ring+"_current"))[0];
+
+						if(current >= min and current <= max)
+						{
+								itr_evts++;
+						}
+						else
+						{
+								delete (*itr_evts);
+								(*itr_evts) = NULL;
+								evts_.erase(itr_evts);
+						}
 				}
-				else
+				catch(int e)
 				{
 						delete (*itr_evts);
 						(*itr_evts) = NULL;
 						evts_.erase(itr_evts);
 				}
+
 		}
 };
 

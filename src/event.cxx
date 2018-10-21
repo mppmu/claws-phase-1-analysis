@@ -3099,12 +3099,18 @@ void AnalysisEvent::Normalize()
 				ch->rate_in_turn->Scale(1./n_, "nosw2");
 
 				double rate_in_turn_maxX = ch->rate_in_turn->GetMaximumBin()*0.8e-9;
-				ch->rate_in_turn->Fit("gaus","","",rate_in_turn_maxX-5*0.8e-9, rate_in_turn_maxX+5*0.8e-9);
-				TF1 *gaus = ch->rate_in_turn->GetFunction("gaus");
-				rate_in_turn_maxX = gaus->GetParameter(1);
-				double rate_in_turn_sig = gaus->GetParameter(2);
+				TFitResultPtr r = ch->rate_in_turn->Fit("gaus","","",rate_in_turn_maxX-5*0.8e-9, rate_in_turn_maxX+5*0.8e-9);
+				Int_t fitStatus = r;
 
-				ch->rate_in_turn->Fit(gaus,"","",rate_in_turn_maxX-3*rate_in_turn_sig, rate_in_turn_maxX+3*rate_in_turn_sig);
+				if(r == 0)
+				{
+						TF1 *gaus = ch->rate_in_turn->GetFunction("gaus");
+						rate_in_turn_maxX = gaus->GetParameter(1);
+						double rate_in_turn_sig = gaus->GetParameter(2);
+
+						ch->rate_in_turn->Fit(gaus,"","",rate_in_turn_maxX-3*rate_in_turn_sig, rate_in_turn_maxX+3*rate_in_turn_sig);
+				}
+
 
 				pt_.put(ch->name +".NEvents", n_);
 
