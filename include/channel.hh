@@ -358,6 +358,31 @@ struct AnalysisChannel {
 				if(energyb_vs_current_ler_1) delete energyb_vs_current_ler_1;
 				if(energyb_vs_current_ler_2) delete energyb_vs_current_ler_2;
 
+				if(t_energy_bunch_belowX_vs_current_her) delete t_energy_bunch_belowX_vs_current_her;
+				if(t_energy_bunch_belowX_vs_current_ler) delete t_energy_bunch_belowX_vs_current_ler;
+				if(t_energy_bunch_belowX_vs_current_ler_1) delete t_energy_bunch_belowX_vs_current_ler_1;
+				if(t_energy_bunch_belowX_vs_current_ler_2) delete t_energy_bunch_belowX_vs_current_ler_2;
+
+				if(t_energy_bunch_belowX_vs_injeff_her) delete t_energy_bunch_belowX_vs_injeff_her;
+				if(t_energy_bunch_belowX_vs_injeff_ler) delete t_energy_bunch_belowX_vs_injeff_ler;
+				if(t_energy_bunch_belowX_vs_injeff_ler_1) delete t_energy_bunch_belowX_vs_injeff_ler_1;
+				if(t_energy_bunch_belowX_vs_injeff_ler_2) delete t_energy_bunch_belowX_vs_injeff_ler_2;
+
+				if(t_energy_bunch_belowX_vs_injcharge_her) delete t_energy_bunch_belowX_vs_injcharge_her;
+				if(t_energy_bunch_belowX_vs_injcharge_ler) delete t_energy_bunch_belowX_vs_injcharge_ler;
+				if(t_energy_bunch_belowX_vs_injcharge_ler_1) delete t_energy_bunch_belowX_vs_injcharge_ler_1;
+				if(t_energy_bunch_belowX_vs_injcharge_ler_2) delete t_energy_bunch_belowX_vs_injcharge_ler_2;
+
+				if(t_energy_bunch_belowX_vs_vertical_steering_1_her) delete t_energy_bunch_belowX_vs_vertical_steering_1_her;
+				if(t_energy_bunch_belowX_vs_vertical_steering_1_ler) delete t_energy_bunch_belowX_vs_vertical_steering_1_ler;
+				if(t_energy_bunch_belowX_vs_vertical_steering_1_ler_1) delete t_energy_bunch_belowX_vs_vertical_steering_1_ler_1;
+				if(t_energy_bunch_belowX_vs_vertical_steering_1_ler_2) delete t_energy_bunch_belowX_vs_vertical_steering_1_ler_2;
+
+				if(t_energy_bunch_belowX_vs_vertical_steering_2_her) delete t_energy_bunch_belowX_vs_vertical_steering_2_her;
+				if(t_energy_bunch_belowX_vs_vertical_steering_2_ler) delete t_energy_bunch_belowX_vs_vertical_steering_2_ler;
+				if(t_energy_bunch_belowX_vs_vertical_steering_2_ler_1) delete t_energy_bunch_belowX_vs_vertical_steering_2_ler_1;
+				if(t_energy_bunch_belowX_vs_vertical_steering_2_ler_2) delete t_energy_bunch_belowX_vs_vertical_steering_2_ler_2;
+
 		};
 
 		std::string name ="";
@@ -508,6 +533,31 @@ struct AnalysisChannel {
 		TGraph* energyb_vs_current_ler = nullptr;
 		TGraph* energyb_vs_current_ler_1 = nullptr;
 		TGraph* energyb_vs_current_ler_2 = nullptr;
+
+		TGraph* t_energy_bunch_belowX_vs_current_her = nullptr;
+		TGraph* t_energy_bunch_belowX_vs_current_ler = nullptr;
+		TGraph* t_energy_bunch_belowX_vs_current_ler_1 = nullptr;
+		TGraph* t_energy_bunch_belowX_vs_current_ler_2 = nullptr;
+
+		TGraph* t_energy_bunch_belowX_vs_injeff_her = nullptr;
+		TGraph* t_energy_bunch_belowX_vs_injeff_ler = nullptr;
+		TGraph* t_energy_bunch_belowX_vs_injeff_ler_1 = nullptr;
+		TGraph* t_energy_bunch_belowX_vs_injeff_ler_2 = nullptr;
+
+		TGraph* t_energy_bunch_belowX_vs_injcharge_her = nullptr;
+		TGraph* t_energy_bunch_belowX_vs_injcharge_ler = nullptr;
+		TGraph* t_energy_bunch_belowX_vs_injcharge_ler_1 = nullptr;
+		TGraph* t_energy_bunch_belowX_vs_injcharge_ler_2 = nullptr;
+
+		TGraph* t_energy_bunch_belowX_vs_vertical_steering_1_her = nullptr;
+		TGraph* t_energy_bunch_belowX_vs_vertical_steering_1_ler = nullptr;
+		TGraph* t_energy_bunch_belowX_vs_vertical_steering_1_ler_1 = nullptr;
+		TGraph* t_energy_bunch_belowX_vs_vertical_steering_1_ler_2 = nullptr;
+
+		TGraph* t_energy_bunch_belowX_vs_vertical_steering_2_her = nullptr;
+		TGraph* t_energy_bunch_belowX_vs_vertical_steering_2_ler = nullptr;
+		TGraph* t_energy_bunch_belowX_vs_vertical_steering_2_ler_1 = nullptr;
+		TGraph* t_energy_bunch_belowX_vs_vertical_steering_2_ler_2 = nullptr;
 
 };
 //

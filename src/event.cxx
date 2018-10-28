@@ -1486,92 +1486,134 @@ AnalysisEvent::AnalysisEvent(string suffix, int min_length) : n_(0), norm_(true)
 
 								title = ch->name + "_nhits_time";
 								ch->nhits_time = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								ch->nhits_time->SetDirectory(0);
 
 								title = ch->name + "_nhits_bunch";
 								ch->nhits_bunch = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								ch->nhits_bunch->SetDirectory(0);
+
 								title = ch->name + "_nhits_bunch_1";
 								ch->nhits_bunch_1 = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								ch->nhits_bunch_1->SetDirectory(0);
+
 								title = ch->name + "_nhits_bunch_2";
 								ch->nhits_bunch_2 = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								ch->nhits_bunch_2->SetDirectory(0);
 
 								title = ch->name + "_e_time";
 								ch->e_time = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								ch->e_time->SetDirectory(0);
 
 								title = ch->name + "_e_bunch";
 								ch->e_bunch = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								ch->e_bunch->SetDirectory(0);
+
 								title = ch->name + "_e_bunch_1";
 								ch->e_bunch_1 = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								ch->e_bunch_1->SetDirectory(0);
+
 								title = ch->name + "_e_bunch_2";
 								ch->e_bunch_2 = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								ch->e_bunch_2->SetDirectory(0);
 
 								title = ch->name + "_t_enery_share";
 								ch->t_enery_share = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_enery_share->SetDirectory(0);
 								ch->t_enery_share->SetXTitle("Time [s]");
 
 								title = ch->name + "_t_hits_share";
 								ch->t_hits_share = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_hits_share->SetDirectory(0);
 								ch->t_hits_share->SetXTitle("Time [s]");
 
 								title = ch->name + "_t_enery_bunch_share";
 								ch->t_enery_bunch_share = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_enery_bunch_share->SetDirectory(0);
 								ch->t_enery_bunch_share->SetXTitle("Time [s]");
+
 								title = ch->name + "_t_enery_bunch_share_1";
 								ch->t_enery_bunch_share_1 = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_enery_bunch_share_1->SetDirectory(0);
 								ch->t_enery_bunch_share_1->SetXTitle("Time [s]");
+
 								title = ch->name + "_t_enery_bunch_share_2";
 								ch->t_enery_bunch_share_2 = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_enery_bunch_share_2->SetDirectory(0);
 								ch->t_enery_bunch_share_2->SetXTitle("Time [s]");
 
 								title = ch->name + "_t_hits_bunch_share";
 								ch->t_hits_bunch_share = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_hits_bunch_share->SetDirectory(0);
 								ch->t_hits_bunch_share->SetXTitle("Time [s]");
+
 								title = ch->name + "_t_hits_bunch_share_1";
 								ch->t_hits_bunch_share_1 = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_hits_bunch_share_1->SetDirectory(0);
 								ch->t_hits_bunch_share_1->SetXTitle("Time [s]");
+
 								title = ch->name + "_t_hits_bunch_share_2";
 								ch->t_hits_bunch_share_2 = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_hits_bunch_share_2->SetDirectory(0);
 								ch->t_hits_bunch_share_2->SetXTitle("Time [s]");
 
 								title = ch->name + "_t_hits_bunch_belowX";
 								ch->t_hits_bunch_belowX = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_hits_bunch_belowX->SetDirectory(0);
 								ch->t_hits_bunch_belowX->SetXTitle("Time [s]");
+
 								title = ch->name + "_t_hits_bunch_belowX_1";
 								ch->t_hits_bunch_belowX_1 = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_hits_bunch_belowX_1->SetDirectory(0);
 								ch->t_hits_bunch_belowX_1->SetXTitle("Time [s]");
+
 								title = ch->name + "_t_hits_bunch_belowX_2";
 								ch->t_hits_bunch_belowX_2 = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_hits_bunch_belowX_2->SetDirectory(0);
 								ch->t_hits_bunch_belowX_2->SetXTitle("Time [s]");
 
 								title = ch->name + "_t_energy_bunch_belowX";
 								ch->t_energy_bunch_belowX = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_energy_bunch_belowX->SetDirectory(0);
 								ch->t_energy_bunch_belowX->SetXTitle("Time [s]");
+
 								title = ch->name + "_t_energy_bunch_belowX_1";
 								ch->t_energy_bunch_belowX_1 = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_energy_bunch_belowX_1->SetDirectory(0);
 								ch->t_energy_bunch_belowX_1->SetXTitle("Time [s]");
+
 								title = ch->name + "_t_energy_bunch_belowX_2";
 								ch->t_energy_bunch_belowX_2 = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_energy_bunch_belowX_2->SetDirectory(0);
 								ch->t_energy_bunch_belowX_2->SetXTitle("Time [s]");
 
 								title = ch->name + "_nhits_per_bunch";
 								ch->nhits_per_bunch = new TH1F(title.c_str(), title.c_str(),100,-0.5, 100-0.5);
+								ch->nhits_per_bunch->SetDirectory(0);
 								ch->nhits_per_bunch->SetXTitle("Hits/Bunch");
+
 								title = ch->name + "_nhits_per_bunch_1";
 								ch->nhits_per_bunch_1 = new TH1F(title.c_str(), title.c_str(),100,-0.5, 100-0.5);
+								ch->nhits_per_bunch_1->SetDirectory(0);
 								ch->nhits_per_bunch_1->SetXTitle("Hits/Bunch");
+
 								title = ch->name + "_nhits_per_bunch_2";
 								ch->nhits_per_bunch_2 = new TH1F(title.c_str(), title.c_str(),100,-0.5, 100-0.5);
+								ch->nhits_per_bunch_2->SetDirectory(0);
 								ch->nhits_per_bunch_2->SetXTitle("Hits/Bunch");
 
 								title = ch->name + "_energy_per_bunch";
 								ch->energy_per_bunch = new TH1F(title.c_str(), title.c_str(), nbinsx, xlow, xup );
+								ch->energy_per_bunch->SetDirectory(0);
 								ch->energy_per_bunch->SetXTitle("Energy/Bunch [MIP]");
 
 								title = ch->name + "_energy_per_bunch_1";
 								ch->energy_per_bunch_1 = new TH1F(title.c_str(), title.c_str(), nbinsx, xlow, xup );
+								ch->energy_per_bunch_1->SetDirectory(0);
 								ch->energy_per_bunch_1->SetXTitle("Energy/Bunch [MIP]");
 
 								title = ch->name + "_energy_per_bunch_2";
 								ch->energy_per_bunch_2 = new TH1F(title.c_str(), title.c_str(), nbinsx, xlow, xup );
+								ch->energy_per_bunch_2->SetDirectory(0);
 								ch->energy_per_bunch_2->SetXTitle("Energy/Bunch [MIP]");
 
 
@@ -1888,7 +1930,6 @@ AnalysisEvent::AnalysisEvent(string suffix, int min_length) : n_(0), norm_(true)
 								ch->hitsb_vs_injeff_ler_2->SetMarkerStyle(markerstyle);
 								ch->hitsb_vs_injeff_ler_2->SetMarkerSize(markersize);
 
-
 								title = ch->name + "_energyb_vs_injeff_her";
 								ch->energyb_vs_injeff_her = new TGraph();
 								ch->energyb_vs_injeff_her->SetTitle(title.c_str());
@@ -1914,9 +1955,6 @@ AnalysisEvent::AnalysisEvent(string suffix, int min_length) : n_(0), norm_(true)
 								ch->energyb_vs_injeff_ler_2->SetName(title.c_str());
 								ch->energyb_vs_injeff_ler_2->SetMarkerStyle(markerstyle);
 								ch->energyb_vs_injeff_ler_2->SetMarkerSize(markersize);
-
-
-
 
 								title = ch->name + "_hitsb_vs_current_her";
 								ch->hitsb_vs_current_her = new TGraph();
@@ -1944,7 +1982,6 @@ AnalysisEvent::AnalysisEvent(string suffix, int min_length) : n_(0), norm_(true)
 								ch->hitsb_vs_current_ler_2->SetMarkerStyle(markerstyle);
 								ch->hitsb_vs_current_ler_2->SetMarkerSize(markersize);
 
-
 								title = ch->name + "_energyb_vs_current_her";
 								ch->energyb_vs_current_her = new TGraph();
 								ch->energyb_vs_current_her->SetTitle(title.c_str());
@@ -1970,6 +2007,136 @@ AnalysisEvent::AnalysisEvent(string suffix, int min_length) : n_(0), norm_(true)
 								ch->energyb_vs_current_ler_2->SetName(title.c_str());
 								ch->energyb_vs_current_ler_2->SetMarkerStyle(markerstyle);
 								ch->energyb_vs_current_ler_2->SetMarkerSize(markersize);
+
+								title = ch->name + "_t_energy_bunch_belowX_vs_current_her";
+								ch->t_energy_bunch_belowX_vs_current_her = new TGraph();
+								ch->t_energy_bunch_belowX_vs_current_her->SetTitle(title.c_str());
+								ch->t_energy_bunch_belowX_vs_current_her->SetName(title.c_str());
+								ch->t_energy_bunch_belowX_vs_current_her->SetMarkerStyle(markerstyle);
+								ch->t_energy_bunch_belowX_vs_current_her->SetMarkerSize(markersize);
+
+								title = ch->name + "_t_energy_bunch_belowX_vs_current_ler";
+								ch->t_energy_bunch_belowX_vs_current_ler = new TGraph();
+								ch->t_energy_bunch_belowX_vs_current_ler->SetTitle(title.c_str());
+								ch->t_energy_bunch_belowX_vs_current_ler->SetName(title.c_str());
+								ch->t_energy_bunch_belowX_vs_current_ler->SetMarkerStyle(markerstyle);
+								ch->t_energy_bunch_belowX_vs_current_ler->SetMarkerSize(markersize);
+								title = ch->name + "_t_energy_bunch_belowX_vs_current_ler_1";
+								ch->t_energy_bunch_belowX_vs_current_ler_1 = new TGraph();
+								ch->t_energy_bunch_belowX_vs_current_ler_1->SetTitle(title.c_str());
+								ch->t_energy_bunch_belowX_vs_current_ler_1->SetName(title.c_str());
+								ch->t_energy_bunch_belowX_vs_current_ler_1->SetMarkerStyle(markerstyle);
+								ch->t_energy_bunch_belowX_vs_current_ler_1->SetMarkerSize(markersize);
+								title = ch->name + "_t_energy_bunch_belowX_vs_current_ler_2";
+								ch->t_energy_bunch_belowX_vs_current_ler_2 = new TGraph();
+								ch->t_energy_bunch_belowX_vs_current_ler_2->SetTitle(title.c_str());
+								ch->t_energy_bunch_belowX_vs_current_ler_2->SetName(title.c_str());
+								ch->t_energy_bunch_belowX_vs_current_ler_2->SetMarkerStyle(markerstyle);
+								ch->t_energy_bunch_belowX_vs_current_ler_2->SetMarkerSize(markersize);
+
+								title = ch->name + "_t_energy_bunch_belowX_vs_injeff_her";
+								ch->t_energy_bunch_belowX_vs_injeff_her = new TGraph();
+								ch->t_energy_bunch_belowX_vs_injeff_her->SetTitle(title.c_str());
+								ch->t_energy_bunch_belowX_vs_injeff_her->SetName(title.c_str());
+								ch->t_energy_bunch_belowX_vs_injeff_her->SetMarkerStyle(markerstyle);
+								ch->t_energy_bunch_belowX_vs_injeff_her->SetMarkerSize(markersize);
+
+								title = ch->name + "_t_energy_bunch_belowX_vs_injeff_ler";
+								ch->t_energy_bunch_belowX_vs_injeff_ler = new TGraph();
+								ch->t_energy_bunch_belowX_vs_injeff_ler->SetTitle(title.c_str());
+								ch->t_energy_bunch_belowX_vs_injeff_ler->SetName(title.c_str());
+								ch->t_energy_bunch_belowX_vs_injeff_ler->SetMarkerStyle(markerstyle);
+								ch->t_energy_bunch_belowX_vs_injeff_ler->SetMarkerSize(markersize);
+								title = ch->name + "_t_energy_bunch_belowX_vs_injeff_ler_1";
+								ch->t_energy_bunch_belowX_vs_injeff_ler_1 = new TGraph();
+								ch->t_energy_bunch_belowX_vs_injeff_ler_1->SetTitle(title.c_str());
+								ch->t_energy_bunch_belowX_vs_injeff_ler_1->SetName(title.c_str());
+								ch->t_energy_bunch_belowX_vs_injeff_ler_1->SetMarkerStyle(markerstyle);
+								ch->t_energy_bunch_belowX_vs_injeff_ler_1->SetMarkerSize(markersize);
+								title = ch->name + "_t_energy_bunch_belowX_vs_injeff_ler_2";
+								ch->t_energy_bunch_belowX_vs_injeff_ler_2 = new TGraph();
+								ch->t_energy_bunch_belowX_vs_injeff_ler_2->SetTitle(title.c_str());
+								ch->t_energy_bunch_belowX_vs_injeff_ler_2->SetName(title.c_str());
+								ch->t_energy_bunch_belowX_vs_injeff_ler_2->SetMarkerStyle(markerstyle);
+								ch->t_energy_bunch_belowX_vs_injeff_ler_2->SetMarkerSize(markersize);
+
+								title = ch->name + "_t_energy_bunch_belowX_vs_injcharge_her";
+								ch->t_energy_bunch_belowX_vs_injcharge_her = new TGraph();
+								ch->t_energy_bunch_belowX_vs_injcharge_her->SetTitle(title.c_str());
+								ch->t_energy_bunch_belowX_vs_injcharge_her->SetName(title.c_str());
+								ch->t_energy_bunch_belowX_vs_injcharge_her->SetMarkerStyle(markerstyle);
+								ch->t_energy_bunch_belowX_vs_injcharge_her->SetMarkerSize(markersize);
+
+								title = ch->name + "_t_energy_bunch_belowX_vs_injcharge_ler";
+								ch->t_energy_bunch_belowX_vs_injcharge_ler = new TGraph();
+								ch->t_energy_bunch_belowX_vs_injcharge_ler->SetTitle(title.c_str());
+								ch->t_energy_bunch_belowX_vs_injcharge_ler->SetName(title.c_str());
+								ch->t_energy_bunch_belowX_vs_injcharge_ler->SetMarkerStyle(markerstyle);
+								ch->t_energy_bunch_belowX_vs_injcharge_ler->SetMarkerSize(markersize);
+								title = ch->name + "_t_energy_bunch_belowX_vs_injcharge_ler_1";
+								ch->t_energy_bunch_belowX_vs_injcharge_ler_1 = new TGraph();
+								ch->t_energy_bunch_belowX_vs_injcharge_ler_1->SetTitle(title.c_str());
+								ch->t_energy_bunch_belowX_vs_injcharge_ler_1->SetName(title.c_str());
+								ch->t_energy_bunch_belowX_vs_injcharge_ler_1->SetMarkerStyle(markerstyle);
+								ch->t_energy_bunch_belowX_vs_injcharge_ler_1->SetMarkerSize(markersize);
+								title = ch->name + "_t_energy_bunch_belowX_vs_injcharge_ler_2";
+								ch->t_energy_bunch_belowX_vs_injcharge_ler_2 = new TGraph();
+								ch->t_energy_bunch_belowX_vs_injcharge_ler_2->SetTitle(title.c_str());
+								ch->t_energy_bunch_belowX_vs_injcharge_ler_2->SetName(title.c_str());
+								ch->t_energy_bunch_belowX_vs_injcharge_ler_2->SetMarkerStyle(markerstyle);
+								ch->t_energy_bunch_belowX_vs_injcharge_ler_2->SetMarkerSize(markersize);
+
+								title = ch->name + "_t_energy_bunch_belowX_vs_vertical_steering_1_her";
+								ch->t_energy_bunch_belowX_vs_vertical_steering_1_her = new TGraph();
+								ch->t_energy_bunch_belowX_vs_vertical_steering_1_her->SetTitle(title.c_str());
+								ch->t_energy_bunch_belowX_vs_vertical_steering_1_her->SetName(title.c_str());
+								ch->t_energy_bunch_belowX_vs_vertical_steering_1_her->SetMarkerStyle(markerstyle);
+								ch->t_energy_bunch_belowX_vs_vertical_steering_1_her->SetMarkerSize(markersize);
+
+								title = ch->name + "_t_energy_bunch_belowX_vs_vertical_steering_1_ler";
+								ch->t_energy_bunch_belowX_vs_vertical_steering_1_ler = new TGraph();
+								ch->t_energy_bunch_belowX_vs_vertical_steering_1_ler->SetTitle(title.c_str());
+								ch->t_energy_bunch_belowX_vs_vertical_steering_1_ler->SetName(title.c_str());
+								ch->t_energy_bunch_belowX_vs_vertical_steering_1_ler->SetMarkerStyle(markerstyle);
+								ch->t_energy_bunch_belowX_vs_vertical_steering_1_ler->SetMarkerSize(markersize);
+								title = ch->name + "_t_energy_bunch_belowX_vs_vertical_steering_1_ler_1";
+								ch->t_energy_bunch_belowX_vs_vertical_steering_1_ler_1 = new TGraph();
+								ch->t_energy_bunch_belowX_vs_vertical_steering_1_ler_1->SetTitle(title.c_str());
+								ch->t_energy_bunch_belowX_vs_vertical_steering_1_ler_1->SetName(title.c_str());
+								ch->t_energy_bunch_belowX_vs_vertical_steering_1_ler_1->SetMarkerStyle(markerstyle);
+								ch->t_energy_bunch_belowX_vs_vertical_steering_1_ler_1->SetMarkerSize(markersize);
+								title = ch->name + "_t_energy_bunch_belowX_vs_vertical_steering_1_ler_2";
+								ch->t_energy_bunch_belowX_vs_vertical_steering_1_ler_2 = new TGraph();
+								ch->t_energy_bunch_belowX_vs_vertical_steering_1_ler_2->SetTitle(title.c_str());
+								ch->t_energy_bunch_belowX_vs_vertical_steering_1_ler_2->SetName(title.c_str());
+								ch->t_energy_bunch_belowX_vs_vertical_steering_1_ler_2->SetMarkerStyle(markerstyle);
+								ch->t_energy_bunch_belowX_vs_vertical_steering_1_ler_2->SetMarkerSize(markersize);
+
+								title = ch->name + "_t_energy_bunch_belowX_vs_vertical_steering_2_her";
+								ch->t_energy_bunch_belowX_vs_vertical_steering_2_her = new TGraph();
+								ch->t_energy_bunch_belowX_vs_vertical_steering_2_her->SetTitle(title.c_str());
+								ch->t_energy_bunch_belowX_vs_vertical_steering_2_her->SetName(title.c_str());
+								ch->t_energy_bunch_belowX_vs_vertical_steering_2_her->SetMarkerStyle(markerstyle);
+								ch->t_energy_bunch_belowX_vs_vertical_steering_2_her->SetMarkerSize(markersize);
+
+								title = ch->name + "_t_energy_bunch_belowX_vs_vertical_steering_2_ler";
+								ch->t_energy_bunch_belowX_vs_vertical_steering_2_ler = new TGraph();
+								ch->t_energy_bunch_belowX_vs_vertical_steering_2_ler->SetTitle(title.c_str());
+								ch->t_energy_bunch_belowX_vs_vertical_steering_2_ler->SetName(title.c_str());
+								ch->t_energy_bunch_belowX_vs_vertical_steering_2_ler->SetMarkerStyle(markerstyle);
+								ch->t_energy_bunch_belowX_vs_vertical_steering_2_ler->SetMarkerSize(markersize);
+								title = ch->name + "_t_energy_bunch_belowX_vs_vertical_steering_2_ler_1";
+								ch->t_energy_bunch_belowX_vs_vertical_steering_2_ler_1 = new TGraph();
+								ch->t_energy_bunch_belowX_vs_vertical_steering_2_ler_1->SetTitle(title.c_str());
+								ch->t_energy_bunch_belowX_vs_vertical_steering_2_ler_1->SetName(title.c_str());
+								ch->t_energy_bunch_belowX_vs_vertical_steering_2_ler_1->SetMarkerStyle(markerstyle);
+								ch->t_energy_bunch_belowX_vs_vertical_steering_2_ler_1->SetMarkerSize(markersize);
+								title = ch->name + "_t_energy_bunch_belowX_vs_vertical_steering_2_ler_2";
+								ch->t_energy_bunch_belowX_vs_vertical_steering_2_ler_2 = new TGraph();
+								ch->t_energy_bunch_belowX_vs_vertical_steering_2_ler_2->SetTitle(title.c_str());
+								ch->t_energy_bunch_belowX_vs_vertical_steering_2_ler_2->SetName(title.c_str());
+								ch->t_energy_bunch_belowX_vs_vertical_steering_2_ler_2->SetMarkerStyle(markerstyle);
+								ch->t_energy_bunch_belowX_vs_vertical_steering_2_ler_2->SetMarkerSize(markersize);
 
 
 								channels_.emplace_back( ch);
@@ -2679,7 +2846,7 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt, NTP_Handler* ntp_handler, str
 
 						}
 
-						channels_.at(i)->t_energy_bunch_belowX->Fill(t_energy_bunch_belowX);
+
 
 						for(int j = start_bin; j<= min_nbins; ++j)
 						{
@@ -2709,8 +2876,6 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt, NTP_Handler* ntp_handler, str
 
 						}
 
-						channels_.at(i)->t_energy_bunch_belowX_1->Fill(t_energy_bunch_belowX_1);
-
 						for(int j = start_bin; j<= min_nbins; ++j)
 						{
 								double t_in_turn = fmod((j-1)*dt,t_rev*1e-9);
@@ -2739,14 +2904,18 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt, NTP_Handler* ntp_handler, str
 
 						}
 
-						channels_.at(i)->t_energy_bunch_belowX_2->Fill(t_energy_bunch_belowX_2);
+
 				}
 				else
 				{
-						channels_.at(i)->t_energy_bunch_belowX->Fill(-1);
-						channels_.at(i)->t_energy_bunch_belowX_1->Fill(-1);
-						channels_.at(i)->t_energy_bunch_belowX_2->Fill(-1);
+						t_energy_bunch_belowX = -1;
+						t_energy_bunch_belowX_1 = -1;
+						t_energy_bunch_belowX_2 = -1;
 				}
+
+				channels_.at(i)->t_energy_bunch_belowX->Fill(t_energy_bunch_belowX);
+				channels_.at(i)->t_energy_bunch_belowX_1->Fill(t_energy_bunch_belowX_1);
+				channels_.at(i)->t_energy_bunch_belowX_2->Fill(t_energy_bunch_belowX_2);
 
 				double drop_hits = GS->GetParameter<double>("SuperKEKB.drop_hits");
 				double t_hits_bunch_belowX = 0;
@@ -3046,6 +3215,31 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt, NTP_Handler* ntp_handler, str
 				channels_.at(i)->energyb_vs_current_ler->SetPoint(channels_.at(i)->energyb_vs_current_ler->GetN(),current_ler,e_bunch);
 				channels_.at(i)->energyb_vs_current_ler_1->SetPoint(channels_.at(i)->energyb_vs_current_ler_1->GetN(),current_ler,e_bunch_1);
 				channels_.at(i)->energyb_vs_current_ler_2->SetPoint(channels_.at(i)->energyb_vs_current_ler_2->GetN(),current_ler,e_bunch_2);
+
+				channels_.at(i)->t_energy_bunch_belowX_vs_current_her->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_current_her->GetN(),current_her,t_energy_bunch_belowX);
+				channels_.at(i)->t_energy_bunch_belowX_vs_current_ler->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_current_ler->GetN(),current_ler,t_energy_bunch_belowX);
+				channels_.at(i)->t_energy_bunch_belowX_vs_current_ler_1->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_current_ler_1->GetN(),current_ler,t_energy_bunch_belowX_1);
+				channels_.at(i)->t_energy_bunch_belowX_vs_current_ler_2->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_current_ler_2->GetN(),current_ler,t_energy_bunch_belowX_2);
+
+				channels_.at(i)->t_energy_bunch_belowX_vs_injeff_her->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_injeff_her->GetN(),eff_her,t_energy_bunch_belowX);
+				channels_.at(i)->t_energy_bunch_belowX_vs_injeff_ler->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_injeff_ler->GetN(),eff_ler,t_energy_bunch_belowX);
+				channels_.at(i)->t_energy_bunch_belowX_vs_injeff_ler_1->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_injeff_ler_1->GetN(),eff_ler,t_energy_bunch_belowX_1);
+				channels_.at(i)->t_energy_bunch_belowX_vs_injeff_ler_2->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_injeff_ler_2->GetN(),eff_ler,t_energy_bunch_belowX_2);
+
+				channels_.at(i)->t_energy_bunch_belowX_vs_injcharge_her->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_injcharge_her->GetN(),injcharge_her,t_energy_bunch_belowX);
+				channels_.at(i)->t_energy_bunch_belowX_vs_injcharge_ler->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_injcharge_ler->GetN(),injcharge_ler,t_energy_bunch_belowX);
+				channels_.at(i)->t_energy_bunch_belowX_vs_injcharge_ler_1->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_injcharge_ler_1->GetN(),injcharge_ler,t_energy_bunch_belowX_1);
+				channels_.at(i)->t_energy_bunch_belowX_vs_injcharge_ler_2->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_injcharge_ler_2->GetN(),injcharge_ler,t_energy_bunch_belowX_2);
+
+				channels_.at(i)->t_energy_bunch_belowX_vs_vertical_steering_1_her->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_vertical_steering_1_her->GetN(),vertical_steering_1_her,t_energy_bunch_belowX);
+				channels_.at(i)->t_energy_bunch_belowX_vs_vertical_steering_1_ler->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_vertical_steering_1_ler->GetN(),vertical_steering_1_ler,t_energy_bunch_belowX);
+				channels_.at(i)->t_energy_bunch_belowX_vs_vertical_steering_1_ler_1->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_vertical_steering_1_ler_1->GetN(),vertical_steering_1_ler,t_energy_bunch_belowX_1);
+				channels_.at(i)->t_energy_bunch_belowX_vs_vertical_steering_1_ler_2->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_vertical_steering_1_ler_2->GetN(),vertical_steering_1_ler,t_energy_bunch_belowX_2);
+
+				channels_.at(i)->t_energy_bunch_belowX_vs_vertical_steering_2_her->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_vertical_steering_2_her->GetN(),vertical_steering_2_her,t_energy_bunch_belowX);
+				channels_.at(i)->t_energy_bunch_belowX_vs_vertical_steering_2_ler->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_vertical_steering_2_ler->GetN(),vertical_steering_2_ler,t_energy_bunch_belowX);
+				channels_.at(i)->t_energy_bunch_belowX_vs_vertical_steering_2_ler_1->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_vertical_steering_2_ler_1->GetN(),vertical_steering_2_ler,t_energy_bunch_belowX_1);
+				channels_.at(i)->t_energy_bunch_belowX_vs_vertical_steering_2_ler_2->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_vertical_steering_2_ler_2->GetN(),vertical_steering_2_ler,t_energy_bunch_belowX_2);
 		}
 
 		n_++;
@@ -3754,6 +3948,31 @@ void AnalysisEvent::SaveEvent(boost::filesystem::path dst, string prefix)
 				if(channel->energyb_vs_current_ler) channel->energyb_vs_current_ler->Write();
 				if(channel->energyb_vs_current_ler_1) channel->energyb_vs_current_ler_1->Write();
 				if(channel->energyb_vs_current_ler_2) channel->energyb_vs_current_ler_2->Write();
+
+				if(channel->t_energy_bunch_belowX_vs_current_her) channel->t_energy_bunch_belowX_vs_current_her->Write();
+				if(channel->t_energy_bunch_belowX_vs_current_ler) channel->t_energy_bunch_belowX_vs_current_ler->Write();
+				if(channel->t_energy_bunch_belowX_vs_current_ler_1) channel->t_energy_bunch_belowX_vs_current_ler_1->Write();
+				if(channel->t_energy_bunch_belowX_vs_current_ler_2) channel->t_energy_bunch_belowX_vs_current_ler_2->Write();
+
+				if(channel->t_energy_bunch_belowX_vs_injeff_her) channel->t_energy_bunch_belowX_vs_injeff_her->Write();
+				if(channel->t_energy_bunch_belowX_vs_injeff_ler) channel->t_energy_bunch_belowX_vs_injeff_ler->Write();
+				if(channel->t_energy_bunch_belowX_vs_injeff_ler_1) channel->t_energy_bunch_belowX_vs_injeff_ler_1->Write();
+				if(channel->t_energy_bunch_belowX_vs_injeff_ler_2) channel->t_energy_bunch_belowX_vs_injeff_ler_2->Write();
+
+				if(channel->t_energy_bunch_belowX_vs_injcharge_her) channel->t_energy_bunch_belowX_vs_injcharge_her->Write();
+				if(channel->t_energy_bunch_belowX_vs_injcharge_ler) channel->t_energy_bunch_belowX_vs_injcharge_ler->Write();
+				if(channel->t_energy_bunch_belowX_vs_injcharge_ler_1) channel->t_energy_bunch_belowX_vs_injcharge_ler_1->Write();
+				if(channel->t_energy_bunch_belowX_vs_injcharge_ler_2) channel->t_energy_bunch_belowX_vs_injcharge_ler_2->Write();
+
+				if(channel->t_energy_bunch_belowX_vs_vertical_steering_1_her) channel->t_energy_bunch_belowX_vs_vertical_steering_1_her->Write();
+				if(channel->t_energy_bunch_belowX_vs_vertical_steering_1_ler) channel->t_energy_bunch_belowX_vs_vertical_steering_1_ler->Write();
+				if(channel->t_energy_bunch_belowX_vs_vertical_steering_1_ler_1) channel->t_energy_bunch_belowX_vs_vertical_steering_1_ler_1->Write();
+				if(channel->t_energy_bunch_belowX_vs_vertical_steering_1_ler_2) channel->t_energy_bunch_belowX_vs_vertical_steering_1_ler_2->Write();
+
+				if(channel->t_energy_bunch_belowX_vs_vertical_steering_2_her) channel->t_energy_bunch_belowX_vs_vertical_steering_2_her->Write();
+				if(channel->t_energy_bunch_belowX_vs_vertical_steering_2_ler) channel->t_energy_bunch_belowX_vs_vertical_steering_2_ler->Write();
+				if(channel->t_energy_bunch_belowX_vs_vertical_steering_2_ler_1) channel->t_energy_bunch_belowX_vs_vertical_steering_2_ler_1->Write();
+				if(channel->t_energy_bunch_belowX_vs_vertical_steering_2_ler_2) channel->t_energy_bunch_belowX_vs_vertical_steering_2_ler_2->Write();
 		}
 
 		if(inj_eff_her) inj_eff_her->Write();
