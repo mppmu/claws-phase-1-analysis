@@ -260,6 +260,10 @@ struct AnalysisChannel {
 				if(e_bunch_1) delete e_bunch_1;
 				if(e_bunch_2) delete e_bunch_2;
 
+				if(e_bunch_5mus) delete e_bunch_5mus;
+				if(e_bunch_5mus_1) delete e_bunch_5mus_1;
+				if(e_bunch_5mus_2) delete e_bunch_5mus_2;
+
 				if(nhits_per_bunch) delete nhits_per_bunch;
 				if(nhits_per_bunch_1) delete nhits_per_bunch_1;
 				if(nhits_per_bunch_2) delete nhits_per_bunch_2;
@@ -383,6 +387,11 @@ struct AnalysisChannel {
 				if(t_energy_bunch_belowX_vs_vertical_steering_2_ler_1) delete t_energy_bunch_belowX_vs_vertical_steering_2_ler_1;
 				if(t_energy_bunch_belowX_vs_vertical_steering_2_ler_2) delete t_energy_bunch_belowX_vs_vertical_steering_2_ler_2;
 
+				if(energy) delete energy;
+				if(energy_bunch) delete energy_bunch;
+				if(energy_bunch_1) delete energy_bunch_1;
+				if(energy_bunch_2) delete energy_bunch_2;
+
 		};
 
 		std::string name ="";
@@ -397,6 +406,7 @@ struct AnalysisChannel {
 		long n = 0;
 		TH2F* hit_map = nullptr;
 		TH1F* hit_energy = nullptr;
+
 		TH1F* bunch_hit_energy = nullptr;
 
 		TH1F* hit_energy_sync = nullptr;
@@ -437,6 +447,10 @@ struct AnalysisChannel {
 		TGraph* energyb_vs_injcharge_her = nullptr;
 		TGraph* energyb_vs_injcharge_ler = nullptr;
 
+		TGraph* energy = nullptr;
+		TGraph* energy_bunch = nullptr;
+		TGraph* energy_bunch_1 = nullptr;
+		TGraph* energy_bunch_2 = nullptr;
 
 		TGraphErrors* rate_vs_vertical_steering_1_her = nullptr;
 		TGraphErrors* rate_vs_vertical_steering_1_ler = nullptr;
@@ -478,6 +492,10 @@ struct AnalysisChannel {
 
 		TH1F* e_bunch_1 = nullptr;
 		TH1F* e_bunch_2 = nullptr;
+
+		TH1F* e_bunch_5mus = nullptr;
+		TH1F* e_bunch_5mus_1 = nullptr;
+		TH1F* e_bunch_5mus_2 = nullptr;
 
 		TH1F* nhits_per_bunch_1 = nullptr;
 		TH1F* nhits_per_bunch_2 = nullptr;

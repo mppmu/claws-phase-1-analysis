@@ -1593,7 +1593,7 @@ int main(int argc, char* argv[])
 										}
 										for(int i = 0; i<3; ++i)
 										{
-												for(int j = 0; j<26; ++j)
+												for(int j = 0; j<76; ++j)
 												{
 														TGraphErrors* tmp = new TGraphErrors();
 														tmp = new TGraphErrors();
@@ -1670,22 +1670,25 @@ int main(int argc, char* argv[])
 
 																int n = fwd_rate.at(i)->GetN();
 																fwd_rate.at(i)->SetPoint(n, ts, analysis_evt->GetParameter<double>("Rate.FWD"+to_string(i+1)));
-																fwd_rate.at(i)->SetPointError(n, 0, analysis_evt->GetParameter<double>("RateErr.FWD"+to_string(i+1)));
+																fwd_rate.at(i)->SetPointError(n, 0, analysis_evt->GetParameter<double>("RateStatErr.FWD"+to_string(i+1)));
 														}
 
 														for(int i = 0; i<3; ++i)
 														{
 																//	auto SKB_LER_pressures_local_corrected = (*ntp_handler->GetPV< vector<double>* >(ts, "SKB_LER_pressures_local_corrected"));
 																double rate = analysis_evt->GetParameter<double>("Rate.FWD"+to_string(i+1));
-																double err = analysis_evt->GetParameter<double>("RateErr.FWD"+to_string(i+1));
-																for(int j = 0; j<26; ++j)
+																double err = analysis_evt->GetParameter<double>("RateStatErr.FWD"+to_string(i+1));
+																for(int j = 0; j<76; ++j)
 																{
-																		int n = fwd.at(i*26+j)->GetN();
-																		double pnew = SKB_pressures_local_corrected[j];
-																		double xnew = i_ring/(pnew*zeff*zeff*sigma_y);
-																		double y_scale_new = i_ring*pnew*zeff*zeff;
-																		fwd.at(26*i+j)->SetPoint(n, xnew, rate/y_scale_new);
-																		fwd.at(26*i+j)->SetPointError(n, 0, err/y_scale_new);
+																		if(SKB_pressures_local_corrected[j] > 1e-25 && SKB_pressures_local_corrected[j] <= 1e25 && !std::isinf(SKB_pressures_local_corrected[j]) && !std::isnan(SKB_pressures_local_corrected[j]))
+																		{
+																				int n = fwd.at(i*76+j)->GetN();
+																				double pnew = SKB_pressures_local_corrected[j];
+																				double xnew = i_ring/(pnew*zeff*zeff*sigma_y);
+																				double y_scale_new = i_ring*pnew*zeff*zeff;
+																				fwd.at(76*i+j)->SetPoint(n, xnew, rate/y_scale_new);
+																				fwd.at(76*i+j)->SetPointError(n, 0, err/y_scale_new);
+																		}
 																}
 														}
 														gp->SetPoint(gp->GetN(), ts, p);
@@ -1701,10 +1704,10 @@ int main(int argc, char* argv[])
 
 										}
 
-										for(int i = 0; i<3*26; ++i)
+										for(int i = 0; i<3*76; ++i)
 										{
 												TF1 *f1 = new TF1("f1", "[0] +[1]*x", 0, 1e8);
-												f1->SetParNames("intercept", "slope");
+												f1->SetParNames("s_bg", "s_t");
 												fwd.at(i)->Fit(f1, "SQ");
 												delete f1;
 										}

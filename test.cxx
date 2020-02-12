@@ -53,12 +53,18 @@ int main(int argc, char* argv[])
 		//
 		// //auto pv = ntp_handler->GetPV(10, "my pv");
 		// NTP_Handler* ntp_handler = new NTP_Handler(filesystem::path("/remote/pcilc3/RaidGroup/claws/data/phase1/NTP/BEAST/v3"));
+		NTP_Handler* ntp_handler = new NTP_Handler(filesystem::path("/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/phase3_study_days"));
+
 		// double ts = 1467052259.9273696;
-		// string pv1 = "SKB_LER_current";
+		double ts = 1572803000.0;
+
+		string pv1 = "SKB_LER_current";
 		// string pv3 = "SKB_HER_current";
 		// string pv2 = "SKB_LER_integratedCurrent";
 		// auto pv_val = ntp_handler->GetPV< vector<double>* >(ts, pv1);
+		auto pv_val = ntp_handler->GetPV< Double_t* >(ts, pv1);
 		// cout << pv1 << ": " << (*pv_val)[0] << endl;
+		cout << pv1 << ": " << (*pv_val) << endl;
 		// //double pv_val = ntp_handler->GetPV<double>(1455.567000e6, pv);
 		// auto pv_val2 = ntp_handler->GetPV< vector<double>* >(ts, pv2);
 		// cout << pv2 << "2: " << (*pv_val2)[0] << endl;

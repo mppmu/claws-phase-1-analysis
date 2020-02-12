@@ -26,6 +26,7 @@ using namespace std;
 class NTP_Handler
 {
 public:
+
 NTP_Handler(boost::filesystem::path search_path);
 virtual ~NTP_Handler();
 
@@ -121,6 +122,7 @@ T GetPVFromTree(double ts, std::string pv, TTree* tree)
 		bool found = false;
 
 		TObjArray* array = tree->GetListOfBranches();
+
 		for(int i = 0; i < array->GetEntries(); ++i)
 		{
 				if(array->At(i)->GetName() == pv)
@@ -135,18 +137,23 @@ T GetPVFromTree(double ts, std::string pv, TTree* tree)
 
 		// check it ts is in tree;
 		Long64_t nentries = tree->GetEntries();
-		UInt_t ts_tree;
+
+		// UInt_t ts_tree;
+		Double_t ts_tree;
+
 		T val_tree = 0;
 		T prev_val_tree = 0;
 
-		tree->SetBranchAddress("ts",&ts_tree);
+		tree->SetBranchAddress("ts", &ts_tree);
 		tree->SetBranchAddress(pv.c_str(), &val_tree);
 
 
 		tree->GetEntry(0);
+
 		double t1 = ts_tree;
 		tree->GetEntry(nentries-1);
 		double t2 = ts_tree;
+
 		prev_val_tree = val_tree;
 
 		if(t1 <= ts && ts <= t2)

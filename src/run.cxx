@@ -1752,16 +1752,14 @@ void CalibrationRun::SystematicsStudy()
 						for(int i = 0; i < evt->GetChannels().size(); ++i)
 						{
 
-
-
 								TH1F* mipwf = dynamic_cast<TH1F*>(evt->GetChannels().at(i)->GetHistogram("mip"));
 
 								for(int j = start_mpv; j <= 500 + start_mpv; ++j)
 								{
-										if( mipwf->GetBinContent(j) > 0 )
+										if( mipwf->GetBinContent(j) > 0.01 )
 										{
 												hists.at(i)->Fill( mipwf->GetBinContent(j) );
-												break;
+												// break;
 												// double integral = 0;
 												//
 												// for(int k = j; k <= j+window_length; ++k)

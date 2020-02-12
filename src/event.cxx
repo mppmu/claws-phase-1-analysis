@@ -1516,73 +1516,85 @@ AnalysisEvent::AnalysisEvent(string suffix, int min_length) : n_(0), norm_(true)
 								ch->e_bunch_2 = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
 								ch->e_bunch_2->SetDirectory(0);
 
+								title = ch->name + "_e_bunch_5mus";
+								ch->e_bunch_5mus = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								ch->e_bunch_5mus->SetDirectory(0);
+
+								title = ch->name + "_e_bunch_5mus_1";
+								ch->e_bunch_5mus_1 = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								ch->e_bunch_5mus_1->SetDirectory(0);
+
+								title = ch->name + "_e_bunch_5mus_2";
+								ch->e_bunch_5mus_2 = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								ch->e_bunch_5mus_2->SetDirectory(0);
+
 								title = ch->name + "_t_enery_share";
 								ch->t_enery_share = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
 								ch->t_enery_share->SetDirectory(0);
 								ch->t_enery_share->SetXTitle("Time [s]");
 
 								title = ch->name + "_t_hits_share";
-								ch->t_hits_share = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_hits_share = new TH1F(title.c_str(), title.c_str(),100000, -0.5e-7, 10.e-3 -0.5e-7);
 								ch->t_hits_share->SetDirectory(0);
 								ch->t_hits_share->SetXTitle("Time [s]");
 
 								title = ch->name + "_t_enery_bunch_share";
-								ch->t_enery_bunch_share = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_enery_bunch_share = new TH1F(title.c_str(), title.c_str(),100000, -0.5e-7, 10.e-3 -0.5e-7);
 								ch->t_enery_bunch_share->SetDirectory(0);
 								ch->t_enery_bunch_share->SetXTitle("Time [s]");
 
 								title = ch->name + "_t_enery_bunch_share_1";
-								ch->t_enery_bunch_share_1 = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_enery_bunch_share_1 = new TH1F(title.c_str(), title.c_str(),100000, -0.5e-7, 10.e-3 -0.5e-7);
 								ch->t_enery_bunch_share_1->SetDirectory(0);
 								ch->t_enery_bunch_share_1->SetXTitle("Time [s]");
 
 								title = ch->name + "_t_enery_bunch_share_2";
-								ch->t_enery_bunch_share_2 = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_enery_bunch_share_2 = new TH1F(title.c_str(), title.c_str(),100000, -0.5e-7, 10.e-3 -0.5e-7);
 								ch->t_enery_bunch_share_2->SetDirectory(0);
 								ch->t_enery_bunch_share_2->SetXTitle("Time [s]");
 
 								title = ch->name + "_t_hits_bunch_share";
-								ch->t_hits_bunch_share = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_hits_bunch_share = new TH1F(title.c_str(), title.c_str(),100000, -0.5e-7, 10.e-3 -0.5e-7);
 								ch->t_hits_bunch_share->SetDirectory(0);
 								ch->t_hits_bunch_share->SetXTitle("Time [s]");
 
 								title = ch->name + "_t_hits_bunch_share_1";
-								ch->t_hits_bunch_share_1 = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_hits_bunch_share_1 = new TH1F(title.c_str(), title.c_str(),100000, -0.5e-7, 10.e-3 -0.5e-7);
 								ch->t_hits_bunch_share_1->SetDirectory(0);
 								ch->t_hits_bunch_share_1->SetXTitle("Time [s]");
 
 								title = ch->name + "_t_hits_bunch_share_2";
-								ch->t_hits_bunch_share_2 = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_hits_bunch_share_2 = new TH1F(title.c_str(), title.c_str(),100000, -0.5e-7, 10.e-3 -0.5e-7);
 								ch->t_hits_bunch_share_2->SetDirectory(0);
 								ch->t_hits_bunch_share_2->SetXTitle("Time [s]");
 
 								title = ch->name + "_t_hits_bunch_belowX";
-								ch->t_hits_bunch_belowX = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_hits_bunch_belowX = new TH1F(title.c_str(), title.c_str(),100000, -0.5e-7, 10.e-3 -0.5e-7);
 								ch->t_hits_bunch_belowX->SetDirectory(0);
 								ch->t_hits_bunch_belowX->SetXTitle("Time [s]");
 
 								title = ch->name + "_t_hits_bunch_belowX_1";
-								ch->t_hits_bunch_belowX_1 = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_hits_bunch_belowX_1 = new TH1F(title.c_str(), title.c_str(),100000, -0.5e-7, 10.e-3 -0.5e-7);
 								ch->t_hits_bunch_belowX_1->SetDirectory(0);
 								ch->t_hits_bunch_belowX_1->SetXTitle("Time [s]");
 
 								title = ch->name + "_t_hits_bunch_belowX_2";
-								ch->t_hits_bunch_belowX_2 = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_hits_bunch_belowX_2 = new TH1F(title.c_str(), title.c_str(),100000, -0.5e-7, 10.e-3 -0.5e-7);
 								ch->t_hits_bunch_belowX_2->SetDirectory(0);
 								ch->t_hits_bunch_belowX_2->SetXTitle("Time [s]");
 
 								title = ch->name + "_t_energy_bunch_belowX";
-								ch->t_energy_bunch_belowX = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_energy_bunch_belowX = new TH1F(title.c_str(), title.c_str(),100000, -0.5e-7, 10.e-3 -0.5e-7);
 								ch->t_energy_bunch_belowX->SetDirectory(0);
 								ch->t_energy_bunch_belowX->SetXTitle("Time [s]");
 
 								title = ch->name + "_t_energy_bunch_belowX_1";
-								ch->t_energy_bunch_belowX_1 = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_energy_bunch_belowX_1 = new TH1F(title.c_str(), title.c_str(),100000, -0.5e-7, 10.e-3 -0.5e-7);
 								ch->t_energy_bunch_belowX_1->SetDirectory(0);
 								ch->t_energy_bunch_belowX_1->SetXTitle("Time [s]");
 
 								title = ch->name + "_t_energy_bunch_belowX_2";
-								ch->t_energy_bunch_belowX_2 = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
+								ch->t_energy_bunch_belowX_2 = new TH1F(title.c_str(), title.c_str(),100000, -0.5e-7, 10.e-3 -0.5e-7);
 								ch->t_energy_bunch_belowX_2->SetDirectory(0);
 								ch->t_energy_bunch_belowX_2->SetXTitle("Time [s]");
 
@@ -2138,6 +2150,33 @@ AnalysisEvent::AnalysisEvent(string suffix, int min_length) : n_(0), norm_(true)
 								ch->t_energy_bunch_belowX_vs_vertical_steering_2_ler_2->SetMarkerStyle(markerstyle);
 								ch->t_energy_bunch_belowX_vs_vertical_steering_2_ler_2->SetMarkerSize(markersize);
 
+								title = ch->name + "_energy";
+								ch->energy = new TGraph();
+								ch->energy->SetTitle(title.c_str());
+								ch->energy->SetName(title.c_str());
+								ch->energy->SetMarkerStyle(markerstyle);
+								ch->energy->SetMarkerSize(markersize);
+
+								title = ch->name + "_energy_bunch";
+								ch->energy_bunch = new TGraph();
+								ch->energy_bunch->SetTitle(title.c_str());
+								ch->energy_bunch->SetName(title.c_str());
+								ch->energy_bunch->SetMarkerStyle(markerstyle);
+								ch->energy_bunch->SetMarkerSize(markersize);
+
+								title = ch->name + "_energy_bunch_1";
+								ch->energy_bunch_1 = new TGraph();
+								ch->energy_bunch_1->SetTitle(title.c_str());
+								ch->energy_bunch_1->SetName(title.c_str());
+								ch->energy_bunch_1->SetMarkerStyle(markerstyle);
+								ch->energy_bunch_1->SetMarkerSize(markersize);
+
+								title = ch->name + "_energy_bunch_2";
+								ch->energy_bunch_2 = new TGraph();
+								ch->energy_bunch_2->SetTitle(title.c_str());
+								ch->energy_bunch_2->SetName(title.c_str());
+								ch->energy_bunch_2->SetMarkerStyle(markerstyle);
+								ch->energy_bunch_2->SetMarkerSize(markersize);
 
 								channels_.emplace_back( ch);
 						}
@@ -2329,16 +2368,16 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt, NTP_Handler* ntp_handler, str
 
 				int bin_first_signal = 0;
 
-				// for(int bin = 1; bin <= ph_hist->GetNbinsX(); ++bin )
-				// {
-				//      if(ph_hist->GetBinContent(bin) > 0 )
-				//      {
-				//              bin_first_signal = bin;
-				//              break;
-				//      }
-				// }
-				//
-				// --bin_first_signal;
+				for(int bin = 1; bin <= ph_hist->GetNbinsX(); ++bin )
+				{
+						if(ph_hist->GetBinContent(bin) > 0 )
+						{
+								bin_first_signal = bin;
+								break;
+						}
+				}
+
+				--bin_first_signal;
 
 				for(int j = 1; j<= ph_hist->GetNbinsX() - bin_first_signal; ++j)
 				{
@@ -2391,6 +2430,11 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt, NTP_Handler* ntp_handler, str
 				double e_bunch = 0;
 				double e_bunch_1 = 0;
 				double e_bunch_2 = 0;
+
+				double e_bunch_5mus = 0;
+				double e_bunch_5mus_1 = 0;
+				double e_bunch_5mus_2 = 0;
+
 				double energy = 0;
 
 				double t_delay = 0;
@@ -2448,6 +2492,12 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt, NTP_Handler* ntp_handler, str
 
 										channels_.at(i)->bunch_hit_energy->Fill(ph_hist_stat->GetBinContent(j));
 										channels_.at(i)->bunch_hit_energy_1->Fill(ph_hist_stat->GetBinContent(j));
+
+										if((j-1)*dt >= t_delay && (j-1)*dt < t_delay+t_decay )
+										{
+												e_bunch_5mus += ph_hist_stat->GetBinContent(j);
+												e_bunch_5mus_1 += ph_hist_stat->GetBinContent(j);
+										}
 								}
 
 								if( fabs(t_in_turn - t_turn_2) < t_turn_width_2)
@@ -2459,6 +2509,12 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt, NTP_Handler* ntp_handler, str
 
 										channels_.at(i)->bunch_hit_energy->Fill(ph_hist_stat->GetBinContent(j));
 										channels_.at(i)->bunch_hit_energy_2->Fill(ph_hist_stat->GetBinContent(j));
+
+										if((j-1)*dt >= t_delay && (j-1)*dt < t_delay+t_decay )
+										{
+												e_bunch_5mus += ph_hist_stat->GetBinContent(j);
+												e_bunch_5mus_2 += ph_hist_stat->GetBinContent(j);
+										}
 								}
 
 								if((j-1)*dt >= t_delay && (j-1)*dt < t_delay+t_decay )
@@ -2499,6 +2555,37 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt, NTP_Handler* ntp_handler, str
 						channels_.at(i)->e_bunch_1->Fill(-1);
 						channels_.at(i)->e_bunch_2->Fill(-1);
 				}
+
+
+				if(e_bunch > 0)
+				{
+						channels_.at(i)->e_bunch_5mus->Fill(e_bunch_5mus/e_bunch);
+				}
+				else
+				{
+						channels_.at(i)->e_bunch_5mus->Fill(-1);
+				}
+
+				if(e_bunch_1 > 0)
+				{
+						channels_.at(i)->e_bunch_5mus_1->Fill(e_bunch_5mus_1/e_bunch_1);
+				}
+				else
+				{
+						channels_.at(i)->e_bunch_5mus_1->Fill(-1);
+				}
+
+				if(e_bunch_2 > 0)
+				{
+						channels_.at(i)->e_bunch_5mus_2->Fill(e_bunch_5mus_2/e_bunch_2);
+				}
+				else
+				{
+						channels_.at(i)->e_bunch_5mus_2->Fill(-1);
+				}
+
+
+
 				double drop_share = GS->GetParameter<double>("SuperKEKB.drop_share");
 
 				double t_enery_share = 0;
@@ -3240,6 +3327,11 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt, NTP_Handler* ntp_handler, str
 				channels_.at(i)->t_energy_bunch_belowX_vs_vertical_steering_2_ler->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_vertical_steering_2_ler->GetN(),vertical_steering_2_ler,t_energy_bunch_belowX);
 				channels_.at(i)->t_energy_bunch_belowX_vs_vertical_steering_2_ler_1->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_vertical_steering_2_ler_1->GetN(),vertical_steering_2_ler,t_energy_bunch_belowX_1);
 				channels_.at(i)->t_energy_bunch_belowX_vs_vertical_steering_2_ler_2->SetPoint(channels_.at(i)->t_energy_bunch_belowX_vs_vertical_steering_2_ler_2->GetN(),vertical_steering_2_ler,t_energy_bunch_belowX_2);
+
+				channels_.at(i)->energy->SetPoint(channels_.at(i)->energy->GetN(),ts,energy);
+				channels_.at(i)->energy_bunch->SetPoint(channels_.at(i)->energy_bunch->GetN(),ts,e_bunch);
+				channels_.at(i)->energy_bunch_1->SetPoint(channels_.at(i)->energy_bunch_1->GetN(),ts,e_bunch_1);
+				channels_.at(i)->energy_bunch_2->SetPoint(channels_.at(i)->energy_bunch_2->GetN(),ts,e_bunch_2);
 		}
 
 		n_++;
@@ -3855,6 +3947,10 @@ void AnalysisEvent::SaveEvent(boost::filesystem::path dst, string prefix)
 				if(channel->e_bunch_1) channel->e_bunch_1->Write();
 				if(channel->e_bunch_2) channel->e_bunch_2->Write();
 
+				if(channel->e_bunch_5mus) channel->e_bunch_5mus->Write();
+				if(channel->e_bunch_5mus_1) channel->e_bunch_5mus_1->Write();
+				if(channel->e_bunch_5mus_2) channel->e_bunch_5mus_2->Write();
+
 				if(channel->t_enery_share) channel->t_enery_share->Write();
 				if(channel->t_hits_share) channel->t_hits_share->Write();
 
@@ -3973,6 +4069,11 @@ void AnalysisEvent::SaveEvent(boost::filesystem::path dst, string prefix)
 				if(channel->t_energy_bunch_belowX_vs_vertical_steering_2_ler) channel->t_energy_bunch_belowX_vs_vertical_steering_2_ler->Write();
 				if(channel->t_energy_bunch_belowX_vs_vertical_steering_2_ler_1) channel->t_energy_bunch_belowX_vs_vertical_steering_2_ler_1->Write();
 				if(channel->t_energy_bunch_belowX_vs_vertical_steering_2_ler_2) channel->t_energy_bunch_belowX_vs_vertical_steering_2_ler_2->Write();
+
+				if(channel->energy) channel->energy->Write();
+				if(channel->energy_bunch) channel->energy_bunch->Write();
+				if(channel->energy_bunch_1) channel->energy_bunch_1->Write();
+				if(channel->energy_bunch_2) channel->energy_bunch_2->Write();
 		}
 
 		if(inj_eff_her) inj_eff_her->Write();

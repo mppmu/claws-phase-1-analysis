@@ -1712,6 +1712,7 @@ void PhysicsChannel::MipTimeRetrieval(double unixtime)
 
 								double alpha = double(npe)/pe_per_mip + correction_factor;
 
+
 								mipwf_->SetBinContent(j, alpha);
 								mipwf_stat_->SetBinContent(j, alpha);
 								mipwf_sys_->SetBinContent(j, alpha);
@@ -1726,10 +1727,37 @@ void PhysicsChannel::MipTimeRetrieval(double unixtime)
 								mipwf_stat_->SetBinError(j, staterr);
 								mipwf_sys_->SetBinError(j, syserr);
 
-								rate_.rate += alpha;
+								int up_gamma_mip = GS->GetParameter<double>("PEToMIP.Up_gamma_mip");
 
-								rate_.staterr += pow(staterr,2);
-								rate_.syserr += syserr;
+								if(up_gamma_mip == 0)
+								{
+										rate_.rate += alpha;
+
+										rate_.staterr += pow(staterr,2);
+										rate_.syserr += syserr;
+								}
+								else if(up_gamma_mip == 1)
+								{
+										double gamma_mip = GS->GetParameter<double>("PEToMIP."+name_+"_gamma_mip");
+										if( alpha <= gamma_mip )
+										{
+												rate_.rate += alpha;
+
+												rate_.staterr += pow(staterr,2);
+												rate_.syserr += syserr;
+										}
+								}
+								else if(up_gamma_mip == 2)
+								{
+										double gamma_mip = GS->GetParameter<double>("PEToMIP."+name_+"_gamma_mip");
+										if( alpha > gamma_mip )
+										{
+												rate_.rate += alpha;
+
+												rate_.staterr += pow(staterr,2);
+												rate_.syserr += syserr;
+										}
+								}
 
 								i += window_length-1;
 						}

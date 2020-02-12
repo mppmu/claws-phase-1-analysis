@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='CLAWS converter from LabVIEW Lab DAQ for myon measurements to phase I root format.')
 
-    parser.add_argument('-i', '--input', type=str, default='/remote/ceph/group/ilc/claws/data/Myon/Converted/Run-900122',
+    parser.add_argument('-i', '--input', type=str, default='/remote/ceph/group/ilc/claws/data/Myon/Converted/Run-900140',
                             help='Input runfolder ', required=False)
 
     parser.add_argument('-o', '--output', type=str, default='/home/iwsatlas1/mgabriel/workspace/claws_phaseI/claws_calibration/SystematicsStudy/systematics_results2.csv',
