@@ -1,5 +1,5 @@
 //============================================================================
-// Name        : main.cpp
+// Name        : calibration.xx
 // Author      : Miroslav Gabriel
 // Version     :
 // Copyright   : GNU General Public License
@@ -17,6 +17,7 @@
 #include <typeinfo>
 #include <fstream>
 #include <iomanip>
+
 // --- boost includes ---
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
@@ -45,19 +46,13 @@
 #include "run.hh"
 #include "globalsettings.hh"
 
-using namespace std;
-using namespace boost;
-using namespace boost::filesystem;
-// using namespace po = boost::program_options;
-namespace pt = boost::property_tree;
-
-
-int error(){
-		throw "DeiMudder";
-		return 0;
-}
-
-using namespace std;
+// using namespace std;
+// using namespace boost;
+// using namespace boost::filesystem;
+// // using namespace po = boost::program_options;
+// namespace pt = boost::property_tree;
+//
+// using namespace std;
 
 int main(int argc, char* argv[]) {
 
@@ -72,7 +67,7 @@ int main(int argc, char* argv[]) {
 		        ("pe-file",         boost::program_options::value<boost::filesystem::path>()->default_value("./config/pe_to_mip.ini"), "Config file to get conversion from pe to MIP.")
 		        ("data.input",      boost::program_options::value<boost::filesystem::path>()->default_value("./"), "Data directory containing runs meant to be analysed.")
 		        ("write-ntp",       boost::program_options::value<bool>()->default_value(false), "Data directory containing runs meant to be analysed.")
-				("profile-timing",  boost::program_options::value<bool>()->default_value(false), "Displays timing info for the individual steps.")
+		        ("profile-timing",  boost::program_options::value<bool>()->default_value(false), "Displays timing info for the individual steps.")
 		        ("tasks",
 		        boost::program_options::value<std::string>()->default_value("0"),
 		        "Task to be processed:\n0: run the complete calibration cahin\
@@ -127,7 +122,7 @@ int main(int argc, char* argv[]) {
 		 *                 3: calculation of the average 1 pe waveform
 		 *                 4: pedestal subtraction on physics waveforms
 		 *                 5: overshoot compensation
-		 * 				   6: Waveform decomposition
+		 *                 6: Waveform decomposition
 		 *				   7: Waveform reconstruction ]
 		 */
 
@@ -155,9 +150,9 @@ int main(int argc, char* argv[]) {
 
 		else if (tasks_tmp.size() == 4)
 		{
-			int found = tasks_tmp.find("-");
+				int found = tasks_tmp.find("-");
 
-			for(int i = std::stoi(tasks_tmp.substr(0,found)) -1; i<std::stoi( tasks_tmp.substr(found+1) ); i++) tasks[i]=true;
+				for(int i = std::stoi(tasks_tmp.substr(0,found)) -1; i<std::stoi( tasks_tmp.substr(found+1) ); i++) tasks[i]=true;
 		}
 
 		else
@@ -170,7 +165,7 @@ int main(int argc, char* argv[]) {
 
 		for(int i = 0; i<10; ++i)
 		{
-			if(tasks[i]) std::cout << tasks_names[i] << "\n";
+				if(tasks[i]) std::cout << tasks_names[i] << "\n";
 		}
 
 		std::cout << "\033[0m" << std::endl;
@@ -181,239 +176,198 @@ int main(int argc, char* argv[]) {
 
 		for(auto run_name : GS->GetRuns( config_map["data.input"].as<boost::filesystem::path>()) )
 		{
-		    CalibrationRun* run = new CalibrationRun(run_name);
+				CalibrationRun* run = new CalibrationRun(run_name);
 
-			run->SynchronizePhysicsEvents();
-			run->SynchronizeCalibrationEvents();
+				run->SynchronizePhysicsEvents();
+				run->SynchronizeCalibrationEvents();
 
-			run->LoadRunSettings();
+				run->LoadRunSettings();
 
-			/**	Pedestal subtraction on the calibration waveforms
-			*
-			*/
-		    if(tasks[0])
-			{
-				double wall0 = claws::get_wall_time();
-				double cpu0  = claws::get_cpu_time();
-
-		    	run->PDS_Calibration();
-
-				double wall1 = claws::get_wall_time();
-				double cpu1  = claws::get_cpu_time();
-
-				if(profile_timing)
+				/**	Pedestal subtraction on the calibration waveforms
+				 *
+				 */
+				if(tasks[0])
 				{
-					cout << "Wall Time = " << wall1 - wall0 << endl;
-					cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+						double wall0 = claws::get_wall_time();
+						double cpu0  = claws::get_cpu_time();
+
+						run->PDS_Calibration();
+
+						double wall1 = claws::get_wall_time();
+						double cpu1  = claws::get_cpu_time();
+
+						if(profile_timing)
+						{
+								cout << "Wall Time = " << wall1 - wall0 << endl;
+								cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+						}
 				}
-			}
 
-			/**	Gain determination on the calibration waveforms
-		 	*
-		 	*/
-			if(tasks[1])
-			{
-				double wall0 = claws::get_wall_time();
-				double cpu0  = claws::get_cpu_time();
-
-				run->GainDetermination();
-
-				double wall1 = claws::get_wall_time();
-				double cpu1  = claws::get_cpu_time();
-
-				if(profile_timing)
+				/**	Gain determination on the calibration waveforms
+				 *
+				 */
+				if(tasks[1])
 				{
-					cout << "Wall Time = " << wall1 - wall0 << endl;
-					cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+						double wall0 = claws::get_wall_time();
+						double cpu0  = claws::get_cpu_time();
+
+						run->GainDetermination();
+
+						double wall1 = claws::get_wall_time();
+						double cpu1  = claws::get_cpu_time();
+
+						if(profile_timing)
+						{
+								cout << "Wall Time = " << wall1 - wall0 << endl;
+								cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+						}
 				}
-			}
 
-			/**	Calculation of average 1 pe calibration waveform
-		 	*
-		 	*/
-			if(tasks[2])
-			{
-				double wall0 = claws::get_wall_time();
-				double cpu0  = claws::get_cpu_time();
-
-				run->Average1PE();
-
-				double wall1 = claws::get_wall_time();
-				double cpu1  = claws::get_cpu_time();
-
-				if(profile_timing)
+				/**	Calculation of average 1 pe calibration waveform
+				 *
+				 */
+				if(tasks[2])
 				{
-					cout << "Wall Time = " << wall1 - wall0 << endl;
-					cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+						double wall0 = claws::get_wall_time();
+						double cpu0  = claws::get_cpu_time();
+
+						run->Average1PE();
+
+						double wall1 = claws::get_wall_time();
+						double cpu1  = claws::get_cpu_time();
+
+						if(profile_timing)
+						{
+								cout << "Wall Time = " << wall1 - wall0 << endl;
+								cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+						}
 				}
-			}
 
-			/**	Pedestal subtraction on the physics waveforms
-		 	*
-		 	*/
-			if(tasks[3])
-			{
-				double wall0 = claws::get_wall_time();
-				double cpu0  = claws::get_cpu_time();
-
-				run->PDS_Physics();
-
-				double wall1 = claws::get_wall_time();
-				double cpu1  = claws::get_cpu_time();
-
-				if(profile_timing)
+				/**	Pedestal subtraction on the physics waveforms
+				 *
+				 */
+				if(tasks[3])
 				{
-					cout << "Wall Time = " << wall1 - wall0 << endl;
-					cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+						double wall0 = claws::get_wall_time();
+						double cpu0  = claws::get_cpu_time();
+
+						run->PDS_Physics();
+
+						double wall1 = claws::get_wall_time();
+						double cpu1  = claws::get_cpu_time();
+
+						if(profile_timing)
+						{
+								cout << "Wall Time = " << wall1 - wall0 << endl;
+								cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+						}
 				}
-			}
 
-			if(tasks[4])
-			{
-				double wall0 = claws::get_wall_time();
-				double cpu0  = claws::get_cpu_time();
-
-				run->OverShootCorrection();
-
-				double wall1 = claws::get_wall_time();
-				double cpu1  = claws::get_cpu_time();
-
-				if(profile_timing)
+				if(tasks[4])
 				{
-					cout << "Wall Time = " << wall1 - wall0 << endl;
-					cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+						double wall0 = claws::get_wall_time();
+						double cpu0  = claws::get_cpu_time();
+
+						run->OverShootCorrection();
+
+						double wall1 = claws::get_wall_time();
+						double cpu1  = claws::get_cpu_time();
+
+						if(profile_timing)
+						{
+								cout << "Wall Time = " << wall1 - wall0 << endl;
+								cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+						}
 				}
-			}
 
-			if(tasks[5])
-			{
-				double wall0 = claws::get_wall_time();
-				double cpu0  = claws::get_cpu_time();
-
-				run->SignalTagging();
-
-				double wall1 = claws::get_wall_time();
-				double cpu1  = claws::get_cpu_time();
-
-				if(profile_timing)
+				if(tasks[5])
 				{
-					cout << "Wall Time = " << wall1 - wall0 << endl;
-					cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+						double wall0 = claws::get_wall_time();
+						double cpu0  = claws::get_cpu_time();
+
+						run->SignalTagging();
+
+						double wall1 = claws::get_wall_time();
+						double cpu1  = claws::get_cpu_time();
+
+						if(profile_timing)
+						{
+								cout << "Wall Time = " << wall1 - wall0 << endl;
+								cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+						}
 				}
-			}
 
-			if(tasks[6])
-			{
-				double wall0 = claws::get_wall_time();
-				double cpu0  = claws::get_cpu_time();
-
-				run->WaveformDecomposition();
-
-				double wall1 = claws::get_wall_time();
-				double cpu1  = claws::get_cpu_time();
-
-				if(profile_timing)
+				if(tasks[6])
 				{
-					cout << "Wall Time = " << wall1 - wall0 << endl;
-					cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+						double wall0 = claws::get_wall_time();
+						double cpu0  = claws::get_cpu_time();
+
+						run->WaveformDecomposition();
+
+						double wall1 = claws::get_wall_time();
+						double cpu1  = claws::get_cpu_time();
+
+						if(profile_timing)
+						{
+								cout << "Wall Time = " << wall1 - wall0 << endl;
+								cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+						}
 				}
-			}
 
-			if(tasks[7])
-			{
-				double wall0 = claws::get_wall_time();
-				double cpu0  = claws::get_cpu_time();
-
-				run->WaveformReconstruction();
-
-				double wall1 = claws::get_wall_time();
-				double cpu1  = claws::get_cpu_time();
-
-				if(profile_timing)
+				if(tasks[7])
 				{
-					cout << "Wall Time = " << wall1 - wall0 << endl;
-					cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+						double wall0 = claws::get_wall_time();
+						double cpu0  = claws::get_cpu_time();
+
+						run->WaveformReconstruction();
+
+						double wall1 = claws::get_wall_time();
+						double cpu1  = claws::get_cpu_time();
+
+						if(profile_timing)
+						{
+								cout << "Wall Time = " << wall1 - wall0 << endl;
+								cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+						}
 				}
-			}
 
-			if(tasks[8])
-			{
-				double wall0 = claws::get_wall_time();
-				double cpu0  = claws::get_cpu_time();
-
-				run->MipTimeRetrieval();
-
-				double wall1 = claws::get_wall_time();
-				double cpu1  = claws::get_cpu_time();
-
-				if(profile_timing)
+				if(tasks[8])
 				{
-					cout << "Wall Time = " << wall1 - wall0 << endl;
-					cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+						double wall0 = claws::get_wall_time();
+						double cpu0  = claws::get_cpu_time();
+
+						run->MipTimeRetrieval();
+
+						double wall1 = claws::get_wall_time();
+						double cpu1  = claws::get_cpu_time();
+
+						if(profile_timing)
+						{
+								cout << "Wall Time = " << wall1 - wall0 << endl;
+								cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+						}
 				}
-			}
 
-			if(tasks[9])
-			{
-				double wall0 = claws::get_wall_time();
-				double cpu0  = claws::get_cpu_time();
-
-				run->SystematicsStudy();
-
-				double wall1 = claws::get_wall_time();
-				double cpu1  = claws::get_cpu_time();
-
-				if(profile_timing)
+				if(tasks[9])
 				{
-					cout << "Wall Time = " << wall1 - wall0 << endl;
-					cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+						double wall0 = claws::get_wall_time();
+						double cpu0  = claws::get_cpu_time();
+
+						run->SystematicsStudy();
+
+						double wall1 = claws::get_wall_time();
+						double cpu1  = claws::get_cpu_time();
+
+						if(profile_timing)
+						{
+								cout << "Wall Time = " << wall1 - wall0 << endl;
+								cout << "CPU Time  = " << cpu1  - cpu0  << endl;
+						}
 				}
-			}
 
-			delete run;
+				delete run;
 
-	}
-//----------------------------------------------------------------------------------------------
-// Now search for the right claws runs & events corresponding to the timestamp of the beast run
-//----------------------------------------------------------------------------------------------
-
-//		std::vector <boost::filesystem::path> runs = GS->GetRuns( config_map["data.input"].as<boost::filesystem::path>());
-
-
-//      std::vector <boost::filesystem::path> runs = GS->GetRuns( config_map["data.input"].as<boost::filesystem::path>());
-//
-//      for(unsigned i = 0; i<runs.size(); i++)
-//      {
-//
-//              //	std::cout << runs.at(i) << std::endl;
-//              CalibrationRun* myrun = new CalibrationRun(runs.at(i));
-//
-//              myrun->SynchronizeFiles();
-//
-//              myrun->LoadData();
-//              myrun->SubtractPedestal2();
-// //		myrun->DeletePhysicsData();
-//              myrun->GainCalibration();
-//              myrun->Average1PE();
-//              myrun->WaveformDecompositionV2();
-//              myrun->SaveRates();
-//
-//              if(config_map["write-ntp"].as<bool>())
-//              {
-//                      std::string day = runs.at(i).parent_path().filename().string();
-//                      myrun->WriteNTuple(path(GS->ResetHook()->SetData()->SetNtp()->SetDetector(claws::CLW)->GetHook()/day));
-//              }
-//
-//              delete myrun;
-//      }
-
-
-
-
-
-
-//	hendrik_file.close();
-//	app->Run();
+		}
 
 		return 0;
 

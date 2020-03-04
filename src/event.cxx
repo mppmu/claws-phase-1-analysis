@@ -1,5 +1,5 @@
 //============================================================================
-// Name        : event.cpp
+// Name        : event.cxx
 // Author      : Miroslav Gabriel
 // Version     :
 // Created on  : Apr 7, 2016
@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <algorithm>    // std::sort
+
 // --- BOOST includes ---
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/algorithm/string/replace.hpp>
@@ -45,8 +46,6 @@ using namespace boost;
 //----------------------------------------------------------------------------------------------
 // Definition of the Event base class.
 //----------------------------------------------------------------------------------------------
-
-
 
 Event::Event()
 {
@@ -2463,6 +2462,8 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt, NTP_Handler* ntp_handler, str
 
 				int start_bin = ph_hist_stat->FindBin(t_delay) - ph_hist_stat->FindBin(t_delay - t_turn_width_1);
 
+				// int jump = 500;
+
 				for(int j = start_bin; j<= min_nbins; ++j)
 				{
 						// in bins
@@ -2470,9 +2471,11 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt, NTP_Handler* ntp_handler, str
 
 						channels_.at(i)->rate_in_turn->SetBinContent(bin_in_turn, channels_.at(i)->rate_in_turn->GetBinContent(bin_in_turn)+ph_hist_stat->GetBinContent(j));
 
+
 						if(ph_hist_stat->GetBinContent(j) > 0)
 						{
 								channels_.at(i)->hit_energy->Fill(ph_hist_stat->GetBinContent(j));
+
 
 								// in seconds
 								double t_in_turn = fmod((j-1)*dt,t_rev*1e-9);
@@ -2522,6 +2525,8 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt, NTP_Handler* ntp_handler, str
 										nhits_time++;
 										e_time += ph_hist_stat->GetBinContent(j);
 								}
+
+								j += 80; // jump Dirty trick for after pulsing cross check
 						}
 
 				}

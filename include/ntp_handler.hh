@@ -138,8 +138,8 @@ T GetPVFromTree(double ts, std::string pv, TTree* tree)
 		// check it ts is in tree;
 		Long64_t nentries = tree->GetEntries();
 
-		// UInt_t ts_tree;
-		Double_t ts_tree;
+		UInt_t ts_tree;
+		// Double_t ts_tree;
 
 		T val_tree = 0;
 		T prev_val_tree = 0;
