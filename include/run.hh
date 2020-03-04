@@ -1,75 +1,24 @@
-/*
- * run.hh
- *
- *  Created on: Apr 7, 2016
- *      Author: mgabriel
- */
-
+//============================================================================
+// Name        : run.chh
+// Author      : Miroslav Gabriel
+// Version     :
+// Created on  : Apr 7, 2016
+// Copyright   : GNU General Public License
+// Description :
+//============================================================================
 #ifndef CLAWS_RUN_H_
 #define CLAWS_RUN_H_
 
 
-// std includes
-// #include <vector>
-// #include <string>
-// #include <map>
-// root includes
-// #include <TFile.h>
-// #include <TH1D.h>
-// #include <TH1I.h>
-// #include <TTree.h>
-// #include <TBranch.h>
-// // boost
-// #include <boost/filesystem.hpp>
-
-
-//std includes
-// #include <iostream>
-// #include <fstream>
-// #include <vector>
-// #include <tuple>
-// #include <map>
-// #include <string>
-// #include <cstdlib>
-// #include <typeinfo>
-// #include <math.h>
-// #include <stdlib.h>
-
-// boost
+// --- BOOST includes ---
 #include <boost/filesystem.hpp>
 #include <boost/property_tree/ptree.hpp>
-// #include <boost/lexical_cast.hpp>
-// #include <boost/algorithm/string/predicate.hpp>
-// #include <boost/algorithm/string/replace.hpp>
-// #include <boost/property_tree/ptree.hpp>
-// #include <boost/property_tree/ini_parser.hpp>
-// #include <boost/program_options.hpp>
-// #include <boost/filesystem/fstream.hpp>
-// #include <boost/algorithm/string/predicate.hpp>
-// #include <boost/foreach.hpp>
 
-// root includes
-// #include <TFile.h>
-// #include <TH1D.h>
-// #include <TH1F.h>
-// #include <TH1I.h>
-// #include <TApplication.h>
-// #include <TCanvas.h>
-// #include <TF1.h>
-// #include <TThread.h>
-// // OpenMP
-//#include <omp.h>
-
-// google performance tools
-// #include <gperftools/heap-profiler.h>
-// #include <gperftools/profiler.h>
-
-// Project includes
+// --- Project includes ---
 // #include "pedestal.hh"
 #include "gain.hh"
 #include "event.hh"
 #include "ntp_handler.hh"
-
 // #include "globalsettings.hh"
 
 
@@ -80,280 +29,57 @@
 
 class Run
 {
-public:
-Run(boost::filesystem::path p);
-virtual ~Run();
+		public:
+				Run(boost::filesystem::path p);
+				virtual ~Run();
 
-virtual void LoadRunSettings();
+				virtual void LoadRunSettings();
 
-protected:
-boost::filesystem::path path_;
-int nr_;
+		protected:
+				boost::filesystem::path path_;
+				int nr_;
 
-boost::property_tree::ptree settings_;
-
-// virtual void SynchronizeFiles() = 0;
-// // double GetStartTime();
-// // double GetStopTime();
-//
-// std::tuple<double, double> GetTime();
-// double tsMin;
-// double tsMax;
+				boost::property_tree::ptree settings_;
 
 };
 
 class CalibrationRun : public Run
 {
-public:
-CalibrationRun(boost::filesystem::path p);
-virtual ~CalibrationRun();
+		public:
+				CalibrationRun(boost::filesystem::path p);
+				virtual ~CalibrationRun();
 
-void SynchronizeCalibrationEvents();
-void PDS_Calibration();
-void GainDetermination();
-void Average1PE();
+				void SynchronizeCalibrationEvents();
+				void PDS_Calibration();
+				void GainDetermination();
+				void Average1PE();
 
-void SynchronizePhysicsEvents();
-void PDS_Physics();
-void OverShootCorrection();
-void SignalTagging();
-void WaveformDecomposition();
-void WaveformReconstruction();
-void MipTimeRetrieval();
-void SystematicsStudy();
-void DeleteCalibrationHistograms();
+				void SynchronizePhysicsEvents();
+				void PDS_Physics();
+				void OverShootCorrection();
+				void SignalTagging();
+				void WaveformDecomposition();
+				void WaveformReconstruction();
+				void MipTimeRetrieval();
+				void SystematicsStudy();
+				void DeleteCalibrationHistograms();
 
-void SetInjectionLimit( std::string type, NTP_Handler* ntp_handler);
-void SetInjectionRate( std::string ring, double limit);
-void SetCurrentLimit(std::string ring, double min, double max, NTP_Handler *ntp_handler);
-void SetTSLimit(double min, double max);
-void SetStatus(std::string type, std::string status);
+				void SetInjectionLimit( std::string type, NTP_Handler* ntp_handler);
+				void SetInjectionRate( std::string ring, double limit);
+				void SetCurrentLimit(std::string ring, double min, double max, NTP_Handler *ntp_handler);
+				void SetTSLimit(double min, double max);
+				void SetStatus(std::string type, std::string status);
 
-int GetNumber();
-int GetNEvents();
-std::vector<PhysicsEvent*> GetEvents();
+				int GetNumber();
+				int GetNEvents();
+				std::vector<PhysicsEvent*> GetEvents();
 
-private:
-int cal_nr_;
+		private:
+				int cal_nr_;
 
-std::vector<PhysicsEvent*>           evts_;
-std::vector<CalibrationEvent*>       cal_evts_;
+				std::vector<PhysicsEvent*>           evts_;
+				std::vector<CalibrationEvent*>       cal_evts_;
 
 };
-
-
-// class AnalysisRun : public Run
-// {
-//     public:
-//         AnalysisRun(boost::filesystem::path p);
-//         virtual ~AnalysisRun();
-//
-//         // void SynchronizeFiles();
-//         // void LoadMetaData();
-//         // void LoadPhysicsData();
-//         //
-//         // void DeleteEvent(int nr = -1);
-//         // void EraseElement(std::vector<AnalysisEvent*>::iterator itr_vec);
-//         // void SetCurrentLimit(std::string ring = "none", double low = -1, double high = 10000);
-//         // void SetInjectionLimit( int type = -1);
-//         //
-//         // std::vector<AnalysisEvent*> GetEvents();
-//         //
-//         //     // void FilterRuns();
-//         //     // void LoadEvents();
-//         //
-//         int NEvents();
-//         //
-//         // std::vector<AnalysisEvent*>   events_;
-//         //
-//         // std::map<std::string, Channel*> channels_;
-// };
-
-
-
-//         int BuildOnlineTree();
-//         int BuildOfflineTree();
-//
-//         int MapOnlineRates();
-//
-//         int WriteOnlineTree(TFile* file);
-//         int WriteTimeStamp(TFile* file);
-//         int WriteTree(TFile* file, std::string type = "-1" );
-//         int WriteNTuple(boost::filesystem::path path_ntuple = "" );
-//
-//         void Subtract();
-//
-//         void DrawPedestal();
-//
-// //        void SaveEvents(boost::filesystem::path fname);
-//
-//
-//         // These methods are meant to be public in the end and used by the user
-//         void SynchronizeFiles();
-//
-//         void LoadData();
-//
-//             void LoadIntermediate();
-//             void LoadMetaData();
-//                 void LoadRunSettings();
-//             void LoadPhysicsData();
-//
-//         void SubtractPedestal();
-//
-//             void LoadPedestal();
-//             void CalculatePedestal(); // Outdated, needs to be removed
-//             void SavePedestal();
-//
-//         void SubtractPedestal2();
-//
-//         void DeletePhysicsData();
-//
-//         void GainCalibration();
-//
-//         void Average1PE();
-//
-//         void WaveformDecomposition();
-//
-//             void SetUpWaveforms();
-//             void FastRate();
-//             void Decompose();
-//             void Reconstruct();
-//             void CalculateChi2();
-//
-//         void WaveformDecompositionV2();
-//
-//         void SaveEvents();
-//         void SaveRates();
-//
-//             void LoadEventFiles();
-//             void LoadWaveforms();
-//
-//
-//
-//
-//         TTree *GetOnlineTree();
-//         TTree *GetOfflineTree();
-//
-//         std::vector<IntChannel*> GetIntChannel(std::string name);
-//         std::vector<PhysicsChannel*> GetPhysicsChannel(std::string name);
-//
-//     protected:
-//
-//
-//     private:
-//
-//         int PathToRunNumber(boost::filesystem::path p);
-//
-//
-//
-//         TTree *tree_online;
-//         TTree *tree_offline;
-//         TTree *tree_skb;
-//
-//         std::vector<PhysicsEvent*>   events_;
-//         std::vector<IntEvent*>       int_events_;
-//
-//         Pedestal* pedestal_;
-//         Gain*     gain_;
-//
-//         // std::map<std::string, TH1F*>   gain_;
-//         std::map<std::string, TH1F*>   average_1pe_;
-//
-//         int pre_samples_;//         int BuildOnlineTree();
-//         int BuildOfflineTree();
-//
-//         int MapOnlineRates();
-//
-//         int WriteOnlineTree(TFile* file);
-//         int WriteTimeStamp(TFile* file);
-//         int WriteTree(TFile* file, std::string type = "-1" );
-//         int WriteNTuple(boost::filesystem::path path_ntuple = "" );
-//
-//         void Subtract();
-//
-//         void DrawPedestal();
-//
-// //        void SaveEvents(boost::filesystem::path fname);
-//
-//
-//         // These methods are meant to be public in the end and used by the user
-//         void SynchronizeFiles();
-//
-//         void LoadData();
-//
-//             void LoadIntermediate();
-//             void LoadMetaData();
-//                 void LoadRunSettings();
-//             void LoadPhysicsData();
-//
-//         void SubtractPedestal();
-//
-//             void LoadPedestal();
-//             void CalculatePedestal(); // Outdated, needs to be removed
-//             void SavePedestal();
-//
-//         void SubtractPedestal2();
-//
-//         void DeletePhysicsData();
-//
-//         void GainCalibration();
-//
-//         void Average1PE();
-//
-//         void WaveformDecomposition();
-//
-//             void SetUpWaveforms();
-//             void FastRate();
-//             void Decompose();
-//             void Reconstruct();
-//             void CalculateChi2();
-//
-//         void WaveformDecompositionV2();
-//
-//         void SaveEvents();
-//         void SaveRates();
-//
-//             void LoadEventFiles();
-//             void LoadWaveforms();
-//
-//
-//
-//
-//         TTree *GetOnlineTree();
-//         TTree *GetOfflineTree();
-//
-//         std::vector<IntChannel*> GetIntChannel(std::string name);
-//         std::vector<PhysicsChannel*> GetPhysicsChannel(std::string name);
-//
-//     protected:
-//
-//
-//     private:
-//
-//         int PathToRunNumber(boost::filesystem::path p);
-//
-//
-//
-//         TTree *tree_online;
-//         TTree *tree_offline;
-//         TTree *tree_skb;
-//
-//         std::vector<PhysicsEvent*>   events_;
-//         std::vector<IntEvent*>       int_events_;
-//
-//         Pedestal* pedestal_;
-//         Gain*     gain_;
-//
-//         // std::map<std::string, TH1F*>   gain_;
-//         std::map<std::string, TH1F*>   average_1pe_;
-//
-//         int pre_samples_;
-//         int post_samples_;
-//         int int_pre_samples_;
-//         int int_post_samples_;
-//         int post_samples_;
-//         int int_pre_samples_;
-//         int int_post_samples_;
-
 
 #endif /* CLAWS_RUN_H_ */
