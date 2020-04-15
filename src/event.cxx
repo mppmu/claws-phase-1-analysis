@@ -212,7 +212,7 @@ void Event::SubtractPedestals(std::vector<double> pd)
 				int nthreads   = GS->GetParameter<int>("General.nthreads");
 				bool parallelize = GS->GetParameter<bool>("General.parallelize");
 
-				#pragma omp parallel for if(parallelize) num_threads(nthreads) private(pd)
+								#pragma omp parallel for if(parallelize) num_threads(nthreads) private(pd)
 				for(int i = 0; i < pd.size(); i++ )
 				{
 						channels_.at(i)->SubtractPedestal(pd.at(i));
@@ -227,7 +227,7 @@ void Event::SubtractPedestals(std::vector<double> pd)
 				int nthreads   = GS->GetParameter<int>("General.nthreads");
 				bool parallelize = GS->GetParameter<bool>("General.parallelize");
 
-				#pragma omp parallel for if(parallelize) num_threads(nthreads)
+								#pragma omp parallel for if(parallelize) num_threads(nthreads)
 				for( int i = 0; i < channels_.size(); ++i )
 				{
 						channels_.at(i)->SubtractPedestal();
@@ -1095,7 +1095,7 @@ void PhysicsEvent::WaveformDecomposition(Gain* gain)
 		int nthreads   = GS->GetParameter<int>("General.nthreads");
 		bool parallelize = GS->GetParameter<bool>("General.parallelize");
 
-		#pragma omp parallel for if(parallelize) num_threads(nthreads)  firstprivate(gain)
+				#pragma omp parallel for if(parallelize) num_threads(nthreads)  firstprivate(gain)
 		for( int i = 0; i < channels_.size(); ++i)
 		{
 				GainChannel * gch = gain->GetChannel(channels_.at(i)->GetName());
@@ -2445,7 +2445,7 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt, NTP_Handler* ntp_handler, str
 										e_time += ph_hist_stat->GetBinContent(j);
 								}
 
-								j += 5000;  // jump Dirty trick for after pulsing cross check
+								j += 0;                                  // jump Dirty trick for after pulsing cross check
 						}
 
 				}
@@ -3394,7 +3394,7 @@ void AnalysisEvent::RunPeak()
 		int nthreads   = GS->GetParameter<int>("General.nthreads");
 		bool parallelize = GS->GetParameter<bool>("General.parallelize");
 
-		#pragma omp parallel for if(parallelize) num_threads(nthreads)
+				#pragma omp parallel for if(parallelize) num_threads(nthreads)
 		for(int i = 0; i < channels_.size(); ++i)
 		{
 				// if(channels_.at(i)->peak != nullptr )
@@ -3524,7 +3524,7 @@ void AnalysisEvent::RunFFT()
 		int nthreads   = GS->GetParameter<int>("General.nthreads");
 		bool parallelize = GS->GetParameter<bool>("General.parallelize");
 
-		#pragma omp parallel for if(parallelize) num_threads(nthreads)
+				#pragma omp parallel for if(parallelize) num_threads(nthreads)
 		for(int i = 0; i < channels_.size(); ++i)
 		{
 				long n = channels_.at(i)->n;

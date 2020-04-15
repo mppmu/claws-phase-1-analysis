@@ -935,7 +935,7 @@ void PhysicsChannel::WaveformDecomposition(TH1F *avg)
 
 							 bool fwhm_true = false;
 
-							 if (stop_methode == 1)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               // Methode 1
+							 if (stop_methode == 1)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           // Methode 1
 							 {
 									 int bin1 = maxbin;
 									 while (wf->GetBinContent(bin1) > wf->GetBinContent(maxbin) / 2)
@@ -950,7 +950,7 @@ void PhysicsChannel::WaveformDecomposition(TH1F *avg)
 
 									 fwhm_true = (bin2 - bin1) >= fwhm;
 							 }
-							 else if (stop_methode == 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             // Methode 2
+							 else if (stop_methode == 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         // Methode 2
 							 {
 									 double avgtmp = 0;
 									 for (int bin = maxbin - int(fwhm / 2) + 1; bin <= maxbin + int(fwhm / 2) - 1; ++bin)
@@ -1295,7 +1295,8 @@ void PhysicsChannel::MipTimeRetrieval(double unixtime)
 		int npe_hit_time      = GS->GetParameter<int>("MipTimeRetrieval.pe_hit_time");
 		std::string timing_type       = GS->GetParameter<std::string>("MipTimeRetrieval.timing_type");
 		double constant_fraction = GS->GetParameter<double>("MipTimeRetrieval.constant_fraction");
-		int jump = GS->GetParameter<double>("MipTimeRetrieval.jump");
+		int afterpusling_jump = GS->GetParameter<double>("MipTimeRetrieval.afterpusling_jump");
+		double afterpusling_threshold = GS->GetParameter<double>("MipTimeRetrieval.afterpusling_threshold");
 
 		double sigma_correction = GS->GetParameter<double>("MipTimeRetrieval.sigma_correction");
 
@@ -1344,20 +1345,96 @@ void PhysicsChannel::MipTimeRetrieval(double unixtime)
 
 						if (npe >= window_threshold)
 						{
-								int j       = i - 1;
-								int time_pe = 0;
 
-								if (timing_type == "pe hit time")
+								if(timing_type == "pe hit time" || timing_type == "constant fraction")
 								{
-										while (time_pe < npe_hit_time && (j - i) <= window_length)
+
+										int j       = i - 1;
+										int time_pe = 0;
+										if (timing_type == "pe hit time")
 										{
-												++j;
-												time_pe += pewf_->GetBinContent(j);
+												while (time_pe < npe_hit_time && (j - i) <= window_length)
+												{
+														++j;
+														time_pe += pewf_->GetBinContent(j);
+												}
+
+										}
+										else if (timing_type == "constant fraction")
+										{
+												int thres_pe = (int)round(constant_fraction * npe);
+
+												if (thres_pe == 0)
+												{
+														thres_pe = 1;
+												}
+
+												while (time_pe < thres_pe && (j - i) <= window_length)
+												{
+														++j;
+														time_pe += pewf_->GetBinContent(j);
+												}
+
 										}
 
+										double alpha = double(npe) / pe_per_mip + correction_factor;
+
+
+										mipwf_->SetBinContent(j, alpha);
+										mipwf_stat_->SetBinContent(j, alpha);
+										mipwf_sys_->SetBinContent(j, alpha);
+
+										double staterr = sqrt(npe) / pe_per_mip;
+
+										double syserr = npe * sigma_pe_per_mip / pow(pe_per_mip, 2) + sigma_correction;
+
+										double err = sqrt(pow(staterr, 2) + pow(syserr, 2));
+
+										mipwf_->SetBinError(j, err);
+										mipwf_stat_->SetBinError(j, staterr);
+										mipwf_sys_->SetBinError(j, syserr);
+
+										int up_gamma_mip = GS->GetParameter<double>("PEToMIP.Up_gamma_mip");
+
+										if (up_gamma_mip == 0)
+										{
+												rate_.rate += alpha;
+
+												rate_.staterr += pow(staterr, 2);
+												rate_.syserr  += syserr;
+										}
+										else if (up_gamma_mip == 1)
+										{
+												double gamma_mip = GS->GetParameter<double>("PEToMIP." + name_ + "_gamma_mip");
+												if (alpha <= gamma_mip)
+												{
+														rate_.rate += alpha;
+
+														rate_.staterr += pow(staterr, 2);
+														rate_.syserr  += syserr;
+												}
+										}
+										else if (up_gamma_mip == 2)
+										{
+												double gamma_mip = GS->GetParameter<double>("PEToMIP." + name_ + "_gamma_mip");
+												if (alpha > gamma_mip)
+												{
+														rate_.rate += alpha;
+
+														rate_.staterr += pow(staterr, 2);
+														rate_.syserr  += syserr;
+												}
+										}
+
+										i += window_length - 1;
+
 								}
-								else if (timing_type == "constant fraction")
+
+								else if (timing_type == "cfaj")
 								{
+										int j       = i - 1;
+										int time_pe = 0;
+
 										int thres_pe = (int)round(constant_fraction * npe);
 
 										if (thres_pe == 0)
@@ -1371,71 +1448,77 @@ void PhysicsChannel::MipTimeRetrieval(double unixtime)
 												time_pe += pewf_->GetBinContent(j);
 										}
 
-								}
-								else if (timing_type == "cfj")
-								{
-										int thres_pe = (int)round(constant_fraction * npe);
-
-										if (thres_pe == 0)
-										{
-												thres_pe = 1;
-										}
+										double alpha = double(npe) / pe_per_mip + correction_factor;
 
 
-								}
+										mipwf_->SetBinContent(j, alpha);
+										mipwf_stat_->SetBinContent(j, alpha);
+										mipwf_sys_->SetBinContent(j, alpha);
 
-								double alpha = double(npe) / pe_per_mip + correction_factor;
+										double staterr = sqrt(npe) / pe_per_mip;
 
+										double syserr = npe * sigma_pe_per_mip / pow(pe_per_mip, 2) + sigma_correction;
 
-								mipwf_->SetBinContent(j, alpha);
-								mipwf_stat_->SetBinContent(j, alpha);
-								mipwf_sys_->SetBinContent(j, alpha);
+										double err = sqrt(pow(staterr, 2) + pow(syserr, 2));
 
-								double staterr = sqrt(npe) / pe_per_mip;
+										mipwf_->SetBinError(j, err);
+										mipwf_stat_->SetBinError(j, staterr);
+										mipwf_sys_->SetBinError(j, syserr);
 
-								double syserr = npe * sigma_pe_per_mip / pow(pe_per_mip, 2) + sigma_correction;
+										int up_gamma_mip = GS->GetParameter<double>("PEToMIP.Up_gamma_mip");
 
-								double err = sqrt(pow(staterr, 2) + pow(syserr, 2));
-
-								mipwf_->SetBinError(j, err);
-								mipwf_stat_->SetBinError(j, staterr);
-								mipwf_sys_->SetBinError(j, syserr);
-
-								int up_gamma_mip = GS->GetParameter<double>("PEToMIP.Up_gamma_mip");
-
-								if (up_gamma_mip == 0)
-								{
-										rate_.rate += alpha;
-
-										rate_.staterr += pow(staterr, 2);
-										rate_.syserr  += syserr;
-								}
-								else if (up_gamma_mip == 1)
-								{
-										double gamma_mip = GS->GetParameter<double>("PEToMIP." + name_ + "_gamma_mip");
-										if (alpha <= gamma_mip)
+										if (up_gamma_mip == 0)
 										{
 												rate_.rate += alpha;
 
 												rate_.staterr += pow(staterr, 2);
 												rate_.syserr  += syserr;
 										}
-								}
-								else if (up_gamma_mip == 2)
-								{
-										double gamma_mip = GS->GetParameter<double>("PEToMIP." + name_ + "_gamma_mip");
-										if (alpha > gamma_mip)
+										else if (up_gamma_mip == 1)
 										{
-												rate_.rate += alpha;
+												double gamma_mip = GS->GetParameter<double>("PEToMIP." + name_ + "_gamma_mip");
+												if (alpha <= gamma_mip)
+												{
+														rate_.rate += alpha;
 
-												rate_.staterr += pow(staterr, 2);
-												rate_.syserr  += syserr;
+														rate_.staterr += pow(staterr, 2);
+														rate_.syserr  += syserr;
+												}
+										}
+										else if (up_gamma_mip == 2)
+										{
+												double gamma_mip = GS->GetParameter<double>("PEToMIP." + name_ + "_gamma_mip");
+												if (alpha > gamma_mip)
+												{
+														rate_.rate += alpha;
+
+														rate_.staterr += pow(staterr, 2);
+														rate_.syserr  += syserr;
+												}
+										}
+
+
+										i += window_length - 1;
+
+										int npe_afterpusling = 0;
+
+										for (int j = i; j < i + afterpusling_jump; ++j)
+										{
+												npe_afterpusling += pewf_->GetBinContent(j);
+										}
+
+										if(double(npe_afterpusling)/pe_per_mip <= afterpusling_threshold)
+										{
+												if((i + afterpusling_jump) < pewf_->GetNbinsX())
+												{
+														i += afterpusling_jump;
+												}
+												else
+												{
+														i = pewf_->GetNbinsX() - 1;
+												}
 										}
 								}
-
-								i += window_length - 1;
-
-
 						}
 				}
 		}
