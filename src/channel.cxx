@@ -935,7 +935,7 @@ void PhysicsChannel::WaveformDecomposition(TH1F *avg)
 
 							 bool fwhm_true = false;
 
-							 if (stop_methode == 1)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           // Methode 1
+							 if (stop_methode == 1)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               // Methode 1
 							 {
 									 int bin1 = maxbin;
 									 while (wf->GetBinContent(bin1) > wf->GetBinContent(maxbin) / 2)
@@ -950,7 +950,7 @@ void PhysicsChannel::WaveformDecomposition(TH1F *avg)
 
 									 fwhm_true = (bin2 - bin1) >= fwhm;
 							 }
-							 else if (stop_methode == 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         // Methode 2
+							 else if (stop_methode == 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             // Methode 2
 							 {
 									 double avgtmp = 0;
 									 for (int bin = maxbin - int(fwhm / 2) + 1; bin <= maxbin + int(fwhm / 2) - 1; ++bin)
@@ -1295,6 +1295,7 @@ void PhysicsChannel::MipTimeRetrieval(double unixtime)
 		int npe_hit_time      = GS->GetParameter<int>("MipTimeRetrieval.pe_hit_time");
 		std::string timing_type       = GS->GetParameter<std::string>("MipTimeRetrieval.timing_type");
 		double constant_fraction = GS->GetParameter<double>("MipTimeRetrieval.constant_fraction");
+		int jump = GS->GetParameter<double>("MipTimeRetrieval.jump");
 
 		double sigma_correction = GS->GetParameter<double>("MipTimeRetrieval.sigma_correction");
 
@@ -1371,6 +1372,17 @@ void PhysicsChannel::MipTimeRetrieval(double unixtime)
 										}
 
 								}
+								else if (timing_type == "cfj")
+								{
+										int thres_pe = (int)round(constant_fraction * npe);
+
+										if (thres_pe == 0)
+										{
+												thres_pe = 1;
+										}
+
+
+								}
 
 								double alpha = double(npe) / pe_per_mip + correction_factor;
 
@@ -1422,6 +1434,8 @@ void PhysicsChannel::MipTimeRetrieval(double unixtime)
 								}
 
 								i += window_length - 1;
+
+
 						}
 				}
 		}
