@@ -1,0 +1,18 @@
+
+--This line, and those below, will be ignored--
+
+A    moveData
+A    moveData/hdd_folder
+A    moveData/hdd_folder/1454384712.ready
+A    moveData/hdd_folder/1454384712.ready/data_1
+A    moveData/hdd_folder/1454384712.ready/tolle_datan
+AM   moveData/moveData.py
+A    moveData/ssd_folder
+A    moveData/ssd_folder/v1454384980
+A    moveData/zip_folder
+AM   moveData/zip_folder/1454384712.ready.zip
+AM   moveData.zip
+AM   mv-tar-script.py
+A    svn-commit.2.tmp~
+A    svn-commit.tmp
+A    svn-commit.tmp~

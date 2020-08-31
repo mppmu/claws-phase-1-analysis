@@ -1,0 +1,10 @@
+0000000000000000000000000000000000000000 36d08264f728311f6efc8dd5023900578d30fdff M.Gabriel <mgabriel@mpp.mpg.de> 1456155859 +0100	clone: from ssh://mgabriel@134.107.40.205:/Users/mgabriel/workspace/python/tdms-converter
+36d08264f728311f6efc8dd5023900578d30fdff f5d60811d8de9af1b469db1e2bb3226f1967bdd3 M.Gabriel <mgabriel@mpp.mpg.de> 1456407884 +0100	commit: routine commit
+f5d60811d8de9af1b469db1e2bb3226f1967bdd3 104a4663517af0b9087aeca8580eb9c0cbdacf66 M.Gabriel <mgabriel@mpp.mpg.de> 1457360629 +0100	merge origin/master: Fast-forward
+104a4663517af0b9087aeca8580eb9c0cbdacf66 a9d5042b01d1490700ceeb31ef38183139114ed4 M.Gabriel <mgabriel@mpp.mpg.de> 1457379791 +0100	commit: almost done including the channel trigger settings. Included channel settings
+a9d5042b01d1490700ceeb31ef38183139114ed4 4d4b764e8c12c3ea153624ab5ab757cba0e4168a M.Gabriel <mgabriel@mpp.mpg.de> 1457459441 +0100	commit: made some progress in implementing the channel trigger properties
+4d4b764e8c12c3ea153624ab5ab757cba0e4168a 61ad8f7fab863f452869857a9206aa06a6baa7a9 M.Gabriel <mgabriel@mpp.mpg.de> 1457534512 +0100	commit: Trying to implement some inheritance
+61ad8f7fab863f452869857a9206aa06a6baa7a9 f31983002c4972820bae3bdb2f36aa7811172cf0 M.Gabriel <mgabriel@mpp.mpg.de> 1457538346 +0100	commit: Implemented mixed trigger and channel trigger properties
+f31983002c4972820bae3bdb2f36aa7811172cf0 233097c50e5bc209f5657cd8b51222aa6d095360 M.Gabriel <mgabriel@mpp.mpg.de> 1457540842 +0100	commit: Implemented acquisition settings
+233097c50e5bc209f5657cd8b51222aa6d095360 64c7aa85422bb5755aedcd982f6f4276aa9f4517 M.Gabriel <mgabriel@mpp.mpg.de> 1457631532 +0100	commit: Implementing the meta data of events.
+64c7aa85422bb5755aedcd982f6f4276aa9f4517 f805e70744d8ab392e4b8ad962da1738b8488e39 M.Gabriel <mgabriel@mpp.mpg.de> 1458211932 +0100	commit: Included all the tdms stuff. Next is including the writing to .root file
