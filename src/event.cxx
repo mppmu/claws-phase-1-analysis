@@ -212,7 +212,7 @@ void Event::SubtractPedestals(std::vector<double> pd)
 				int nthreads   = GS->GetParameter<int>("General.nthreads");
 				bool parallelize = GS->GetParameter<bool>("General.parallelize");
 
-								#pragma omp parallel for if(parallelize) num_threads(nthreads) private(pd)
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																#pragma omp parallel for if(parallelize) num_threads(nthreads) private(pd)
 				for(int i = 0; i < pd.size(); i++ )
 				{
 						channels_.at(i)->SubtractPedestal(pd.at(i));
@@ -227,7 +227,7 @@ void Event::SubtractPedestals(std::vector<double> pd)
 				int nthreads   = GS->GetParameter<int>("General.nthreads");
 				bool parallelize = GS->GetParameter<bool>("General.parallelize");
 
-								#pragma omp parallel for if(parallelize) num_threads(nthreads)
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																#pragma omp parallel for if(parallelize) num_threads(nthreads)
 				for( int i = 0; i < channels_.size(); ++i )
 				{
 						channels_.at(i)->SubtractPedestal();
@@ -1095,7 +1095,7 @@ void PhysicsEvent::WaveformDecomposition(Gain* gain)
 		int nthreads   = GS->GetParameter<int>("General.nthreads");
 		bool parallelize = GS->GetParameter<bool>("General.parallelize");
 
-				#pragma omp parallel for if(parallelize) num_threads(nthreads)  firstprivate(gain)
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																#pragma omp parallel for if(parallelize) num_threads(nthreads)  firstprivate(gain)
 		for( int i = 0; i < channels_.size(); ++i)
 		{
 				GainChannel * gch = gain->GetChannel(channels_.at(i)->GetName());
@@ -1403,48 +1403,64 @@ AnalysisEvent::AnalysisEvent(string suffix, int min_length) : n_(0), norm_(true)
 								ch->bunch_hit_energy_2->SetYTitle("Entries per event [1/equivalent of one p.e. in MIP]");
 
 								title = ch->name + "_nhits_time";
-								ch->nhits_time = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								ch->nhits_time = new TH1F(title.c_str(), title.c_str(),101, -0.005,1.005);
 								ch->nhits_time->SetDirectory(0);
 
 								title = ch->name + "_nhits_bunch";
-								ch->nhits_bunch = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								ch->nhits_bunch = new TH1F(title.c_str(), title.c_str(),101, -0.005,1.005);
 								ch->nhits_bunch->SetDirectory(0);
 
 								title = ch->name + "_nhits_bunch_1";
-								ch->nhits_bunch_1 = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								ch->nhits_bunch_1 = new TH1F(title.c_str(), title.c_str(),101, -0.005,1.005);
 								ch->nhits_bunch_1->SetDirectory(0);
 
 								title = ch->name + "_nhits_bunch_2";
-								ch->nhits_bunch_2 = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								ch->nhits_bunch_2 = new TH1F(title.c_str(), title.c_str(),101, -0.005,1.005);
 								ch->nhits_bunch_2->SetDirectory(0);
 
 								title = ch->name + "_e_time";
-								ch->e_time = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								ch->e_time = new TH1F(title.c_str(), title.c_str(),101, -0.005,1.005);
 								ch->e_time->SetDirectory(0);
 
 								title = ch->name + "_e_bunch";
-								ch->e_bunch = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								ch->e_bunch = new TH1F(title.c_str(), title.c_str(),101, -0.005,1.005);
 								ch->e_bunch->SetDirectory(0);
 
 								title = ch->name + "_e_bunch_1";
-								ch->e_bunch_1 = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								ch->e_bunch_1 = new TH1F(title.c_str(), title.c_str(),101, -0.005,1.005);
 								ch->e_bunch_1->SetDirectory(0);
 
 								title = ch->name + "_e_bunch_2";
-								ch->e_bunch_2 = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								ch->e_bunch_2 = new TH1F(title.c_str(), title.c_str(),101, -0.005,1.005);
 								ch->e_bunch_2->SetDirectory(0);
 
+								title = ch->name + "_e_bunch_1_only";
+								ch->e_bunch_1_only = new TH1F(title.c_str(), title.c_str(),101, -0.005,1.005);
+								ch->e_bunch_1_only->SetDirectory(0);
+
+								title = ch->name + "_e_bunch_2_only";
+								ch->e_bunch_2_only = new TH1F(title.c_str(), title.c_str(),101, -0.005,1.005);
+								ch->e_bunch_2_only->SetDirectory(0);
+
 								title = ch->name + "_e_bunch_5mus";
-								ch->e_bunch_5mus = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								ch->e_bunch_5mus = new TH1F(title.c_str(), title.c_str(),101, -0.005,1.005);
 								ch->e_bunch_5mus->SetDirectory(0);
 
 								title = ch->name + "_e_bunch_5mus_1";
-								ch->e_bunch_5mus_1 = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								ch->e_bunch_5mus_1 = new TH1F(title.c_str(), title.c_str(),101, -0.005,1.005);
 								ch->e_bunch_5mus_1->SetDirectory(0);
 
 								title = ch->name + "_e_bunch_5mus_2";
-								ch->e_bunch_5mus_2 = new TH1F(title.c_str(), title.c_str(),10001, -0.00005,1.00005);
+								ch->e_bunch_5mus_2 = new TH1F(title.c_str(), title.c_str(),101, -0.005,1.005);
 								ch->e_bunch_5mus_2->SetDirectory(0);
+
+								title = ch->name + "_e_bunch_5mus_1_only";
+								ch->e_bunch_5mus_1_only = new TH1F(title.c_str(), title.c_str(),101, -0.005,1.005);
+								ch->e_bunch_5mus_1_only->SetDirectory(0);
+
+								title = ch->name + "_e_bunch_5mus_2_only";
+								ch->e_bunch_5mus_2_only = new TH1F(title.c_str(), title.c_str(),101, -0.005,1.005);
+								ch->e_bunch_5mus_2_only->SetDirectory(0);
 
 								title = ch->name + "_t_enery_share";
 								ch->t_enery_share = new TH1F(title.c_str(), title.c_str(),24000, -0.5e-7, 2.4e-3 -0.5e-7);
@@ -2286,16 +2302,16 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt, NTP_Handler* ntp_handler, str
 
 				int bin_first_signal = 0;
 
-				for(int bin = 1; bin <= ph_hist->GetNbinsX(); ++bin )
-				{
-						if(ph_hist->GetBinContent(bin) > 0 )
-						{
-								bin_first_signal = bin;
-								break;
-						}
-				}
-
-				--bin_first_signal;
+				// for(int bin = 1; bin <= ph_hist->GetNbinsX(); ++bin )
+				// {
+				//      if(ph_hist->GetBinContent(bin) > 0 )
+				//      {
+				//              bin_first_signal = bin;
+				//              break;
+				//      }
+				// }
+				//
+				// --bin_first_signal;
 
 				for(int j = 1; j<= ph_hist->GetNbinsX() - bin_first_signal; ++j)
 				{
@@ -2445,7 +2461,7 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt, NTP_Handler* ntp_handler, str
 										e_time += ph_hist_stat->GetBinContent(j);
 								}
 
-								j += 0;                                  // jump Dirty trick for after pulsing cross check
+								j += 0;                                                                                                                                                                                                                                                                                                  // jump Dirty trick for after pulsing cross check
 						}
 
 				}
@@ -2480,6 +2496,28 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt, NTP_Handler* ntp_handler, str
 						channels_.at(i)->e_bunch_2->Fill(-1);
 				}
 
+				// Bunch energy 1 only
+				if((energy-e_bunch_2)>0)
+				{
+						channels_.at(i)->e_bunch_1_only->Fill(e_bunch_1/(energy-e_bunch_2));
+
+				}
+				else
+				{
+						channels_.at(i)->e_bunch_1_only->Fill(-1);
+				}
+
+				// Bunch energy 1 only
+				if((energy-e_bunch_1)>0)
+				{
+						channels_.at(i)->e_bunch_2_only->Fill(e_bunch_2/(energy-e_bunch_1));
+
+				}
+				else
+				{
+						channels_.at(i)->e_bunch_2_only->Fill(-1);
+				}
+
 
 				if(e_bunch > 0)
 				{
@@ -2508,6 +2546,27 @@ void AnalysisEvent::AddEvent(PhysicsEvent* ph_evt, NTP_Handler* ntp_handler, str
 						channels_.at(i)->e_bunch_5mus_2->Fill(-1);
 				}
 
+				// Bunch energy 1 only
+				if((energy-e_bunch_2)>0)
+				{
+						channels_.at(i)->e_bunch_1_only->Fill(e_bunch_1/(energy-e_bunch_2));
+
+				}
+				else
+				{
+						channels_.at(i)->e_bunch_1_only->Fill(-1);
+				}
+
+				// Bunch energy 1 only
+				if((energy-e_bunch_1)>0)
+				{
+						channels_.at(i)->e_bunch_2_only->Fill(e_bunch_2/(energy-e_bunch_1));
+
+				}
+				else
+				{
+						channels_.at(i)->e_bunch_2_only->Fill(-1);
+				}
 
 
 				double drop_share = GS->GetParameter<double>("SuperKEKB.drop_share");
@@ -3394,7 +3453,7 @@ void AnalysisEvent::RunPeak()
 		int nthreads   = GS->GetParameter<int>("General.nthreads");
 		bool parallelize = GS->GetParameter<bool>("General.parallelize");
 
-				#pragma omp parallel for if(parallelize) num_threads(nthreads)
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																#pragma omp parallel for if(parallelize) num_threads(nthreads)
 		for(int i = 0; i < channels_.size(); ++i)
 		{
 				// if(channels_.at(i)->peak != nullptr )
@@ -3524,7 +3583,7 @@ void AnalysisEvent::RunFFT()
 		int nthreads   = GS->GetParameter<int>("General.nthreads");
 		bool parallelize = GS->GetParameter<bool>("General.parallelize");
 
-				#pragma omp parallel for if(parallelize) num_threads(nthreads)
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																#pragma omp parallel for if(parallelize) num_threads(nthreads)
 		for(int i = 0; i < channels_.size(); ++i)
 		{
 				long n = channels_.at(i)->n;
@@ -3698,6 +3757,9 @@ void AnalysisEvent::SaveEvent(boost::filesystem::path dst, string prefix)
 				if(channel->e_bunch) channel->e_bunch->Write();
 				if(channel->e_bunch_1) channel->e_bunch_1->Write();
 				if(channel->e_bunch_2) channel->e_bunch_2->Write();
+
+				if(channel->e_bunch_1_only) channel->e_bunch_1_only->Write();
+				if(channel->e_bunch_2_only) channel->e_bunch_2_only->Write();
 
 				if(channel->e_bunch_5mus) channel->e_bunch_5mus->Write();
 				if(channel->e_bunch_5mus_1) channel->e_bunch_5mus_1->Write();

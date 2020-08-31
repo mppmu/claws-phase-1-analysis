@@ -224,7 +224,11 @@ struct AnalysisChannel {
 				if (bunch_hit_energy) delete bunch_hit_energy; if (bunch_hit_energy_1) delete bunch_hit_energy_1; if (bunch_hit_energy_2) delete bunch_hit_energy_2;
 				if (hit_energy_sync) delete hit_energy_sync; if (hit_energy_mip) delete hit_energy_mip; if (time_in_turn) delete time_in_turn; if (rate_in_turn) delete rate_in_turn; if (nhits_time) delete nhits_time;
 				if (nhits_bunch) delete nhits_bunch; if (nhits_bunch_1) delete nhits_bunch_1; if (nhits_bunch_2) delete nhits_bunch_2;
-				if (e_time) delete e_time; if (e_bunch) delete e_bunch; if (e_bunch_1) delete e_bunch_1; if (e_bunch_2) delete e_bunch_2;
+				if (e_time) delete e_time; if (e_bunch) delete e_bunch;
+				if (e_bunch_1) delete e_bunch_1;
+				if (e_bunch_2) delete e_bunch_2;
+				if (e_bunch_1_only) delete e_bunch_1_only;
+				if (e_bunch_2_only) delete e_bunch_2_only;
 				if (e_bunch_5mus) delete e_bunch_5mus; if (e_bunch_5mus_1) delete e_bunch_5mus_1; if (e_bunch_5mus_2) delete e_bunch_5mus_2;
 				if (nhits_per_bunch) delete nhits_per_bunch; if (nhits_per_bunch_1) delete nhits_per_bunch_1; if (nhits_per_bunch_2) delete nhits_per_bunch_2;
 				if (energy_per_bunch) delete energy_per_bunch; if (energy_per_bunch_1) delete energy_per_bunch_1; if (energy_per_bunch_2) delete energy_per_bunch_2;
@@ -352,6 +356,9 @@ struct AnalysisChannel {
 
 		TH1F *          e_bunch_1 = nullptr;
 		TH1F *          e_bunch_2 = nullptr;
+
+		TH1F *          e_bunch_1_only = nullptr;
+		TH1F *          e_bunch_2_only = nullptr;
 
 		TH1F *          e_bunch_5mus = nullptr;
 		TH1F *          e_bunch_5mus_1 = nullptr;
